@@ -1,0 +1,145 @@
+'use client';
+
+import { useState, useMemo } from 'react';
+import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const PAGE_SIZE = 10;
+
+interface Employee {
+  id: number;
+  name: string;
+  position: string;
+  employee_no: string | null;
+}
+
+export default function EmployeeTable({ employees }: { employees: Employee[] }) {
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+
+  const filtered = useMemo(() => {
+    if (!query.trim()) return employees;
+    const q = query.toLowerCase();
+    return employees.filter(
+      (emp) =>
+        emp.name.toLowerCase().includes(q) ||
+        (emp.position || '').toLowerCase().includes(q) ||
+        (emp.employee_no || '').toLowerCase().includes(q)
+    );
+  }, [employees, query]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+    setPage(1); // reset ke halaman 1 saat search berubah
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Search */}
+      <div className="relative">
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <input
+          type="text"
+          value={query}
+          onChange={handleSearch}
+          placeholder="Cari nama, jabatan, atau ID karyawan..."
+          className="w-full pl-9 pr-4 py-2 text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
+        />
+      </div>
+
+      {/* Table */}
+      <div className="card p-0 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="sticky top-0">
+              <tr className="text-slate-500 text-sm border-b border-white/5">
+                <th className="px-5 py-3 font-medium w-12">No.</th>
+                <th className="px-5 py-3 font-medium">Nama</th>
+                <th className="px-5 py-3 font-medium">Jabatan</th>
+                <th className="px-5 py-3 font-medium w-28">ID Karyawan</th>
+              </tr>
+            </thead>
+          </table>
+        </div>
+        <div className="overflow-y-auto" style={{ maxHeight: '420px' }}>
+          <table className="w-full text-left">
+            <tbody className="divide-y divide-white/5">
+              {paginated.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-slate-500 italic">
+                    {query ? 'Tidak ada hasil yang cocok.' : 'Belum ada data karyawan.'}
+                  </td>
+                </tr>
+              ) : (
+                paginated.map((emp, index) => (
+                  <tr key={emp.id} className="text-sm hover:bg-white/5 transition-colors">
+                    <td className="px-5 py-3 text-slate-500 w-12">{(currentPage - 1) * PAGE_SIZE + index + 1}</td>
+                    <td className="px-5 py-3 font-medium">{emp.name}</td>
+                    <td className="px-5 py-3 text-slate-400">{emp.position}</td>
+                    <td className="px-5 py-3 text-slate-500 font-mono text-xs w-28">{emp.employee_no ?? '-'}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between text-sm text-slate-500">
+        <span>
+          {filtered.length === 0
+            ? 'Tidak ada data'
+            : `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, filtered.length)} dari ${filtered.length} karyawan`}
+        </span>
+
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="p-1.5 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft size={16} />
+          </button>
+
+          {/* Page numbers */}
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+            .reduce<(number | '...')[]>((acc, p, i, arr) => {
+              if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push('...');
+              acc.push(p);
+              return acc;
+            }, [])
+            .map((p, i) =>
+              p === '...' ? (
+                <span key={`dots-${i}`} className="px-2">…</span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setPage(p as number)}
+                  className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${
+                    currentPage === p
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                      : 'hover:bg-white/10'
+                  }`}
+                >
+                  {p}
+                </button>
+              )
+            )}
+
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="p-1.5 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
