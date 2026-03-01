@@ -25,7 +25,7 @@ function SearchableSelect({
   displayFn,
   valueFn,
 }: {
-  label: string;
+  label: React.ReactNode;
   name: string;
   options: any[];
   placeholder: string;
@@ -54,7 +54,7 @@ function SearchableSelect({
 
   return (
     <div ref={ref} className="relative">
-      <label className="block text-xs font-semibold text-slate-500 uppercase mb-2">{label}</label>
+      <label className="flex items-baseline text-xs font-semibold text-slate-500 uppercase mb-2">{label}</label>
       {/* Hidden input for form submission */}
       <input type="hidden" name={name} value={selected ? String(valueFn(selected)) : ''} />
       <div
@@ -123,11 +123,31 @@ export default function RecordsForm({
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [lastFaktur, setLastFaktur] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [fakturPreview, setFakturPreview] = useState<string>('Memuat...');
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Preview faktur: REK/YYYY/MM/AUTO
-  const now = new Date();
-  const fakturPreview = `REK/${now.getFullYear()}/${String(now.getMonth()+1).padStart(2,'0')}/AUTO`;
+  useEffect(() => {
+    async function fetchNextFaktur() {
+      try {
+        const yyyy = selectedDate.getFullYear();
+        const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(selectedDate.getDate()).padStart(2, '0');
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+        
+        const res = await fetch(`/api/infractions/next-faktur?date=${dateStr}`);
+        if (res.ok) {
+          const data = await res.json();
+          setFakturPreview(data.nextFaktur);
+        } else {
+          setFakturPreview('ERR-DDMMYY-AUTO');
+        }
+      } catch (err) {
+        setFakturPreview('ERR-DDMMYY-AUTO');
+      }
+    }
+    fetchNextFaktur();
+  }, [selectedDate]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -174,6 +194,8 @@ export default function RecordsForm({
       </div>
 
       <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+        <DatePicker name="date" required label="Tanggal" onChange={setSelectedDate} />
+
         <SearchableSelect
           label="Pilih Karyawan"
           name="employee_id"
@@ -185,7 +207,7 @@ export default function RecordsForm({
         />
 
         <SearchableSelect
-          label="Order Produksi (Opsional)"
+          label={<>Order Produksi <span className="text-slate-400 font-normal normal-case ml-1">(opsional)</span></>}
           name="order_name"
           options={orders}
           placeholder="Pilih order..."
@@ -204,8 +226,6 @@ export default function RecordsForm({
             placeholder="Jelaskan detail kesalahan..."
           />
         </div>
-
-        <DatePicker name="date" required label="Tanggal" />
 
         <SearchableSelect
           label="Dicatat Oleh"

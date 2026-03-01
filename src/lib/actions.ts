@@ -31,52 +31,7 @@ export async function addInfraction(employeeId: number, description: string, sev
 }
 
 export async function fetchProductionOrders() {
-  try {
-    // 1. Login to get cookies
-    const loginRes = await fetch('https://buyapercetakan.mdthoster.com/il/v1/auth/login', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      },
-      body: JSON.stringify({ username: 'nauval', password: '312admin2' })
-    });
-
-    const setCookies = loginRes.headers.getSetCookie(); // Use getSetCookie for better handling of multiple cookies
-    if (!setCookies || setCookies.length === 0) {
-      const body = await loginRes.text();
-      console.error('Login Failed Status:', loginRes.status, 'Body:', body);
-      throw new Error('Failed to get cookies from login response');
-    }
-
-    // Join and clean cookies for the next request
-    const cookieString = setCookies.map(c => c.split(';')[0]).join('; ');
-
-    // 2. Fetch data using the cookies
-    const requestParam = JSON.stringify({
-      limit: 50,
-      offset: 0,
-      bsearch: { stgl_awal: '01-01-2026', stgl_akhir: '31-12-2026' }
-    });
-    
-    const dataRes = await fetch(`https://buyapercetakan.mdthoster.com/il/v1/prd/trprd_o/gr1?request=${encodeURIComponent(requestParam)}`, {
-      headers: {
-        'Cookie': cookieString,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
-    });
-
-    if (!dataRes.ok) {
-      const errBody = await dataRes.text();
-      throw new Error(`API Data Fetch Failed: ${dataRes.status} ${errBody}`);
-    }
-
-    const data = await dataRes.json();
-    return data.records || [];
-  } catch (error) {
-    console.error('API Fetch Error:', error);
-    return [];
-  }
+  return [];
 }
 
 export async function getStats() {

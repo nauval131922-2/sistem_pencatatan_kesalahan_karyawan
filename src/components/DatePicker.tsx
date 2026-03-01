@@ -38,9 +38,10 @@ interface DatePickerProps {
   name: string;
   required?: boolean;
   label?: string;
+  onChange?: (date: Date) => void;
 }
 
-export default function DatePicker({ name, required, label }: DatePickerProps) {
+export default function DatePicker({ name, required, label, onChange }: DatePickerProps) {
   const today = new Date();
   const [selected, setSelected] = useState<Date | null>(null);
   const [viewYear, setViewYear] = useState(today.getFullYear());
@@ -76,6 +77,9 @@ export default function DatePicker({ name, required, label }: DatePickerProps) {
     setViewYear(y);
     setViewMonth(m);
     setOpen(false);
+    if (onChange) {
+      onChange(d);
+    }
   };
 
   const isSelected = (cell: { day: number; month: string }) => {

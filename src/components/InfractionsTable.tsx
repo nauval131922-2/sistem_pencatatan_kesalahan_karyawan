@@ -120,120 +120,133 @@ export default function InfractionsTable({ infractions: initial }: { infractions
       </div>
 
       {/* List */}
-      <div className="space-y-2">
-        {paginated.length === 0 ? (
-          <div className="card text-center py-8 text-slate-400 italic text-sm">
-            {query ? 'Tidak ada hasil yang cocok.' : 'Belum ada riwayat kesalahan.'}
-          </div>
-        ) : (
-          paginated.map((inf) => (
-            <div key={inf.id} className="card border-slate-200 transition-colors">
-              {editId === inf.id ? (
-                /* Edit mode */
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-emerald-600">{inf.employee_name}</span>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => saveEdit(inf.id)}
-                        disabled={saving}
-                        className="p-1 rounded bg-emerald-500 text-white hover:bg-emerald-600 transition-colors disabled:opacity-50"
-                        title="Simpan"
-                      >
-                        <Check size={13} />
-                      </button>
-                      <button
-                        onClick={cancelEdit}
-                        disabled={saving}
-                        className="p-1 rounded bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
-                        title="Batal"
-                      >
-                        <X size={13} />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[10px] text-slate-400 uppercase font-semibold">Tanggal</label>
-                      <input
-                        type="date"
-                        value={editData.date ?? ''}
-                        onChange={e => setEditData(d => ({ ...d, date: e.target.value }))}
-                        className={inputCls}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-slate-400 uppercase font-semibold">Dicatat Oleh</label>
-                      <input
-                        type="text"
-                        value={editData.recorded_by ?? ''}
-                        onChange={e => setEditData(d => ({ ...d, recorded_by: e.target.value }))}
-                        className={inputCls}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-slate-400 uppercase font-semibold">Deskripsi</label>
-                    <textarea
-                      value={editData.description ?? ''}
-                      onChange={e => setEditData(d => ({ ...d, description: e.target.value }))}
-                      rows={2}
-                      className={inputCls + ' resize-none'}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-slate-400 uppercase font-semibold">Order (opsional)</label>
-                    <input
-                      type="text"
-                      value={editData.order_name ?? ''}
-                      onChange={e => setEditData(d => ({ ...d, order_name: e.target.value }))}
-                      className={inputCls}
-                    />
-                  </div>
-                </div>
-              ) : (
-                /* View mode */
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 space-y-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-semibold text-emerald-600">{inf.employee_name}</span>
-                      <span className="text-[10px] text-slate-400">{inf.date?.slice(0, 10)}</span>
-                      {inf.faktur && (
-                        <span className="font-mono text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded border border-slate-200">{inf.faktur}</span>
-                      )}
-                    </div>
-                    {inf.order_name && (
-                      <span className="inline-block bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded border border-emerald-500/20 text-[10px]">
-                        {inf.order_name}
-                      </span>
-                    )}
-                    {inf.description && (
-                      <p className="text-xs text-slate-400 line-clamp-2">{inf.description}</p>
-                    )}
-                    <p className="text-[10px] text-slate-400">Oleh: {inf.recorded_by}</p>
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    <button
-                      onClick={() => startEdit(inf)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
-                      title="Edit"
-                    >
-                      <Pencil size={13} />
-                    </button>
-                    <button
-                      onClick={() => doDelete(inf.id)}
-                      disabled={deleting === inf.id}
-                      className="p-1.5 rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-40"
-                      title="Hapus"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))
-        )}
+      <div className="bg-white border text-left text-slate-600 border-slate-200 rounded-lg overflow-x-auto">
+        <table className="w-full text-xs whitespace-nowrap">
+          <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold">
+            <tr>
+              <th className="px-4 py-3">Tanggal</th>
+              <th className="px-4 py-3">Faktur</th>
+              <th className="px-4 py-3">Karyawan</th>
+              <th className="px-4 py-3">Deskripsi</th>
+              <th className="px-4 py-3">Order</th>
+              <th className="px-4 py-3">Dicatat Oleh</th>
+              <th className="px-4 py-3 text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {paginated.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-slate-400 italic text-sm">
+                  {query ? 'Tidak ada hasil yang cocok.' : 'Belum ada riwayat kesalahan.'}
+                </td>
+              </tr>
+            ) : (
+              paginated.map((inf) => (
+                editId === inf.id ? (
+                  <tr key={inf.id} className="bg-emerald-50/30">
+                    <td colSpan={7} className="px-4 py-3">
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-emerald-600">Edit Kesalahan: {inf.employee_name}</span>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => saveEdit(inf.id)}
+                              disabled={saving}
+                              className="p-1 rounded bg-emerald-500 text-white hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                              title="Simpan"
+                            >
+                              <Check size={13} />
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              disabled={saving}
+                              className="p-1 rounded bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
+                              title="Batal"
+                            >
+                              <X size={13} />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div>
+                            <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Tanggal</label>
+                            <input
+                              type="date"
+                              value={editData.date ?? ''}
+                              onChange={e => setEditData(d => ({ ...d, date: e.target.value }))}
+                              className={inputCls}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Dicatat Oleh</label>
+                            <input
+                              type="text"
+                              value={editData.recorded_by ?? ''}
+                              onChange={e => setEditData(d => ({ ...d, recorded_by: e.target.value }))}
+                              className={inputCls}
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Order (opsional)</label>
+                            <input
+                              type="text"
+                              value={editData.order_name ?? ''}
+                              onChange={e => setEditData(d => ({ ...d, order_name: e.target.value }))}
+                              className={inputCls}
+                            />
+                          </div>
+                          <div className="md:col-span-4">
+                            <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Deskripsi</label>
+                            <textarea
+                              value={editData.description ?? ''}
+                              onChange={e => setEditData(d => ({ ...d, description: e.target.value }))}
+                              rows={2}
+                              className={inputCls + ' resize-none'}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={inf.id} className="hover:bg-slate-50 transition-colors group">
+                    <td className="px-4 py-3">{inf.date?.slice(0, 10)}</td>
+                    <td className="px-4 py-3 font-mono text-[10px] text-slate-500">{inf.faktur || '-'}</td>
+                    <td className="px-4 py-3 font-semibold text-emerald-600">{inf.employee_name}</td>
+                    <td className="px-4 py-3 max-w-[200px] truncate" title={inf.description}>{inf.description || '-'}</td>
+                    <td className="px-4 py-3 text-[10px]">
+                      {inf.order_name ? (
+                        <span className="inline-block bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded border border-emerald-500/20 max-w-[150px] truncate" title={inf.order_name}>
+                          {inf.order_name}
+                        </span>
+                      ) : '-'}
+                    </td>
+                    <td className="px-4 py-3 text-[10px] text-slate-400">{inf.recorded_by}</td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => startEdit(inf)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                        <button
+                          onClick={() => doDelete(inf.id)}
+                          disabled={deleting === inf.id}
+                          className="p-1.5 rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-40"
+                          title="Hapus"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
       {/* Pagination */}

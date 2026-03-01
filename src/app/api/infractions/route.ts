@@ -23,16 +23,22 @@ export async function POST(req: NextRequest) {
       fullDate = `${date} ${time}`;
     }
 
-    // Generate faktur: REK/YYYY/MM/XXXX
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const prefix = `${yyyy}-${mm}`;
+    // Generate faktur: DDMMYY-XXX berdasarkan tanggal input (bukan tanggal komputer/hari ini)
+    // `date` formatnya YYYY-MM-DD
+    const dateObj = new Date(date.substring(0, 10)); // pastikan mengambil YYYY-MM-DD saja
+    const dd = String(dateObj.getDate()).padStart(2, '0');
+    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const yy = String(dateObj.getFullYear()).substring(2); // Ambil 2 digit tahun terakhir
+    const datePrefix = `${dd}${mm}${yy}`; // misal 020126
+
+    // Hitung prefix ini sudah ada berapa di database
     const countRow = db.prepare(
       `SELECT COUNT(*) as cnt FROM infractions WHERE faktur LIKE ?`
-    ).get(`REK/${yyyy}/${mm}/%`) as { cnt: number };
-    const seq = String((countRow?.cnt ?? 0) + 1).padStart(4, '0');
-    const faktur = `REK/${yyyy}/${mm}/${seq}`;
+    ).get(`ERR-${datePrefix}-%`) as { cnt: number };
+    
+    // Nomor urut per hari (3 digit)
+    const seq = String((countRow?.cnt ?? 0) + 1).padStart(3, '0');
+    const faktur = `ERR-${datePrefix}-${seq}`; // misal ERR-020126-001
 
     db.prepare(
       'INSERT INTO infractions (employee_id, description, severity, date, recorded_by, order_name, faktur) VALUES (?, ?, ?, ?, ?, ?, ?)'
