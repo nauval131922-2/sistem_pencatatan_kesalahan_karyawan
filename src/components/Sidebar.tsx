@@ -33,7 +33,7 @@ export default function Sidebar() {
         <div className="flex items-center justify-between">
           {!isCollapsed && (
             <h1 className="text-lg font-bold gradient-text whitespace-nowrap overflow-hidden">
-              RecLog
+              SIKKA
             </h1>
           )}
           <button 

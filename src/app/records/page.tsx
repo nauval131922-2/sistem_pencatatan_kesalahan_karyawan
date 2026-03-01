@@ -1,10 +1,9 @@
 import { getEmployees, getInfractions, fetchProductionOrders } from '@/lib/actions';
 import type { Metadata } from 'next';
-import RecordsForm from '@/components/RecordsForm';
-import InfractionsTable from '@/components/InfractionsTable';
+import RecordsTabs from '@/components/RecordsTabs';
 
 export const metadata: Metadata = {
-  title: 'RecLog | Pencatatan Kesalahan',
+  title: 'SIKKA | Pencatatan Kesalahan',
 };
 
 export default async function RecordsPage() {
@@ -15,23 +14,19 @@ export default async function RecordsPage() {
   ]);
 
   return (
-    <div className="space-y-6">
-      <header className="flex justify-between items-center mb-6">
+    <div className="space-y-4 pb-48">
+      <header className="flex justify-between items-center mb-4">
         <div>
-          <h2 className="text-xl font-semibold">Pencatatan Kesalahan</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Pencatatan Kesalahan</h2>
+          <p className="text-zinc-500 mt-1">Kelola dan lihat riwayat kesalahan karyawan.</p>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div>
-          <RecordsForm employees={employees as any} orders={orders as any} />
-        </div>
-
-        <div className="space-y-3">
-          <h3 className="text-base font-semibold">Riwayat Kesalahan</h3>
-          <InfractionsTable infractions={infractions as any} />
-        </div>
-      </div>
+      <RecordsTabs 
+        employees={employees as any} 
+        orders={orders as any} 
+        infractions={infractions as any} 
+      />
     </div>
   );
 }

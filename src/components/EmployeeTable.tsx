@@ -46,27 +46,23 @@ export default function EmployeeTable({ employees }: { employees: Employee[] }) 
           value={query}
           onChange={handleSearch}
           placeholder="Cari nama, jabatan, atau ID karyawan..."
-          className="w-full pl-9 pr-4 py-2 text-sm bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
+          className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
         />
       </div>
 
       {/* Table */}
       <div className="card p-0 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="sticky top-0">
-              <tr className="text-slate-500 text-sm border-b border-white/5">
-                <th className="px-5 py-3 font-medium w-12">No.</th>
-                <th className="px-5 py-3 font-medium">Nama</th>
-                <th className="px-5 py-3 font-medium">Jabatan</th>
-                <th className="px-5 py-3 font-medium w-28">ID Karyawan</th>
+        <div className="overflow-auto" style={{ maxHeight: '280px' }}>
+          <table className="w-full text-left relative">
+            <thead className="sticky top-0 z-10">
+              <tr className="text-slate-500 text-sm border-b border-slate-200 bg-slate-50">
+                <th className="px-5 py-3 font-medium w-12 whitespace-nowrap">No.</th>
+                <th className="px-5 py-3 font-medium whitespace-nowrap">Nama</th>
+                <th className="px-5 py-3 font-medium whitespace-nowrap">Jabatan</th>
+                <th className="px-5 py-3 font-medium w-28 whitespace-nowrap">ID Karyawan</th>
               </tr>
             </thead>
-          </table>
-        </div>
-        <div className="overflow-y-auto" style={{ maxHeight: '420px' }}>
-          <table className="w-full text-left">
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-slate-100">
               {paginated.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-8 text-center text-slate-500 italic">
@@ -77,9 +73,9 @@ export default function EmployeeTable({ employees }: { employees: Employee[] }) 
                 paginated.map((emp, index) => (
                   <tr key={emp.id} className="text-sm hover:bg-slate-50 transition-colors">
                     <td className="px-5 py-3 text-slate-500 w-12">{(currentPage - 1) * PAGE_SIZE + index + 1}</td>
-                    <td className="px-5 py-3 font-medium">{emp.name}</td>
-                    <td className="px-5 py-3 text-slate-400">{emp.position}</td>
-                    <td className="px-5 py-3 text-slate-500 font-mono text-xs w-28">{emp.employee_no ?? '-'}</td>
+                    <td className="px-5 py-3 font-medium text-slate-700">{emp.name}</td>
+                    <td className="px-5 py-3 text-slate-500">{emp.position}</td>
+                    <td className="px-5 py-3 text-slate-400 font-mono text-xs w-28">{emp.employee_no ?? '-'}</td>
                   </tr>
                 ))
               )}
@@ -100,7 +96,7 @@ export default function EmployeeTable({ employees }: { employees: Employee[] }) 
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="p-1.5 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronLeft size={16} />
           </button>
@@ -122,8 +118,8 @@ export default function EmployeeTable({ employees }: { employees: Employee[] }) 
                   onClick={() => setPage(p as number)}
                   className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${
                     currentPage === p
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      : 'hover:bg-white/10'
+                      ? 'bg-emerald-500 text-white border border-emerald-600'
+                      : 'text-slate-600 hover:bg-slate-100'
                   }`}
                 >
                   {p}
@@ -134,7 +130,7 @@ export default function EmployeeTable({ employees }: { employees: Employee[] }) 
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="p-1.5 rounded-lg hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronRight size={16} />
           </button>

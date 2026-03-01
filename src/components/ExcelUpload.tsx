@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Upload, FileSpreadsheet, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, XCircle, Loader2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function ExcelUpload() {
+  const [isOpen, setIsOpen] = useState(false);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [dragging, setDragging] = useState(false);
@@ -65,68 +66,91 @@ export default function ExcelUpload() {
   };
 
   return (
-    <div className="card space-y-4">
-      <div className="flex items-center gap-3 mb-2">
-        <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-          <FileSpreadsheet size={18} />
-        </div>
-        <div>
-          <h4 className="font-semibold text-sm">Import dari Excel</h4>
-          <p className="text-xs text-slate-500">Nama Karyawan &amp; Jabatan</p>
-        </div>
-      </div>
-
-      {/* Drop zone */}
-      <div
-        onClick={() => fileRef.current?.click()}
-        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={onDrop}
-        className={`
-          relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all
-          ${dragging
-            ? 'border-emerald-400 bg-emerald-500/10'
-            : 'border-white/10 hover:border-emerald-500/40 hover:bg-white/5'
-          }
-        `}
+    <>
+      <button
+        onClick={() => setIsOpen(true)}
+        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
       >
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".xls,.xlsx,.xlsm"
-          className="hidden"
-          onChange={onFileChange}
-        />
+        <FileSpreadsheet size={16} />
+        Import Data
+      </button>
 
-        {status === 'loading' ? (
-          <div className="flex flex-col items-center gap-3 text-slate-400">
-            <Loader2 size={32} className="animate-spin text-emerald-400" />
-            <p className="text-sm">Memproses file...</p>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-3 text-slate-400">
-            <Upload size={28} className={dragging ? 'text-emerald-400' : 'opacity-40'} />
-            <div>
-              <p className="text-sm font-medium">Klik atau drag & drop file Excel</p>
-              <p className="text-xs text-slate-500 mt-1">.xls / .xlsx / .xlsm</p>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden relative animate-in fade-in zoom-in duration-200">
+            
+            <button
+              onClick={() => setIsOpen(false)}
+              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="p-6 space-y-4">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100">
+                  <FileSpreadsheet size={20} />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-lg text-slate-800">Import Karyawan</h4>
+                  <p className="text-sm text-slate-500">Format: .xls, .xlsx, .xlsm</p>
+                </div>
+              </div>
+
+              {/* Drop zone */}
+              <div
+                onClick={() => fileRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+                onDragLeave={() => setDragging(false)}
+                onDrop={onDrop}
+                className={`
+                  relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all
+                  ${dragging
+                    ? 'border-emerald-500 bg-emerald-50'
+                    : 'border-slate-300 hover:border-emerald-400 hover:bg-slate-50'
+                  }
+                `}
+              >
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".xls,.xlsx,.xlsm"
+                  className="hidden"
+                  onChange={onFileChange}
+                />
+
+                {status === 'loading' ? (
+                  <div className="flex flex-col items-center gap-3 text-slate-500">
+                    <Loader2 size={32} className="animate-spin text-emerald-500" />
+                    <p className="text-sm font-medium">Memproses file...</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-3 text-slate-500">
+                    <Upload size={28} className={dragging ? 'text-emerald-500' : 'text-slate-400'} />
+                    <div>
+                      <p className="text-sm font-medium text-slate-700">Klik atau seret & lepas file ke sini</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Result message */}
+              {status === 'success' && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm">
+                  <CheckCircle size={18} className="shrink-0" />
+                  <span className="font-medium">{message}</span>
+                </div>
+              )}
+              {status === 'error' && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm">
+                  <XCircle size={18} className="shrink-0" />
+                  <span className="font-medium">{message}</span>
+                </div>
+              )}
             </div>
           </div>
-        )}
-      </div>
-
-      {/* Result message */}
-      {status === 'success' && (
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm">
-          <CheckCircle size={16} className="shrink-0" />
-          <span>{message}</span>
         </div>
       )}
-      {status === 'error' && (
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
-          <XCircle size={16} className="shrink-0" />
-          <span>{message}</span>
-        </div>
-      )}
-    </div>
+    </>
   );
 }

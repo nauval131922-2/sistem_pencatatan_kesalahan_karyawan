@@ -67,6 +67,17 @@ export async function POST(req: NextRequest) {
     // Aktifkan kembali foreign key setelah selesai
     db.pragma('foreign_keys = ON');
 
+    // Log the mass upload
+    const rawData = JSON.stringify({
+      total_imported: imported,
+      filename: file.name,
+      file_size: file.size
+    });
+    db.prepare(`
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES (?, ?, 0, ?, ?, 'Admin')
+    `).run('IMPORT', 'employees', `Update Master Data Karyawan (${imported} baris)`, rawData);
+
     return NextResponse.json({ success: true, imported });
   } catch (err: any) {
     console.error('Import error:', err);

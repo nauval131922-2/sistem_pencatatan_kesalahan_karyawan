@@ -3,7 +3,7 @@ import { BarChart3, TrendingDown, TrendingUp, AlertCircle } from 'lucide-react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'RecLog | Statistik Performa',
+  title: 'SIKKA | Statistik Performa',
 };
 
 export default async function StatsPage() {

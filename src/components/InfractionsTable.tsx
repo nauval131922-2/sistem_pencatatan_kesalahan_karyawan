@@ -2,9 +2,9 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, ChevronLeft, ChevronRight, Pencil, Trash2, X, Check } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Pencil, Trash2 } from 'lucide-react';
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 
 interface Infraction {
   id: number;
@@ -18,15 +18,18 @@ interface Infraction {
   updated_at?: string | null;
 }
 
-export default function InfractionsTable({ infractions: initial }: { infractions: Infraction[] }) {
+export default function InfractionsTable({ 
+  infractions: initial,
+  onEdit 
+}: { 
+  infractions: Infraction[];
+  onEdit?: (inf: Infraction) => void;
+}) {
   const router = useRouter();
   const [infractions, setInfractions] = useState<Infraction[]>(initial);
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
-  const [editId, setEditId] = useState<number | null>(null);
-  const [editData, setEditData] = useState<Partial<Infraction>>({});
   const [deleting, setDeleting] = useState<number | null>(null);
-  const [saving, setSaving] = useState(false);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return infractions;
@@ -47,189 +50,80 @@ export default function InfractionsTable({ infractions: initial }: { infractions
   const paginated = filtered.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
 
   const startEdit = (inf: Infraction) => {
-    setEditId(inf.id);
-    setEditData({
-      description: inf.description,
-      date: inf.date?.slice(0, 10),
-      recorded_by: inf.recorded_by,
-      order_name: inf.order_name ?? '',
-    });
-  };
-
-  const cancelEdit = () => { setEditId(null); setEditData({}); };
-
-  const saveEdit = async (id: number) => {
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/infractions/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          description: editData.description || '',
-          date: editData.date,
-          recorded_by: editData.recorded_by,
-          order_name: editData.order_name || null,
-        }),
-      });
-      if (res.ok) {
-        setInfractions(prev =>
-          prev.map(inf =>
-            inf.id === id
-              ? { ...inf, ...editData, date: editData.date ?? inf.date, updated_at: new Date().toISOString() }
-              : inf
-          )
-        );
-        cancelEdit();
-        router.refresh();
-      } else {
-        const err = await res.json();
-        console.error('Save failed:', err);
-      }
-    } finally {
-      setSaving(false);
-    }
+    onEdit?.(inf);
   };
 
   const doDelete = async (id: number) => {
+    if (!window.confirm('Apakah Anda yakin ingin menghapus data kesalahan ini secara permanen?')) {
+      return;
+    }
+
     setDeleting(id);
     try {
       const res = await fetch(`/api/infractions/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setInfractions(prev => prev.filter(inf => inf.id !== id));
         router.refresh();
+        alert('Data berhasil dihapus.');
       }
     } finally {
       setDeleting(null);
     }
   };
 
-  const inputCls = 'bg-white border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-emerald-500 w-full';
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+    setPage(1);
+  };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Search */}
+      <h3 className="text-base font-semibold mb-2">Riwayat Kesalahan</h3>
       <div className="relative">
-        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           type="text"
           value={query}
-          onChange={(e) => { setQuery(e.target.value); setPage(1); }}
-          placeholder="Cari karyawan, deskripsi, pencatat..."
-          className="w-full pl-8 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
+          onChange={handleSearch}
+          placeholder="Cari karyawan, deskripsi, riwayat faktor..."
+          className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
         />
       </div>
 
-      {/* List */}
-      <div className="bg-white border text-left text-slate-600 border-slate-200 rounded-lg overflow-x-auto">
-        <table className="w-full text-xs whitespace-nowrap">
-          <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-semibold">
-            <tr>
-              <th className="px-4 py-3">Tanggal</th>
-              <th className="px-4 py-3">Faktur</th>
-              <th className="px-4 py-3">Karyawan</th>
-              <th className="px-4 py-3">Deskripsi</th>
-              <th className="px-4 py-3">Order</th>
-              <th className="px-4 py-3">Dicatat Oleh</th>
-              <th className="px-4 py-3 text-right">Aksi</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {paginated.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-slate-400 italic text-sm">
-                  {query ? 'Tidak ada hasil yang cocok.' : 'Belum ada riwayat kesalahan.'}
-                </td>
+      {/* Table */}
+      <div className="card p-0 overflow-hidden">
+        <div className="overflow-auto" style={{ maxHeight: '280px' }}>
+          <table className="w-full text-left relative">
+            <thead className="sticky top-0 z-10">
+              <tr className="text-slate-500 text-sm border-b border-slate-200 bg-slate-50">
+                <th className="px-5 py-3 font-medium w-24 whitespace-nowrap">Aksi</th>
+                <th className="px-5 py-3 font-medium whitespace-nowrap">Faktur</th>
+                <th className="px-5 py-3 font-medium whitespace-nowrap">Tanggal</th>
+                <th className="px-5 py-3 font-medium whitespace-nowrap">Karyawan</th>
+                <th className="px-5 py-3 font-medium whitespace-nowrap">Deskripsi</th>
+                <th className="px-5 py-3 font-medium whitespace-nowrap">Order</th>
+                <th className="px-5 py-3 font-medium whitespace-nowrap">Dicatat Oleh</th>
               </tr>
-            ) : (
-              paginated.map((inf) => (
-                editId === inf.id ? (
-                  <tr key={inf.id} className="bg-emerald-50/30">
-                    <td colSpan={7} className="px-4 py-3">
-                      <div className="flex flex-col gap-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-emerald-600">Edit Kesalahan: {inf.employee_name}</span>
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => saveEdit(inf.id)}
-                              disabled={saving}
-                              className="p-1 rounded bg-emerald-500 text-white hover:bg-emerald-600 transition-colors disabled:opacity-50"
-                              title="Simpan"
-                            >
-                              <Check size={13} />
-                            </button>
-                            <button
-                              onClick={cancelEdit}
-                              disabled={saving}
-                              className="p-1 rounded bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
-                              title="Batal"
-                            >
-                              <X size={13} />
-                            </button>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                          <div>
-                            <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Tanggal</label>
-                            <input
-                              type="date"
-                              value={editData.date ?? ''}
-                              onChange={e => setEditData(d => ({ ...d, date: e.target.value }))}
-                              className={inputCls}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Dicatat Oleh</label>
-                            <input
-                              type="text"
-                              value={editData.recorded_by ?? ''}
-                              onChange={e => setEditData(d => ({ ...d, recorded_by: e.target.value }))}
-                              className={inputCls}
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Order (opsional)</label>
-                            <input
-                              type="text"
-                              value={editData.order_name ?? ''}
-                              onChange={e => setEditData(d => ({ ...d, order_name: e.target.value }))}
-                              className={inputCls}
-                            />
-                          </div>
-                          <div className="md:col-span-4">
-                            <label className="text-[10px] text-slate-400 uppercase font-semibold block mb-1">Deskripsi</label>
-                            <textarea
-                              value={editData.description ?? ''}
-                              onChange={e => setEditData(d => ({ ...d, description: e.target.value }))}
-                              rows={2}
-                              className={inputCls + ' resize-none'}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  <tr key={inf.id} className="hover:bg-slate-50 transition-colors group">
-                    <td className="px-4 py-3">{inf.date?.slice(0, 10)}</td>
-                    <td className="px-4 py-3 font-mono text-[10px] text-slate-500">{inf.faktur || '-'}</td>
-                    <td className="px-4 py-3 font-semibold text-emerald-600">{inf.employee_name}</td>
-                    <td className="px-4 py-3 max-w-[200px] truncate" title={inf.description}>{inf.description || '-'}</td>
-                    <td className="px-4 py-3 text-[10px]">
-                      {inf.order_name ? (
-                        <span className="inline-block bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded border border-emerald-500/20 max-w-[150px] truncate" title={inf.order_name}>
-                          {inf.order_name}
-                        </span>
-                      ) : '-'}
-                    </td>
-                    <td className="px-4 py-3 text-[10px] text-slate-400">{inf.recorded_by}</td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {paginated.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-slate-500 italic text-sm">
+                    {query ? 'Tidak ada hasil yang cocok.' : 'Belum ada riwayat kesalahan.'}
+                  </td>
+                </tr>
+              ) : (
+                paginated.map((inf) => (
+                  <tr key={inf.id} className="text-sm hover:bg-slate-50 transition-colors group">
+                    <td className="px-5 py-3 w-24 whitespace-nowrap">
+                      <div className="flex items-center gap-1">
                         <button
                           onClick={() => startEdit(inf)}
                           className="p-1.5 rounded-lg text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
                           title="Edit"
                         >
-                          <Pencil size={13} />
+                          <Pencil size={15} />
                         </button>
                         <button
                           onClick={() => doDelete(inf.id)}
@@ -237,51 +131,92 @@ export default function InfractionsTable({ infractions: initial }: { infractions
                           className="p-1.5 rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-40"
                           title="Hapus"
                         >
-                          <Trash2 size={13} />
+                          <Trash2 size={15} />
                         </button>
                       </div>
                     </td>
+                    <td className="px-5 py-3 font-mono text-xs text-slate-500 whitespace-nowrap">
+                      {inf.faktur || '-'}
+                    </td>
+                    <td className="px-5 py-3 text-slate-600 whitespace-nowrap">
+                      {inf.date ? inf.date.slice(0, 10).split('-').reverse().join('-') : '-'}
+                    </td>
+                    <td className="px-5 py-3 font-semibold text-emerald-600 truncate max-w-[150px]">
+                      {inf.employee_name}
+                    </td>
+                    <td className="px-5 py-3 truncate max-w-[200px]" title={inf.description}>
+                      {inf.description || '-'}
+                    </td>
+                    <td className="px-5 py-3 text-xs">
+                      {inf.order_name ? (
+                        <span className="inline-block bg-emerald-500/10 text-emerald-600 px-2 py-1 rounded border border-emerald-500/20 max-w-[150px] truncate" title={inf.order_name}>
+                          {inf.order_name}
+                        </span>
+                      ) : '-'}
+                    </td>
+                    <td className="px-5 py-3 text-xs text-slate-400 whitespace-nowrap">
+                      {inf.recorded_by}
+                    </td>
                   </tr>
-                )
-              ))
-            )}
-          </tbody>
-        </table>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-xs text-slate-400">
-          <span>
-            {(curPage - 1) * PAGE_SIZE + 1}–{Math.min(curPage * PAGE_SIZE, filtered.length)} dari {filtered.length}
-          </span>
-          <div className="flex items-center gap-1">
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={curPage === 1}
-              className="p-1 rounded hover:bg-slate-100 disabled:opacity-30 transition-colors">
-              <ChevronLeft size={14} />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter(p => p === 1 || p === totalPages || Math.abs(p - curPage) <= 1)
-              .reduce<(number | '...')[]>((acc, p, i, arr) => {
-                if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push('...');
-                acc.push(p);
-                return acc;
-              }, [])
-              .map((p, i) => p === '...' ? (
-                <span key={`d${i}`} className="px-1">…</span>
+      <div className="flex items-center justify-between text-sm text-slate-500">
+        <span>
+          {filtered.length === 0
+            ? 'Tidak ada data'
+            : `${(curPage - 1) * PAGE_SIZE + 1}–${Math.min(curPage * PAGE_SIZE, filtered.length)} dari ${filtered.length} riwayat`}
+        </span>
+
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={curPage === 1}
+            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft size={16} />
+          </button>
+
+          {/* Page numbers */}
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter((p) => p === 1 || p === totalPages || Math.abs(p - curPage) <= 1)
+            .reduce<(number | '...')[]>((acc, p, i, arr) => {
+              if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push('...');
+              acc.push(p);
+              return acc;
+            }, [])
+            .map((p, i) =>
+              p === '...' ? (
+                <span key={`dots-${i}`} className="px-2">…</span>
               ) : (
-                <button key={p} onClick={() => setPage(p as number)}
-                  className={`w-6 h-6 rounded text-[11px] font-medium transition-colors ${curPage === p ? 'bg-emerald-500/20 text-emerald-600 border border-emerald-500/30' : 'hover:bg-slate-100'}`}>
+                <button
+                  key={p}
+                  onClick={() => setPage(p as number)}
+                  className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${
+                    curPage === p
+                      ? 'bg-emerald-500 text-white border border-emerald-600'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
                   {p}
                 </button>
-              ))}
-            <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={curPage === totalPages}
-              className="p-1 rounded hover:bg-slate-100 disabled:opacity-30 transition-colors">
-              <ChevronRight size={14} />
-            </button>
-          </div>
+              )
+            )}
+
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={curPage === totalPages}
+            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight size={16} />
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

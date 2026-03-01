@@ -9,11 +9,11 @@ export async function POST(req: NextRequest) {
     const description = (formData.get('description') as string)?.trim() || '';
     const date = (formData.get('date') as string)?.trim();
     const recordedBy = (formData.get('recorded_by') as string)?.trim();
-    const orderName = (formData.get('order_name') as string)?.trim() || null;
+    const orderName = (formData.get('order_name') as string)?.trim();
     const severity = 'Low'; // default, severitas dihapus dari UI
 
-    if (!employeeId || !date || !recordedBy) {
-      return NextResponse.json({ error: 'Data tidak lengkap.' }, { status: 400 });
+    if (!employeeId || !date || !recordedBy || !orderName) {
+      return NextResponse.json({ error: 'Data tidak lengkap. Pastikan Order Produksi sudah dipilih.' }, { status: 400 });
     }
 
     // Append time if only date given
@@ -31,18 +31,36 @@ export async function POST(req: NextRequest) {
     const yy = String(dateObj.getFullYear()).substring(2); // Ambil 2 digit tahun terakhir
     const datePrefix = `${dd}${mm}${yy}`; // misal 020126
 
-    // Hitung prefix ini sudah ada berapa di database
+    // Hitung nomor seri terakhir untuk tanggal terkait
     const countRow = db.prepare(
-      `SELECT COUNT(*) as cnt FROM infractions WHERE faktur LIKE ?`
-    ).get(`ERR-${datePrefix}-%`) as { cnt: number };
+      `SELECT MAX(CAST(SUBSTR(faktur, -3) AS INTEGER)) as max_seq FROM infractions WHERE faktur LIKE ?`
+    ).get(`ERR-${datePrefix}-%`) as { max_seq: number | null };
     
     // Nomor urut per hari (3 digit)
-    const seq = String((countRow?.cnt ?? 0) + 1).padStart(3, '0');
+    const seq = String((countRow?.max_seq ?? 0) + 1).padStart(3, '0');
     const faktur = `ERR-${datePrefix}-${seq}`; // misal ERR-020126-001
 
-    db.prepare(
+    const insertResult = db.prepare(
       'INSERT INTO infractions (employee_id, description, severity, date, recorded_by, order_name, faktur) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ).run(employeeId, description, severity, fullDate, recordedBy, orderName, faktur);
+
+    // Dapatkan data karyawan untuk kebutuhan logging yang informatif
+    const emp = db.prepare('SELECT name FROM employees WHERE id = ?').get(employeeId) as { name: string } | undefined;
+    const empName = emp?.name || 'Unknown';
+
+    // Log the created activity
+    const rawData = JSON.stringify({
+      employee_name: empName,
+      description,
+      faktur,
+      date: fullDate,
+      order_name: orderName
+    });
+
+    db.prepare(`
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run('INSERT', 'infractions', insertResult.lastInsertRowid, `Tambah data kesalahan karyawan: ${empName}`, rawData, recordedBy);
 
     return NextResponse.json({ success: true, faktur });
   } catch (err: any) {

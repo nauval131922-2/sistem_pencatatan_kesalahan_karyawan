@@ -1,31 +1,64 @@
-import { getEmployees } from '@/lib/actions';
+import { getEmployees, getLastEmployeeImport } from '@/lib/actions';
 import type { Metadata } from 'next';
 import ExcelUpload from '@/components/ExcelUpload';
 import EmployeeTable from '@/components/EmployeeTable';
+import { FileSpreadsheet, Clock } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'RecLog | Daftar Karyawan',
+  title: 'SIKKA | Daftar Karyawan',
 };
 
 export default async function EmployeesPage() {
   const employees = await getEmployees();
+  const lastImport = await getLastEmployeeImport();
+
+  let importFileName = '';
+  let importTime = '';
+
+  if (lastImport) {
+    try {
+      const raw = JSON.parse(lastImport.raw_data);
+      importFileName = raw.filename || '';
+      
+      let dateString = lastImport.created_at;
+      // Pastikan format ISO 8601 valid dengan indikator UTC (Z)
+      if (!dateString.includes('T')) dateString = dateString.replace(' ', 'T');
+      if (!dateString.endsWith('Z')) dateString += 'Z';
+      
+      const d = new Date(dateString); 
+      
+      importTime = d.toLocaleString('id-ID', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+    } catch(e) {}
+  }
 
   return (
-    <div className="space-y-4">
-      <header className="flex justify-between items-center">
+    <div className="space-y-6">
+      <header className="flex justify-between items-start mb-6">
         <div>
-          <h2 className="text-2xl font-semibold">Daftar Karyawan</h2>
+          <h2 className="text-2xl font-bold tracking-tight">Daftar Karyawan</h2>
+          <p className="text-zinc-500 mt-1">Kelola data master karyawan Anda.</p>
+          
+          {importFileName && (
+            <div className="flex items-center gap-3 mt-3 text-xs font-medium">
+              <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2.5 py-1 rounded shadow-sm">
+                <FileSpreadsheet size={12} className="text-emerald-500" />
+                <span className="max-w-[150px] truncate" title={importFileName}>{importFileName}</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-slate-500">
+                <Clock size={12} className="opacity-70" />
+                Diperbarui: {importTime}
+              </div>
+            </div>
+          )}
         </div>
+        <ExcelUpload />
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1">
-          <ExcelUpload />
-        </div>
-
-        <div className="lg:col-span-2">
-          <EmployeeTable employees={employees as any} />
-        </div>
+      <div className="w-full">
+        <EmployeeTable employees={employees as any} />
       </div>
     </div>
   );

@@ -6,7 +6,7 @@ import MainContentWrapper from "@/components/MainContentWrapper";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "RecLog | Dashboard",
+  title: "SIKKA | Dashboard",
   description: "Sistem Pencatatan Kesalahan Karyawan - Divisi Percetakan",
 };
 
