@@ -23,6 +23,7 @@ db.exec(`
     recorded_by TEXT NOT NULL,
     order_name TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT NULL,
     FOREIGN KEY (employee_id) REFERENCES employees(id)
   );
 `);
@@ -43,6 +44,12 @@ try {
 try {
   db.exec("ALTER TABLE infractions ADD COLUMN faktur TEXT;");
 } catch (e) {}
+
+// Migration: tambah kolom updated_at
+try {
+  db.exec("ALTER TABLE infractions ADD COLUMN updated_at DATETIME DEFAULT NULL;");
+} catch (e) {}
+
 
 
 export default db;

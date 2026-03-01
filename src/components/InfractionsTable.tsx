@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Search, ChevronLeft, ChevronRight, Pencil, Trash2, X, Check } from 'lucide-react';
 
 const PAGE_SIZE = 5;
@@ -13,15 +14,19 @@ interface Infraction {
   recorded_by: string;
   order_name: string | null;
   faktur: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export default function InfractionsTable({ infractions: initial }: { infractions: Infraction[] }) {
+  const router = useRouter();
   const [infractions, setInfractions] = useState<Infraction[]>(initial);
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
   const [editId, setEditId] = useState<number | null>(null);
   const [editData, setEditData] = useState<Partial<Infraction>>({});
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const filtered = useMemo(() => {
     if (!query.trim()) return infractions;
@@ -43,30 +48,57 @@ export default function InfractionsTable({ infractions: initial }: { infractions
 
   const startEdit = (inf: Infraction) => {
     setEditId(inf.id);
-    setEditData({ description: inf.description, date: inf.date?.slice(0, 10), recorded_by: inf.recorded_by, order_name: inf.order_name ?? '' });
+    setEditData({
+      description: inf.description,
+      date: inf.date?.slice(0, 10),
+      recorded_by: inf.recorded_by,
+      order_name: inf.order_name ?? '',
+    });
   };
 
   const cancelEdit = () => { setEditId(null); setEditData({}); };
 
   const saveEdit = async (id: number) => {
-    const res = await fetch(`/api/infractions/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(editData),
-    });
-    if (res.ok) {
-      setInfractions(prev => prev.map(inf =>
-        inf.id === id ? { ...inf, ...editData, date: editData.date ?? inf.date } : inf
-      ));
-      cancelEdit();
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/infractions/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: editData.description || '',
+          date: editData.date,
+          recorded_by: editData.recorded_by,
+          order_name: editData.order_name || null,
+        }),
+      });
+      if (res.ok) {
+        setInfractions(prev =>
+          prev.map(inf =>
+            inf.id === id
+              ? { ...inf, ...editData, date: editData.date ?? inf.date, updated_at: new Date().toISOString() }
+              : inf
+          )
+        );
+        cancelEdit();
+        router.refresh();
+      } else {
+        const err = await res.json();
+        console.error('Save failed:', err);
+      }
+    } finally {
+      setSaving(false);
     }
   };
 
   const doDelete = async (id: number) => {
     setDeleting(id);
-    const res = await fetch(`/api/infractions/${id}`, { method: 'DELETE' });
-    if (res.ok) {
-      setInfractions(prev => prev.filter(inf => inf.id !== id));
+    try {
+      const res = await fetch(`/api/infractions/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setInfractions(prev => prev.filter(inf => inf.id !== id));
+        router.refresh();
+      }
+    } finally {
       setDeleting(null);
     }
   };
@@ -95,17 +127,27 @@ export default function InfractionsTable({ infractions: initial }: { infractions
           </div>
         ) : (
           paginated.map((inf) => (
-            <div key={inf.id} className="card hover:border-emerald-200 transition-all">
+            <div key={inf.id} className="card border-slate-200 transition-colors">
               {editId === inf.id ? (
                 /* Edit mode */
                 <div className="space-y-2">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-emerald-600">{inf.employee_name}</span>
                     <div className="flex gap-1">
-                      <button onClick={() => saveEdit(inf.id)} className="p-1 rounded bg-emerald-500 text-white hover:bg-emerald-600 transition-colors" title="Simpan">
+                      <button
+                        onClick={() => saveEdit(inf.id)}
+                        disabled={saving}
+                        className="p-1 rounded bg-emerald-500 text-white hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                        title="Simpan"
+                      >
                         <Check size={13} />
                       </button>
-                      <button onClick={cancelEdit} className="p-1 rounded bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors" title="Batal">
+                      <button
+                        onClick={cancelEdit}
+                        disabled={saving}
+                        className="p-1 rounded bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
+                        title="Batal"
+                      >
                         <X size={13} />
                       </button>
                     </div>
@@ -113,20 +155,40 @@ export default function InfractionsTable({ infractions: initial }: { infractions
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-[10px] text-slate-400 uppercase font-semibold">Tanggal</label>
-                      <input type="date" value={editData.date ?? ''} onChange={e => setEditData(d => ({ ...d, date: e.target.value }))} className={inputCls} />
+                      <input
+                        type="date"
+                        value={editData.date ?? ''}
+                        onChange={e => setEditData(d => ({ ...d, date: e.target.value }))}
+                        className={inputCls}
+                      />
                     </div>
                     <div>
                       <label className="text-[10px] text-slate-400 uppercase font-semibold">Dicatat Oleh</label>
-                      <input type="text" value={editData.recorded_by ?? ''} onChange={e => setEditData(d => ({ ...d, recorded_by: e.target.value }))} className={inputCls} />
+                      <input
+                        type="text"
+                        value={editData.recorded_by ?? ''}
+                        onChange={e => setEditData(d => ({ ...d, recorded_by: e.target.value }))}
+                        className={inputCls}
+                      />
                     </div>
                   </div>
                   <div>
                     <label className="text-[10px] text-slate-400 uppercase font-semibold">Deskripsi</label>
-                    <textarea value={editData.description ?? ''} onChange={e => setEditData(d => ({ ...d, description: e.target.value }))} rows={2} className={inputCls + ' resize-none'} />
+                    <textarea
+                      value={editData.description ?? ''}
+                      onChange={e => setEditData(d => ({ ...d, description: e.target.value }))}
+                      rows={2}
+                      className={inputCls + ' resize-none'}
+                    />
                   </div>
                   <div>
                     <label className="text-[10px] text-slate-400 uppercase font-semibold">Order (opsional)</label>
-                    <input type="text" value={editData.order_name ?? ''} onChange={e => setEditData(d => ({ ...d, order_name: e.target.value }))} className={inputCls} />
+                    <input
+                      type="text"
+                      value={editData.order_name ?? ''}
+                      onChange={e => setEditData(d => ({ ...d, order_name: e.target.value }))}
+                      className={inputCls}
+                    />
                   </div>
                 </div>
               ) : (
@@ -182,7 +244,7 @@ export default function InfractionsTable({ infractions: initial }: { infractions
           </span>
           <div className="flex items-center gap-1">
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={curPage === 1}
-              className="p-1 rounded hover:bg-white/10 disabled:opacity-30 transition-colors">
+              className="p-1 rounded hover:bg-slate-100 disabled:opacity-30 transition-colors">
               <ChevronLeft size={14} />
             </button>
             {Array.from({ length: totalPages }, (_, i) => i + 1)
@@ -201,7 +263,7 @@ export default function InfractionsTable({ infractions: initial }: { infractions
                 </button>
               ))}
             <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={curPage === totalPages}
-              className="p-1 rounded hover:bg-white/10 disabled:opacity-30 transition-colors">
+              className="p-1 rounded hover:bg-slate-100 disabled:opacity-30 transition-colors">
               <ChevronRight size={14} />
             </button>
           </div>

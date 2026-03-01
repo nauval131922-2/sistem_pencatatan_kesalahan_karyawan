@@ -75,7 +75,7 @@ export default function EmployeeTable({ employees }: { employees: Employee[] }) 
                 </tr>
               ) : (
                 paginated.map((emp, index) => (
-                  <tr key={emp.id} className="text-sm hover:bg-white/5 transition-colors">
+                  <tr key={emp.id} className="text-sm hover:bg-slate-50 transition-colors">
                     <td className="px-5 py-3 text-slate-500 w-12">{(currentPage - 1) * PAGE_SIZE + index + 1}</td>
                     <td className="px-5 py-3 font-medium">{emp.name}</td>
                     <td className="px-5 py-3 text-slate-400">{emp.position}</td>
