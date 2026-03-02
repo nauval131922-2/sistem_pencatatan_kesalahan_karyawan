@@ -41,7 +41,7 @@ export default function RecordsTabs({ employees, orders, infractions }: RecordsT
           }`}
         >
           <ClipboardList className="w-5 h-5" />
-          Daftar Kesalahan
+          <span>Daftar Kesalahan</span>
         </button>
         <button
           onClick={() => { setActiveTab('form'); handleCancelEdit(); }}
@@ -52,7 +52,7 @@ export default function RecordsTabs({ employees, orders, infractions }: RecordsT
           }`}
         >
           {editingInfraction ? <Pencil className="w-5 h-5" /> : <PlusCircle className="w-5 h-5" />}
-          {editingInfraction ? 'Edit Data' : 'Tambah Data'}
+          <span>{editingInfraction ? 'Edit Data' : 'Tambah Data'}</span>
         </button>
       </div>
 

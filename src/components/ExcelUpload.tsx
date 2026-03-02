@@ -3,12 +3,19 @@
 import { useState, useRef } from 'react';
 import { Upload, FileSpreadsheet, CheckCircle, XCircle, Loader2, X, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import ConfirmDialog from './ConfirmDialog';
 
 export default function ExcelUpload() {
   const [isOpen, setIsOpen] = useState(false);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
-  const [dragging, setDragging] = useState(false);
+   const [dragging, setDragging] = useState(false);
+  const [dialog, setDialog] = useState<{isOpen: boolean, type: 'success' | 'error', title: string, message: string}>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
   const fileRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -37,8 +44,13 @@ export default function ExcelUpload() {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setStatus('success');
-        setMessage(`Berhasil mengimpor ${data.imported} karyawan.`);
+        setStatus('idle');
+        setDialog({
+          isOpen: true,
+          type: 'success',
+          title: 'Berhasil',
+          message: `Berhasil mengimpor ${data.imported} karyawan.`
+        });
         router.refresh();
       } else {
         setStatus('error');
@@ -110,12 +122,13 @@ export default function ExcelUpload() {
         </div>
       )}
       
-      {status === 'success' && (
-        <div className="mt-4 p-3 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-sm flex items-start gap-2 animate-in fade-in">
-          <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
-          <p>{message}</p>
-        </div>
-      )}
+      <ConfirmDialog 
+        isOpen={dialog.isOpen}
+        type={dialog.type}
+        title={dialog.title}
+        message={dialog.message}
+        onConfirm={() => setDialog(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
     </div>
   );

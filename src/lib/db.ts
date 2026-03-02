@@ -11,6 +11,7 @@ db.exec(`
     name TEXT NOT NULL,
     position TEXT NOT NULL,
     department TEXT NOT NULL,
+    employee_no TEXT UNIQUE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -81,6 +82,20 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS sales_reports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tgl TEXT,
+    kd_barang TEXT,
+    nama_prd TEXT,
+    nama_pelanggan TEXT,
+    dati_2 TEXT,
+    qty REAL,
+    harga REAL,
+    jumlah REAL,
+    raw_data TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE TABLE IF NOT EXISTS faktur_sequences (
     prefix TEXT PRIMARY KEY,
     last_seq INTEGER NOT NULL DEFAULT 0,
@@ -94,6 +109,11 @@ try {
 } catch (e) {
   // Kolom sudah ada
 }
+
+// Migration: Tambahkan index UNIQUE pada employee_no untuk mendukung UPSERT
+try {
+  db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_employee_no ON employees(employee_no);");
+} catch (e) {}
 
 // Migration to add order_name if it doesn't exist
 try {
@@ -127,5 +147,54 @@ infractionColumns.forEach(col => {
     db.exec(`ALTER TABLE infractions ADD COLUMN ${colName} ${col.split(' ').slice(1).join(' ')};`);
   } catch (e) {}
 });
+
+// Migration: tambah kolom employee_no ke infractions untuk sinkronisasi permanen
+try {
+  db.exec("ALTER TABLE infractions ADD COLUMN employee_no TEXT;");
+} catch (e) {}
+
+try {
+  db.exec("ALTER TABLE infractions ADD COLUMN recorded_by_id INTEGER;");
+} catch (e) {}
+
+try {
+  db.exec("ALTER TABLE infractions ADD COLUMN recorded_by_no TEXT;");
+} catch (e) {}
+
+try {
+  db.exec("ALTER TABLE infractions ADD COLUMN order_faktur TEXT;");
+} catch (e) {}
+
+try {
+  db.exec("ALTER TABLE bahan_baku ADD COLUMN kd_barang TEXT;");
+} catch (e) {}
+
+try {
+  db.exec("ALTER TABLE barang_jadi ADD COLUMN kd_barang TEXT;");
+} catch (e) {}
+
+try {
+  db.exec("ALTER TABLE infractions ADD COLUMN item_code TEXT;");
+} catch (e) {}
+
+try {
+  db.exec("ALTER TABLE bahan_baku ADD COLUMN faktur TEXT;");
+} catch (e) {}
+
+try {
+  db.exec("ALTER TABLE barang_jadi ADD COLUMN faktur TEXT;");
+} catch (e) {}
+
+try {
+  db.exec("ALTER TABLE infractions ADD COLUMN item_faktur TEXT;");
+} catch (e) {}
+
+try {
+  db.exec("ALTER TABLE bahan_baku ADD COLUMN faktur_prd TEXT;");
+} catch (e) {}
+
+try {
+  db.exec("ALTER TABLE barang_jadi ADD COLUMN faktur_prd TEXT;");
+} catch (e) {}
 
 export default db;

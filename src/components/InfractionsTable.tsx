@@ -1,21 +1,31 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, ChevronLeft, ChevronRight, Pencil, Trash2 } from 'lucide-react';
+import ConfirmDialog, { DialogType } from '@/components/ConfirmDialog';
 
 const PAGE_SIZE = 10;
 
 interface Infraction {
   id: number;
   employee_name: string;
+  employee_no?: string | null;
+  employee_position?: string | null;
   description: string;
   date: string;
   recorded_by: string;
+  recorded_by_name?: string | null;
+  recorded_by_position?: string | null;
+  recorded_by_id?: number | null;
   order_name: string | null;
+  order_name_display?: string | null;
+  order_faktur?: string | null;
   faktur: string | null;
   jenis_barang?: string | null;
   nama_barang?: string | null;
+  nama_barang_display?: string | null;
+  item_faktur?: string | null;
   jenis_harga?: string | null;
   jumlah?: number | null;
   harga?: number | null;
@@ -36,6 +46,26 @@ export default function InfractionsTable({
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
   const [deleting, setDeleting] = useState<number | null>(null);
+  
+  // Sync state with props when server data changes
+  useEffect(() => {
+    setInfractions(initial);
+  }, [initial]);
+  
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [isDeletingConfirm, setIsDeletingConfirm] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState<{
+    isOpen: boolean;
+    type: DialogType;
+    title: string;
+    message: string;
+  }>({ isOpen: false, type: 'alert', title: '', message: '' });
+
+  const closeDialog = () => setDialogConfig(prev => ({ ...prev, isOpen: false }));
+  const closeConfirm = () => {
+    setConfirmDeleteId(null);
+    setIsDeletingConfirm(false);
+  };
 
   const filtered = useMemo(() => {
     if (!query.trim()) return infractions;
@@ -60,21 +90,49 @@ export default function InfractionsTable({
     onEdit?.(inf);
   };
 
-  const doDelete = async (id: number) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus data kesalahan ini secara permanen?')) {
-      return;
-    }
+  const requestDelete = (id: number) => {
+    setConfirmDeleteId(id);
+  };
 
+  const executeDelete = async () => {
+    if (confirmDeleteId === null) return;
+    const id = confirmDeleteId;
+    
+    setIsDeletingConfirm(true);
     setDeleting(id);
     try {
       const res = await fetch(`/api/infractions/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setInfractions(prev => prev.filter(inf => inf.id !== id));
         router.refresh();
-        alert('Data berhasil dihapus.');
+        setConfirmDeleteId(null);
+        setDialogConfig({
+          isOpen: true,
+          type: 'success',
+          title: 'Berhasil',
+          message: 'Data kesalahan berhasil dihapus secara permanen.'
+        });
+      } else {
+        const err = await res.json();
+        setConfirmDeleteId(null);
+        setDialogConfig({
+          isOpen: true,
+          type: 'error',
+          title: 'Gagal',
+          message: 'Gagal menghapus data: ' + (err.error || 'Unknown error')
+        });
       }
+    } catch (err) {
+      setConfirmDeleteId(null);
+      setDialogConfig({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: 'Terjadi kesalahan jaringan atau server.'
+      });
     } finally {
       setDeleting(null);
+      setIsDeletingConfirm(false);
     }
   };
 
@@ -108,6 +166,7 @@ export default function InfractionsTable({
                 <th className="px-5 py-3 font-medium whitespace-nowrap">Faktur</th>
                 <th className="px-5 py-3 font-medium whitespace-nowrap">Tanggal</th>
                 <th className="px-5 py-3 font-medium whitespace-nowrap">Karyawan</th>
+                <th className="px-5 py-3 font-medium whitespace-nowrap">Deskripsi</th>
                 <th className="px-5 py-3 font-medium whitespace-nowrap">Info Barang</th>
                 <th className="px-5 py-3 font-medium whitespace-nowrap text-right">Qty</th>
                 <th className="px-5 py-3 font-medium whitespace-nowrap text-right">Harga</th>
@@ -119,7 +178,7 @@ export default function InfractionsTable({
             <tbody className="divide-y divide-slate-100">
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-500 italic text-sm">
+                  <td colSpan={11} className="py-8 text-center text-slate-500 italic text-sm">
                     {query ? 'Tidak ada hasil yang cocok.' : 'Belum ada riwayat kesalahan.'}
                   </td>
                 </tr>
@@ -136,7 +195,7 @@ export default function InfractionsTable({
                           <Pencil size={15} />
                         </button>
                         <button
-                          onClick={() => doDelete(inf.id)}
+                          onClick={() => requestDelete(inf.id)}
                           disabled={deleting === inf.id}
                           className="p-1.5 rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-40"
                           title="Hapus"
@@ -152,17 +211,32 @@ export default function InfractionsTable({
                       {inf.date ? inf.date.slice(0, 10).split('-').reverse().join('-') : '-'}
                     </td>
                     <td className="px-5 py-3 font-semibold text-emerald-600 truncate max-w-[150px]">
-                      {inf.employee_name}
-                      {inf.description && (
-                        <div className="text-xs text-slate-400 font-normal mt-0.5 truncate max-w-[150px]" title={inf.description}>
-                          {inf.description}
+                      {inf.employee_name || 'Karyawan Dihapus'}
+                      {inf.employee_position && (
+                        <div className="text-[10px] text-slate-400 font-normal mt-0.5 truncate max-w-[150px]" title={inf.employee_position}>
+                          {inf.employee_position}
                         </div>
                       )}
                     </td>
-                    <td className="px-5 py-3 truncate max-w-[200px]" title={inf.nama_barang || ''}>
-                      <div className="font-medium text-slate-700">{inf.nama_barang || '-'}</div>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">
-                        {inf.jenis_barang || '-'}
+                    <td className="px-5 py-3 text-slate-600 max-w-[200px]">
+                      <div className="text-xs line-clamp-2" title={inf.description}>
+                        {inf.description || '-'}
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 truncate max-w-[200px]" title={inf.nama_barang_display || inf.nama_barang || ''}>
+                      <div className="font-medium text-slate-700">{inf.nama_barang_display || inf.nama_barang || '-'}</div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">
+                          {inf.jenis_barang || '-'}
+                        </span>
+                        {inf.item_faktur && (
+                          <>
+                            <span className="text-slate-300">•</span>
+                            <span className="text-[10px] font-mono text-slate-400 border border-slate-200 bg-slate-50 px-1 rounded">
+                              {inf.item_faktur}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </td>
                     <td className="px-5 py-3 text-right tabular-nums">
@@ -180,14 +254,19 @@ export default function InfractionsTable({
                       {inf.total ? inf.total.toLocaleString('id-ID') : '-'}
                     </td>
                     <td className="px-5 py-3 text-xs">
-                      {inf.order_name ? (
-                        <span className="inline-block bg-emerald-500/10 text-emerald-600 px-2 py-1 rounded border border-emerald-500/20 max-w-[150px] truncate" title={inf.order_name}>
-                          {inf.order_name}
+                      {(inf.order_name_display || inf.order_name) ? (
+                        <span className="inline-block bg-emerald-500/10 text-emerald-600 px-2 py-1 rounded border border-emerald-500/20 max-w-[150px] truncate" title={inf.order_name_display || inf.order_name || ''}>
+                          {inf.order_name_display || inf.order_name}
                         </span>
                       ) : '-'}
                     </td>
                     <td className="px-5 py-3 text-xs text-slate-400 whitespace-nowrap">
-                      {inf.recorded_by}
+                      <div>{inf.recorded_by_name || inf.recorded_by}</div>
+                      {inf.recorded_by_position && (
+                        <div className="text-[10px] text-slate-300 font-normal mt-0.5" title={inf.recorded_by_position}>
+                          {inf.recorded_by_position}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -249,6 +328,27 @@ export default function InfractionsTable({
           </button>
         </div>
       </div>
+
+      {/* Dialogs */}
+      <ConfirmDialog
+        isOpen={confirmDeleteId !== null}
+        type="danger"
+        title="Hapus Data"
+        message="Apakah Anda yakin ingin menghapus data kesalahan ini secara permanen? Tindakan ini tidak dapat dibatalkan."
+        confirmLabel="Ya, Hapus"
+        cancelLabel="Batal"
+        isLoading={isDeletingConfirm}
+        onConfirm={executeDelete}
+        onCancel={closeConfirm}
+      />
+
+      <ConfirmDialog
+        isOpen={dialogConfig.isOpen}
+        type={dialogConfig.type}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        onConfirm={closeDialog}
+      />
     </div>
   );
 }

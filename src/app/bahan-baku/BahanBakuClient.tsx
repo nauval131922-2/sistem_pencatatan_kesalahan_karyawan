@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Package, Hash, Calendar, Loader2, Download, Search, AlertCircle, ChevronLeft, ChevronRight, Clock, Box } from 'lucide-react';
 import DatePicker from '@/components/DatePicker';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 // Helper to format Date to YYYY-MM-DD
 function formatDateToYYYYMMDD(date: Date) {
@@ -25,6 +26,13 @@ export default function BahanBakuClient() {
   // Search & Pagination state
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
+
+  const [dialog, setDialog] = useState<{isOpen: boolean, type: 'success' | 'error' | 'danger' | 'confirm' | 'alert', title: string, message: string}>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   // Fetch cached data from Local DB on mount
   useEffect(() => {
@@ -124,6 +132,13 @@ export default function BahanBakuClient() {
         lastUpdated: timestamp
       }));
 
+      setDialog({
+        isOpen: true,
+        type: 'success',
+        title: 'Berhasil',
+        message: `Berhasil menarik ${json.total || fetchedData.length} data pengeluaran bahan baku.`
+      });
+
     } catch (err: any) {
       setError(err.message || 'Gagal mengambil data dari server.');
     } finally {
@@ -140,6 +155,9 @@ export default function BahanBakuClient() {
     return data.filter((item) => {
       return (
         (item.nama_barang || '').toLowerCase().includes(lowerQuery) ||
+        (item.faktur || '').toLowerCase().includes(lowerQuery) ||
+        (item.faktur_prd || '').toLowerCase().includes(lowerQuery) ||
+        (item.kd_barang || '').toLowerCase().includes(lowerQuery) ||
         (item.nama_prd || '').toLowerCase().includes(lowerQuery) ||
         (item.tgl || '').toLowerCase().includes(lowerQuery)
       );
@@ -248,6 +266,8 @@ export default function BahanBakuClient() {
                 <thead className="sticky top-0 z-10">
                   <tr className="text-slate-500 text-sm border-b border-slate-200 bg-slate-50/90 backdrop-blur-sm">
                     <th className="px-5 py-3 font-semibold whitespace-nowrap">Tanggal</th>
+                    <th className="px-5 py-3 font-semibold whitespace-nowrap">Faktur</th>
+                    <th className="px-5 py-3 font-semibold whitespace-nowrap text-[11px] uppercase tracking-wider text-slate-400">Faktur PRD</th>
                     <th className="px-5 py-3 font-semibold whitespace-nowrap">Nama Barang</th>
                     <th className="px-5 py-3 font-semibold whitespace-nowrap text-right">Qty</th>
                     <th className="px-5 py-3 font-semibold whitespace-nowrap">Satuan</th>
@@ -258,7 +278,7 @@ export default function BahanBakuClient() {
                 <tbody className="divide-y divide-slate-100">
                   {paginatedData.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-500 italic text-sm">
+                      <td colSpan={8} className="py-8 text-center text-slate-500 italic text-sm">
                         Pencarian "{searchQuery}" tidak ditemukan.
                       </td>
                     </tr>
@@ -267,6 +287,12 @@ export default function BahanBakuClient() {
                       <tr key={item.id || idx} className="text-sm hover:bg-slate-50 transition-colors group">
                         <td className="px-5 py-3 text-slate-500 whitespace-nowrap">
                           {item.tgl}
+                        </td>
+                        <td className="px-5 py-3 font-mono text-[11px] text-slate-400">
+                          {item.faktur || '-'}
+                        </td>
+                        <td className="px-5 py-3 font-mono text-[11px] text-slate-400/70 italic">
+                          {item.faktur_prd || '-'}
                         </td>
                         <td className="px-5 py-3 font-medium text-slate-700">
                           <div className="max-w-xs md:max-w-xs xl:max-w-md truncate" title={item.nama_barang}>
@@ -347,6 +373,14 @@ export default function BahanBakuClient() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog 
+        isOpen={dialog.isOpen}
+        type={dialog.type}
+        title={dialog.title}
+        message={dialog.message}
+        onConfirm={() => setDialog(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

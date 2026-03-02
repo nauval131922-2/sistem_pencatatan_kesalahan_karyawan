@@ -149,8 +149,8 @@ export async function GET(request: NextRequest) {
     db.prepare('DELETE FROM bahan_baku').run();
     
     const insertStmt = db.prepare(`
-      INSERT INTO bahan_baku (tgl, nama_barang, qty, satuan, nama_prd, hp, raw_data)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO bahan_baku (tgl, nama_barang, kd_barang, faktur, faktur_prd, qty, satuan, nama_prd, hp, raw_data)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     db.transaction(() => {
@@ -160,6 +160,9 @@ export async function GET(request: NextRequest) {
           insertStmt.run(
             record.tgl || '',
             record.nama_barang || '',
+            record.kd_barang || '',
+            record.faktur || '',
+            record.faktur_prd || '',
             record.qty || 0,
             record.satuan || '',
             record.nama_prd || '',

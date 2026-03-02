@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, AlertCircle, Package, ChevronLeft, ChevronRight, Box, Star, Calculator, ChevronDown, Database } from 'lucide-react';
+import { Home, Users, AlertCircle, Package, ChevronLeft, ChevronRight, Box, Star, Calculator, ChevronDown, Database, BarChart3 } from 'lucide-react';
 
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -26,6 +26,7 @@ export default function Sidebar() {
     { name: 'Order Produksi', icon: Package, href: '/orders' },
     { name: 'Bahan Baku', icon: Box, href: '/bahan-baku' },
     { name: 'Barang Jadi', icon: Star, href: '/barang-jadi' },
+    { name: 'Laporan Penjualan', icon: BarChart3, href: '/sales' },
     { name: 'HPP Kalkulasi', icon: Calculator, href: '/hpp-kalkulasi' },
   ];
 

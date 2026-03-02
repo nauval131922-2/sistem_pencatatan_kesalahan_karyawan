@@ -40,23 +40,26 @@ export async function POST(req: NextRequest) {
     // Nonaktifkan foreign key di luar transaksi (SQLite tidak izinkan di dalam transaksi)
     db.pragma('foreign_keys = OFF');
 
-    const insert = db.prepare('INSERT INTO employees (name, position, department, employee_no) VALUES (?, ?, ?, ?)');
-    const insertMany = db.transaction((validRows: any[][]) => {
-      db.prepare('DELETE FROM employees').run();
+    const upsert = db.prepare(`
+      INSERT INTO employees (name, position, department, employee_no) 
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(employee_no) DO UPDATE SET
+        name = excluded.name,
+        position = excluded.position
+    `);
 
+    const insertMany = db.transaction((validRows: any[][]) => {
       let count = 0;
       for (const row of validRows) {
         const colB = String(row[COL_B] ?? '').trim();
-        // Filter: kolom B harus tidak kosong
         if (!colB) continue;
 
         const name = String(row[COL_C] ?? '').trim();
         const position = String(row[COL_J] ?? '').trim();
 
-        // Skip jika nama kosong atau berupa angka murni
         if (!name || /^\d+$/.test(name)) continue;
 
-        insert.run(name, position || '-', '-', colB);
+        upsert.run(name, position || '-', '-', colB);
         count++;
       }
       return count;

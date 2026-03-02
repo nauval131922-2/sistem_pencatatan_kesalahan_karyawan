@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Upload, FileSpreadsheet, Loader2, Search, CheckCircle, AlertCircle, ChevronLeft, ChevronRight, Hash, Calculator, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import ConfirmDialog from '@/components/ConfirmDialog';
 
 const PAGE_SIZE = 5;
 
@@ -11,9 +12,15 @@ export default function HppKalkulasiClient() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   
+  const [dialog, setDialog] = useState<{isOpen: boolean, type: 'success' | 'error', title: string, message: string}>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -65,7 +72,6 @@ export default function HppKalkulasiClient() {
 
     setUploading(true);
     setError('');
-    setSuccess('');
 
     const formData = new FormData();
     formData.append('file', file);
@@ -82,7 +88,12 @@ export default function HppKalkulasiClient() {
         throw new Error(json.error || 'Terjadi kesalahan saat mengunggah file.');
       }
 
-      setSuccess(json.message);
+      setDialog({
+        isOpen: true,
+        type: 'success',
+        title: 'Berhasil',
+        message: json.message || 'Data HPP Kalkulasi berhasil diperbarui.'
+      });
       await fetchHppData(); // Refresh table
       router.refresh(); // Refresh page data (like the header timestamps)
     } catch (err: any) {
@@ -146,14 +157,15 @@ export default function HppKalkulasiClient() {
             <p>{error}</p>
           </div>
         )}
-        
-        {success && (
-          <div className="mt-4 p-3 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-sm flex items-start gap-2 animate-in fade-in">
-            <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
-            <p>{success}</p>
-          </div>
-        )}
       </div>
+
+      <ConfirmDialog 
+        isOpen={dialog.isOpen}
+        type={dialog.type}
+        title={dialog.title}
+        message={dialog.message}
+        onConfirm={() => setDialog(prev => ({ ...prev, isOpen: false }))}
+      />
 
       {/* Results View */}
       {data === null && loading && (

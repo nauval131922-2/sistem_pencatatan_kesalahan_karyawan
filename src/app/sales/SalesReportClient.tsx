@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Package, Hash, User, Calendar, Loader2, Download, Search, AlertCircle, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
-import DatePicker from '@/components/DatePicker';
+import { Search, Download, Loader2, ChevronLeft, ChevronRight, AlertCircle, Clock, BarChart3, Hash, User, Calendar, Tag } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import DatePicker from '@/components/DatePicker';
+
+const PAGE_SIZE = 10;
 
 // Helper to format Date to YYYY-MM-DD
 function formatDateToYYYYMMDD(date: Date) {
@@ -13,7 +15,7 @@ function formatDateToYYYYMMDD(date: Date) {
   return `${y}-${m}-${d}`;
 }
 
-// Helper to format "DD-MM-YYYY" string to "DD MMM YYYY"
+// Helper to format date string to "DD MMM YYYY"
 function formatIndoDateStr(tglStr: string) {
   if (!tglStr) return '';
   const parts = tglStr.split('-');
@@ -26,20 +28,15 @@ function formatIndoDateStr(tglStr: string) {
   return tglStr;
 }
 
-const PAGE_SIZE = 10;
-
-export default function OrderProduksiClient() {
+export default function SalesReportClient() {
+  const [data, setData] = useState<any[] | null>(null);
+  const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date>(new Date());
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<any[] | null>(null);
-  const [error, setError] = useState('');
-  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
-
-  // Search & Pagination state
-  const [searchQuery, setSearchQuery] = useState('');
+  const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
-
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  
   const [dialog, setDialog] = useState<{isOpen: boolean, type: 'success' | 'error' | 'danger' | 'confirm' | 'alert', title: string, message: string}>({
     isOpen: false,
     type: 'success',
@@ -51,7 +48,7 @@ export default function OrderProduksiClient() {
   useEffect(() => {
     async function loadCached() {
       try {
-        const res = await fetch('/api/orders');
+        const res = await fetch('/api/sales');
         if (res.ok) {
            const json = await res.json();
            if (json.data && json.data.length > 0) {
@@ -67,13 +64,13 @@ export default function OrderProduksiClient() {
                 setLastUpdated(timestamp);
               }
               // Fallback to local storage for dates
-              const saved = localStorage.getItem('orderProduksiState');
+              const saved = localStorage.getItem('salesReportState');
               if (saved) {
                 try {
                   const parsed = JSON.parse(saved);
                   if (parsed.startDate) setStartDate(new Date(parsed.startDate));
                   if (parsed.endDate) setEndDate(new Date(parsed.endDate));
-                  if (parsed.lastUpdated) setLastUpdated(parsed.lastUpdated); // Priority to last saved explicit scrape time
+                  if (parsed.lastUpdated) setLastUpdated(parsed.lastUpdated);
                 } catch(e) {}
               }
            }
@@ -85,96 +82,87 @@ export default function OrderProduksiClient() {
     loadCached();
   }, []);
 
-  const handleFetch = async () => {
-    if (!startDate || !endDate) {
-      setError('Pilih tanggal mulai dan akhir terlebih dahulu.');
-      return;
-    }
-
-    if (startDate > endDate) {
-      setError('Tanggal mulai tidak boleh lebih dari tanggal akhir.');
-      return;
-    }
-
+  const handleScrape = async () => {
     setLoading(true);
-    setError('');
-    setData(null);
-    setPage(1);
-    setSearchQuery('');
-
-    const startStr = formatDateToYYYYMMDD(startDate);
-    const endStr = formatDateToYYYYMMDD(endDate);
-
     try {
-      const res = await fetch(`/api/scrape-orders?start=${startStr}&end=${endStr}`);
-      const json = await res.json();
+      const startStr = formatDateToYYYYMMDD(startDate);
+      const endStr = formatDateToYYYYMMDD(endDate);
       
-      if (!res.ok) {
-        throw new Error(json.error || 'Terjadi kesalahan saat mengambil data.');
+      const res = await fetch(`/api/scrape-sales?start=${startStr}&end=${endStr}`);
+      const result = await res.json();
+      
+      if (res.ok) {
+        // Refresh data
+        const dataRes = await fetch('/api/sales');
+        const newData = await dataRes.json();
+        setData(newData.data || []);
+        
+        const timestamp = new Date().toLocaleString('id-ID', {
+          day: '2-digit', month: 'short', year: 'numeric',
+          hour: '2-digit', minute: '2-digit', second: '2-digit'
+        });
+        setLastUpdated(timestamp);
+
+        // Save state
+        localStorage.setItem('salesReportState', JSON.stringify({
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          lastUpdated: timestamp
+        }));
+
+        setDialog({
+          isOpen: true,
+          type: 'success',
+          title: 'Berhasil',
+          message: `Berhasil menarik ${result.total} data laporan penjualan.`
+        });
+      } else {
+        setDialog({
+          isOpen: true,
+          type: 'error',
+          title: 'Gagal',
+          message: result.error || 'Terjadi kesalahan saat menarik data.'
+        });
       }
-      
-      const fetchedData = json.data || [];
-      const timestamp = new Date().toLocaleString('id-ID', {
-        day: '2-digit', month: 'short', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-      });
-
-      setData(fetchedData);
-      setLastUpdated(timestamp);
-
-      // Save to localStorage without 'data' to avoid quota limits
-      localStorage.setItem('orderProduksiState', JSON.stringify({
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        lastUpdated: timestamp
-      }));
-
+    } catch (err) {
       setDialog({
         isOpen: true,
-        type: 'success',
-        title: 'Berhasil',
-        message: `Berhasil menarik ${json.total || fetchedData.length} data order produksi.`
+        type: 'error',
+        title: 'Error',
+        message: 'Gagal terhubung ke server.'
       });
-
-    } catch (err: any) {
-      setError(err.message || 'Gagal mengambil data dari server.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Filter and paginate data
   const filteredData = useMemo(() => {
     if (!data) return [];
-    if (!searchQuery.trim()) return data;
+    const lowerQuery = query.toLowerCase();
+    return data.filter(item => 
+      item.nama_prd?.toLowerCase().includes(lowerQuery) ||
+      item.nama_pelanggan?.toLowerCase().includes(lowerQuery) ||
+      item.kd_barang?.toLowerCase().includes(lowerQuery)
+    );
+  }, [data, query]);
 
-    const lowerQuery = searchQuery.toLowerCase();
-    return data.filter((order) => {
-      return (
-        (order.faktur || '').toLowerCase().includes(lowerQuery) ||
-        (order.nama_prd || '').toLowerCase().includes(lowerQuery) ||
-        (order.nama_pelanggan || order.kd_pelanggan || '').toLowerCase().includes(lowerQuery)
-      );
-    });
-  }, [data, searchQuery]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredData.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
+  const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
+  const currentPage = Math.min(page, totalPages || 1);
   const paginatedData = useMemo(() => {
     const startIdx = (currentPage - 1) * PAGE_SIZE;
     return filteredData.slice(startIdx, startIdx + PAGE_SIZE);
   }, [filteredData, currentPage]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    setPage(1); // Reset page on search
+    setQuery(e.target.value);
+    setPage(1);
   };
 
   return (
     <div className="space-y-6">
       {/* Control Panel */}
       <div className="flex justify-center w-full">
-        <div className="card glass relative z-20 overflow-visible p-5 px-8 border border-emerald-500/10 w-fit">
+        <div className="card glass relative z-20 overflow-visible p-5 px-8 border border-blue-500/10 w-fit">
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Periode</span>
             <div className="w-[160px] relative">
@@ -194,9 +182,9 @@ export default function OrderProduksiClient() {
             </div>
 
             <button 
-              onClick={handleFetch}
+              onClick={handleScrape}
               disabled={loading}
-              className="w-full sm:w-auto shrink-0 h-[42px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white px-8 rounded-xl text-sm font-semibold shadow-md shadow-emerald-500/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap lg:ml-2"
+              className="w-full sm:w-auto shrink-0 h-[42px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-8 rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap lg:ml-2"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
               {loading ? 'Menarik...' : 'Tarik Data'}
@@ -205,25 +193,18 @@ export default function OrderProduksiClient() {
         </div>
       </div>
 
-      {error && (
-        <div className="mt-4 p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm flex items-start gap-2 max-w-2xl mx-auto">
-          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-          <p>{error}</p>
-        </div>
-      )}
-
       {/* Results View */}
-      {data === null && !loading && !error && (
+      {data === null && !loading && (
         <div className="card text-center py-24 text-slate-500 flex flex-col items-center bg-slate-50/50 border-dashed">
-          <Loader2 size={48} className="mb-4 opacity-20 text-emerald-600 animate-spin" />
+          <Loader2 size={48} className="mb-4 opacity-20 text-blue-600 animate-spin" />
           <p className="font-medium text-slate-600">Sedang memuat data dari database...</p>
         </div>
       )}
 
       {data !== null && data.length === 0 && !loading && (
-        <div className="card text-center py-20 text-slate-500 flex flex-col items-center">
+        <div className="card text-center py-20 text-slate-500 flex flex-col items-center bg-white border-dashed">
           <Search size={48} className="mb-4 opacity-20" />
-          <p>Tidak ada data order ditemukan pada rentang tanggal tersebut.</p>
+          <p>Belum ada data laporan penjualan. Silakan tarik data untuk memulai.</p>
         </div>
       )}
 
@@ -232,78 +213,85 @@ export default function OrderProduksiClient() {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2">
             <div className="flex items-center gap-4 w-full flex-wrap">
               <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-base">
-                  <Package size={18} className="text-emerald-500" /> Hasil Scrapping
+                  <BarChart3 size={18} className="text-blue-500" /> Hasil Scrapping
               </h3>
               {lastUpdated && (
-                <div className="flex items-center gap-1.5 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100 px-2.5 py-1 rounded shadow-sm w-fit">
-                  <Clock size={12} className="text-emerald-500 opacity-80" />
+                <div className="flex items-center gap-1.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded shadow-sm w-fit">
+                  <Clock size={12} className="text-blue-500 opacity-80" />
                   Diperbarui: {lastUpdated}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Global Style Search */}
+          {/* Search Box */}
           <div className="relative">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
-              placeholder="Cari faktur, produk, pelanggan..." 
-              className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
-              value={searchQuery}
+              placeholder="Cari Order, Pelanggan, atau Kode..." 
+              className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+              value={query}
               onChange={handleSearch}
             />
           </div>
 
-          <div className="card p-0 overflow-hidden">
-            <div className="overflow-auto" style={{ maxHeight: '350px' }}>
+          <div className="card p-0 overflow-hidden border border-slate-200">
+            <div className="overflow-auto" style={{ maxHeight: '450px' }}>
               <table className="w-full text-left relative">
                 <thead className="sticky top-0 z-10">
                   <tr className="text-slate-500 text-sm border-b border-slate-200 bg-slate-50">
-                    <th className="px-5 py-3 font-medium whitespace-nowrap">No. Faktur</th>
-                    <th className="px-5 py-3 font-medium whitespace-nowrap">Nama Produk</th>
-                    <th className="px-5 py-3 font-medium whitespace-nowrap">Pelanggan</th>
                     <th className="px-5 py-3 font-medium whitespace-nowrap">Tanggal</th>
-                    <th className="px-5 py-3 font-medium text-center whitespace-nowrap">Qty Order</th>
+                    <th className="px-5 py-3 font-medium whitespace-nowrap">Nama Order</th>
+                    <th className="px-5 py-3 font-medium whitespace-nowrap">Pelanggan</th>
+                    <th className="px-5 py-3 font-medium whitespace-nowrap">Nama Barang</th>
+                    <th className="px-5 py-3 font-medium text-center whitespace-nowrap">Qty</th>
+                    <th className="px-5 py-3 font-medium text-right whitespace-nowrap">Harga Jual</th>
+                    <th className="px-5 py-3 font-medium text-right whitespace-nowrap">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {paginatedData.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-8 text-center text-slate-500 italic text-sm">
-                        Pencarian "{searchQuery}" tidak ditemukan.
+                      <td colSpan={7} className="py-12 text-center text-slate-500 italic text-sm">
+                        Pencarian "{query}" tidak ditemukan.
                       </td>
                     </tr>
                   ) : (
-                    paginatedData.map((order: any, idx) => (
-                      <tr key={order.id || idx} className="text-sm hover:bg-slate-50 transition-colors group">
-                        <td className="px-5 py-3 font-mono text-emerald-600 font-medium whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <Hash size={14} className="opacity-40" />
-                            {order.faktur}
-                          </div>
-                        </td>
-                        <td className="px-5 py-3 font-medium text-slate-700">
-                          <div className="max-w-xs md:max-w-xs xl:max-w-md truncate" title={order.nama_prd}>
-                            {order.nama_prd}
-                          </div>
-                        </td>
-                        <td className="px-5 py-3 text-slate-500 text-xs">
-                          <div className="flex items-center gap-2 whitespace-nowrap">
-                            <User size={14} className="opacity-40" />
-                            <span className="truncate max-w-[150px]" title={order.nama_pelanggan || order.kd_pelanggan}>
-                              {order.nama_pelanggan || order.kd_pelanggan}
-                            </span>
-                          </div>
-                        </td>
+                    paginatedData.map((row) => (
+                      <tr key={row.id} className="text-sm hover:bg-slate-50 transition-colors group">
                         <td className="px-5 py-3 text-slate-500 text-xs whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <Calendar size={14} className="opacity-40" />
-                            {formatIndoDateStr(order.tgl)}
+                            {formatIndoDateStr(row.tgl)}
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 font-medium text-slate-800">
+                          <div className="flex items-center gap-2">
+                            <Hash size={14} className="text-blue-500 opacity-40 shrink-0" />
+                            <span className="max-w-xs truncate" title={row.nama_prd}>{row.nama_prd}</span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-slate-500 text-xs">
+                          <div className="flex items-center gap-2">
+                             <User size={14} className="opacity-40" />
+                             <span className="truncate max-w-[150px]" title={row.nama_pelanggan}>{row.nama_pelanggan}</span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-slate-500 text-xs">
+                          <div className="flex items-center gap-2">
+                            <Tag size={13} className="opacity-40" />
+                            <span className="truncate max-w-[120px]" title={row.kd_barang}>{row.kd_barang}</span>
                           </div>
                         </td>
                         <td className="px-5 py-3 text-slate-600 font-medium text-center">
-                          {order.qty}
+                          {row.qty?.toLocaleString('id-ID')}
+                        </td>
+                        <td className="px-5 py-3 text-blue-600 font-semibold text-right whitespace-nowrap">
+                          Rp {row.harga?.toLocaleString('id-ID')}
+                        </td>
+                        <td className="px-5 py-3 text-slate-800 font-bold text-right whitespace-nowrap">
+                          Rp {row.jumlah?.toLocaleString('id-ID')}
                         </td>
                       </tr>
                     ))
@@ -313,8 +301,8 @@ export default function OrderProduksiClient() {
             </div>
           </div>
 
-          {/* Global Style Pagination */}
-          <div className="flex items-center justify-between text-sm text-slate-500">
+          {/* Pagination */}
+          <div className="flex items-center justify-between text-sm text-slate-500 px-2 py-2">
             <span>
               {filteredData.length === 0
                 ? 'Tidak ada data'
@@ -330,7 +318,6 @@ export default function OrderProduksiClient() {
                 <ChevronLeft size={16} />
               </button>
 
-              {/* Page numbers */}
               {Array.from({ length: totalPages }, (_, i) => i + 1)
                 .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
                 .reduce<(number | '...')[]>((acc, p, i, arr) => {
@@ -347,7 +334,7 @@ export default function OrderProduksiClient() {
                       onClick={() => setPage(p as number)}
                       className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${
                         currentPage === p
-                          ? 'bg-emerald-500 text-white border border-emerald-600'
+                          ? 'bg-blue-500 text-white border border-blue-600'
                           : 'text-slate-600 hover:bg-slate-100'
                       }`}
                     >
@@ -368,6 +355,7 @@ export default function OrderProduksiClient() {
         </div>
       )}
 
+
       <ConfirmDialog 
         isOpen={dialog.isOpen}
         type={dialog.type}
@@ -378,3 +366,4 @@ export default function OrderProduksiClient() {
     </div>
   );
 }
+

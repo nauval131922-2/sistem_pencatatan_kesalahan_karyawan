@@ -31,18 +31,25 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
     }
   };
 
+  const getChannelName = (tableName: string) => {
+    switch (tableName) {
+      case 'employees': return 'Data Karyawan';
+      case 'orders': return 'Order Produksi';
+      case 'bahan_baku': return 'Bahan Baku (BBB)';
+      case 'barang_jadi': return 'Barang Hasil Produksi';
+      case 'hpp_kalkulasi': return 'HPP Kalkulasi';
+      case 'sales_reports': return 'Laporan Penjualan';
+      case 'infractions': return 'Catat Kesalahan';
+      default: return 'Catat Kesalahan';
+    }
+  };
+
   const filtered = useMemo(() => {
     if (!search.trim()) return initialLogs;
     const q = search.toLowerCase();
     
     return initialLogs.filter((log) => {
-      let channel = 'catat kesalahan';
-      if (log.table_name === 'employees') channel = 'data karyawan';
-      if (log.table_name === 'orders') channel = 'order produksi';
-      if (log.table_name === 'bahan_baku') channel = 'daftar bahan baku';
-      if (log.table_name === 'barang_jadi') channel = 'barang hasil produksi';
-      if (log.table_name === 'hpp_kalkulasi') channel = 'hpp kalkulasi';
-      
+      const channel = getChannelName(log.table_name).toLowerCase();
       const pesan = (log.message || '').toLowerCase();
       const dbDate = (log.created_at || '').toLowerCase();
       const raw = (log.raw_data || '').toLowerCase();
@@ -105,12 +112,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                         {fmtDateTime(log.created_at)}
                       </td>
                       <td className="px-5 py-3 font-medium text-slate-700 w-36">
-                        {log.table_name === 'employees' ? 'Data Karyawan' : 
-                         log.table_name === 'orders' ? 'Order Produksi' : 
-                         log.table_name === 'bahan_baku' ? 'Bahan Baku (BBB)' :
-                         log.table_name === 'barang_jadi' ? 'Barang Hasil Produksi' :
-                         log.table_name === 'hpp_kalkulasi' ? 'HPP Kalkulasi' :
-                         'Catat Kesalahan'}
+                        {getChannelName(log.table_name)}
                       </td>
                       <td className="px-5 py-3 text-slate-500 w-64">
                         {log.message}

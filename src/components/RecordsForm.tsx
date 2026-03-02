@@ -1,11 +1,14 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Search, ChevronDown, AlertTriangle, Loader2 } from 'lucide-react';
+import ConfirmDialog, { DialogType } from '@/components/ConfirmDialog';
 import DatePicker from '@/components/DatePicker';
 
 interface Employee {
   id: number;
+  employee_no: string | null;
   name: string;
   position: string;
 }
@@ -18,6 +21,8 @@ interface Order {
 
 interface ItemData {
   nama_barang: string;
+  kd_barang: string;
+  faktur: string;
   harga: number; // For Bahan Baku -> HPP Digit, For Barang Jadi -> hp
   harga_jual?: number; // Only For Barang Jadi -> Harga yg dr orders
 }
@@ -181,6 +186,7 @@ export default function RecordsForm({
   onCancelEdit?: () => void;
   onSuccessEdit?: () => void;
 }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [lastFaktur, setLastFaktur] = useState<string | null>(null);
@@ -190,14 +196,42 @@ export default function RecordsForm({
   const [resetKey, setResetKey] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
 
+  const [dialogConfig, setDialogConfig] = useState<{
+    isOpen: boolean;
+    type: DialogType;
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    isLoading?: boolean;
+    onConfirm?: () => void;
+  }>({ isOpen: false, type: 'alert', title: '', message: '' });
+  
+  const pendingSubmitDataRef = useRef<{
+    endpoint: string;
+    method: string;
+    headers: HeadersInit;
+    body: any;
+    isEdit: boolean;
+  } | null>(null);
+
+  const showDialog = (type: DialogType, title: string, message: string, onConfirm?: () => void, confirmLabel?: string) => {
+    setDialogConfig({ isOpen: true, type, title, message, onConfirm, confirmLabel });
+  };
+
+  const closeDialog = () => {
+    setDialogConfig(prev => ({ ...prev, isOpen: false }));
+  };
+
   // New states mimicking Excel Logic
-  const [selectedOrder, setSelectedOrder] = useState<string>('');
+  const [selectedOrderFaktur, setSelectedOrderFaktur] = useState<string>('');
+  const [selectedOrderName, setSelectedOrderName] = useState<string>('');
   const [jenisBarang, setJenisBarang] = useState<string>('Bahan Baku');
   
   const [items, setItems] = useState<ItemData[]>([]);
   const [itemsLoading, setItemsLoading] = useState(false);
   const [hppKalkulasiValue, setHppKalkulasiValue] = useState<number | null>(null);
   const [selectedNamaBarang, setSelectedNamaBarang] = useState<string>('');
+  const [selectedItemFaktur, setSelectedItemFaktur] = useState<string>('');
   const [manualNamaBarang, setManualNamaBarang] = useState<string>('');
   
   const [jenisHarga, setJenisHarga] = useState<string>('HPP Digit');
@@ -242,7 +276,8 @@ export default function RecordsForm({
       setSelectedDate(parsedDate);
       setFakturPreview(editingInfraction.faktur || 'Tanpa Faktur');
 
-      setSelectedOrder(editingInfraction.order_name || '');
+      setSelectedOrderFaktur(editingInfraction.order_faktur || '');
+      setSelectedOrderName(editingInfraction.order_name || '');
       setJenisBarang(editingInfraction.jenis_barang || 'Bahan Baku');
       setJenisHarga(editingInfraction.jenis_harga || 'HPP Digit');
       
@@ -250,6 +285,7 @@ export default function RecordsForm({
         setManualNamaBarang(editingInfraction.nama_barang || '');
       } else {
         setSelectedNamaBarang(editingInfraction.nama_barang || '');
+        setSelectedItemFaktur(editingInfraction.item_faktur || '');
       }
 
       setJumlah(editingInfraction.jumlah ? String(editingInfraction.jumlah) : '');
@@ -263,10 +299,12 @@ export default function RecordsForm({
   const resetFormStates = () => {
     setDescription('');
     setSelectedDate(new Date());
-    setSelectedOrder('');
+    setSelectedOrderFaktur('');
+    setSelectedOrderName('');
     setJenisBarang('Bahan Baku');
     setJenisHarga('HPP Digit');
     setSelectedNamaBarang('');
+    setSelectedItemFaktur('');
     setManualNamaBarang('');
     setJumlah('');
     setHarga('');
@@ -275,13 +313,13 @@ export default function RecordsForm({
   // Fetch Items when Order or Jenis Barang changes
   useEffect(() => {
     async function fetchItems() {
-      if (!selectedOrder || jenisBarang === 'Input Manual') {
+      if (!selectedOrderName || jenisBarang === 'Input Manual') {
         setItems([]);
         return;
       }
       setItemsLoading(true);
       try {
-        const res = await fetch(`/api/items?order_name=${encodeURIComponent(selectedOrder)}&jenis_barang=${encodeURIComponent(jenisBarang)}`);
+        const res = await fetch(`/api/items?order_name=${encodeURIComponent(selectedOrderName)}&order_faktur=${encodeURIComponent(selectedOrderFaktur)}&jenis_barang=${encodeURIComponent(jenisBarang)}`);
         if (res.ok) {
           const json = await res.json();
           setItems(json.data || []);
@@ -296,17 +334,17 @@ export default function RecordsForm({
       }
     }
     fetchItems();
-  }, [selectedOrder, jenisBarang]);
+  }, [selectedOrderName, jenisBarang]);
 
   // Fetch HPP Kalkulasi for selectedOrder
   useEffect(() => {
     async function fetchHpp() {
-      if (!selectedOrder) {
+      if (!selectedOrderName) {
         setHppKalkulasiValue(null);
         return;
       }
       try {
-        const res = await fetch(`/api/hpp-kalkulasi?order_name=${encodeURIComponent(selectedOrder)}`);
+        const res = await fetch(`/api/hpp-kalkulasi?order_name=${encodeURIComponent(selectedOrderName)}`);
         if (res.ok) {
           const json = await res.json();
           if (json.data && json.data.length > 0) {
@@ -322,11 +360,11 @@ export default function RecordsForm({
       }
     }
     fetchHpp();
-  }, [selectedOrder]);
+  }, [selectedOrderName]);
 
   // Handle Logic Harga recalculation (Based heavily on the VBA Logic)
   const calculateAutoHarga = useCallback(() => {
-    if (jenisHarga === 'Input Manual' || jenisBarang === 'Input Manual' || !selectedOrder) {
+    if (jenisHarga === 'Input Manual' || jenisBarang === 'Input Manual' || !selectedOrderName) {
       // Leave harga as is or empty if manual. If it was already manually set, don't overwrite blindly on type change
       return; 
     }
@@ -337,7 +375,10 @@ export default function RecordsForm({
       return;
     }
 
-    const matchedItem = items.find(i => i.nama_barang === actualItemName);
+    const matchedItem = items.find(i => 
+      (selectedItemFaktur && i.faktur === selectedItemFaktur) || 
+      (!selectedItemFaktur && i.nama_barang === actualItemName)
+    );
     if (!matchedItem) {
       setHarga('');
       return;
@@ -355,7 +396,22 @@ export default function RecordsForm({
       if (jenisHarga === 'HPP Digit') {
         calculatedHarga = matchedItem.harga;
       } else if (jenisHarga === 'Harga Jual Digit') {
-        calculatedHarga = matchedItem.harga_jual || 0;
+        const fetchSalesPrice = async () => {
+          try {
+            const res = await fetch(`/api/sales?order_name=${encodeURIComponent(selectedOrderName)}`);
+            const json = await res.json();
+            if (json.success && json.data && json.data.length > 0) {
+              setHarga(String(json.data[0].harga));
+            } else {
+              setHarga('0');
+            }
+          } catch (err) {
+            console.error("Error fetching sales price:", err);
+            setHarga('0');
+          }
+        };
+        fetchSalesPrice();
+        return; // handle price update in async call
       } else if (jenisHarga === 'HPP Kalkulasi') {
         // Apply the fetched HPP Kalkulasi for the current selected order
         calculatedHarga = hppKalkulasiValue || 0;
@@ -364,7 +420,7 @@ export default function RecordsForm({
 
     setHarga(calculatedHarga > 0 ? String(calculatedHarga) : '');
 
-  }, [jenisBarang, jenisHarga, selectedNamaBarang, selectedOrder, items, hppKalkulasiValue]);
+  }, [jenisBarang, jenisHarga, selectedNamaBarang, selectedOrderName, items, hppKalkulasiValue]);
 
   // Run calculation when dependencies change
   useEffect(() => {
@@ -374,7 +430,7 @@ export default function RecordsForm({
        // However, to deeply mimic excel, we overwrite it when these parameters change.
        calculateAutoHarga();
     }
-  }, [jenisBarang, jenisHarga, selectedNamaBarang, selectedOrder, items, calculateAutoHarga, editingInfraction]);
+  }, [jenisBarang, jenisHarga, selectedNamaBarang, selectedOrderName, items, calculateAutoHarga, editingInfraction]);
 
   // Derived Total
   const totalValue = useMemo(() => {
@@ -416,28 +472,30 @@ export default function RecordsForm({
     const formData = new FormData(e.currentTarget);
 
     const employeeId = formData.get('employee_id');
-    if (!employeeId) { alert('Pilih karyawan terlebih dahulu'); return; }
+    if (!employeeId) { showDialog('alert', 'Peringatan', 'Pilih karyawan terlebih dahulu'); return; }
 
-    const recordedBy = formData.get('recorded_by');
-    if (!recordedBy) { alert('Pilih "Dicatat Oleh" terlebih dahulu'); return; }
+    const recordedById = formData.get('recorded_by_id');
+    if (!recordedById) { showDialog('alert', 'Peringatan', 'Pilih "Dicatat Oleh" terlebih dahulu'); return; }
 
     const isEdit = !!editingInfraction;
 
     // Validation
-    if (!selectedOrder) { alert('Pilih Nama Order terlebih dahulu!'); return; }
-    if (!jenisBarang) { alert('Pilih Jenis Barang terlebih dahulu!'); return; }
+    if (!selectedOrderFaktur) { showDialog('alert', 'Peringatan', 'Pilih Nama Order terlebih dahulu!'); return; }
+    if (!jenisBarang) { showDialog('alert', 'Peringatan', 'Pilih Jenis Barang terlebih dahulu!'); return; }
     
     // Add dynamically calculated values to Form Data
     const actualNamaBarang = jenisBarang === 'Input Manual' ? manualNamaBarang : selectedNamaBarang;
-    if (!actualNamaBarang) { alert('Isi Nama Barang terlebih dahulu!'); return; }
+    if (!actualNamaBarang) { showDialog('alert', 'Peringatan', 'Isi Nama Barang terlebih dahulu!'); return; }
     
-    if (!jenisHarga) { alert('Pilih Jenis Harga terlebih dahulu!'); return; }
-    if (!jumlah || parseFloat(jumlah) <= 0) { alert('Jumlah harus diisi dan lebih dari 0!'); return; }
-    if (!harga || parseFloat(harga) <= 0) { alert('Harga harus diisi dan lebih dari 0!'); return; }
+    if (!jenisHarga) { showDialog('alert', 'Peringatan', 'Pilih Jenis Harga terlebih dahulu!'); return; }
+    if (!jumlah || parseFloat(jumlah) <= 0) { showDialog('alert', 'Peringatan', 'Jumlah harus diisi dan lebih dari 0!'); return; }
+    if (!harga || parseFloat(harga) <= 0) { showDialog('alert', 'Peringatan', 'Harga harus diisi dan lebih dari 0!'); return; }
 
-    formData.set('order_name', selectedOrder);
+    formData.set('order_faktur', selectedOrderFaktur);
+    formData.set('order_name', selectedOrderName);
     formData.set('jenis_barang', jenisBarang);
     formData.set('nama_barang', actualNamaBarang);
+    formData.set('item_faktur', selectedItemFaktur);
     formData.set('jenis_harga', jenisHarga);
     formData.set('jumlah', jumlah);
     formData.set('harga', harga);
@@ -447,46 +505,64 @@ export default function RecordsForm({
       ? 'Apakah Anda yakin ingin menyimpan perubahan pada data kesalahan ini?'
       : 'Apakah Anda yakin ingin mencatat data kesalahan baru ini?';
       
-    if (!window.confirm(confirmMessage)) {
-      return;
+    const endpoint = isEdit ? `/api/infractions/${editingInfraction.id}` : '/api/infractions';
+    const method = isEdit ? 'PUT' : 'POST';
+
+    let body: any = formData;
+    let headers: HeadersInit = {};
+    
+    if (isEdit) {
+      headers = { 'Content-Type': 'application/json' };
+      const updateData: Record<string, any> = {};
+      formData.forEach((value, key) => { updateData[key] = value });
+      body = JSON.stringify(updateData);
     }
 
+    pendingSubmitDataRef.current = { endpoint, method, headers, body, isEdit };
+    showDialog('confirm', 'Konfirmasi Simpan', confirmMessage, executeSubmit, 'Ya, Simpan');
+  };
+
+  const executeSubmit = async () => {
+    if (!pendingSubmitDataRef.current) return;
+    
+    // Set loading in dialog
+    setDialogConfig(prev => ({ ...prev, isLoading: true }));
+    
+    const { endpoint, method, headers, body, isEdit } = pendingSubmitDataRef.current;
+    
     setLoading(true);
     try {
-      const endpoint = isEdit ? `/api/infractions/${editingInfraction.id}` : '/api/infractions';
-      const method = isEdit ? 'PUT' : 'POST';
-
-      let body: any = formData;
-      let headers: HeadersInit = {};
-      
-      if (isEdit) {
-        headers = { 'Content-Type': 'application/json' };
-        const updateData: Record<string, any> = {};
-        formData.forEach((value, key) => { updateData[key] = value });
-        body = JSON.stringify(updateData);
-      }
-
       const res = await fetch(endpoint, { method, headers, body });
 
       if (res.ok) {
-        if (!isEdit) {
-          const data = await res.json();
-          setLastFaktur(data.faktur ?? null);
-          setSuccess(true);
-          setTimeout(() => setSuccess(false), 5000);
-          formRef.current?.reset();
-          resetFormStates();
-          setResetKey(k => k + 1);
-        }
-        
-        if (onSuccessEdit) onSuccessEdit();
-        window.location.reload();
+        closeDialog(); // Clear confirm dialog
+        const data = await res.json();
+        const msg = isEdit 
+          ? 'Perubahan data kesalahan berhasil disimpan.' 
+          : `Data kesalahan berhasil dicatat dengan nomor faktur: ${data.faktur || fakturPreview}`;
+
+        showDialog('success', 'Berhasil', msg, () => {
+          if (onSuccessEdit) {
+            onSuccessEdit(); // Switch tab
+          }
+          if (!isEdit) {
+            formRef.current?.reset();
+            resetFormStates();
+            setResetKey(k => k + 1);
+          }
+          router.refresh(); // Sync data without full reload
+        });
       } else {
+        closeDialog(); // Clear confirm dialog
         const err = await res.json();
-        alert('Gagal menyimpan: ' + (err.error || 'Unknown error'));
+        showDialog('error', 'Gagal', 'Gagal menyimpan: ' + (err.error || 'Unknown error'));
       }
+    } catch (err) {
+      closeDialog();
+      showDialog('error', 'Gagal', 'Terjadi kesalahan koneksi atau sistem.');
     } finally {
       setLoading(false);
+      pendingSubmitDataRef.current = null;
     }
   };
 
@@ -547,7 +623,7 @@ export default function RecordsForm({
               options={employees}
               placeholder="Pilih karyawan..."
               required
-              displayFn={(e) => `${e.name}${e.position ? ` — ${e.position}` : ''}`}
+              displayFn={(e) => `${e.employee_no ? `${e.employee_no} — ` : ''}${e.name}${e.position ? ` — ${e.position}` : ''}`}
               valueFn={(e) => e.id}
               defaultValue={editingInfraction?.employee_name ? employees.find(e => e.name === editingInfraction.employee_name)?.id : undefined}
             />
@@ -558,14 +634,22 @@ export default function RecordsForm({
         <SearchableSelect
           key={`ord-${resetKey}`}
           label={<>Nama Order <span className="text-red-500 ml-1">*</span></>}
-          name="order_name"
+          name="order_faktur"
           options={orders}
           placeholder="Pilih order..."
           required
           displayFn={(o) => `${o.faktur} — ${o.nama_prd}`}
-          valueFn={(o) => o.nama_prd}
-          defaultValue={selectedOrder}
-          onChange={(o) => setSelectedOrder(o ? o.nama_prd : '')}
+          valueFn={(o) => o.faktur}
+          defaultValue={selectedOrderFaktur}
+          onChange={(o) => {
+            setSelectedOrderFaktur(o ? o.faktur : '');
+            setSelectedOrderName(o ? o.nama_prd : '');
+            // Reset items when order changes
+            setSelectedNamaBarang('');
+            setSelectedItemFaktur('');
+            setManualNamaBarang('');
+            setHppKalkulasiValue(null);
+          }}
         />
 
         {/* JENIS BARANG & NAMA BARANG */}
@@ -584,7 +668,9 @@ export default function RecordsForm({
               onChange={(o) => {
                 setJenisBarang(o.value);
                 setSelectedNamaBarang('');
+                setSelectedItemFaktur('');
                 setManualNamaBarang('');
+                setHppKalkulasiValue(null);
               }}
             />
           </div>
@@ -604,12 +690,12 @@ export default function RecordsForm({
               />
             ) : (
             <SearchableSelect
-                key={`nb-${selectedOrder}-${jenisBarang}-${resetKey}`}
+                key={`nb-${selectedOrderName}-${jenisBarang}-${resetKey}`}
                 label=""
                 name="nama_barang"
                 options={items}
                 placeholder={
-                  !selectedOrder 
+                  !selectedOrderName 
                     ? "Pilih Order Dulu" 
                     : itemsLoading 
                       ? "Memuat barang..." 
@@ -617,13 +703,16 @@ export default function RecordsForm({
                         ? `Data ${jenisBarang} tidak ditemukan`
                         : "Pilih Barang..."
                 }
-                displayFn={(o) => o.nama_barang}
-                valueFn={(o) => o.nama_barang}
-                defaultValue={selectedNamaBarang}
-                disabled={!selectedOrder}
+                displayFn={(o) => o.faktur ? `${o.faktur} — ${o.nama_barang}` : o.nama_barang}
+                valueFn={(o) => o.faktur}
+                defaultValue={selectedItemFaktur}
+                disabled={!selectedOrderName}
                 isLoading={itemsLoading}
                 noOptionsMessage={items.length === 0 ? `Data ${jenisBarang} untuk order ini kosong (Cek Jenis Barang)` : 'Tidak ada hasil'}
-                onChange={(o) => setSelectedNamaBarang(o ? o.nama_barang : '')}
+                onChange={(o) => {
+                  setSelectedNamaBarang(o ? o.nama_barang : '');
+                  setSelectedItemFaktur(o ? o.faktur : '');
+                }}
               />
             )}
           </div>
@@ -723,13 +812,13 @@ export default function RecordsForm({
         <SearchableSelect
           key={`rec-${resetKey}`}
           label="Dicatat Oleh"
-          name="recorded_by"
+          name="recorded_by_id"
           options={employees}
           placeholder="Pilih pencatat..."
           required
-          displayFn={(e) => `${e.name}${e.position ? ` — ${e.position}` : ''}`}
-          valueFn={(e) => e.name}
-          defaultValue={editingInfraction?.recorded_by}
+          displayFn={(e) => `${e.employee_no ? `${e.employee_no} — ` : ''}${e.name}${e.position ? ` — ${e.position}` : ''}`}
+          valueFn={(e) => e.id}
+          defaultValue={editingInfraction?.recorded_by_id || (editingInfraction?.recorded_by ? employees.find(e => e.name === editingInfraction.recorded_by)?.id : undefined)}
           dropdownPos={'up'}
         />
 
@@ -761,6 +850,17 @@ export default function RecordsForm({
           </div>
         )}
       </form>
+
+      <ConfirmDialog
+        isOpen={dialogConfig.isOpen}
+        type={dialogConfig.type}
+        title={dialogConfig.title}
+        message={dialogConfig.message}
+        confirmLabel={dialogConfig.confirmLabel}
+        isLoading={dialogConfig.isLoading}
+        onConfirm={dialogConfig.onConfirm || closeDialog}
+        onCancel={closeDialog}
+      />
     </div>
   );
 }

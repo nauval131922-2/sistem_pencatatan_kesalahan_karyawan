@@ -20,13 +20,18 @@ export async function addEmployee(name: string, position: string, department: st
 export async function getInfractions() {
   return db.prepare(`
     SELECT 
-      i.id, i.employee_id, i.description, i.severity, i.date, i.recorded_by, 
-      i.order_name, i.faktur, i.jenis_barang, i.nama_barang, i.jenis_harga, 
-      i.jumlah, i.harga, i.total, i.created_at, i.updated_at,
-      e.name as employee_name 
+      i.*,
+      e.name as employee_name, e.employee_no, e.position as employee_position,
+      COALESCE(r.name, i.recorded_by) as recorded_by_name, r.position as recorded_by_position,
+      COALESCE(o.nama_prd, i.order_name) as order_name_display,
+      COALESCE(bb.nama_barang, bj.nama_barang, i.nama_barang) as nama_barang_display
     FROM infractions i 
-    JOIN employees e ON i.employee_id = e.id 
-    ORDER BY i.date DESC
+    LEFT JOIN employees e ON (i.employee_id = e.id OR (i.employee_no IS NOT NULL AND i.employee_no = e.employee_no))
+    LEFT JOIN employees r ON (i.recorded_by_id = r.id OR (i.recorded_by_no IS NOT NULL AND i.recorded_by_no = r.employee_no))
+    LEFT JOIN orders o ON (i.order_faktur = o.faktur)
+    LEFT JOIN bahan_baku bb ON (i.item_faktur = bb.faktur AND i.jenis_barang = 'Bahan Baku' AND i.order_name = bb.nama_prd)
+    LEFT JOIN barang_jadi bj ON (i.item_faktur = bj.faktur AND i.jenis_barang = 'Barang Jadi' AND i.order_name = bj.nama_prd)
+    ORDER BY i.date DESC, i.id DESC
   `).all();
 }
 
@@ -59,11 +64,11 @@ export async function getStats() {
   const totalEmployees = db.prepare('SELECT COUNT(*) as count FROM employees').get() as { count: number };
   const totalInfractions = db.prepare(`
     SELECT COUNT(*) as count FROM infractions i
-    INNER JOIN employees e ON i.employee_id = e.id
+    LEFT JOIN employees e ON (i.employee_id = e.id OR (i.employee_no IS NOT NULL AND i.employee_no = e.employee_no))
   `).get() as { count: number };
   const highSeverity = db.prepare(`
     SELECT COUNT(*) as count FROM infractions i
-    INNER JOIN employees e ON i.employee_id = e.id
+    LEFT JOIN employees e ON (i.employee_id = e.id OR (i.employee_no IS NOT NULL AND i.employee_no = e.employee_no))
     WHERE i.severity = 'High'
   `).get() as { count: number };
   const totalOrders = db.prepare('SELECT COUNT(*) as count FROM orders').get() as { count: number };

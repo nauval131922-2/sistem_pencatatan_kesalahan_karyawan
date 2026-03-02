@@ -5,6 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const orderName = searchParams.get('order_name');
+    const orderFaktur = searchParams.get('order_faktur');
     const jenisBarang = searchParams.get('jenis_barang'); // 'Bahan Baku' | 'Barang Jadi'
 
     if (!orderName || !jenisBarang) {
@@ -17,31 +18,31 @@ export async function GET(request: NextRequest) {
     if (jenisBarang === 'Bahan Baku') {
       // Find all unique items for this specific order from bahan_baku table
       const stmt = db.prepare(`
-        SELECT DISTINCT nama_barang, hp as harga 
+        SELECT DISTINCT nama_barang, kd_barang, faktur, hp as harga 
         FROM bahan_baku 
-        WHERE nama_prd = ? AND nama_barang IS NOT NULL AND nama_barang != ''
+        WHERE (faktur_prd = ? OR nama_prd = ?) AND nama_barang IS NOT NULL AND nama_barang != ''
         ORDER BY nama_barang ASC
       `);
-      items = stmt.all(orderName) as any[];
+      items = stmt.all(orderFaktur || '', orderName) as any[];
       
     } else if (jenisBarang === 'Barang Jadi') {
       // Find all unique items for this specific order from barang_jadi table
       const stmt = db.prepare(`
-        SELECT DISTINCT nama_barang, hp as harga 
+        SELECT DISTINCT nama_barang, kd_barang, faktur, hp as harga 
         FROM barang_jadi 
-        WHERE nama_prd = ? AND nama_barang IS NOT NULL AND nama_barang != ''
+        WHERE (faktur_prd = ? OR nama_prd = ?) AND nama_barang IS NOT NULL AND nama_barang != ''
         ORDER BY nama_barang ASC
       `);
-      items = stmt.all(orderName) as any[];
+      items = stmt.all(orderFaktur || '', orderName) as any[];
       
       // We also need to fetch "Harga Jual Digit" which comes from 'orders' table
       const orderStmt = db.prepare(`
         SELECT harga 
         FROM orders 
-        WHERE nama_prd = ?
+        WHERE faktur = ? OR nama_prd = ?
         LIMIT 1
       `);
-      const orderData = orderStmt.get(orderName) as { harga: number } | undefined;
+      const orderData = orderStmt.get(orderFaktur || '', orderName) as { harga: number } | undefined;
       const hargaJual = orderData?.harga || 0;
       
       // Inject the 'harga_jual' property so the frontend knows what to use when 'Harga Jual Digit' is selected
