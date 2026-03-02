@@ -21,10 +21,10 @@ export async function GET(req: NextRequest) {
     const datePrefix = `${dd}${mm}${yy}`;
 
     const countRow = db.prepare(
-      `SELECT MAX(CAST(SUBSTR(faktur, -3) AS INTEGER)) as max_seq FROM infractions WHERE faktur LIKE ?`
-    ).get(`ERR-${datePrefix}-%`) as { max_seq: number | null };
+      `SELECT last_seq FROM faktur_sequences WHERE prefix = ?`
+    ).get(datePrefix) as { last_seq: number } | undefined;
 
-    const seq = String((countRow?.max_seq ?? 0) + 1).padStart(3, '0');
+    const seq = String((countRow?.last_seq ?? 0) + 1).padStart(3, '0');
     const nextFaktur = `ERR-${datePrefix}-${seq}`;
 
     return NextResponse.json({ nextFaktur });

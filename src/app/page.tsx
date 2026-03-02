@@ -17,7 +17,6 @@ export default async function Home() {
   const statCards = [
     { title: 'Total Karyawan', value: stats.totalEmployees, icon: Users, classes: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20', href: '/employees' },
     { title: 'Total Kesalahan', value: stats.totalInfractions, icon: AlertTriangle, classes: 'bg-amber-500/10 text-amber-400 border-amber-500/20', href: '/records' },
-    { title: 'Total Order Produksi', value: stats.totalOrders, icon: Package, classes: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', href: '/orders' },
   ];
 
   return (
@@ -29,7 +28,7 @@ export default async function Home() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {statCards.map((card) => (
           <Link key={card.title} href={card.href} className="card relative overflow-hidden cursor-pointer hover:border-emerald-300 transition-colors block">
             <div className="flex items-center gap-4 mb-4">

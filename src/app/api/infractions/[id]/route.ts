@@ -6,15 +6,27 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const body = await req.json();
-    const { description, date, recorded_by, order_name, employee_id } = body;
+    const { 
+      description, date, recorded_by, order_name, employee_id,
+      jenis_barang, nama_barang, jenis_harga, jumlah, harga, total
+    } = body;
 
     if (!order_name) {
       return NextResponse.json({ error: 'Data tidak lengkap. Pastikan Order Produksi sudah dipilih.' }, { status: 400 });
     }
 
-    db.prepare(
-      'UPDATE infractions SET employee_id = ?, description = ?, date = ?, recorded_by = ?, order_name = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-    ).run(employee_id, description || '', date, recorded_by, order_name, id);
+    db.prepare(`
+      UPDATE infractions 
+      SET 
+        employee_id = ?, description = ?, date = ?, recorded_by = ?, order_name = ?,
+        jenis_barang = ?, nama_barang = ?, jenis_harga = ?, jumlah = ?, harga = ?, total = ?,
+        updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `).run(
+      employee_id, description || '', date, recorded_by, order_name,
+      jenis_barang, nama_barang, jenis_harga, parseFloat(jumlah) || 0, parseFloat(harga) || 0, parseFloat(total) || 0,
+      id
+    );
 
     // Get the updated infraction details for the log
     const updatedInf = db.prepare(`

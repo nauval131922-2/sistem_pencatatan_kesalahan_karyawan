@@ -14,6 +14,12 @@ interface Infraction {
   recorded_by: string;
   order_name: string | null;
   faktur: string | null;
+  jenis_barang?: string | null;
+  nama_barang?: string | null;
+  jenis_harga?: string | null;
+  jumlah?: number | null;
+  harga?: number | null;
+  total?: number | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -41,7 +47,8 @@ export default function InfractionsTable({
         inf.recorded_by?.toLowerCase().includes(q) ||
         inf.date?.includes(q) ||
         inf.faktur?.toLowerCase().includes(q) ||
-        inf.order_name?.toLowerCase().includes(q)
+        inf.order_name?.toLowerCase().includes(q) ||
+        inf.nama_barang?.toLowerCase().includes(q)
     );
   }, [infractions, query]);
 
@@ -101,7 +108,10 @@ export default function InfractionsTable({
                 <th className="px-5 py-3 font-medium whitespace-nowrap">Faktur</th>
                 <th className="px-5 py-3 font-medium whitespace-nowrap">Tanggal</th>
                 <th className="px-5 py-3 font-medium whitespace-nowrap">Karyawan</th>
-                <th className="px-5 py-3 font-medium whitespace-nowrap">Deskripsi</th>
+                <th className="px-5 py-3 font-medium whitespace-nowrap">Info Barang</th>
+                <th className="px-5 py-3 font-medium whitespace-nowrap text-right">Qty</th>
+                <th className="px-5 py-3 font-medium whitespace-nowrap text-right">Harga</th>
+                <th className="px-5 py-3 font-medium whitespace-nowrap text-right">Total</th>
                 <th className="px-5 py-3 font-medium whitespace-nowrap">Order</th>
                 <th className="px-5 py-3 font-medium whitespace-nowrap">Dicatat Oleh</th>
               </tr>
@@ -143,9 +153,31 @@ export default function InfractionsTable({
                     </td>
                     <td className="px-5 py-3 font-semibold text-emerald-600 truncate max-w-[150px]">
                       {inf.employee_name}
+                      {inf.description && (
+                        <div className="text-xs text-slate-400 font-normal mt-0.5 truncate max-w-[150px]" title={inf.description}>
+                          {inf.description}
+                        </div>
+                      )}
                     </td>
-                    <td className="px-5 py-3 truncate max-w-[200px]" title={inf.description}>
-                      {inf.description || '-'}
+                    <td className="px-5 py-3 truncate max-w-[200px]" title={inf.nama_barang || ''}>
+                      <div className="font-medium text-slate-700">{inf.nama_barang || '-'}</div>
+                      <div className="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5">
+                        {inf.jenis_barang || '-'}
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-right tabular-nums">
+                      {inf.jumlah || 0}
+                    </td>
+                    <td className="px-5 py-3 text-right tabular-nums" title={inf.jenis_harga || ''}>
+                      <div className="text-slate-600">
+                        {inf.harga ? inf.harga.toLocaleString('id-ID') : '-'}
+                      </div>
+                      <div className="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5 truncate max-w-[80px] ml-auto">
+                        {inf.jenis_harga || '-'}
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-right tabular-nums font-medium text-emerald-700">
+                      {inf.total ? inf.total.toLocaleString('id-ID') : '-'}
                     </td>
                     <td className="px-5 py-3 text-xs">
                       {inf.order_name ? (

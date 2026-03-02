@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Users } from 'lucide-react';
 
 const PAGE_SIZE = 10;
 
@@ -38,7 +38,13 @@ export default function EmployeeTable({ employees }: { employees: Employee[] }) 
 
   return (
     <div className="space-y-4">
-      {/* Search */}
+      {/* Heading & Search */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2">
+        <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-base">
+            <Users size={18} className="text-emerald-500" /> Data Karyawan
+        </h3>
+      </div>
+
       <div className="relative">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
         <input

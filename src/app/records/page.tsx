@@ -14,7 +14,7 @@ export default async function RecordsPage() {
   ]);
 
   return (
-    <div className="space-y-4 pb-48">
+    <div className="space-y-4 pb-8">
       <header className="flex justify-between items-center mb-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Pencatatan Kesalahan</h2>

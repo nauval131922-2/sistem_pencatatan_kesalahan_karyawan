@@ -11,7 +11,7 @@ export default function OrdersPage() {
       <header className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Order Produksi</h2>
-          <p className="text-zinc-500 mt-1">Tarik dan lihat data order produksi secara langsung dari sistem eksternal.</p>
+          <p className="text-zinc-500 mt-1">Tarik data Order Produksi dari <span className="gradient-text font-semibold">Digit</span></p>
         </div>
       </header>
 

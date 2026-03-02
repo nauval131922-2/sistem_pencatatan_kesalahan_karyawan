@@ -1,16 +1,14 @@
-import { getEmployees, getLastEmployeeImport } from '@/lib/actions';
+import HppKalkulasiClient from './HppKalkulasiClient';
 import type { Metadata } from 'next';
-import ExcelUpload from '@/components/ExcelUpload';
-import EmployeeTable from '@/components/EmployeeTable';
+import { getLastHppImport } from '@/lib/actions';
 import { FileSpreadsheet, Clock } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'SIKKA | Daftar Karyawan',
+  title: 'SIKKA | HPP Kalkulasi',
 };
 
-export default async function EmployeesPage() {
-  const employees = await getEmployees();
-  const lastImport = await getLastEmployeeImport();
+export default async function HppKalkulasiPage() {
+  const lastImport = await getLastHppImport();
 
   let importFileName = '';
   let importTime = '';
@@ -18,10 +16,9 @@ export default async function EmployeesPage() {
   if (lastImport) {
     try {
       const raw = JSON.parse(lastImport.raw_data);
-      importFileName = raw.filename || '';
+      importFileName = raw.fileName || '';
       
       let dateString = lastImport.created_at;
-      // Pastikan format ISO 8601 valid dengan indikator UTC (Z)
       if (!dateString.includes('T')) dateString = dateString.replace(' ', 'T');
       if (!dateString.endsWith('Z')) dateString += 'Z';
       
@@ -38,8 +35,8 @@ export default async function EmployeesPage() {
     <div className="space-y-6 pb-24">
       <header className="flex justify-between items-start mb-6">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Daftar Karyawan</h2>
-          <p className="text-zinc-500 mt-1">Upload data Karyawan dari file Excel.</p>
+          <h2 className="text-2xl font-bold tracking-tight">HPP Kalkulasi</h2>
+          <p className="text-zinc-500 mt-1">Upload data HPP Kalkulasi dari file Excel.</p>
           
           {importFileName && (
             <div className="flex items-center gap-3 mt-3 text-xs font-medium">
@@ -56,11 +53,7 @@ export default async function EmployeesPage() {
         </div>
       </header>
 
-      <ExcelUpload />
-
-      <div className="w-full mt-4">
-        <EmployeeTable employees={employees as any} />
-      </div>
+      <HppKalkulasiClient />
     </div>
   );
 }

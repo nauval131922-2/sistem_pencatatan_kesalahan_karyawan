@@ -49,6 +49,43 @@ db.exec(`
     raw_data TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS bahan_baku (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tgl TEXT,
+    nama_barang TEXT NOT NULL,
+    qty REAL,
+    satuan TEXT,
+    nama_prd TEXT NOT NULL,
+    hp REAL,
+    raw_data TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS barang_jadi (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tgl TEXT,
+    nama_barang TEXT NOT NULL,
+    qty REAL,
+    satuan TEXT,
+    nama_prd TEXT NOT NULL,
+    hp REAL,
+    raw_data TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS hpp_kalkulasi (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nama_order TEXT UNIQUE NOT NULL,
+    hpp_kalkulasi REAL NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS faktur_sequences (
+    prefix TEXT PRIMARY KEY,
+    last_seq INTEGER NOT NULL DEFAULT 0,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Migration: tambah kolom employee_no jika belum ada
@@ -74,5 +111,21 @@ try {
 } catch (e) {}
 
 
+// Migration: tambah kolom-kolom baru untuk form kesalahan (relasi Excel)
+const infractionColumns = [
+  'jenis_barang TEXT',
+  'nama_barang TEXT',
+  'jenis_harga TEXT',
+  'jumlah REAL',
+  'harga REAL',
+  'total REAL'
+];
+
+infractionColumns.forEach(col => {
+  try {
+    const colName = col.split(' ')[0];
+    db.exec(`ALTER TABLE infractions ADD COLUMN ${colName} ${col.split(' ').slice(1).join(' ')};`);
+  } catch (e) {}
+});
 
 export default db;

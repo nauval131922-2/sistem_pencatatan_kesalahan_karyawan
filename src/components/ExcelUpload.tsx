@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Upload, FileSpreadsheet, CheckCircle, XCircle, Loader2, X } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle, XCircle, Loader2, X, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function ExcelUpload() {
@@ -66,91 +66,57 @@ export default function ExcelUpload() {
   };
 
   return (
-    <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors"
-      >
-        <FileSpreadsheet size={16} />
-        Import Data
-      </button>
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
 
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden relative animate-in fade-in zoom-in duration-200">
-            
-            <button
-              onClick={() => setIsOpen(false)}
-              className="absolute right-4 top-4 text-slate-400 hover:text-slate-600 transition-colors"
-            >
-              <X size={20} />
-            </button>
+      <div className="card glass p-6 border border-emerald-500/20 relative overflow-hidden mb-6">
+      <div className="absolute right-0 top-0 -mt-10 -mr-10 opacity-5 pointer-events-none">
+         <FileSpreadsheet size={200} />
+      </div>
+      
+      <div className="flex flex-col md:flex-row gap-6 items-center justify-between relative z-10">
+        <div className="flex-1">
+          <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2">
+            <Upload className="text-emerald-500" size={20}/>
+            Upload Data Karyawan
+          </h3>
+          <p className="text-sm text-slate-500">
+            Unggah file Excel yang berisi Data Karyawan. Data yang lama akan dihapus dan digantikan seluruhnya oleh data dari file baru.
+          </p>
+        </div>
+        <div className="w-full md:w-auto shrink-0 flex flex-col gap-2">
+          <input 
+            type="file" 
+            accept=".xls, .xlsx, .xlsm"
+            className="hidden" 
+            ref={fileRef}
+            onChange={onFileChange}
+          />
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={status === 'loading'}
+            className="w-full relative px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed group overflow-hidden"
+          >
+            {status === 'loading' && <Loader2 size={18} className="animate-spin" />}
+            {status !== 'loading' && <FileSpreadsheet size={18} className="group-hover:scale-110 transition-transform" />}
+            <span>{status === 'loading' ? 'Mengunggah File...' : 'Pilih & Upload File Excel'}</span>
+          </button>
+        </div>
+      </div>
 
-            <div className="p-6 space-y-4">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100">
-                  <FileSpreadsheet size={20} />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-lg text-slate-800">Import Karyawan</h4>
-                  <p className="text-sm text-slate-500">Format: .xls, .xlsx, .xlsm</p>
-                </div>
-              </div>
-
-              {/* Drop zone */}
-              <div
-                onClick={() => fileRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-                onDragLeave={() => setDragging(false)}
-                onDrop={onDrop}
-                className={`
-                  relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all
-                  ${dragging
-                    ? 'border-emerald-500 bg-emerald-50'
-                    : 'border-slate-300 hover:border-emerald-400 hover:bg-slate-50'
-                  }
-                `}
-              >
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept=".xls,.xlsx,.xlsm"
-                  className="hidden"
-                  onChange={onFileChange}
-                />
-
-                {status === 'loading' ? (
-                  <div className="flex flex-col items-center gap-3 text-slate-500">
-                    <Loader2 size={32} className="animate-spin text-emerald-500" />
-                    <p className="text-sm font-medium">Memproses file...</p>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-3 text-slate-500">
-                    <Upload size={28} className={dragging ? 'text-emerald-500' : 'text-slate-400'} />
-                    <div>
-                      <p className="text-sm font-medium text-slate-700">Klik atau seret & lepas file ke sini</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Result message */}
-              {status === 'success' && (
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm">
-                  <CheckCircle size={18} className="shrink-0" />
-                  <span className="font-medium">{message}</span>
-                </div>
-              )}
-              {status === 'error' && (
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-sm">
-                  <XCircle size={18} className="shrink-0" />
-                  <span className="font-medium">{message}</span>
-                </div>
-              )}
-            </div>
-          </div>
+      {status === 'error' && (
+        <div className="mt-4 p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm flex items-start gap-2 animate-in fade-in">
+          <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <p>{message}</p>
         </div>
       )}
-    </>
+      
+      {status === 'success' && (
+        <div className="mt-4 p-3 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-sm flex items-start gap-2 animate-in fade-in">
+          <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <p>{message}</p>
+        </div>
+      )}
+    </div>
+    </div>
   );
 }

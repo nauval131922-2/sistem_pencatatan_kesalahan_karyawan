@@ -19,7 +19,11 @@ export async function addEmployee(name: string, position: string, department: st
 
 export async function getInfractions() {
   return db.prepare(`
-    SELECT i.*, e.name as employee_name 
+    SELECT 
+      i.id, i.employee_id, i.description, i.severity, i.date, i.recorded_by, 
+      i.order_name, i.faktur, i.jenis_barang, i.nama_barang, i.jenis_harga, 
+      i.jumlah, i.harga, i.total, i.created_at, i.updated_at,
+      e.name as employee_name 
     FROM infractions i 
     JOIN employees e ON i.employee_id = e.id 
     ORDER BY i.date DESC
@@ -73,9 +77,21 @@ export async function getStats() {
 }
 
 export async function getLastEmployeeImport() {
-  return db.prepare(`
-    SELECT * FROM activity_logs 
-    WHERE action_type = 'IMPORT' AND table_name = 'employees' 
-    ORDER BY created_at DESC LIMIT 1
-  `).get() as any;
+  try {
+    const log = db.prepare(`SELECT * FROM activity_logs WHERE table_name = 'employees' AND action_type = 'IMPORT' ORDER BY id DESC LIMIT 1`).get() as any;
+    return log || null;
+  } catch (err) {
+    console.error('Failed to get last employee import log', err);
+    return null;
+  }
+}
+
+export async function getLastHppImport() {
+  try {
+    const log = db.prepare(`SELECT * FROM activity_logs WHERE table_name = 'hpp_kalkulasi' AND action_type = 'UPLOAD' ORDER BY id DESC LIMIT 1`).get() as any;
+    return log || null;
+  } catch (err) {
+    console.error('Failed to get last hpp kalkulasi import log', err);
+    return null;
+  }
 }

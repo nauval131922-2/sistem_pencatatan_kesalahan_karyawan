@@ -23,7 +23,7 @@ export default function MainContentWrapper({
     <div className="flex min-h-screen">
       <Sidebar />
       <main 
-        className={`flex-1 transition-all duration-300 ease-in-out p-6 md:p-10 ${
+        className={`flex-1 min-w-0 transition-all duration-300 ease-in-out p-6 md:p-10 ${
           isCollapsed ? 'ml-[80px]' : 'ml-[210px]'
         }`}
       >
