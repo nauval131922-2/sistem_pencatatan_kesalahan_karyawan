@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import MainContentWrapper from "@/components/MainContentWrapper";
+import ManualModal from "@/components/ManualModal";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,6 +22,7 @@ export default function RootLayout({
         <MainContentWrapper>
           {children}
         </MainContentWrapper>
+        <ManualModal />
       </body>
     </html>
   );
