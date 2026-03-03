@@ -70,7 +70,7 @@ export default function OrderProduksiClient() {
       setLoading(true);
       const startTime = performance.now();
       try {
-        const res = await fetch(`/api/orders?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}`);
+        const res = await fetch(`/api/orders?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}&_t=${Date.now()}`);
         if (res.ok && active) {
           const json = await res.json();
           const endTime = performance.now();
@@ -78,8 +78,8 @@ export default function OrderProduksiClient() {
           setData(json.data || []);
           setTotalCount(json.total || 0);
 
-          if (json.data && json.data.length > 0) {
-            const latestDate = new Date(Math.max(...json.data.map((r: any) => new Date(r.created_at || new Date()).getTime())));
+          if (json.lastUpdated) {
+            const latestDate = new Date(json.lastUpdated);
             if (!isNaN(latestDate.getTime())) {
               const timestamp = latestDate.toLocaleString('id-ID', {
                 day: '2-digit', month: 'short', year: 'numeric',
@@ -107,6 +107,7 @@ export default function OrderProduksiClient() {
         const parsed = JSON.parse(saved);
         if (parsed.startDate) setStartDate(new Date(parsed.startDate));
         if (parsed.endDate) setEndDate(new Date(parsed.endDate));
+        if (parsed.lastUpdated) setLastUpdated(parsed.lastUpdated);
       } catch(e) {}
     }
   }, []);
@@ -139,27 +140,35 @@ export default function OrderProduksiClient() {
         throw new Error(json.error || 'Terjadi kesalahan saat mengambil data.');
       }
       
-      const fetchedData = json.data || [];
-      const timestamp = new Date().toLocaleString('id-ID', {
-        day: '2-digit', month: 'short', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-      });
+      // We no longer set large data directly here to avoid UI freezing.
+      // Instead, we just refresh the current view by resetting search/page
+      // which will trigger the loadData useEffect to fetch ONLY the first PAGE.
+      setPage(1);
+      setSearchQuery('');
+      
+      if (json.lastUpdated) {
+        const latestDate = new Date(json.lastUpdated);
+        if (!isNaN(latestDate.getTime())) {
+          const timestamp = latestDate.toLocaleString('id-ID', {
+            day: '2-digit', month: 'short', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', second: '2-digit'
+          });
+          setLastUpdated(timestamp);
 
-      setData(fetchedData);
-      setLastUpdated(timestamp);
-
-      // Save to localStorage without 'data' to avoid quota limits
-      localStorage.setItem('orderProduksiState', JSON.stringify({
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        lastUpdated: timestamp
-      }));
+          // Save to localStorage
+          localStorage.setItem('orderProduksiState', JSON.stringify({
+            startDate: startDate.toISOString(),
+            endDate: endDate.toISOString(),
+            lastUpdated: timestamp
+          }));
+        }
+      }
 
       setDialog({
         isOpen: true,
         type: 'success',
         title: 'Berhasil',
-        message: `Berhasil menarik ${json.total || fetchedData.length} data order produksi.`
+        message: `Berhasil menarik ${json.total} data order produksi.`
       });
 
     } catch (err: any) {
@@ -181,9 +190,9 @@ export default function OrderProduksiClient() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
       {/* Control Panel */}
-      <div className="flex justify-center w-full">
+      <div className="flex justify-center w-full shrink-0">
         <div className="card glass relative z-20 overflow-visible p-5 px-8 border border-emerald-500/10 w-fit">
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Periode</span>
@@ -208,7 +217,11 @@ export default function OrderProduksiClient() {
               disabled={loading}
               className="w-full sm:w-auto shrink-0 h-[42px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white px-8 rounded-xl text-sm font-semibold shadow-md shadow-emerald-500/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap lg:ml-2"
             >
-              {loading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              {loading ? (
+                <Loader2 key="loading" size={16} className="animate-spin" />
+              ) : (
+                <Download key="download" size={16} />
+              )}
               {loading ? 'Menarik...' : 'Tarik Data'}
             </button>
           </div>
@@ -216,7 +229,7 @@ export default function OrderProduksiClient() {
       </div>
 
       {error && (
-        <div className="mt-4 p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm flex items-start gap-2 max-w-2xl mx-auto">
+        <div className="mt-2 p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm flex items-start gap-2 max-w-2xl mx-auto shrink-0">
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
           <p>{error}</p>
         </div>
@@ -224,22 +237,24 @@ export default function OrderProduksiClient() {
 
       {/* Results View */}
       {data === null && !loading && !error && (
-        <div className="card text-center py-24 text-slate-500 flex flex-col items-center bg-slate-50/50 border-dashed">
+        <div className="card text-center py-20 text-slate-500 flex flex-col items-center bg-slate-50/50 border-dashed justify-center flex-1">
           <Loader2 size={48} className="mb-4 opacity-20 text-emerald-600 animate-spin" />
           <p className="font-medium text-slate-600">Sedang memuat data dari database...</p>
         </div>
       )}
 
-      {data !== null && data.length === 0 && !loading && (
-        <div className="card text-center py-20 text-slate-500 flex flex-col items-center">
-          <Search size={48} className="mb-4 opacity-20" />
-          <p>Tidak ada data order ditemukan pada rentang tanggal tersebut.</p>
-        </div>
-      )}
+      {data !== null && (
+        <div className="flex flex-col flex-1 gap-4 overflow-hidden min-h-0 relative">
+          {/* Global Loading Overlay (Subtle) */}
+          {loading && (
+            <div className="absolute inset-0 z-30 bg-white/40 backdrop-blur-[1px] flex items-center justify-center rounded-xl transition-all">
+              <div className="bg-white p-3 rounded-full shadow-lg border border-emerald-100">
+                <Loader2 size={24} className="text-emerald-500 animate-spin" />
+              </div>
+            </div>
+          )}
 
-      {data !== null && data.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 shrink-0">
             <div className="flex items-center gap-4 w-full flex-wrap">
               <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-base">
                   <Package size={18} className="text-emerald-500" /> Hasil Scrapping
@@ -253,8 +268,7 @@ export default function OrderProduksiClient() {
             </div>
           </div>
 
-          {/* Global Style Search */}
-          <div className="relative">
+          <div className="relative shrink-0">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
@@ -265,9 +279,18 @@ export default function OrderProduksiClient() {
             />
           </div>
 
-          <div className="card p-0 overflow-hidden">
-            <div className="overflow-auto" style={{ maxHeight: '350px' }}>
-              <table className="w-full text-left relative">
+          {data.length === 0 ? (
+            <div className="card text-center py-20 text-slate-500 flex flex-col items-center justify-center flex-1 bg-white border-dashed">
+              <Search size={48} className="mb-4 opacity-20" />
+              <p className="font-medium">Tidak ada data ditemukan.</p>
+              <p className="text-xs opacity-60 mt-1">Coba sesuaikan kata kunci pencarian atau rentang tanggal.</p>
+            </div>
+          ) : (
+            <>
+              <div className="card p-0 overflow-hidden border border-slate-200 shadow-sm flex-1 flex flex-col min-h-0">
+
+            <div className="overflow-auto bg-white flex-1 min-h-0">
+              <table className="w-full text-left relative min-w-[800px]">
                 <thead className="sticky top-0 z-10">
                   <tr className="text-slate-500 text-sm border-b border-slate-200 bg-slate-50">
                     <th className="px-5 py-3 font-medium whitespace-nowrap">No. Faktur</th>
@@ -386,6 +409,8 @@ export default function OrderProduksiClient() {
               </button>
             </div>
           </div>
+            </>
+          )}
         </div>
       )}
 

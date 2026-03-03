@@ -4,6 +4,10 @@ import path from 'path';
 const dbPath = path.join(process.cwd(), 'database.sqlite');
 const db = new Database(dbPath);
 
+// Enable WAL mode for better performance
+db.pragma('journal_mode = WAL');
+db.pragma('synchronous = NORMAL');
+
 // Initialize schema
 db.exec(`
   CREATE TABLE IF NOT EXISTS employees (
@@ -99,6 +103,12 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS faktur_sequences (
     prefix TEXT PRIMARY KEY,
     last_seq INTEGER NOT NULL DEFAULT 0,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS system_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 `);
@@ -210,28 +220,28 @@ try {
 
 // --- PERFORMANCE INDEXES ---
 try {
-  db.exec("CREATE INDEX IF NOT EXISTS idx_sales_reports_tgl ON sales_reports(tgl);");
-  db.exec("CREATE INDEX IF NOT EXISTS idx_sales_reports_nama_prd ON sales_reports(nama_prd);");
-  db.exec("CREATE INDEX IF NOT EXISTS idx_sales_reports_faktur ON sales_reports(faktur);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_infractions_date ON infractions(date);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_infractions_faktur ON infractions(faktur);");
+
+  // --- COMPOSITE & EXPRESSION-BASED INDEXES FOR FAST SORTING ---
+  // We use substr-based indexing to match the ORDER BY clauses in API routes
+  db.exec("DROP INDEX IF EXISTS idx_barang_jadi_tgl_id;"); 
+  db.exec("CREATE INDEX IF NOT EXISTS idx_barang_jadi_expr_tgl ON barang_jadi(substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_barang_jadi_created_at ON barang_jadi(created_at);");
   
-  db.exec("CREATE INDEX IF NOT EXISTS idx_barang_jadi_tgl ON barang_jadi(tgl);");
-  db.exec("CREATE INDEX IF NOT EXISTS idx_barang_jadi_nama_prd ON barang_jadi(nama_prd);");
-  db.exec("CREATE INDEX IF NOT EXISTS idx_barang_jadi_faktur ON barang_jadi(faktur);");
+  db.exec("DROP INDEX IF EXISTS idx_bahan_baku_tgl_id;");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_bahan_baku_expr_tgl ON bahan_baku(substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_bahan_baku_created_at ON bahan_baku(created_at);");
   
-  db.exec("CREATE INDEX IF NOT EXISTS idx_bahan_baku_tgl ON bahan_baku(tgl);");
-  db.exec("CREATE INDEX IF NOT EXISTS idx_bahan_baku_nama_prd ON bahan_baku(nama_prd);");
-  db.exec("CREATE INDEX IF NOT EXISTS idx_bahan_baku_faktur ON bahan_baku(faktur);");
+  db.exec("DROP INDEX IF EXISTS idx_orders_tgl_id;");
+  db.exec("DROP INDEX IF EXISTS idx_orders_sorting;");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_orders_expr_tgl ON orders(substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);");
   
-  db.exec("CREATE INDEX IF NOT EXISTS idx_orders_tgl ON orders(tgl);");
-  db.exec("CREATE INDEX IF NOT EXISTS idx_orders_faktur ON orders(faktur);");
-  db.exec("CREATE INDEX IF NOT EXISTS idx_orders_nama_prd ON orders(nama_prd);");
-  
-  db.exec("CREATE INDEX IF NOT EXISTS idx_employees_nama ON employees(nama);");
-  db.exec("CREATE INDEX IF NOT EXISTS idx_employees_nik ON employees(nik);");
-  
-  db.exec("CREATE INDEX IF NOT EXISTS idx_infractions_employee_id ON infractions(employee_id);");
-  db.exec("CREATE INDEX IF NOT EXISTS idx_infractions_tgl_kejadian ON infractions(tgl_kejadian);");
-  db.exec("CREATE INDEX IF NOT EXISTS idx_infractions_no_faktur ON infractions(no_faktur);");
+  db.exec("DROP INDEX IF EXISTS idx_sales_reports_tgl_id;");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_sales_reports_expr_tgl ON sales_reports(substr(tgl, 7, 4), substr(tgl, 4, 2), substr(tgl, 1, 2), id ASC);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_sales_reports_created_at ON sales_reports(created_at);");
+
 } catch (e) {
   console.error("Failed to create performance indexes:", e);
 }

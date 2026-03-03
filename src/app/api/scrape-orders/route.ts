@@ -72,60 +72,41 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Failed to login. No cookies returned." }, { status: 401 });
     }
 
-    // 2. Prepare days to fetch
-    const days = getDatesInRange(startDate, endDate);
-    let allRecords: ScrapeRecord[] = [];
-
-    // Helper function to fetch one day
-    const fetchDay = async (date: Date): Promise<ScrapeRecord[]> => {
-      const dayStr = formatDate(date);
-      const reqData = {
-        limit: 10000,
-        offset: 0,
-        bsearch: {
-          stgl_awal: dayStr,
-          stgl_akhir: dayStr,
-          ppn: "semua",
-        },
-      };
-
-      const reqJson = encodeURIComponent(JSON.stringify(reqData));
-      const dataUrl = BASE_URL + "v1/prd/trprd_o/gr1?request=" + reqJson;
-
-      try {
-        const res = await fetch(dataUrl, {
-          method: "GET",
-          headers: {
-            Accept: "application/json; charset=utf-8",
-            "X-Bismillah-Api-Key": API_KEY,
-            Cookie: cookies,
-          },
-        });
-
-        const jsonData = await res.json();
-        const records = jsonData.records || jsonData.data || jsonData.rows || jsonData.result || [];
-        
-        // Filter out totals row like the python script
-        return records.filter((r: any) => 
-            String(r.kd_barang || "").toLowerCase().trim() !== "total"
-        );
-      } catch (error) {
-        console.error(`Error fetching day ${dayStr}:`, error);
-        return [];
-      }
+    // 2. Fetch data using range
+    const startStr = formatDate(startDate);
+    const endStr = formatDate(endDate);
+    
+    const reqData = {
+      limit: 10000,
+      offset: 0,
+      bsearch: {
+        stgl_awal: startStr,
+        stgl_akhir: endStr,
+        ppn: "semua",
+      },
     };
 
-    // Process in batches of 10 days
-    const batchSize = 10;
-    for (let i = 0; i < days.length; i += batchSize) {
-      const batch = days.slice(i, i + batchSize);
-      const batchResults = await Promise.all(batch.map(d => fetchDay(d)));
-      for (const records of batchResults) {
-        allRecords = allRecords.concat(records);
-      }
-    }
+    const reqJson = encodeURIComponent(JSON.stringify(reqData));
+    const dataUrl = BASE_URL + "v1/prd/trprd_o/gr1?request=" + reqJson;
 
-    const finalRecords = allRecords.map((r: any) => {
+    const res = await fetch(dataUrl, {
+      method: "GET",
+      headers: {
+        Accept: "application/json; charset=utf-8",
+        "X-Bismillah-Api-Key": API_KEY,
+        Cookie: cookies,
+      },
+    });
+
+    const jsonData = await res.json();
+    const rawRecords = jsonData.records || jsonData.data || jsonData.rows || jsonData.result || [];
+    
+    // Filter out totals row
+    const filteredRecords = rawRecords.filter((r: any) => 
+        String(r.kd_barang || "").toLowerCase().trim() !== "total"
+    );
+
+    const finalRecords = filteredRecords.map((r: any) => {
       const parsedQty = parseFloat(r.qty_order || r.qty_so || r.qty || "0") || 0;
       const parsedHarga = parseFloat(r.hp || r.bbb || r.harga || "0") || 0;
       return {
@@ -137,7 +118,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Sort descending by date (Tgl = DD-MM-YYYY)
-    finalRecords.sort((a, b) => {
+    finalRecords.sort((a: any, b: any) => {
       const parseDate = (dStr: string) => {
         if (!dStr) return 0;
         const parts = dStr.split('-');
@@ -202,10 +183,21 @@ export async function GET(request: NextRequest) {
       console.error("Failed to log activity:", e);
     }
 
+    const lastUpdated = new Date().toISOString();
+    try {
+      db.prepare(`
+        INSERT INTO system_settings (key, value, updated_at)
+        VALUES (?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+      `).run('last_scrape_orders', lastUpdated);
+    } catch (e) {
+      console.error("Failed to update system_settings:", e);
+    }
+
     return NextResponse.json({
       success: true,
       total: finalRecords.length,
-      data: finalRecords,
+      lastUpdated
     }, {
       headers: {
         // Prevent caching

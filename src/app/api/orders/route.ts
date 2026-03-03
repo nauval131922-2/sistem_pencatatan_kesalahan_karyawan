@@ -15,28 +15,35 @@ export async function GET(request: Request) {
     if (search) {
       const query = `%${search}%`;
       records = db.prepare(`
-        SELECT * FROM orders 
+        SELECT id, faktur, nama_prd, nama_pelanggan, tgl, qty, created_at 
+        FROM orders 
         WHERE nama_prd LIKE ? OR nama_pelanggan LIKE ? OR faktur LIKE ?
-        ORDER BY tgl DESC, id DESC 
+        ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
         LIMIT ? OFFSET ?
-      `).all(query, query, query, query, limit, offset);
+      `).all(query, query, query, limit, offset);
       total = (db.prepare(`
         SELECT COUNT(*) as count FROM orders 
         WHERE nama_prd LIKE ? OR nama_pelanggan LIKE ? OR faktur LIKE ?
-      `).get(query, query, query, query) as any).count;
+      `).get(query, query, query) as any).count;
     } else {
-      // In SQLite, we can't easily sort by the DD-MM-YYYY string properly using built-in ORDER BY 
-      // without complex string manipulation. However, for orders we added created_at.
-      // But the user usually wants to see by production date 'tgl'.
-      // Let's use a simpler created_at for now or just standard tgl string order (which works if same length)
-      records = db.prepare(`SELECT * FROM orders ORDER BY tgl DESC, id DESC LIMIT ? OFFSET ?`).all(limit, offset);
+      records = db.prepare(`
+        SELECT id, faktur, nama_prd, nama_pelanggan, tgl, qty, created_at 
+        FROM orders 
+        ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
+        LIMIT ? OFFSET ?
+      `).all(limit, offset);
       total = (db.prepare(`SELECT COUNT(*) as count FROM orders`).get() as any).count;
     }
+
+    const lastScrape = (db.prepare(`SELECT value FROM system_settings WHERE key = ?`).get('last_scrape_orders') as any);
+    const lastUpdatedRaw = (db.prepare(`SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM orders`).get() as any).lastUpdated;
+    const lastUpdated = lastScrape ? lastScrape.value : lastUpdatedRaw;
 
     return NextResponse.json({
       success: true,
       data: records,
       total,
+      lastUpdated,
       page,
       limit
     });
