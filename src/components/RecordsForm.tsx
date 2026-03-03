@@ -64,25 +64,27 @@ function SearchableSelect({
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // If loading, don't try to sync/clear selection to prevent flickering/loss
+    if (isLoading) return;
+
     if (defaultValue !== undefined && defaultValue !== null) {
       const found = options.find((o) => String(valueFn(o)) === String(defaultValue));
       if (found) setSelected(found);
     } else if (defaultValue === null) {
       // Explicitly requested to clear
       setSelected(null);
-    } else if (selected) {
-      // If we already have a selection but options refreshed, 
-      // check if our selection is still valid in the new options
+    } else if (selected && options.length > 0) {
+      // If we already have a selection and options are present,
+      // check if our selection is still valid in the new options.
+      // If options are empty but we have a selection, KEEP it (resilience).
       const stillExists = options.find((o) => String(valueFn(o)) === String(valueFn(selected)));
-      if (stillExists) {
-        setSelected(stillExists);
-      } else {
-        // Selection is no longer in options
+      if (!stillExists) {
+        // Selection is truly no longer in the provided options
         setSelected(null);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [defaultValue, options]);
+  }, [defaultValue, options, isLoading]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -237,6 +239,8 @@ export default function RecordsForm({
   const [jenisHarga, setJenisHarga] = useState<string>('HPP Digit');
   const [jumlah, setJumlah] = useState<string>('');
   const [harga, setHarga] = useState<string>('');
+  const [draftEmployeeId, setDraftEmployeeId] = useState<number | null>(null);
+  const [draftRecordedById, setDraftRecordedById] = useState<number | null>(null);
 
   // Fixed options arrays
   const jenisBarangOptions = useMemo(() => [
@@ -282,9 +286,10 @@ export default function RecordsForm({
     }
   }, [jenisBarang]);
 
-  // Initialize data when editing
+  // Initialize data when editing or from draft
   useEffect(() => {
     if (editingInfraction) {
+      // ... (edit mode logic)
       setDescription(editingInfraction.description || '');
       
       let parsedDate = new Date();
@@ -322,9 +327,58 @@ export default function RecordsForm({
       setHarga(editingInfraction.harga ? String(editingInfraction.harga) : '');
       
     } else {
-      resetFormStates();
+      // Check for draft
+      const savedDraft = localStorage.getItem('infraction_form_draft');
+      if (savedDraft) {
+        try {
+          const draft = JSON.parse(savedDraft);
+          setDescription(draft.description || '');
+          if (draft.selectedDate) setSelectedDate(new Date(draft.selectedDate));
+          setSelectedOrderFaktur(draft.selectedOrderFaktur || '');
+          setSelectedOrderName(draft.selectedOrderName || '');
+          setJenisBarang(draft.jenisBarang || 'Bahan Baku');
+          setJenisHarga(draft.jenisHarga || 'HPP Digit');
+          setSelectedNamaBarang(draft.selectedNamaBarang || '');
+          setSelectedItemFaktur(draft.selectedItemFaktur || '');
+          setManualNamaBarang(draft.manualNamaBarang || '');
+          setJumlah(draft.jumlah || '');
+          setHarga(draft.harga || '');
+          setDraftEmployeeId(draft.employeeId || null);
+          setDraftRecordedById(draft.recordedById || null);
+        } catch (e) {
+          console.error('Failed to load draft', e);
+        }
+      } else {
+        resetFormStates();
+      }
     }
   }, [editingInfraction]);
+
+  // Save draft on changes (Debounced ideally, but simple useEffect for now)
+  useEffect(() => {
+    if (editingInfraction) return; // Don't save draft in edit mode
+
+    const draft = {
+      description,
+      selectedDate: selectedDate.toISOString(),
+      selectedOrderFaktur,
+      selectedOrderName,
+      jenisBarang,
+      jenisHarga,
+      selectedNamaBarang,
+      selectedItemFaktur,
+      manualNamaBarang,
+      jumlah,
+      harga,
+      employeeId: draftEmployeeId,
+      recordedById: draftRecordedById
+    };
+    localStorage.setItem('infraction_form_draft', JSON.stringify(draft));
+  }, [
+    description, selectedDate, selectedOrderFaktur, selectedOrderName, 
+    jenisBarang, jenisHarga, selectedNamaBarang, selectedItemFaktur, 
+    manualNamaBarang, jumlah, harga, draftEmployeeId, draftRecordedById, editingInfraction
+  ]);
 
   const resetFormStates = () => {
     setDescription('');
@@ -338,6 +392,9 @@ export default function RecordsForm({
     setManualNamaBarang('');
     setJumlah('');
     setHarga('');
+    setDraftEmployeeId(null);
+    setDraftRecordedById(null);
+    localStorage.removeItem('infraction_form_draft');
   };
 
   // Fetch Items when Order or Jenis Barang changes
@@ -642,7 +699,8 @@ export default function RecordsForm({
               required
               displayFn={(e) => `${e.employee_no ? `${e.employee_no} — ` : ''}${e.name}${e.position ? ` — ${e.position}` : ''}`}
               valueFn={(e) => e.id}
-              defaultValue={editingInfraction?.employee_name ? employees.find(e => e.name === editingInfraction.employee_name)?.id : undefined}
+              defaultValue={editingInfraction?.employee_name ? employees.find(e => e.name === editingInfraction.employee_name)?.id : draftEmployeeId}
+              onChange={(e) => setDraftEmployeeId(e ? e.id : null)}
             />
           </div>
         </div>
@@ -740,11 +798,11 @@ export default function RecordsForm({
           <label className={labelCls}>
             Deskripsi Kesalahan <span className="text-slate-400 font-normal normal-case">(opsional)</span>
           </label>
-          <input
-            type="text"
+          <textarea
             name="description"
-            className={inputCls}
-            placeholder="Jelaskan detail kesalahan..."
+            rows={3}
+            className={`${inputCls} resize-none`}
+            placeholder="Jelaskan detail kesalahan secara lengkap..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
@@ -835,7 +893,8 @@ export default function RecordsForm({
           required
           displayFn={(e) => `${e.employee_no ? `${e.employee_no} — ` : ''}${e.name}${e.position ? ` — ${e.position}` : ''}`}
           valueFn={(e) => e.id}
-          defaultValue={editingInfraction?.recorded_by_id || (editingInfraction?.recorded_by ? employees.find(e => e.name === editingInfraction.recorded_by)?.id : undefined)}
+          defaultValue={editingInfraction?.recorded_by_id || (editingInfraction?.recorded_by ? employees.find(e => e.name === editingInfraction.recorded_by)?.id : draftRecordedById)}
+          onChange={(e) => setDraftRecordedById(e ? e.id : null)}
           dropdownPos={'up'}
         />
 

@@ -66,7 +66,7 @@ export default function SalesReportClient() {
       setLoading(true);
       const startTime = performance.now();
       try {
-        const res = await fetch(`/api/sales?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}`);
+        const res = await fetch(`/api/sales?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}&_t=${Date.now()}`);
         if (res.ok && active) {
            const json = await res.json();
            const endTime = performance.now();
@@ -74,9 +74,9 @@ export default function SalesReportClient() {
            setData(json.data || []);
            setTotalCount(json.total || 0);
 
-           // Update last updated if we have data
-           if (json.data && json.data.length > 0) {
-             const latestDate = new Date(Math.max(...json.data.map((r: any) => new Date(r.created_at || new Date()).getTime())));
+           // Update last updated if we have it from API
+           if (json.lastUpdated) {
+             const latestDate = new Date(json.lastUpdated);
              if (!isNaN(latestDate.getTime())) {
                const timestamp = latestDate.toLocaleString('id-ID', {
                  day: '2-digit', month: 'short', year: 'numeric',
@@ -104,6 +104,7 @@ export default function SalesReportClient() {
         const parsed = JSON.parse(saved);
         if (parsed.startDate) setStartDate(new Date(parsed.startDate));
         if (parsed.endDate) setEndDate(new Date(parsed.endDate));
+        if (parsed.lastUpdated) setLastUpdated(parsed.lastUpdated);
       } catch(e) {}
     }
   }, []);
@@ -123,18 +124,23 @@ export default function SalesReportClient() {
         const newData = await dataRes.json();
         setData(newData.data || []);
         
-        const timestamp = new Date().toLocaleString('id-ID', {
-          day: '2-digit', month: 'short', year: 'numeric',
-          hour: '2-digit', minute: '2-digit', second: '2-digit'
-        });
-        setLastUpdated(timestamp);
+        if (result.lastUpdated) {
+          const latestDate = new Date(result.lastUpdated);
+          if (!isNaN(latestDate.getTime())) {
+            const timestamp = latestDate.toLocaleString('id-ID', {
+              day: '2-digit', month: 'short', year: 'numeric',
+              hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+            setLastUpdated(timestamp);
 
-        // Save state
-        localStorage.setItem('salesReportState', JSON.stringify({
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
-          lastUpdated: timestamp
-        }));
+            // Save state
+            localStorage.setItem('salesReportState', JSON.stringify({
+              startDate: startDate.toISOString(),
+              endDate: endDate.toISOString(),
+              lastUpdated: timestamp
+            }));
+          }
+        }
 
         setDialog({
           isOpen: true,
@@ -173,9 +179,9 @@ export default function SalesReportClient() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
       {/* Control Panel */}
-      <div className="flex justify-center w-full">
+      <div className="flex justify-center w-full shrink-0">
         <div className="card glass relative z-20 overflow-visible p-5 px-8 border border-blue-500/10 w-fit">
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Periode</span>
@@ -200,7 +206,11 @@ export default function SalesReportClient() {
               disabled={loading}
               className="w-full sm:w-auto shrink-0 h-[42px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-8 rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap lg:ml-2"
             >
-              {loading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+              {loading ? (
+                <Loader2 key="loading" size={16} className="animate-spin" />
+              ) : (
+                <Download key="download" size={16} />
+              )}
               {loading ? 'Menarik...' : 'Tarik Data'}
             </button>
           </div>
@@ -209,22 +219,24 @@ export default function SalesReportClient() {
 
       {/* Results View */}
       {data === null && !loading && (
-        <div className="card text-center py-24 text-slate-500 flex flex-col items-center bg-slate-50/50 border-dashed">
+        <div className="card text-center py-20 text-slate-500 flex flex-col items-center bg-slate-50/50 border-dashed justify-center flex-1">
           <Loader2 size={48} className="mb-4 opacity-20 text-blue-600 animate-spin" />
           <p className="font-medium text-slate-600">Sedang memuat data dari database...</p>
         </div>
       )}
 
-      {data !== null && data.length === 0 && !loading && (
-        <div className="card text-center py-20 text-slate-500 flex flex-col items-center bg-white border-dashed">
-          <Search size={48} className="mb-4 opacity-20" />
-          <p>Belum ada data laporan penjualan. Silakan tarik data untuk memulai.</p>
-        </div>
-      )}
+      {data !== null && (
+        <div className="flex flex-col flex-1 gap-4 overflow-hidden min-h-0 relative">
+          {/* Global Loading Overlay (Subtle) */}
+          {loading && (
+            <div className="absolute inset-0 z-30 bg-white/40 backdrop-blur-[1px] flex items-center justify-center rounded-xl transition-all">
+              <div className="bg-white p-3 rounded-full shadow-lg border border-blue-100">
+                <Loader2 size={24} className="text-blue-500 animate-spin" />
+              </div>
+            </div>
+          )}
 
-      {data !== null && data.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 shrink-0">
             <div className="flex items-center gap-4 w-full flex-wrap">
               <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-base">
                   <BarChart3 size={18} className="text-blue-500" /> Hasil Scrapping
@@ -239,7 +251,7 @@ export default function SalesReportClient() {
           </div>
 
           {/* Search Box */}
-          <div className="relative">
+          <div className="relative shrink-0">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
@@ -250,8 +262,17 @@ export default function SalesReportClient() {
             />
           </div>
 
-          <div className="card p-0 overflow-hidden border border-slate-200">
-            <div className="overflow-auto" style={{ maxHeight: '450px' }}>
+          {data.length === 0 ? (
+            <div className="card text-center py-20 text-slate-500 flex flex-col items-center justify-center flex-1 bg-white border-dashed">
+              <Search size={48} className="mb-4 opacity-20" />
+              <p className="font-medium">Tidak ada data ditemukan.</p>
+              <p className="text-xs opacity-60 mt-1">Coba sesuaikan kata kunci pencarian atau rentang tanggal.</p>
+            </div>
+          ) : (
+            <>
+              <div className="card p-0 overflow-hidden border border-slate-200 flex-1 flex flex-col min-h-0">
+
+            <div className="overflow-auto bg-white flex-1 min-h-0">
               <table className="w-full text-left relative">
                 <thead className="sticky top-0 z-10">
                   <tr className="text-slate-500 text-sm border-b border-slate-200 bg-slate-50">
@@ -381,6 +402,8 @@ export default function SalesReportClient() {
               </button>
             </div>
           </div>
+            </>
+          )}
         </div>
       )}
 

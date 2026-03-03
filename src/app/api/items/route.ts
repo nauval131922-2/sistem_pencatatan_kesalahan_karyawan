@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
           harga as harga_jual
         FROM sales_reports 
         WHERE (faktur = ? OR nama_prd = ?) AND nama_prd IS NOT NULL AND nama_prd != ''
-        ORDER BY tgl DESC
+        ORDER BY substr(tgl, 7, 4) ASC, substr(tgl, 4, 2) ASC, substr(tgl, 1, 2) ASC
       `);
       items = stmt.all(orderFaktur || '', orderName) as any[];
     }

@@ -1,3 +1,5 @@
+'use server';
+
 import db from '@/lib/db';
 
 export async function getEmployees() {
@@ -17,8 +19,8 @@ export async function addEmployee(name: string, position: string, department: st
   return result;
 }
 
-export async function getInfractions() {
-  return db.prepare(`
+export async function getInfractions(startDate?: string, endDate?: string) {
+  let query = `
     SELECT 
       i.*,
       e.name as employee_name, e.employee_no, e.position as employee_position,
@@ -31,8 +33,17 @@ export async function getInfractions() {
     LEFT JOIN orders o ON (i.order_faktur = o.faktur)
     LEFT JOIN bahan_baku bb ON (i.item_faktur = bb.faktur AND i.jenis_barang = 'Bahan Baku' AND i.order_name = bb.nama_prd)
     LEFT JOIN barang_jadi bj ON (i.item_faktur = bj.faktur AND i.jenis_barang = 'Barang Jadi' AND i.order_name = bj.nama_prd)
-    ORDER BY i.date DESC, i.id DESC
-  `).all();
+  `;
+
+  const params: any[] = [];
+  if (startDate && endDate) {
+    query += ` WHERE substr(i.date, 1, 10) BETWEEN ? AND ? `;
+    params.push(startDate, endDate);
+  }
+
+  query += ` ORDER BY i.date DESC, i.id DESC `;
+  
+  return db.prepare(query).all(...params);
 }
 
 export async function getActivityLogs(limit = 1000) {

@@ -2,10 +2,41 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, ChevronLeft, ChevronRight, Pencil, Trash2 } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Pencil, Trash2, Calendar, FileText, Printer, Download, RefreshCw } from 'lucide-react';
 import ConfirmDialog, { DialogType } from '@/components/ConfirmDialog';
+import DatePicker from '@/components/DatePicker';
+import { getInfractions } from '@/lib/actions';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const PAGE_SIZE = 10;
+
+// Helper to format Date to YYYY-MM-DD
+function formatDateToYYYYMMDD(date: Date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+// Helper to format "DD-MM-YYYY" or "YYYY-MM-DD" string to "DD MMM YYYY"
+function formatIndoDateStr(tglStr: string) {
+  if (!tglStr) return '';
+  const cleanStr = tglStr.slice(0, 10);
+  const parts = cleanStr.includes('-') ? cleanStr.split('-') : [];
+  if (parts.length === 3) {
+    let d;
+    if (parts[0].length === 4) {
+      d = new Date(`${parts[0]}-${parts[1]}-${parts[2]}T12:00:00Z`);
+    } else {
+      d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T12:00:00Z`);
+    }
+    if (d && !isNaN(d.getTime())) {
+      return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+  }
+  return tglStr;
+}
 
 interface Infraction {
   id: number;
@@ -43,6 +74,14 @@ export default function InfractionsTable({
 }) {
   const router = useRouter();
   const [infractions, setInfractions] = useState<Infraction[]>(initial);
+  const [startDate, setStartDate] = useState<Date>(() => {
+    const d = new Date();
+    d.setDate(1); // Mulai dari awal bulan
+    return d;
+  });
+  const [endDate, setEndDate] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
   const [deleting, setDeleting] = useState<number | null>(null);
@@ -51,7 +90,259 @@ export default function InfractionsTable({
   useEffect(() => {
     setInfractions(initial);
   }, [initial]);
-  
+
+  const fetchFilteredData = async () => {
+    setIsRefreshing(true);
+    try {
+      const start = formatDateToYYYYMMDD(startDate);
+      const end = formatDateToYYYYMMDD(endDate);
+      const data = await getInfractions(start, end);
+      setInfractions(data as Infraction[]);
+      setPage(1);
+    } catch (e) {
+      console.error('Fetch error:', e);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const generatePDF = () => {
+    const doc = new jsPDF({
+      orientation: 'p',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const startStr = formatIndoDateStr(formatDateToYYYYMMDD(startDate));
+    const endStr = formatIndoDateStr(formatDateToYYYYMMDD(endDate));
+
+    // Header Perusahaan
+    doc.setFontSize(22);
+    doc.setTextColor(5, 150, 105); // emerald-600
+    doc.setFont('helvetica', 'bold');
+    doc.text('PT. Buya Barokah', 14, 20);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139); // slate-500
+    doc.setFont('helvetica', 'normal');
+    doc.text('Div. Percetakan', 14, 26);
+    
+    // Header Right Text
+    doc.setFontSize(8);
+    doc.text('SIKKA - Sistem Informasi Pencatatan Kesalahan Karyawan', 196, 20, { align: 'right' });
+    
+    doc.setDrawColor(226, 232, 240); // slate-200
+    doc.setLineWidth(0.5);
+    doc.line(14, 32, 196, 32);
+
+    // Judul Laporan
+    doc.setFontSize(14);
+    doc.setTextColor(30, 41, 59); // slate-800
+    doc.setFont('helvetica', 'bold');
+    doc.text('LAPORAN RINCIAN KESALAHAN KARYAWAN', 14, 42);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    const printedOnStr = formatIndoDateStr(formatDateToYYYYMMDD(new Date()));
+    doc.text(`Periode: ${startStr} s/d ${endStr}`, 14, 48);
+    doc.text(`Total Data: ${infractions.length}`, 14, 56);
+
+    const tableData = infractions.map((inf: Infraction, idx: number) => [
+      idx + 1,
+      formatIndoDateStr(inf.date),
+      inf.employee_name || '-',
+      inf.faktur || '-',
+      inf.order_name_display || '-',
+      inf.nama_barang_display || '-',
+      inf.description || '-',
+      inf.total ? `Rp ${inf.total.toLocaleString('id-ID')}` : '-'
+    ]);
+
+    autoTable(doc, {
+      startY: 59,
+      head: [['No', 'Tanggal', 'Karyawan', 'No. Faktur', 'Order Produksi', 'Nama Barang', 'Deskripsi', 'Total']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [5, 150, 105],
+        textColor: [255, 255, 255],
+        fontSize: 7.5,
+        fontStyle: 'bold',
+        halign: 'center',
+        valign: 'middle'
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 10 },
+        1: { halign: 'center', cellWidth: 20 },
+        2: { cellWidth: 26 },
+        3: { halign: 'center', cellWidth: 20 },
+        4: { cellWidth: 26 },
+        5: { cellWidth: 26 },
+        6: { fontSize: 6.5 },
+        7: { halign: 'right', fontStyle: 'bold', cellWidth: 22 }
+      },
+      styles: {
+        fontSize: 7.5,
+        cellPadding: 2,
+        overflow: 'linebreak',
+        valign: 'top'
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252]
+      },
+      margin: { top: 20, right: 14, bottom: 20, left: 14 },
+      didDrawPage: (data) => {
+        const pageStr = `Halaman ${data.pageNumber}`;
+        const printStr = `Dicetak: ${printedOnStr}`;
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184); // slate-400
+        doc.text(pageStr, 14, doc.internal.pageSize.height - 10);
+        doc.text(printStr, 196, doc.internal.pageSize.height - 10, { align: 'right' });
+      }
+    });
+
+    const pdfOutput = doc.output('bloburl');
+    window.open(pdfOutput, '_blank');
+  };
+
+  const generateSinglePDF = (inf: Infraction) => {
+    const doc = new jsPDF({
+      orientation: 'p',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const docDate = formatIndoDateStr(inf.date);
+    const printedOnStr = formatIndoDateStr(formatDateToYYYYMMDD(new Date()));
+
+    // --- HEADER ---
+    doc.setFontSize(22);
+    doc.setTextColor(5, 150, 105); // emerald-600
+    doc.setFont('helvetica', 'bold');
+    doc.text('PT. Buya Barokah', 14, 20);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139); // slate-500
+    doc.setFont('helvetica', 'normal');
+    doc.text('Div. Percetakan', 14, 26);
+    
+    // SIKKA branding top right
+    doc.setFontSize(8);
+    doc.text('SIKKA - Sistem Informasi Pencatatan Kesalahan Karyawan', 196, 20, { align: 'right' });
+    
+    doc.setDrawColor(226, 232, 240); // slate-200
+    doc.setLineWidth(0.5);
+    doc.line(14, 32, 196, 32);
+
+    // --- TITLE ---
+    doc.setFontSize(16);
+    doc.setTextColor(30, 41, 59); // slate-800
+    doc.setFont('helvetica', 'bold');
+    doc.text('FORMULIR CATATAN KESALAHAN', 105, 45, { align: 'center' });
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 116, 139);
+    doc.text(`No. Referensi: ${inf.faktur || '-'}`, 105, 52, { align: 'center' });
+
+    // --- DATA KARYAWAN & WAKTU ---
+    const startY = 65;
+    doc.setFontSize(10);
+    doc.setTextColor(30, 41, 59);
+
+    // Left Column
+    doc.setFont('helvetica', 'bold');
+    doc.text('Nama Karyawan', 14, startY);
+    doc.text('Tanggal Kejadian', 14, startY + 8);
+    doc.text('Posisi / Bagian', 14, startY + 16);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(`:  ${inf.employee_name || '-'}`, 50, startY);
+    doc.text(`:  ${docDate}`, 50, startY + 8);
+    doc.text(`:  ${inf.employee_position || '-'}`, 50, startY + 16);
+
+    // --- RINCIAN PRODUKSI ---
+    const detailY = startY + 30;
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(5, 150, 105);
+    doc.text('A. RINCIAN PRODUKSI & BARANG', 14, detailY);
+    doc.setDrawColor(5, 150, 105);
+    doc.setLineWidth(0.2);
+    doc.line(14, detailY + 2, 196, detailY + 2);
+
+    doc.setTextColor(30, 41, 59);
+    doc.setFont('helvetica', 'bold');
+    doc.text('No. Order / SPK', 14, detailY + 10);
+    doc.text('Nama Barang', 14, detailY + 18);
+    doc.text('Kategori', 14, detailY + 26);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(`:  ${inf.order_name_display || inf.order_name || '-'}`, 50, detailY + 10);
+    doc.text(`:  ${inf.nama_barang_display || inf.nama_barang || '-'}`, 50, detailY + 18);
+    doc.text(`:  ${inf.jenis_barang || '-'}`, 50, detailY + 26);
+
+    // --- DESKRIPSI KEJADIAN ---
+    const descY = detailY + 40;
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(5, 150, 105);
+    doc.text('B. DESKRIPSI KESALAHAN', 14, descY);
+    doc.line(14, descY + 2, 196, descY + 2);
+
+    doc.setTextColor(30, 41, 59);
+    doc.setFont('helvetica', 'normal');
+    const splitDesc = doc.splitTextToSize(inf.description || 'Tidak ada deskripsi rinci.', 182);
+    doc.text(splitDesc, 14, descY + 10);
+
+    // Calculaate next Y based on description length
+    const descHeight = splitDesc.length * 5;
+
+    // --- DAMPAK FINANCIAL ---
+    const finY = descY + descHeight + 15;
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(5, 150, 105);
+    doc.text('C. DAMPAK BIAYA (BEBAN)', 14, finY);
+    doc.line(14, finY + 2, 196, finY + 2);
+
+    const totalStr = inf.total ? `Rp ${inf.total.toLocaleString('id-ID')}` : '-';
+    const qtyStr = inf.jumlah ? `${inf.jumlah}` : '-';
+    const hargaStr = inf.harga ? `Rp ${inf.harga.toLocaleString('id-ID')}` : '-';
+
+    doc.setTextColor(30, 41, 59);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Kuantitas (Qty)', 14, finY + 10);
+    doc.text('Harga Satuan', 14, finY + 18);
+    doc.text('Total Beban', 14, finY + 26);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(`:  ${qtyStr}`, 50, finY + 10);
+    doc.text(`:  ${hargaStr}`, 50, finY + 18);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`:  ${totalStr}`, 50, finY + 26);
+
+    // --- SIGNATURES ---
+    const sigY = finY + 50;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    
+    doc.text('Mengetahui / Pencatat,', 30, sigY, { align: 'center' });
+    doc.text('( _________________________ )', 30, sigY + 20, { align: 'center' });
+    doc.text(inf.recorded_by_name || inf.recorded_by || 'Admin', 30, sigY + 25, { align: 'center' });
+
+    doc.text('Karyawan Ybs,', 166, sigY, { align: 'center' });
+    doc.text('( _________________________ )', 166, sigY + 20, { align: 'center' });
+    doc.text(inf.employee_name || '-', 166, sigY + 25, { align: 'center' });
+
+
+    // --- FOOTER ---
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184); // slate-400
+    doc.text(`Dicetak: ${printedOnStr}`, 14, doc.internal.pageSize.height - 10);
+    doc.text(`ID Record: ${inf.id}`, 196, doc.internal.pageSize.height - 10, { align: 'right' });
+
+
+    const pdfOutput = doc.output('bloburl');
+    window.open(pdfOutput, '_blank');
+  };
+
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [isDeletingConfirm, setIsDeletingConfirm] = useState(false);
   const [dialogConfig, setDialogConfig] = useState<{
@@ -142,27 +433,80 @@ export default function InfractionsTable({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
       {/* Search */}
-      <h3 className="text-base font-semibold mb-2">Riwayat Kesalahan</h3>
-      <div className="relative">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          type="text"
-          value={query}
-          onChange={handleSearch}
-          placeholder="Cari karyawan, deskripsi, riwayat faktor..."
-          className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
-        />
+      {/* Date Filter & PDF Export Panel */}
+      <div className="flex justify-center w-full shrink-0">
+        <div className="card glass relative z-20 overflow-visible p-5 px-8 border border-emerald-500/10 w-fit flex flex-col sm:flex-row items-center gap-6">
+          <div className="flex items-center gap-4">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Filter Periode</span>
+            <div className="w-[160px] relative">
+              <DatePicker 
+                name="startDate"
+                value={startDate}
+                onChange={setStartDate}
+              />
+            </div>
+            <span className="text-slate-400 font-medium">-</span>
+            <div className="w-[160px] relative">
+              <DatePicker 
+                name="endDate"
+                value={endDate}
+                onChange={setEndDate}
+              />
+            </div>
+            <button 
+              onClick={fetchFilteredData}
+              disabled={isRefreshing}
+              className="p-2.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-xl transition-colors disabled:opacity-50"
+              title="Refresh Data"
+            >
+              <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+            </button>
+          </div>
+
+          <div className="w-px h-8 bg-slate-200 hidden sm:block"></div>
+
+          <button 
+            onClick={generatePDF}
+            className="w-full sm:w-auto h-[42px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white px-8 rounded-xl text-sm font-semibold shadow-md shadow-red-500/20 transition-all whitespace-nowrap"
+          >
+            <FileText size={16} />
+            Cetak PDF (A4)
+          </button>
+        </div>
+      </div>
+
+      {/* Search & Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-end gap-2 shrink-0">
+        <div className="flex items-center gap-4 w-full flex-wrap">
+          <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-base">
+            <Printer size={18} className="text-emerald-500" /> Riwayat Kesalahan
+          </h3>
+          <div className="text-[10px] text-slate-400 font-medium px-2 py-0.5 bg-slate-100 rounded-full uppercase tracking-tighter">
+            {filtered.length} Record Ditemukan
+          </div>
+        </div>
+
+        <div className="relative w-full sm:w-72">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={query}
+            onChange={handleSearch}
+            placeholder="Cari karyawan, deskripsi..."
+            className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors shadow-sm"
+          />
+        </div>
       </div>
 
       {/* Table */}
-      <div className="card p-0 overflow-hidden">
-        <div className="overflow-auto" style={{ maxHeight: '280px' }}>
-          <table className="w-full text-left relative">
+      <div className="card p-0 overflow-hidden flex-1 flex flex-col border border-slate-200 shadow-sm min-h-0">
+        <div className="overflow-auto bg-white flex-1 min-h-0">
+          <table className="w-full text-left relative min-w-[1000px]">
             <thead className="sticky top-0 z-10">
               <tr className="text-slate-500 text-sm border-b border-slate-200 bg-slate-50">
-                <th className="px-5 py-3 font-medium w-24 whitespace-nowrap">Aksi</th>
+                <th className="px-5 py-3 font-medium w-32 whitespace-nowrap">Aksi</th>
                 <th className="px-5 py-3 font-medium whitespace-nowrap">Faktur</th>
                 <th className="px-5 py-3 font-medium whitespace-nowrap">Tanggal</th>
                 <th className="px-5 py-3 font-medium whitespace-nowrap">Karyawan</th>
@@ -185,8 +529,16 @@ export default function InfractionsTable({
               ) : (
                 paginated.map((inf) => (
                   <tr key={inf.id} className="text-sm hover:bg-slate-50 transition-colors group">
-                    <td className="px-5 py-3 w-24 whitespace-nowrap">
-                      <div className="flex items-center gap-1">
+                    <td className="px-5 py-3 w-32 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => generateSinglePDF(inf)}
+                          className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1.5 rounded-md transition-colors shadow-sm"
+                          title="Cetak PDF Faktur"
+                        >
+                          <FileText size={14} />
+                          <span className="text-[10px] font-bold">PDF</span>
+                        </button>
                         <button
                           onClick={() => startEdit(inf)}
                           className="p-1.5 rounded-lg text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
@@ -207,8 +559,11 @@ export default function InfractionsTable({
                     <td className="px-5 py-3 font-mono text-xs text-slate-500 whitespace-nowrap">
                       {inf.faktur || '-'}
                     </td>
-                    <td className="px-5 py-3 text-slate-600 whitespace-nowrap">
-                      {inf.date ? inf.date.slice(0, 10).split('-').reverse().join('-') : '-'}
+                    <td className="px-5 py-3 text-slate-600 text-xs whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <Calendar size={14} className="opacity-40" />
+                        {formatIndoDateStr(inf.date)}
+                      </div>
                     </td>
                     <td className="px-5 py-3 font-semibold text-emerald-600 truncate max-w-[150px]">
                       {inf.employee_name || 'Karyawan Dihapus'}
@@ -218,8 +573,8 @@ export default function InfractionsTable({
                         </div>
                       )}
                     </td>
-                    <td className="px-5 py-3 text-slate-600 max-w-[200px]">
-                      <div className="text-xs line-clamp-2" title={inf.description}>
+                    <td className="px-5 py-3 text-slate-600 max-w-[300px]">
+                      <div className="text-xs line-clamp-3 leading-relaxed" title={inf.description}>
                         {inf.description || '-'}
                       </div>
                     </td>

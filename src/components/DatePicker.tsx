@@ -122,7 +122,7 @@ export default function DatePicker({ name, required, label, onChange, value }: D
   };
 
   const formatted = value
-    ? value.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+    ? value.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
     : '';
 
   const valueStr = value

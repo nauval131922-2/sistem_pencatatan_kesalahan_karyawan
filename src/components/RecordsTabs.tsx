@@ -40,9 +40,9 @@ export default function RecordsTabs({ employees, orders, infractions }: RecordsT
 
 
   return (
-    <div className="w-full">
+    <div className="w-full h-full flex flex-col overflow-hidden min-h-0">
       {/* Tab Navigation */}
-      <div className="flex w-full mb-6 border-b border-zinc-200">
+      <div className="flex w-full shrink-0 border-b border-zinc-200">
         <button
           onClick={() => {
             setActiveTab('list');
@@ -71,17 +71,17 @@ export default function RecordsTabs({ employees, orders, infractions }: RecordsT
       </div>
 
       {/* Tab Content */}
-      <div className="mt-2 outline-none">
+      <div className="flex-1 flex flex-col overflow-hidden pt-4">
         {activeTab === 'list' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="bg-white rounded-xl border border-zinc-200/60 p-4 shadow-sm">
+          <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="flex-1 flex flex-col bg-white rounded-xl border border-zinc-200/60 p-4 shadow-sm overflow-hidden">
               <InfractionsTable infractions={infractions} onEdit={handleEdit} />
             </div>
           </div>
         )}
 
         {activeTab === 'form' && (
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="overflow-auto animate-in fade-in slide-in-from-bottom-2 duration-300 pb-10">
             <RecordsForm 
               employees={employees} 
               orders={orders} 

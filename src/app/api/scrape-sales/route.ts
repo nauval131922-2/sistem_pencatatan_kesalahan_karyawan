@@ -60,55 +60,39 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Failed to login." }, { status: 401 });
     }
 
-    // 2. Fetch data
-    const days = getDatesInRange(startDate, endDate);
-    let allRecords: ScrapeRecord[] = [];
-
-    const fetchDay = async (date: Date): Promise<ScrapeRecord[]> => {
-      const dayStr = formatDate(date);
-      const reqData = {
-        limit: 10000,
-        offset: 0,
-        bsearch: {
-          stgl_awal: dayStr,
-          stgl_akhir: dayStr,
-          ppn: "semua",
-        },
-      };
-
-      const reqJson = encodeURIComponent(JSON.stringify(reqData));
-      const dataUrl = BASE_URL + "v1/pj/r_jual_rkp/gr1?request=" + reqJson;
-
-      try {
-        const res = await fetch(dataUrl, {
-          method: "GET",
-          headers: {
-            Accept: "application/json; charset=utf-8",
-            "X-Bismillah-Api-Key": API_KEY,
-            Cookie: cookies,
-          },
-        });
-
-        const jsonData = await res.json();
-        const records = jsonData.records || jsonData.data || jsonData.rows || jsonData.result || [];
-        
-        return records.filter((r: any) => 
-            String(r.kd_barang || "").toLowerCase().trim() !== "total"
-        );
-      } catch (error) {
-        console.error(`Error fetching sales for ${dayStr}:`, error);
-        return [];
-      }
+    // 2. Fetch data using range
+    const startStr = formatDate(startDate);
+    const endStr = formatDate(endDate);
+    
+    const reqData = {
+      limit: 10000,
+      offset: 0,
+      bsearch: {
+        stgl_awal: startStr,
+        stgl_akhir: endStr,
+        ppn: "semua",
+      },
     };
 
-    const batchSize = 10;
-    for (let i = 0; i < days.length; i += batchSize) {
-      const batch = days.slice(i, i + batchSize);
-      const batchResults = await Promise.all(batch.map(d => fetchDay(d)));
-      for (const records of batchResults) {
-        allRecords = allRecords.concat(records);
-      }
-    }
+    const reqJson = encodeURIComponent(JSON.stringify(reqData));
+    const dataUrl = BASE_URL + "v1/pj/r_jual_rkp/gr1?request=" + reqJson;
+
+    const res = await fetch(dataUrl, {
+      method: "GET",
+      headers: {
+        Accept: "application/json; charset=utf-8",
+        "X-Bismillah-Api-Key": API_KEY,
+        Cookie: cookies,
+      },
+    });
+
+    const jsonData = await res.json();
+    const rawRecords = jsonData.records || jsonData.data || jsonData.rows || jsonData.result || [];
+    
+    // Filter out totals row
+    const allRecords = rawRecords.filter((r: any) => 
+        String(r.kd_barang || "").toLowerCase().trim() !== "total"
+    );
 
     // 3. Save to database - Use UPSERT logic
     // Ensure UNIQUE constraint exists for UPSERT to work effectively. 
@@ -155,7 +139,29 @@ export async function GET(request: NextRequest) {
       VALUES (?, ?, ?, ?, ?, ?)
     `).run('SCRAPE', 'sales_reports', 0, `Tarik Laporan Penjualan (${startParam} s/d ${endParam})`, JSON.stringify({ total: allRecords.length }), 'System');
 
-    return NextResponse.json({ success: true, total: allRecords.length });
+    // Update last_scrape_at for this module
+    try {
+      db.prepare(`
+        INSERT INTO system_settings (key, value, updated_at)
+        VALUES (?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+      `).run('last_scrape_sales', new Date().toISOString());
+    } catch (e) {
+      console.error("Failed to update system_settings:", e);
+    }
+
+    const lastUpdated = new Date().toISOString();
+    try {
+      db.prepare(`
+        INSERT INTO system_settings (key, value, updated_at)
+        VALUES (?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+      `).run('last_scrape_sales', lastUpdated);
+    } catch (e) {
+      console.error("Failed to update system_settings:", e);
+    }
+
+    return NextResponse.json({ success: true, total: allRecords.length, lastUpdated });
 
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
