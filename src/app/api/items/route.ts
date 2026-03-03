@@ -35,21 +35,22 @@ export async function GET(request: NextRequest) {
       `);
       items = stmt.all(orderFaktur || '', orderName) as any[];
       
-      // We also need to fetch "Harga Jual Digit" which comes from 'orders' table
-      const orderStmt = db.prepare(`
-        SELECT harga 
-        FROM orders 
-        WHERE faktur = ? OR nama_prd = ?
-        LIMIT 1
+      items = stmt.all(orderFaktur || '', orderName) as any[];
+    } else if (jenisBarang === 'Penjualan Barang') {
+      // Find items from sales_reports table
+      // We format kd_barang as 'faktur - nama_prd' and nama_barang as 'faktur - nama_prd' as requested
+      const stmt = db.prepare(`
+        SELECT 
+          nama_prd as nama_barang,
+          kd_barang,
+          faktur,
+          harga as harga,
+          harga as harga_jual
+        FROM sales_reports 
+        WHERE (faktur = ? OR nama_prd = ?) AND nama_prd IS NOT NULL AND nama_prd != ''
+        ORDER BY tgl DESC
       `);
-      const orderData = orderStmt.get(orderFaktur || '', orderName) as { harga: number } | undefined;
-      const hargaJual = orderData?.harga || 0;
-      
-      // Inject the 'harga_jual' property so the frontend knows what to use when 'Harga Jual Digit' is selected
-      items = items.map(item => ({
-        ...item,
-        harga_jual: hargaJual
-      }));
+      items = stmt.all(orderFaktur || '', orderName) as any[];
     }
 
     return NextResponse.json({

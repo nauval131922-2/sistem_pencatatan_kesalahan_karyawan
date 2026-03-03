@@ -35,7 +35,22 @@ export default function SalesReportClient() {
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [loadTime, setLoadTime] = useState<number | null>(null);
+  const mountedRef = useMemo(() => ({ current: true }), []);
+  
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [query]);
+  
+  useEffect(() => {
+    return () => { mountedRef.current = false; };
+  }, []);
   
   const [dialog, setDialog] = useState<{isOpen: boolean, type: 'success' | 'error' | 'danger' | 'confirm' | 'alert', title: string, message: string}>({
     isOpen: false,
@@ -44,42 +59,53 @@ export default function SalesReportClient() {
     message: ''
   });
 
-  // Fetch cached data from Local DB on mount
+  // Fetch data from API with pagination and search
   useEffect(() => {
-    async function loadCached() {
+    let active = true;
+    async function loadData() {
+      setLoading(true);
+      const startTime = performance.now();
       try {
-        const res = await fetch('/api/sales');
-        if (res.ok) {
+        const res = await fetch(`/api/sales?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}`);
+        if (res.ok && active) {
            const json = await res.json();
+           const endTime = performance.now();
+           setLoadTime(Math.round(endTime - startTime));
+           setData(json.data || []);
+           setTotalCount(json.total || 0);
+
+           // Update last updated if we have data
            if (json.data && json.data.length > 0) {
-              setData(json.data);
-              // Format last updated from DB if exist
-              const latestDate = new Date(Math.max(...json.data.map((r: any) => new Date(r.created_at || new Date()).getTime())));
-              
-              if (!isNaN(latestDate.getTime())) {
-                const timestamp = latestDate.toLocaleString('id-ID', {
-                  day: '2-digit', month: 'short', year: 'numeric',
-                  hour: '2-digit', minute: '2-digit', second: '2-digit'
-                });
-                setLastUpdated(timestamp);
-              }
-              // Fallback to local storage for dates
-              const saved = localStorage.getItem('salesReportState');
-              if (saved) {
-                try {
-                  const parsed = JSON.parse(saved);
-                  if (parsed.startDate) setStartDate(new Date(parsed.startDate));
-                  if (parsed.endDate) setEndDate(new Date(parsed.endDate));
-                  if (parsed.lastUpdated) setLastUpdated(parsed.lastUpdated);
-                } catch(e) {}
-              }
+             const latestDate = new Date(Math.max(...json.data.map((r: any) => new Date(r.created_at || new Date()).getTime())));
+             if (!isNaN(latestDate.getTime())) {
+               const timestamp = latestDate.toLocaleString('id-ID', {
+                 day: '2-digit', month: 'short', year: 'numeric',
+                 hour: '2-digit', minute: '2-digit', second: '2-digit'
+               });
+               setLastUpdated(timestamp);
+             }
            }
         }
       } catch (err) {
-         console.error('Gagal mengambil cache:', err);
+         console.error('Gagal mengambil data:', err);
+      } finally {
+        if (active) setLoading(false);
       }
     }
-    loadCached();
+    loadData();
+    return () => { active = false; };
+  }, [page, debouncedQuery]);
+
+  // Restore dates from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('salesReportState');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.startDate) setStartDate(new Date(parsed.startDate));
+        if (parsed.endDate) setEndDate(new Date(parsed.endDate));
+      } catch(e) {}
+    }
   }, []);
 
   const handleScrape = async () => {
@@ -125,6 +151,7 @@ export default function SalesReportClient() {
         });
       }
     } catch (err) {
+      if (!mountedRef.current) return;
       setDialog({
         isOpen: true,
         type: 'error',
@@ -132,26 +159,13 @@ export default function SalesReportClient() {
         message: 'Gagal terhubung ke server.'
       });
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   };
 
-  const filteredData = useMemo(() => {
-    if (!data) return [];
-    const lowerQuery = query.toLowerCase();
-    return data.filter(item => 
-      item.nama_prd?.toLowerCase().includes(lowerQuery) ||
-      item.nama_pelanggan?.toLowerCase().includes(lowerQuery) ||
-      item.kd_barang?.toLowerCase().includes(lowerQuery)
-    );
-  }, [data, query]);
-
-  const totalPages = Math.ceil(filteredData.length / PAGE_SIZE);
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
   const currentPage = Math.min(page, totalPages || 1);
-  const paginatedData = useMemo(() => {
-    const startIdx = (currentPage - 1) * PAGE_SIZE;
-    return filteredData.slice(startIdx, startIdx + PAGE_SIZE);
-  }, [filteredData, currentPage]);
+  const paginatedData = data || [];
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
@@ -242,6 +256,7 @@ export default function SalesReportClient() {
                 <thead className="sticky top-0 z-10">
                   <tr className="text-slate-500 text-sm border-b border-slate-200 bg-slate-50">
                     <th className="px-5 py-3 font-medium whitespace-nowrap">Tanggal</th>
+                    <th className="px-5 py-3 font-medium whitespace-nowrap">Faktur</th>
                     <th className="px-5 py-3 font-medium whitespace-nowrap">Nama Order</th>
                     <th className="px-5 py-3 font-medium whitespace-nowrap">Pelanggan</th>
                     <th className="px-5 py-3 font-medium whitespace-nowrap">Nama Barang</th>
@@ -253,7 +268,7 @@ export default function SalesReportClient() {
                 <tbody className="divide-y divide-slate-100">
                   {paginatedData.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-slate-500 italic text-sm">
+                      <td colSpan={8} className="py-12 text-center text-slate-500 italic text-sm">
                         Pencarian "{query}" tidak ditemukan.
                       </td>
                     </tr>
@@ -265,6 +280,9 @@ export default function SalesReportClient() {
                             <Calendar size={14} className="opacity-40" />
                             {formatIndoDateStr(row.tgl)}
                           </div>
+                        </td>
+                        <td className="px-5 py-3 text-blue-600 font-medium whitespace-nowrap">
+                          {row.faktur}
                         </td>
                         <td className="px-5 py-3 font-medium text-slate-800">
                           <div className="flex items-center gap-2">
@@ -303,11 +321,22 @@ export default function SalesReportClient() {
 
           {/* Pagination */}
           <div className="flex items-center justify-between text-sm text-slate-500 px-2 py-2">
-            <span>
-              {filteredData.length === 0
-                ? 'Tidak ada data'
-                : `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, filteredData.length)} dari ${filteredData.length} data`}
-            </span>
+            <div className="flex items-center gap-3">
+              <span>
+                {totalCount === 0
+                  ? 'Tidak ada data'
+                  : `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, totalCount)} dari ${totalCount} data`}
+              </span>
+              {loadTime !== null && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono flex items-center gap-1 ${
+                  loadTime < 200 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 
+                  loadTime < 800 ? 'bg-amber-50 text-amber-600 border border-amber-100' : 
+                  'bg-red-50 text-red-600 border border-red-100'
+                }`}>
+                  <span className="opacity-70">⚡</span> {loadTime}ms
+                </span>
+              )}
+            </div>
 
             <div className="flex items-center gap-1">
               <button

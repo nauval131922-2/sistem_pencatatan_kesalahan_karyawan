@@ -25,7 +25,23 @@ export default function BahanBakuClient() {
 
   // Search & Pagination state
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loadTime, setLoadTime] = useState<number | null>(null);
+  const mountedRef = useMemo(() => ({ current: true }), []);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+      setPage(1);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const [dialog, setDialog] = useState<{isOpen: boolean, type: 'success' | 'error' | 'danger' | 'confirm' | 'alert', title: string, message: string}>({
     isOpen: false,
@@ -34,57 +50,51 @@ export default function BahanBakuClient() {
     message: ''
   });
 
-  // Fetch cached data from Local DB on mount
+  // Fetch data
   useEffect(() => {
-    async function loadCached() {
+    let active = true;
+    async function loadData() {
+      setLoading(true);
+      const startTime = performance.now();
       try {
-        const res = await fetch('/api/bahan-baku');
-        if (res.ok) {
-           const json = await res.json();
-           if (json.data && json.data.length > 0) {
-              setData(json.data);
-              // Format last updated from DB if exist
-              const latestDate = new Date(Math.max(...json.data.map((r: any) => new Date(r.created_at || new Date()).getTime())));
-              
-              if (!isNaN(latestDate.getTime())) {
-                const timestamp = latestDate.toLocaleString('id-ID', {
-                  day: '2-digit', month: 'short', year: 'numeric',
-                  hour: '2-digit', minute: '2-digit', second: '2-digit'
-                });
-                setLastUpdated(timestamp);
-              }
+        const res = await fetch(`/api/bahan-baku?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}`);
+        if (res.ok && active) {
+          const json = await res.json();
+          const endTime = performance.now();
+          setLoadTime(Math.round(endTime - startTime));
+          setData(json.data || []);
+          setTotalCount(json.total || 0);
 
-              // Fallback to local storage for dates
-              const saved = localStorage.getItem('bahanBakuState');
-              if (saved) {
-                try {
-                  const parsed = JSON.parse(saved);
-                  if (parsed.startDate) setStartDate(new Date(parsed.startDate));
-                  if (parsed.endDate) setEndDate(new Date(parsed.endDate));
-                  if (parsed.lastUpdated) setLastUpdated(parsed.lastUpdated); // Priority to last saved explicit scrape time
-                } catch(e) {}
-              }
-           } else {
-             setData([]); // Set explicitly so user doesn't wait forever if db is truly empty
-           }
+          if (json.data && json.data.length > 0) {
+            const latestDate = new Date(Math.max(...json.data.map((r: any) => new Date(r.created_at || new Date()).getTime())));
+            if (!isNaN(latestDate.getTime())) {
+              const timestamp = latestDate.toLocaleString('id-ID', {
+                day: '2-digit', month: 'short', year: 'numeric',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+              });
+              setLastUpdated(timestamp);
+            }
+          }
         }
       } catch (err) {
-         console.error('Gagal mengambil cache:', err);
-         setData([]);
+        console.error('Failed to fetch:', err);
+      } finally {
+        if (active) setLoading(false);
       }
     }
-    loadCached();
-    
-    // Also restore date filters if they exist
-    try {
-      const saved = sessionStorage.getItem('bahanBakuState');
-      if (saved) {
+    loadData();
+    return () => { active = false; };
+  }, [page, debouncedQuery]);
+
+  // Restore state on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('bahanBakuState');
+    if (saved) {
+      try {
         const parsed = JSON.parse(saved);
         if (parsed.startDate) setStartDate(new Date(parsed.startDate));
         if (parsed.endDate) setEndDate(new Date(parsed.endDate));
-      }
-    } catch (e) {
-      console.error('Failed to restore state from sessionStorage', e);
+      } catch(e) {}
     }
   }, []);
 
@@ -140,36 +150,17 @@ export default function BahanBakuClient() {
       });
 
     } catch (err: any) {
+      if (!mountedRef.current) return;
       setError(err.message || 'Gagal mengambil data dari server.');
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
   };
 
   // Filter and paginate data
-  const filteredData = useMemo(() => {
-    if (!data) return [];
-    if (!searchQuery.trim()) return data;
-
-    const lowerQuery = searchQuery.toLowerCase();
-    return data.filter((item) => {
-      return (
-        (item.nama_barang || '').toLowerCase().includes(lowerQuery) ||
-        (item.faktur || '').toLowerCase().includes(lowerQuery) ||
-        (item.faktur_prd || '').toLowerCase().includes(lowerQuery) ||
-        (item.kd_barang || '').toLowerCase().includes(lowerQuery) ||
-        (item.nama_prd || '').toLowerCase().includes(lowerQuery) ||
-        (item.tgl || '').toLowerCase().includes(lowerQuery)
-      );
-    });
-  }, [data, searchQuery]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredData.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const paginatedData = useMemo(() => {
-    const startIdx = (currentPage - 1) * PAGE_SIZE;
-    return filteredData.slice(startIdx, startIdx + PAGE_SIZE);
-  }, [filteredData, currentPage]);
+  const paginatedData = data || [];
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
@@ -322,11 +313,22 @@ export default function BahanBakuClient() {
           </div>
 
           <div className="flex items-center justify-between text-sm text-slate-500">
-            <span>
-              {filteredData.length === 0
-                ? 'Tidak ada data'
-                : `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, filteredData.length)} dari ${filteredData.length} data`}
-            </span>
+            <div className="flex items-center gap-3">
+              <span>
+                {totalCount === 0
+                  ? 'Tidak ada data'
+                  : `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, totalCount)} dari ${totalCount} data`}
+              </span>
+              {loadTime !== null && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono flex items-center gap-1 ${
+                  loadTime < 200 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 
+                  loadTime < 800 ? 'bg-amber-50 text-amber-600 border border-amber-100' : 
+                  'bg-red-50 text-red-600 border border-red-100'
+                }`}>
+                  <span className="opacity-70">⚡</span> {loadTime}ms
+                </span>
+              )}
+            </div>
 
             <div className="flex items-center gap-1">
               <button

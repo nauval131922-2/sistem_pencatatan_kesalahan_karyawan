@@ -242,15 +242,45 @@ export default function RecordsForm({
   const jenisBarangOptions = useMemo(() => [
     { label: 'Bahan Baku', value: 'Bahan Baku' },
     { label: 'Barang Jadi', value: 'Barang Jadi' },
+    { label: 'Penjualan Barang', value: 'Penjualan Barang' },
     { label: 'Input Manual', value: 'Input Manual' }
   ], []);
 
-  const jenisHargaOptions = useMemo(() => [
+  const allJenisHargaOptions = [
     { label: 'HPP Digit', value: 'HPP Digit' },
     { label: 'Harga Jual Digit', value: 'Harga Jual Digit' },
-    { label: 'HPP Kalkulasi', value: 'HPP Kalkulasi' }, // We don't have this DB table yet, but we will leave it as an option
-    { label: 'Input Manual', value: 'Input Manual' }
-  ], []);
+    { label: 'HPP Kalkulasi', value: 'HPP Kalkulasi' },
+    { label: 'Input Manual', value: 'Input Manual' },
+  ];
+
+  const jenisHargaOptions = useMemo(() => {
+    if (jenisBarang === 'Bahan Baku') {
+      return allJenisHargaOptions.filter(o => o.value === 'HPP Digit' || o.value === 'Input Manual');
+    }
+    if (jenisBarang === 'Barang Jadi') {
+      return allJenisHargaOptions.filter(o => o.value === 'HPP Digit' || o.value === 'HPP Kalkulasi' || o.value === 'Input Manual');
+    }
+    if (jenisBarang === 'Penjualan Barang') {
+      return allJenisHargaOptions.filter(o => o.value === 'Harga Jual Digit' || o.value === 'Input Manual');
+    }
+    if (jenisBarang === 'Input Manual') {
+      return allJenisHargaOptions.filter(o => o.value === 'Input Manual');
+    }
+    return allJenisHargaOptions;
+  }, [jenisBarang]);
+
+  // Reset Jenis Harga if current selection is invalid for the new Jenis Barang
+  useEffect(() => {
+    if (jenisBarang === 'Input Manual') {
+      setJenisHarga('Input Manual');
+    } else if (jenisBarang === 'Bahan Baku' && (jenisHarga !== 'HPP Digit' && jenisHarga !== 'Input Manual')) {
+      setJenisHarga('HPP Digit');
+    } else if (jenisBarang === 'Penjualan Barang' && (jenisHarga !== 'Harga Jual Digit' && jenisHarga !== 'Input Manual')) {
+      setJenisHarga('Harga Jual Digit');
+    } else if (jenisBarang === 'Barang Jadi' && (jenisHarga !== 'HPP Digit' && jenisHarga !== 'HPP Kalkulasi' && jenisHarga !== 'Input Manual')) {
+      setJenisHarga('HPP Digit');
+    }
+  }, [jenisBarang]);
 
   // Initialize data when editing
   useEffect(() => {
@@ -312,6 +342,7 @@ export default function RecordsForm({
 
   // Fetch Items when Order or Jenis Barang changes
   useEffect(() => {
+    let active = true;
     async function fetchItems() {
       if (!selectedOrderName || jenisBarang === 'Input Manual') {
         setItems([]);
@@ -320,52 +351,54 @@ export default function RecordsForm({
       setItemsLoading(true);
       try {
         const res = await fetch(`/api/items?order_name=${encodeURIComponent(selectedOrderName)}&order_faktur=${encodeURIComponent(selectedOrderFaktur)}&jenis_barang=${encodeURIComponent(jenisBarang)}`);
-        if (res.ok) {
+        if (res.ok && active) {
           const json = await res.json();
           setItems(json.data || []);
-        } else {
+        } else if (active) {
           setItems([]);
         }
       } catch (err) {
         console.error(err);
-        setItems([]);
+        if (active) setItems([]);
       } finally {
-        setItemsLoading(false);
+        if (active) setItemsLoading(false);
       }
     }
     fetchItems();
-  }, [selectedOrderName, jenisBarang]);
+    return () => { active = false; };
+  }, [selectedOrderName, selectedOrderFaktur, jenisBarang]);
 
   // Fetch HPP Kalkulasi for selectedOrder
   useEffect(() => {
+    let active = true;
     async function fetchHpp() {
       if (!selectedOrderName) {
-        setHppKalkulasiValue(null);
+        if (active) setHppKalkulasiValue(null);
         return;
       }
       try {
         const res = await fetch(`/api/hpp-kalkulasi?order_name=${encodeURIComponent(selectedOrderName)}`);
-        if (res.ok) {
+        if (res.ok && active) {
           const json = await res.json();
           if (json.data && json.data.length > 0) {
             setHppKalkulasiValue(json.data[0].hpp_kalkulasi);
           } else {
             setHppKalkulasiValue(0);
           }
-        } else {
+        } else if (active) {
            setHppKalkulasiValue(null);
         }
       } catch {
-        setHppKalkulasiValue(null);
+        if (active) setHppKalkulasiValue(null);
       }
     }
     fetchHpp();
+    return () => { active = false; };
   }, [selectedOrderName]);
 
   // Handle Logic Harga recalculation (Based heavily on the VBA Logic)
   const calculateAutoHarga = useCallback(() => {
-    if (jenisHarga === 'Input Manual' || jenisBarang === 'Input Manual' || !selectedOrderName) {
-      // Leave harga as is or empty if manual. If it was already manually set, don't overwrite blindly on type change
+    if (jenisBarang === 'Input Manual' || !selectedOrderName) {
       return; 
     }
 
@@ -389,32 +422,16 @@ export default function RecordsForm({
     if (jenisBarang === 'Bahan Baku') {
       if (jenisHarga === 'HPP Digit') {
         calculatedHarga = matchedItem.harga;
-      } else {
-        calculatedHarga = 0; // HPP Kalkulasi & Harga Jual Digit tak ada nilainya untuk BB
       }
     } else if (jenisBarang === 'Barang Jadi') {
       if (jenisHarga === 'HPP Digit') {
         calculatedHarga = matchedItem.harga;
-      } else if (jenisHarga === 'Harga Jual Digit') {
-        const fetchSalesPrice = async () => {
-          try {
-            const res = await fetch(`/api/sales?order_name=${encodeURIComponent(selectedOrderName)}`);
-            const json = await res.json();
-            if (json.success && json.data && json.data.length > 0) {
-              setHarga(String(json.data[0].harga));
-            } else {
-              setHarga('0');
-            }
-          } catch (err) {
-            console.error("Error fetching sales price:", err);
-            setHarga('0');
-          }
-        };
-        fetchSalesPrice();
-        return; // handle price update in async call
       } else if (jenisHarga === 'HPP Kalkulasi') {
-        // Apply the fetched HPP Kalkulasi for the current selected order
         calculatedHarga = hppKalkulasiValue || 0;
+      }
+    } else if (jenisBarang === 'Penjualan Barang') {
+      if (jenisHarga === 'Harga Jual Digit') {
+        calculatedHarga = matchedItem.harga_jual || matchedItem.harga;
       }
     }
 

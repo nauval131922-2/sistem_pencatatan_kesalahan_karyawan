@@ -197,4 +197,43 @@ try {
   db.exec("ALTER TABLE barang_jadi ADD COLUMN faktur_prd TEXT;");
 } catch (e) {}
 
+try {
+  db.exec("ALTER TABLE sales_reports ADD COLUMN faktur TEXT;");
+} catch (e) {}
+
+// --- UPSERT CONSTRAINTS ---
+try {
+  db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_sales_unique ON sales_reports(faktur, kd_barang, tgl);");
+  db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_barang_jadi_unique ON barang_jadi(faktur, kd_barang, tgl);");
+  db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_bahan_baku_unique ON bahan_baku(faktur, kd_barang, tgl);");
+} catch (e) {}
+
+// --- PERFORMANCE INDEXES ---
+try {
+  db.exec("CREATE INDEX IF NOT EXISTS idx_sales_reports_tgl ON sales_reports(tgl);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_sales_reports_nama_prd ON sales_reports(nama_prd);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_sales_reports_faktur ON sales_reports(faktur);");
+  
+  db.exec("CREATE INDEX IF NOT EXISTS idx_barang_jadi_tgl ON barang_jadi(tgl);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_barang_jadi_nama_prd ON barang_jadi(nama_prd);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_barang_jadi_faktur ON barang_jadi(faktur);");
+  
+  db.exec("CREATE INDEX IF NOT EXISTS idx_bahan_baku_tgl ON bahan_baku(tgl);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_bahan_baku_nama_prd ON bahan_baku(nama_prd);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_bahan_baku_faktur ON bahan_baku(faktur);");
+  
+  db.exec("CREATE INDEX IF NOT EXISTS idx_orders_tgl ON orders(tgl);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_orders_faktur ON orders(faktur);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_orders_nama_prd ON orders(nama_prd);");
+  
+  db.exec("CREATE INDEX IF NOT EXISTS idx_employees_nama ON employees(nama);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_employees_nik ON employees(nik);");
+  
+  db.exec("CREATE INDEX IF NOT EXISTS idx_infractions_employee_id ON infractions(employee_id);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_infractions_tgl_kejadian ON infractions(tgl_kejadian);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_infractions_no_faktur ON infractions(no_faktur);");
+} catch (e) {
+  console.error("Failed to create performance indexes:", e);
+}
+
 export default db;

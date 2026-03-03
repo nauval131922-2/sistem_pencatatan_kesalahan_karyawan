@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import RecordsForm from './RecordsForm';
 import InfractionsTable from './InfractionsTable';
 import { ClipboardList, PlusCircle, Pencil } from 'lucide-react';
@@ -12,8 +13,21 @@ type RecordsTabsProps = {
 };
 
 export default function RecordsTabs({ employees, orders, infractions }: RecordsTabsProps) {
-  const [activeTab, setActiveTab] = useState<'list' | 'form'>('list');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  
+  // Get tab from URL, default to 'list'
+  const tabParam = searchParams.get('tab');
+  const activeTab = tabParam === 'form' ? 'form' : 'list';
+
   const [editingInfraction, setEditingInfraction] = useState<any | null>(null);
+
+  const setActiveTab = (tab: 'list' | 'form') => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', tab);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   const handleEdit = (inf: any) => {
     setEditingInfraction(inf);

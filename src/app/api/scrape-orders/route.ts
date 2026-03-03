@@ -152,12 +152,17 @@ export async function GET(request: NextRequest) {
     // Save to database
     let importedCount = 0;
     
-    // As per user request: replace the old data with the newly fetched data
-    db.prepare('DELETE FROM orders').run();
-    
     const insertStmt = db.prepare(`
       INSERT INTO orders (faktur, nama_prd, nama_pelanggan, tgl, qty, harga, jumlah, raw_data)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(faktur) DO UPDATE SET
+        nama_prd = excluded.nama_prd,
+        nama_pelanggan = excluded.nama_pelanggan,
+        tgl = excluded.tgl,
+        qty = excluded.qty,
+        harga = excluded.harga,
+        jumlah = excluded.jumlah,
+        raw_data = excluded.raw_data
     `);
 
     db.transaction(() => {

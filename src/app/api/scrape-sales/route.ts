@@ -110,12 +110,22 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 3. Save to database
-    db.prepare('DELETE FROM sales_reports').run();
+    // 3. Save to database - Use UPSERT logic
+    // Ensure UNIQUE constraint exists for UPSERT to work effectively. 
+    // In this case, we use 'faktur' and 'kd_barang' and 'nama_prd' as unique combo if needed, 
+    // but usually faktur+item is unique enough.
     
     const insertStmt = db.prepare(`
-      INSERT INTO sales_reports (tgl, kd_barang, nama_prd, nama_pelanggan, dati_2, qty, harga, jumlah, raw_data)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO sales_reports (tgl, kd_barang, nama_prd, nama_pelanggan, dati_2, qty, harga, jumlah, faktur, raw_data)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(faktur, kd_barang, tgl) DO UPDATE SET
+        nama_prd = excluded.nama_prd,
+        nama_pelanggan = excluded.nama_pelanggan,
+        dati_2 = excluded.dati_2,
+        qty = excluded.qty,
+        harga = excluded.harga,
+        jumlah = excluded.jumlah,
+        raw_data = excluded.raw_data
     `);
 
     db.transaction(() => {
@@ -130,6 +140,7 @@ export async function GET(request: NextRequest) {
             parseFloat(record.qty || "0") || 0,
             parseFloat(record.harga || "0") || 0,
             parseFloat(record.jumlah || "0") || 0,
+            record.faktur || '',
             JSON.stringify(record)
           );
         } catch (err) {
