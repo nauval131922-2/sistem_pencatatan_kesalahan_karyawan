@@ -18,10 +18,10 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
       }
       const d = new Date(validDt);
       
-      const day = d.toLocaleString('en-GB', { day: '2-digit', timeZone: 'Asia/Jakarta' });
+      const day = d.toLocaleString('id-ID', { day: '2-digit', timeZone: 'Asia/Jakarta' });
       const month = d.toLocaleString('id-ID', { month: 'short', timeZone: 'Asia/Jakarta' });
-      const year = d.toLocaleString('en-GB', { year: 'numeric', timeZone: 'Asia/Jakarta' });
-      const time = d.toLocaleString('en-GB', { 
+      const year = d.toLocaleString('id-ID', { year: 'numeric', timeZone: 'Asia/Jakarta' });
+      const time = d.toLocaleString('id-ID', { 
         hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Asia/Jakarta' 
       });
       
@@ -68,24 +68,26 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
       {/* Search */}
-      <h3 className="text-base font-semibold mb-2">Aktivitas Terkini</h3>
-      <div className="relative">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          type="text"
-          value={search}
-          onChange={handleSearch}
-          placeholder="Cari channel, pesan, atau data..."
-          className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
-        />
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 shrink-0 px-2 mt-2">
+        <h3 className="text-base font-semibold text-slate-800">Aktivitas Terkini</h3>
+        <div className="relative w-full sm:w-72">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={search}
+            onChange={handleSearch}
+            placeholder="Cari channel, pesan..."
+            className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
+          />
+        </div>
       </div>
 
       {/* Table */}
-      <div className="card p-0 overflow-hidden">
-        <div className="overflow-auto" style={{ maxHeight: '280px' }}>
-          <table className="w-full text-left relative">
+      <div className="card p-0 overflow-hidden flex-1 flex flex-col border border-slate-200 shadow-sm min-h-0">
+        <div className="overflow-auto bg-white flex-1 min-h-0">
+          <table className="w-full text-left relative min-w-[800px]">
             <thead className="sticky top-0 z-10">
               <tr className="text-slate-500 text-sm border-b border-slate-200 bg-slate-50">
                 <th className="px-5 py-3 font-medium w-40 whitespace-nowrap">Datetime</th>

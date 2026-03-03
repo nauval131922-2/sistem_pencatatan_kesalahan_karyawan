@@ -20,29 +20,31 @@ export default async function Home() {
   ];
 
   return (
-    <div className="space-y-10">
-      <header className="flex justify-between items-start mb-6">
+    <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden">
+      <header className="flex justify-between items-start shrink-0">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
-          <p className="text-zinc-500 mt-1">Ringkasan aktivitas dan metrik sistem.</p>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-800">Dashboard</h2>
+          <p className="text-slate-500 mt-1 text-sm">Ringkasan aktivitas dan metrik sistem.</p>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
         {statCards.map((card) => (
-          <Link key={card.title} href={card.href} className="card relative overflow-hidden cursor-pointer hover:border-emerald-300 transition-colors block">
+          <Link key={card.title} href={card.href} className="card relative overflow-hidden cursor-pointer hover:border-emerald-300 transition-colors block p-6">
             <div className="flex items-center gap-4 mb-4">
               <div className={`p-3 rounded-xl border ${card.classes}`}>
                 <card.icon size={24} />
               </div>
               <h3 className="text-slate-400 font-medium text-sm">{card.title}</h3>
             </div>
-            <p className="text-4xl font-bold">{card.value}</p>
+            <p className="text-4xl font-bold text-slate-800">{card.value}</p>
           </Link>
         ))}
       </div>
 
-      <ActivityTable initialLogs={logs} />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <ActivityTable initialLogs={logs} />
+      </div>
     </div>
   );
 }

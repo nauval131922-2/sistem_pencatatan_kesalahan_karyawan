@@ -36,7 +36,7 @@ export default function Sidebar() {
 
   return (
     <aside 
-      className={`fixed left-0 top-0 h-screen glass border-r border-slate-200 z-50 transition-all duration-300 ease-in-out ${
+      className={`h-screen glass border-r border-slate-200 transition-all duration-300 ease-in-out shrink-0 ${
         isCollapsed ? 'w-[80px]' : 'w-[210px]'
       }`}
     >

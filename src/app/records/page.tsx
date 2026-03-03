@@ -14,11 +14,11 @@ export default async function RecordsPage() {
   ]);
 
   return (
-    <div className="space-y-4 pb-8">
-      <header className="flex justify-between items-center mb-4">
+    <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
+      <header className="flex justify-between items-center shrink-0 mb-2">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Pencatatan Kesalahan</h2>
-          <p className="text-zinc-500 mt-1">Kelola dan lihat riwayat kesalahan karyawan.</p>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-800">Pencatatan Kesalahan</h2>
+          <p className="text-slate-500 text-sm mt-0.5">Kelola dan lihat riwayat kesalahan karyawan.</p>
         </div>
       </header>
 
