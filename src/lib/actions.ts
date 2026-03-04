@@ -3,7 +3,7 @@
 import db from '@/lib/db';
 
 export async function getEmployees() {
-  return db.prepare('SELECT * FROM employees ORDER BY id ASC').all();
+  return db.prepare('SELECT * FROM employees WHERE is_active = 1 ORDER BY id ASC').all();
 }
 
 export async function addEmployee(name: string, position: string, department: string) {
@@ -23,10 +23,13 @@ export async function getInfractions(startDate?: string, endDate?: string) {
   let query = `
     SELECT 
       i.*,
-      e.name as employee_name, e.employee_no, e.position as employee_position,
-      COALESCE(r.name, i.recorded_by) as recorded_by_name, r.position as recorded_by_position,
-      COALESCE(o.nama_prd, i.order_name) as order_name_display,
-      COALESCE(bb.nama_barang, bj.nama_barang, i.nama_barang) as nama_barang_display
+      COALESCE(i.employee_name, e.name) as employee_name, 
+      i.employee_no, 
+      COALESCE(i.employee_position, e.position) as employee_position,
+      COALESCE(i.recorded_by_name, r.name, i.recorded_by) as recorded_by_name, 
+      COALESCE(i.recorded_by_position, r.position) as recorded_by_position,
+      COALESCE(i.order_name, o.nama_prd) as order_name_display,
+      COALESCE(i.nama_barang, bb.nama_barang, bj.nama_barang) as nama_barang_display
     FROM infractions i 
     LEFT JOIN employees e ON (i.employee_id = e.id OR (i.employee_no IS NOT NULL AND i.employee_no = e.employee_no))
     LEFT JOIN employees r ON (i.recorded_by_id = r.id OR (i.recorded_by_no IS NOT NULL AND i.recorded_by_no = r.employee_no))
@@ -54,16 +57,31 @@ export async function getActivityLogs(limit = 1000) {
   `).all(limit);
 }
 
-export async function addInfraction(employeeId: number, description: string, severity: string, date: string, recordedBy: string, orderName?: string) {
+export async function addInfraction(employeeId: number, description: string, severity: string, date: string, recordedById: number|string, orderName?: string) {
   // If date only (YYYY-MM-DD), append current time
   let fullDate = date;
   if (date.length === 10) {
     const time = new Date().toLocaleTimeString('id-ID', { hour12: false });
     fullDate = `${date} ${time}`;
   }
-  
-  return db.prepare('INSERT INTO infractions (employee_id, description, severity, date, recorded_by, order_name) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(employeeId, description, severity, fullDate, recordedBy, orderName || null);
+
+  // Fetch snapshots
+  const emp = db.prepare('SELECT name, position, employee_no FROM employees WHERE id = ?').get(employeeId) as any;
+  const rec = db.prepare('SELECT name, position, employee_no FROM employees WHERE id = ?').get(recordedById) as any;
+
+  return db.prepare(`
+    INSERT INTO infractions (
+      employee_id, employee_no, employee_name, employee_position,
+      description, severity, date, 
+      recorded_by, recorded_by_id, recorded_by_no, recorded_by_name, recorded_by_position,
+      order_name
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    employeeId, emp?.employee_no, emp?.name, emp?.position,
+    description, severity, fullDate,
+    rec?.name, recordedById, rec?.employee_no, rec?.name, rec?.position,
+    orderName || null
+  );
 }
 
 export async function fetchProductionOrders() {
@@ -72,7 +90,7 @@ export async function fetchProductionOrders() {
 }
 
 export async function getStats() {
-  const totalEmployees = db.prepare('SELECT COUNT(*) as count FROM employees').get() as { count: number };
+  const totalEmployees = db.prepare('SELECT COUNT(*) as count FROM employees WHERE is_active = 1').get() as { count: number };
   const totalInfractions = db.prepare(`
     SELECT COUNT(*) as count FROM infractions i
     LEFT JOIN employees e ON (i.employee_id = e.id OR (i.employee_no IS NOT NULL AND i.employee_no = e.employee_no))

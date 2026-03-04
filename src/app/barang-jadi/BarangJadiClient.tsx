@@ -137,7 +137,6 @@ export default function BarangJadiClient() {
 
     setError('');
     setData(null);
-    setRefreshKey(prev => prev + 1);
     setPage(1);
     setSearchQuery('');
 
@@ -175,8 +174,8 @@ export default function BarangJadiClient() {
     };
     
     try {
-      // Parallel execution with concurrency limit 15 (Pol Mentok)
-      const concurrency = 15;
+      // Parallel execution with concurrency limit 5 (Safe & Stable)
+      const concurrency = 5;
       const queue = [...chunks];
       const workers = Array(Math.min(concurrency, queue.length)).fill(null).map(async () => {
         while (queue.length > 0) {
@@ -316,7 +315,15 @@ export default function BarangJadiClient() {
       {data !== null && (
         <div className="flex flex-col flex-1 gap-4 overflow-hidden min-h-0 relative">
           {/* Global Loading Overlay (Subtle) */}
-          {loading && (
+          {loading && data !== null && (
+            <div className="absolute top-2 right-2 z-30 transition-all animate-in fade-in">
+              <div className="bg-white/80 backdrop-blur-sm p-1.5 rounded-full shadow-sm border border-indigo-100">
+                <Loader2 size={14} className="text-indigo-500 animate-spin" />
+              </div>
+            </div>
+          )}
+
+          {loading && data === null && (
             <div className="absolute inset-0 z-30 bg-white/40 backdrop-blur-[1px] flex items-center justify-center rounded-xl transition-all">
               <div className="bg-white p-3 rounded-full shadow-lg border border-indigo-100">
                 <Loader2 size={24} className="text-indigo-500 animate-spin" />

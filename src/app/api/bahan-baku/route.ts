@@ -29,7 +29,7 @@ export async function GET(request: Request) {
         SELECT id, tgl, nama_barang, kd_barang, qty, satuan, hp, nama_prd, faktur, faktur_prd, created_at 
         FROM bahan_baku 
         WHERE (nama_barang LIKE ? OR nama_prd LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
-        ORDER BY substr(tgl, 7, 4) ASC, substr(tgl, 4, 2) ASC, substr(tgl, 1, 2) ASC, id ASC 
+        ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
         LIMIT ? OFFSET ?
       `).all(...sqlParams);
 
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
         SELECT id, tgl, nama_barang, kd_barang, qty, satuan, hp, nama_prd, faktur, faktur_prd, created_at 
         FROM bahan_baku 
         ${(fromDate && toDate) ? `WHERE 1=1 ${dateFilterSQL}` : ''}
-        ORDER BY substr(tgl, 7, 4) ASC, substr(tgl, 4, 2) ASC, substr(tgl, 1, 2) ASC, id ASC 
+        ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
         LIMIT ? OFFSET ?
       `).all(...sqlParams);
       console.log(`[API] Default branch returned ${records.length} records`);

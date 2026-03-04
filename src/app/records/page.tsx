@@ -9,7 +9,8 @@ export const metadata: Metadata = {
 };
 
 export default async function RecordsPage() {
-  const today = new Date().toISOString().slice(0, 10);
+  // Gunakan timezone WIB (UTC+7) agar tanggal konsisten dengan tampilan lokal
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());
   const [employees, infractions, orders] = await Promise.all([
     getEmployees(),
     getInfractions(today, today),
@@ -32,7 +33,8 @@ export default async function RecordsPage() {
         <RecordsTabs 
           employees={employees as any} 
           orders={orders as any} 
-          infractions={infractions as any} 
+          infractions={infractions as any}
+          initialPeriod={{ start: today, end: today }}
         />
       </Suspense>
     </div>

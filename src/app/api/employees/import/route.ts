@@ -6,7 +6,8 @@ const SHEET_NAME = 'A.DATA KARYAWAN';
 const START_ROW = 6; // data mulai baris 6 (1-indexed)
 
 // Kolom index (0-based): A=0, B=1, C=2, J=9
-const COL_B = 1; // filter: tidak kosong
+const COL_A = 0; // ID Karyawan (employee_no)
+const COL_B = 1; // filter: tidak kosong (baris valid)
 const COL_C = 2; // Nama
 const COL_J = 9; // Jabatan/Bagian
 
@@ -41,27 +42,39 @@ export async function POST(req: NextRequest) {
     db.pragma('foreign_keys = OFF');
 
     const upsert = db.prepare(`
-      INSERT INTO employees (name, position, department, employee_no) 
-      VALUES (?, ?, ?, ?)
+      INSERT INTO employees (name, position, department, employee_no, is_active) 
+      VALUES (?, ?, ?, ?, 1)
       ON CONFLICT(employee_no) DO UPDATE SET
         name = excluded.name,
-        position = excluded.position
+        position = excluded.position,
+        is_active = 1
     `);
 
     const insertMany = db.transaction((validRows: any[][]) => {
       let count = 0;
+      const importedNoSet = new Set<string>();
+
       for (const row of validRows) {
+        const colA = String(row[COL_A] ?? '').trim();
         const colB = String(row[COL_B] ?? '').trim();
-        if (!colB) continue;
+        if (!colB) continue; // filter: kolom B harus tidak kosong
 
         const name = String(row[COL_C] ?? '').trim();
         const position = String(row[COL_J] ?? '').trim();
 
         if (!name || /^\d+$/.test(name)) continue;
 
-        upsert.run(name, position || '-', '-', colB);
+        upsert.run(name, position || '-', '-', colA);
+        importedNoSet.add(colA);
         count++;
       }
+
+      // Soft-delete karyawan yang tidak ada di Excel (Archive)
+      if (count > 0) {
+        const placeholders = Array.from(importedNoSet).map(() => '?').join(',');
+        db.prepare(`UPDATE employees SET is_active = 0 WHERE employee_no NOT IN (${placeholders})`).run(...Array.from(importedNoSet));
+      }
+
       return count;
     });
 

@@ -8,32 +8,36 @@ export async function GET(request: NextRequest) {
     const orderFaktur = searchParams.get('order_faktur');
     const jenisBarang = searchParams.get('jenis_barang'); // 'Bahan Baku' | 'Barang Jadi'
 
-    if (!orderName || !jenisBarang) {
-      return NextResponse.json({ error: "order_name and jenis_barang are required" }, { status: 400 });
+    if (!jenisBarang) {
+      return NextResponse.json({ error: "jenis_barang is required" }, { status: 400 });
     }
 
     let items: any[] = [];
     
-    // Use the appropriate table based on Jenis Barang
+    // Add WHERE conditions dynamically based on presence of order filters
+    const orderFilter = (orderFaktur || orderName) 
+      ? `AND (faktur_prd = ? OR nama_prd = ?)` 
+      : '';
+    const queryParams = (orderFaktur || orderName) ? [orderFaktur || '', orderName || ''] : [];
     if (jenisBarang === 'Bahan Baku') {
       // Find all unique items for this specific order from bahan_baku table
       const stmt = db.prepare(`
         SELECT DISTINCT nama_barang, kd_barang, faktur, hp as harga 
         FROM bahan_baku 
-        WHERE (faktur_prd = ? OR nama_prd = ?) AND nama_barang IS NOT NULL AND nama_barang != ''
+        WHERE nama_barang IS NOT NULL AND nama_barang != '' ${orderFilter}
         ORDER BY nama_barang ASC
       `);
-      items = stmt.all(orderFaktur || '', orderName) as any[];
+      items = stmt.all(...queryParams) as any[];
       
     } else if (jenisBarang === 'Barang Jadi') {
       // Find all unique items for this specific order from barang_jadi table
       const stmt = db.prepare(`
         SELECT DISTINCT nama_barang, kd_barang, faktur, hp as harga 
         FROM barang_jadi 
-        WHERE (faktur_prd = ? OR nama_prd = ?) AND nama_barang IS NOT NULL AND nama_barang != ''
+        WHERE nama_barang IS NOT NULL AND nama_barang != '' ${orderFilter}
         ORDER BY nama_barang ASC
       `);
-      items = stmt.all(orderFaktur || '', orderName) as any[];
+      items = stmt.all(...queryParams) as any[];
       
       items = stmt.all(orderFaktur || '', orderName) as any[];
     } else if (jenisBarang === 'Penjualan Barang') {
@@ -47,10 +51,10 @@ export async function GET(request: NextRequest) {
           harga as harga,
           harga as harga_jual
         FROM sales_reports 
-        WHERE (faktur = ? OR nama_prd = ?) AND nama_prd IS NOT NULL AND nama_prd != ''
+        WHERE nama_prd IS NOT NULL AND nama_prd != '' ${(orderFaktur || orderName) ? `AND (faktur = ? OR nama_prd = ?)` : ''}
         ORDER BY substr(tgl, 7, 4) ASC, substr(tgl, 4, 2) ASC, substr(tgl, 1, 2) ASC
       `);
-      items = stmt.all(orderFaktur || '', orderName) as any[];
+      items = stmt.all(...queryParams) as any[];
     }
 
     return NextResponse.json({

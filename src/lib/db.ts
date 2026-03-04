@@ -1,7 +1,8 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
-const dbPath = path.join(process.cwd(), 'database.sqlite');
+const dbPath = path.join(process.cwd(), process.env.DB_PATH || 'database.sqlite');
+
 const db = new Database(dbPath);
 
 // Enable WAL mode for better performance
@@ -16,6 +17,7 @@ db.exec(`
     position TEXT NOT NULL,
     department TEXT NOT NULL,
     employee_no TEXT UNIQUE,
+    is_active INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -125,6 +127,11 @@ try {
   db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_employee_no ON employees(employee_no);");
 } catch (e) {}
 
+// Migration: tambah kolom is_active jika belum ada
+try {
+  db.exec("ALTER TABLE employees ADD COLUMN is_active INTEGER DEFAULT 1;");
+} catch (e) {}
+
 // Migration to add order_name if it doesn't exist
 try {
   db.exec("ALTER TABLE infractions ADD COLUMN order_name TEXT;");
@@ -148,7 +155,11 @@ const infractionColumns = [
   'jenis_harga TEXT',
   'jumlah REAL',
   'harga REAL',
-  'total REAL'
+  'total REAL',
+  'employee_name TEXT',
+  'employee_position TEXT',
+  'recorded_by_name TEXT',
+  'recorded_by_position TEXT'
 ];
 
 infractionColumns.forEach(col => {
@@ -222,6 +233,9 @@ try {
 try {
   db.exec("CREATE INDEX IF NOT EXISTS idx_infractions_date ON infractions(date);");
   db.exec("CREATE INDEX IF NOT EXISTS idx_infractions_faktur ON infractions(faktur);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_infractions_emp_id ON infractions(employee_id);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_infractions_rec_id ON infractions(recorded_by_id);");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_infractions_emp_no ON infractions(employee_no);");
 
   // --- COMPOSITE & EXPRESSION-BASED INDEXES FOR FAST SORTING ---
   // We use substr-based indexing to match the ORDER BY clauses in API routes

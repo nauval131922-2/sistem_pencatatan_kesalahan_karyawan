@@ -68,32 +68,32 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
+    <div className="flex flex-col gap-4 overflow-hidden">
       {/* Search */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 shrink-0 px-2 mt-2">
-        <h3 className="text-base font-semibold text-slate-800">Aktivitas Terkini</h3>
-        <div className="relative w-full sm:w-72">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 shrink-0 px-1 mt-1">
+        <h3 className="text-sm font-semibold text-slate-800">Aktivitas Terkini</h3>
+        <div className="relative w-full sm:w-64">
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={search}
             onChange={handleSearch}
             placeholder="Cari channel, pesan..."
-            className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
+            className="w-full pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
           />
         </div>
       </div>
 
       {/* Table */}
-      <div className="card p-0 overflow-hidden flex-1 flex flex-col border border-slate-200 shadow-sm min-h-0">
+      <div className="card p-0 overflow-hidden flex flex-col border border-slate-200 shadow-sm min-h-0">
         <div className="overflow-auto bg-white flex-1 min-h-0">
           <table className="w-full text-left relative min-w-[800px]">
             <thead className="sticky top-0 z-10">
-              <tr className="text-slate-500 text-sm border-b border-slate-200 bg-slate-50">
-                <th className="px-5 py-3 font-medium w-40 whitespace-nowrap">Datetime</th>
-                <th className="px-5 py-3 font-medium w-36 whitespace-nowrap">Channel</th>
-                <th className="px-5 py-3 font-medium w-64 whitespace-nowrap">Pesan</th>
-                <th className="px-5 py-3 font-medium whitespace-nowrap">Data</th>
+              <tr className="text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-200 bg-slate-50">
+                <th className="px-4 py-2 font-semibold w-40 whitespace-nowrap">Datetime</th>
+                <th className="px-4 py-2 font-semibold w-36 whitespace-nowrap">Channel</th>
+                <th className="px-4 py-2 font-semibold w-64 whitespace-nowrap">Pesan</th>
+                <th className="px-4 py-2 font-semibold whitespace-nowrap">Data</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -109,23 +109,23 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                   try { parsedData = JSON.parse(log.raw_data); } catch (e) {}
                   
                   return (
-                    <tr key={log.id} className="text-sm hover:bg-slate-50 transition-colors align-top">
-                      <td className="px-5 py-3 text-emerald-600 font-mono text-xs w-40 whitespace-nowrap">
+                    <tr key={log.id} className="text-[11px] hover:bg-slate-50 transition-colors align-top">
+                      <td className="px-4 py-2 text-emerald-600 font-mono w-40 whitespace-nowrap">
                         {fmtDateTime(log.created_at)}
                       </td>
-                      <td className="px-5 py-3 font-medium text-slate-700 w-36">
+                      <td className="px-4 py-2 font-medium text-slate-700 w-36">
                         {getChannelName(log.table_name)}
                       </td>
-                      <td className="px-5 py-3 text-slate-500 w-64">
+                      <td className="px-4 py-2 text-slate-500 w-64 leading-relaxed">
                         {log.message}
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-4 py-2">
                         <details className="group">
-                          <summary className="cursor-pointer text-emerald-600 hover:text-emerald-700 font-medium select-none text-xs list-none flex items-center gap-1">
-                            <svg className="w-3 h-3 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                          <summary className="cursor-pointer text-emerald-600 hover:text-emerald-700 font-medium select-none text-[10px] list-none flex items-center gap-1">
+                            <svg className="w-2.5 h-2.5 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                             Lihat Data
                           </summary>
-                          <div className="mt-2 bg-slate-100 p-2 rounded whitespace-pre-wrap font-mono text-[10px] text-slate-600 break-all w-full">
+                          <div className="mt-1 bg-slate-100 p-1.5 rounded whitespace-pre-wrap font-mono text-[9px] text-slate-600 break-all w-full leading-tight">
                             {JSON.stringify(parsedData, null, 2)}
                           </div>
                         </details>
@@ -140,7 +140,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between text-sm text-slate-500">
+      <div className="flex items-center justify-between text-[11px] text-slate-500 px-1">
         <span>
           {filtered.length === 0
             ? 'Tidak ada data'

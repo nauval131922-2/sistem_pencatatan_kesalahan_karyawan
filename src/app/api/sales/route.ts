@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       : ``;
 
     if (orderName) {
-      data = db.prepare("SELECT id, tgl, kd_barang, nama_prd, nama_pelanggan, dati_2, qty, harga, jumlah, faktur, created_at FROM sales_reports WHERE nama_prd = ? ORDER BY substr(tgl, 7, 4) ASC, substr(tgl, 4, 2) ASC, substr(tgl, 1, 2) ASC LIMIT 1").all(orderName);
+      data = db.prepare("SELECT id, tgl, kd_barang, nama_prd, nama_pelanggan, dati_2, qty, harga, jumlah, faktur, created_at FROM sales_reports WHERE nama_prd = ? ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC LIMIT 1").all(orderName);
       total = data.length;
     } else if (search) {
       const query = `%${search}%`;
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         SELECT id, tgl, kd_barang, nama_prd, nama_pelanggan, dati_2, qty, harga, jumlah, faktur, created_at 
         FROM sales_reports 
         WHERE (nama_prd LIKE ? OR nama_pelanggan LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
-        ORDER BY substr(tgl, 7, 4) ASC, substr(tgl, 4, 2) ASC, substr(tgl, 1, 2) ASC, id ASC 
+        ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
         LIMIT ? OFFSET ?
       `).all(...sqlParams);
 
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
         SELECT id, tgl, kd_barang, nama_prd, nama_pelanggan, dati_2, qty, harga, jumlah, faktur, created_at 
         FROM sales_reports 
         ${(fromDate && toDate) ? `WHERE 1=1 ${dateFilterSQL}` : ''}
-        ORDER BY substr(tgl, 7, 4) ASC, substr(tgl, 4, 2) ASC, substr(tgl, 1, 2) ASC, id ASC 
+        ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
         LIMIT ? OFFSET ?
       `).all(...sqlParams);
 

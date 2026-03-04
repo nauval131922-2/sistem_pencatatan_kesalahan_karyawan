@@ -62,7 +62,7 @@ export default async function EmployeesPage() {
 
       <ExcelUpload />
 
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="min-h-0 overflow-hidden">
         <EmployeeTable employees={employees as any} />
       </div>
     </div>

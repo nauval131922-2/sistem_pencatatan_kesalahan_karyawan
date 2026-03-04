@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Search, ChevronLeft, ChevronRight, Package, Calendar, User, Tag, Hash, RefreshCw, BarChart3, Download, Printer, Loader2, AlertCircle, Clock } from 'lucide-react';
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -50,7 +50,7 @@ export default function OrderProduksiClient() {
   const [batchProgress, setBatchProgress] = useState(0);
   const [batchStatus, setBatchStatus] = useState('');
 
-  const mountedRef = useMemo(() => ({ current: true }), []);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -163,8 +163,8 @@ export default function OrderProduksiClient() {
     };
     
     try {
-      // Parallel execution with concurrency limit 15 (Pol Mentok - Ultra)
-      const concurrency = 15;
+      // Parallel execution with concurrency limit 5 (Safe & Stable)
+      const concurrency = 5;
       const queue = [...chunks];
       const workers = Array(Math.min(concurrency, queue.length)).fill(null).map(async () => {
         while (queue.length > 0) {
@@ -221,6 +221,7 @@ export default function OrderProduksiClient() {
         setIsBatching(false);
         setLoading(false);
         setBatchStatus('');
+        // Trigger one final refresh to show results
         setRefreshKey(prev => prev + 1);
       }
     }
@@ -306,7 +307,15 @@ export default function OrderProduksiClient() {
       {data !== null && (
         <div className="flex flex-col flex-1 gap-4 overflow-hidden min-h-0 relative">
           {/* Global Loading Overlay (Subtle) */}
-          {loading && (
+          {loading && data !== null && (
+            <div className="absolute top-2 right-2 z-30 transition-all animate-in fade-in">
+              <div className="bg-white/80 backdrop-blur-sm p-1.5 rounded-full shadow-sm border border-emerald-100">
+                <Loader2 size={14} className="text-emerald-500 animate-spin" />
+              </div>
+            </div>
+          )}
+
+          {loading && data === null && (
             <div className="absolute inset-0 z-30 bg-white/40 backdrop-blur-[1px] flex items-center justify-center rounded-xl transition-all">
               <div className="bg-white p-3 rounded-full shadow-lg border border-emerald-100">
                 <Loader2 size={24} className="text-emerald-500 animate-spin" />
@@ -426,6 +435,14 @@ export default function OrderProduksiClient() {
             </div>
 
             <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
               {/* Page numbers */}
               {Array.from({ length: totalPages }, (_, i) => i + 1)
                 .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)

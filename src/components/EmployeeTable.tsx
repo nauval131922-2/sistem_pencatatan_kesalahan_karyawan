@@ -37,7 +37,7 @@ export default function EmployeeTable({ employees }: { employees: Employee[] }) 
   };
 
   return (
-    <div className="h-full flex flex-col gap-3 overflow-hidden">
+    <div className="flex flex-col gap-3 overflow-hidden">
       {/* Heading & Search */}
       <div className="flex flex-col sm:flex-row justify-between items-center gap-3 shrink-0">
         <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-sm shrink-0">
@@ -56,7 +56,7 @@ export default function EmployeeTable({ employees }: { employees: Employee[] }) 
       </div>
 
       {/* Table */}
-      <div className="card p-0 overflow-hidden flex-1 flex flex-col border border-slate-200/60 shadow-sm min-h-0">
+      <div className="card p-0 overflow-hidden flex flex-col border border-slate-200/60 shadow-sm min-h-0">
         <div className="overflow-auto flex-1 min-h-0">
           <table className="w-full text-left relative min-w-[600px]">
             <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-sm">

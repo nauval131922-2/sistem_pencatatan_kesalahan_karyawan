@@ -108,12 +108,21 @@ export default function ManualModal() {
         'Atur **Tgl Mulai & Akhir** untuk memfilter data riwayat kesalahan.',
         '**Data Otomatis Memuat**: Tabel akan terupdate otomatis setiap kali tanggal diubah.',
         'Klik tombol **Cetak PDF** untuk membuat laporan rekap atau formulir detail.',
-        'TAB TAMBAH DATA:',
-        'Pilih **Nama Order**: Mengaitkan kesalahan dengan order yang relevan.',
-        'Pilih **Jenis Barang**: Memfilter apakah Bahan Baku, Barang Jadi, atau Penjualan.',
-        'Pilih **Nama Barang**: Muncul otomatis sesuai Order dan Jenis yang dipilih.',
-        'Pilih **Jenis Harga**: Menarik harga otomatis (**HPP Digit**, **HPP Kalkulasi**, atau **Harga Jual**).',
-        'Isi **Jumlah**: Maka **Total Beban** (Harga × Jumlah) akan dihitung otomatis.'
+        'TAB TAMBAH/EDIT DATA:',
+        '**Faktur**: Otomatis di-generate berdasarkan hari, bulan dan tahun pilihan Tanggal Input Data.',
+        '**Pilih Tanggal**: Pilih tanggal pencatatan kesalahan karyawan.',
+        '**Nama Karyawan**: Pilih karyawan yang melakukan kesalahan dari daftar yang tersedia (data ini diambil dari menu **Data Karyawan** via Upload Excel).',
+        '**Nama Order**: Pilih order terkait (data diambil dari menu **Order Produksi**).',
+        '**Jenis Barang**: Pilih kategori barang sesuai sumber harganya:',
+        '  • **Bahan Baku (Digit)**: Barang mentah, harga diambil dari menu **Bahan Baku**.',
+        '  • **Barang Jadi (Digit)**: Hasil produksi, harga diambil dari menu **Barang Jadi**.',
+        '  • **HPP Kalkulasi (Excel)**: Perhitungan HPP per-Order, harga diambil dari database Excel yang diupload di menu **HPP Kalkulasi**.',
+        '  • **Penjualan Barang (Digit)**: Barang keluar/jual, harga diambil dari menu **Laporan Penjualan**.',
+        '**Nama Barang**: Pilih barang spesifik. Anda bisa mengetik **Nomor Faktur** barang untuk pencarian cepat antar-Order.',
+        '**Deskripsi**: Jelaskan detail kesalahan karyawan (opsional).',
+        '**Jenis Harga**: Dipilihkan otomatis sesuai **Jenis Barang**. Nilai harga akan ditarik dari menu referensi masing-masing.',
+        '**Jumlah (Qty)**: Isi jumlah barang yang rusak/salah untuk menghitung **Total Beban** otomatis.',
+        '**Dicatat Oleh**: Pilih petugas yang melakukan pencatatan data ini (data diambil dari menu **Data Karyawan**).'
       ]
     }
   }), []);
@@ -192,14 +201,22 @@ export default function ManualModal() {
                     {/* Steps / Cara Penggunaan */}
                     <div className="space-y-3.5 pl-1">
                       {currentGuide.steps.map((step, index) => {
-                        const isHeader = step.endsWith(':');
+                        const isHeader = step.endsWith(':') && step === step.toUpperCase() && !step.includes('**');
+                        const isSubStep = step.trimStart().startsWith('•') || step.startsWith('  ');
+                        const cleanText = isSubStep ? step.trimStart().replace(/^[•\s]+/, '') : step;
+                        
                         return (
-                          <div key={index} className={`flex ${isHeader ? 'mt-3 first:mt-0' : 'gap-3 pl-2'} group items-start`}>
-                            {!isHeader && (
+                          <div key={index} className={`flex ${isHeader ? 'mt-3 first:mt-0' : 'gap-3'} ${isSubStep ? 'pl-8 py-0.5' : 'pl-2'} group items-start`}>
+                            {isHeader ? null : isSubStep ? (
+                              <div className="flex-shrink-0 w-1 h-1 mt-2 rounded-full border border-emerald-400 bg-white" />
+                            ) : (
                               <div className="flex-shrink-0 w-1.5 h-1.5 mt-2 rounded-full bg-emerald-500 group-hover:scale-125 transition-all shadow-sm" />
                             )}
-                            <p className={`text-sm leading-relaxed ${isHeader ? 'font-bold text-slate-800 uppercase tracking-widest text-xs' : 'text-slate-600'}`}>
-                              {renderText(step)}
+                            <p className={`text-sm leading-relaxed ${
+                              isHeader ? 'font-bold text-slate-800 uppercase tracking-widest text-xs' : 
+                              isSubStep ? 'text-slate-500 text-[13px]' : 'text-slate-600'
+                            }`}>
+                              {renderText(cleanText)}
                             </p>
                           </div>
                         );

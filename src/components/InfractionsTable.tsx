@@ -67,10 +67,14 @@ interface Infraction {
 
 export default function InfractionsTable({ 
   infractions: initial,
-  onEdit 
+  onEdit,
+  onPeriodChange,
+  onRefresh,
 }: { 
   infractions: Infraction[];
   onEdit?: (inf: Infraction) => void;
+  onPeriodChange?: (start: string, end: string) => void;
+  onRefresh?: (period?: { start: string; end: string }) => Promise<void>;
 }) {
   const router = useRouter();
   const [infractions, setInfractions] = useState<Infraction[]>(initial);
@@ -102,8 +106,13 @@ export default function InfractionsTable({
     try {
       const start = formatDateToYYYYMMDD(startDate);
       const end = formatDateToYYYYMMDD(endDate);
-      const data = await getInfractions(start, end);
-      setInfractions(data as Infraction[]);
+      // Use client-side API for fast fetch (no server action overhead)
+      const res = await fetch(`/api/infractions?start=${start}&end=${end}`);
+      if (res.ok) {
+        const json = await res.json();
+        setInfractions(json.data || []);
+        if (onPeriodChange) onPeriodChange(start, end);
+      }
       setPage(1);
     } catch (e) {
       console.error('Fetch error:', e);
@@ -481,15 +490,7 @@ export default function InfractionsTable({
       </div>
 
       {/* Search & Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-end gap-2 shrink-0">
-        <div className="flex items-center gap-4 w-full flex-wrap">
-          <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-sm">
-            <Printer size={16} className="text-emerald-500" /> Riwayat Kesalahan
-          </h3>
-          <div className="text-[10px] text-slate-400 font-medium px-2 py-0.5 bg-slate-100 rounded-full uppercase tracking-tighter">
-            {filtered.length} Record Ditemukan
-          </div>
-        </div>
+      <div className="flex flex-col sm:flex-row justify-end items-end gap-2 shrink-0">
 
         <div className="relative w-full sm:w-72">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />

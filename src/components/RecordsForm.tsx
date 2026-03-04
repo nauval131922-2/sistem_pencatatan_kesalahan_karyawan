@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, ChevronDown, AlertTriangle, Loader2 } from 'lucide-react';
+import { Search, ChevronDown, AlertTriangle, Loader2, Users, Box, Star, CheckCircle2 } from 'lucide-react';
 import ConfirmDialog, { DialogType } from '@/components/ConfirmDialog';
 import DatePicker from '@/components/DatePicker';
 
@@ -181,12 +181,14 @@ export default function RecordsForm({
   editingInfraction,
   onCancelEdit,
   onSuccessEdit,
+  onRefreshInfractions,
 }: {
   employees: Employee[];
   orders: Order[];
   editingInfraction?: any;
   onCancelEdit?: () => void;
   onSuccessEdit?: () => void;
+  onRefreshInfractions?: () => Promise<void>;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -232,6 +234,7 @@ export default function RecordsForm({
   const [items, setItems] = useState<ItemData[]>([]);
   const [itemsLoading, setItemsLoading] = useState(false);
   const [hppKalkulasiValue, setHppKalkulasiValue] = useState<number | null>(null);
+  const [hppLoading, setHppLoading] = useState(false);
   const [selectedNamaBarang, setSelectedNamaBarang] = useState<string>('');
   const [selectedItemFaktur, setSelectedItemFaktur] = useState<string>('');
   const [manualNamaBarang, setManualNamaBarang] = useState<string>('');
@@ -241,21 +244,26 @@ export default function RecordsForm({
   const [harga, setHarga] = useState<string>('');
   const [draftEmployeeId, setDraftEmployeeId] = useState<number | null>(null);
   const [draftRecordedById, setDraftRecordedById] = useState<number | null>(null);
+  // Separate display-only states for order and item (decoupled from items-loading state)
+  const [draftOrderFaktur, setDraftOrderFaktur] = useState<string>('');
+  const [draftItemFaktur, setDraftItemFaktur] = useState<string | null>('');
+
 
   // Fixed options arrays
-  const jenisBarangOptions = useMemo(() => [
-    { label: 'Bahan Baku', value: 'Bahan Baku' },
-    { label: 'Barang Jadi', value: 'Barang Jadi' },
-    { label: 'Penjualan Barang', value: 'Penjualan Barang' },
-    { label: 'Input Manual', value: 'Input Manual' }
-  ], []);
+  const jenisBarangOptions = [
+  { label: 'Bahan Baku (Digit)', value: 'Bahan Baku' },
+  { label: 'Barang Jadi (Digit)', value: 'Barang Jadi' },
+  { label: 'HPP Kalkulasi (Excel)', value: 'HPP Kalkulasi' },
+  { label: 'Penjualan Barang (Digit)', value: 'Penjualan Barang' },
+  { label: 'Input Manual', value: 'Input Manual' },
+];
 
-  const allJenisHargaOptions = [
-    { label: 'HPP Digit', value: 'HPP Digit' },
-    { label: 'Harga Jual Digit', value: 'Harga Jual Digit' },
-    { label: 'HPP Kalkulasi', value: 'HPP Kalkulasi' },
-    { label: 'Input Manual', value: 'Input Manual' },
-  ];
+const allJenisHargaOptions = [
+  { label: 'HPP Digit', value: 'HPP Digit' },
+  { label: 'Harga Jual Digit', value: 'Harga Jual Digit' },
+  { label: 'HPP Kalkulasi', value: 'HPP Kalkulasi' },
+  { label: 'Input Manual', value: 'Input Manual' },
+];
 
   const jenisHargaOptions = useMemo(() => {
     if (jenisBarang === 'Bahan Baku') {
@@ -270,8 +278,21 @@ export default function RecordsForm({
     if (jenisBarang === 'Input Manual') {
       return allJenisHargaOptions.filter(o => o.value === 'Input Manual');
     }
-    return allJenisHargaOptions;
+    if (jenisBarang === 'HPP Kalkulasi') {
+      return allJenisHargaOptions.filter(o => o.value === 'HPP Kalkulasi');
+    }
+    if (jenisBarang === 'Penjualan Barang') {
+      return allJenisHargaOptions.filter(o => o.value === 'Harga Jual Digit');
+    }
+    return [{ label: 'Pilih Jenis Barang Dulu', value: '' }];
   }, [jenisBarang]);
+
+  // Sync jenisHarga when jenisBarang changes and has only 1 option
+  useEffect(() => {
+    if (jenisHargaOptions.length === 1 && jenisHarga !== jenisHargaOptions[0].value) {
+      setJenisHarga(jenisHargaOptions[0].value);
+    }
+  }, [jenisHargaOptions, jenisHarga]);
 
   // Reset Jenis Harga if current selection is invalid for the new Jenis Barang
   useEffect(() => {
@@ -311,20 +332,38 @@ export default function RecordsForm({
       setSelectedDate(parsedDate);
       setFakturPreview(editingInfraction.faktur || 'Tanpa Faktur');
 
+      // Always load from snapshot so items still fetch correctly
       setSelectedOrderFaktur(editingInfraction.order_faktur || '');
       setSelectedOrderName(editingInfraction.order_name || '');
+
+      // Check if order still exists in source with same nama_prd
+      const orderMatch = orders.find(o => o.faktur === editingInfraction.order_faktur);
+      const orderUnchanged = orderMatch && (orderMatch as any).nama_prd === editingInfraction.order_name;
+      setDraftOrderFaktur(orderUnchanged ? (editingInfraction.order_faktur || '') : '');
+
       setJenisBarang(editingInfraction.jenis_barang || 'Bahan Baku');
       setJenisHarga(editingInfraction.jenis_harga || 'HPP Digit');
       
       if (editingInfraction.jenis_barang === 'Input Manual') {
         setManualNamaBarang(editingInfraction.nama_barang || '');
+        setDraftItemFaktur('');
       } else {
         setSelectedNamaBarang(editingInfraction.nama_barang || '');
         setSelectedItemFaktur(editingInfraction.item_faktur || '');
+        // draftItemFaktur will be set after items load (in fetchItems useEffect)
+        setDraftItemFaktur('__pending__');
       }
 
       setJumlah(editingInfraction.jumlah ? String(editingInfraction.jumlah) : '');
       setHarga(editingInfraction.harga ? String(editingInfraction.harga) : '');
+      // Pre-select only if still exists AND name/data unchanged
+      const empMatch = employees.find(e => e.id === editingInfraction.employee_id);
+      const empUnchanged = empMatch && empMatch.name === editingInfraction.employee_name;
+      setDraftEmployeeId(empUnchanged ? editingInfraction.employee_id : null);
+
+      const recMatch = employees.find(e => e.id === editingInfraction.recorded_by_id);
+      const recUnchanged = recMatch && recMatch.name === editingInfraction.recorded_by_name;
+      setDraftRecordedById(recUnchanged ? editingInfraction.recorded_by_id : null);
       
     } else {
       // Check for draft
@@ -394,8 +433,60 @@ export default function RecordsForm({
     setHarga('');
     setDraftEmployeeId(null);
     setDraftRecordedById(null);
+    setDraftOrderFaktur('');
+    setDraftItemFaktur('');
     localStorage.removeItem('infraction_form_draft');
   };
+
+  // Augmented employee list to include historical value if missing
+  const allEmployees = useMemo(() => {
+    let list = [...employees];
+    if (editingInfraction) {
+      // Check for employee_id
+      const empId = editingInfraction.employee_id;
+      if (empId && !list.find(e => e.id === empId)) {
+        list.push({
+          id: empId,
+          name: editingInfraction.employee_name || 'Unknown',
+          position: editingInfraction.employee_position || '-',
+          employee_no: editingInfraction.employee_no || '',
+          is_active: 0
+        } as any);
+      }
+      
+      // Check for recorded_by_id
+      const recId = editingInfraction.recorded_by_id;
+      if (recId && !list.find(e => e.id === recId)) {
+        list.push({
+          id: recId,
+          name: editingInfraction.recorded_by_name || 'Unknown',
+          position: editingInfraction.recorded_by_position || '-',
+          employee_no: editingInfraction.recorded_by_no || '',
+          is_active: 0
+        } as any);
+      }
+    }
+    return list;
+  }, [employees, editingInfraction]);
+
+  // Augmented orders list: only add ghost if order is NOT found at all
+  const allOrders = useMemo(() => {
+    let list = [...orders];
+    if (editingInfraction && editingInfraction.order_faktur) {
+      const found = list.find(o => o.faktur === editingInfraction.order_faktur);
+      if (!found) {
+        // Deleted: inject ghost so it can be pre-selected
+        list.push({
+          faktur: editingInfraction.order_faktur,
+          nama_prd: editingInfraction.order_name || 'Data Terhapus',
+          is_ghost: true
+        } as any);
+        setDraftOrderFaktur(editingInfraction.order_faktur);
+      }
+      // If found but renamed → draftOrderFaktur stays '' (set in useEffect), no ghost needed
+    }
+    return list;
+  }, [orders, editingInfraction]);
 
   // Fetch Items when Order or Jenis Barang changes
   useEffect(() => {
@@ -410,7 +501,40 @@ export default function RecordsForm({
         const res = await fetch(`/api/items?order_name=${encodeURIComponent(selectedOrderName)}&order_faktur=${encodeURIComponent(selectedOrderFaktur)}&jenis_barang=${encodeURIComponent(jenisBarang)}`);
         if (res.ok && active) {
           const json = await res.json();
-          setItems(json.data || []);
+          let fetchedItems = json.data || [];
+          
+          // Check if editing item exists in fetched results
+          if (editingInfraction && 
+              editingInfraction.item_faktur && 
+              editingInfraction.jenis_barang === jenisBarang && 
+              (editingInfraction.order_faktur === selectedOrderFaktur || !selectedOrderFaktur)) {
+            const itemInSource = fetchedItems.find((i: any) => i.faktur === editingInfraction.item_faktur);
+            if (!itemInSource) {
+              // Deleted: inject ghost and auto-select
+              fetchedItems.push({
+                faktur: editingInfraction.item_faktur,
+                nama_barang: editingInfraction.nama_barang,
+                harga: editingInfraction.harga,
+                is_ghost: true
+              });
+              if (active) setDraftItemFaktur(editingInfraction.item_faktur);
+            } else if (itemInSource.nama_barang !== editingInfraction.nama_barang) {
+              // Exists but nama_barang renamed: inject ghost for placeholder, but don't auto-select
+              fetchedItems.push({
+                faktur: editingInfraction.item_faktur + '__hist',
+                nama_barang: editingInfraction.nama_barang,
+                harga: editingInfraction.harga,
+                is_ghost: true
+              });
+              if (active) setDraftItemFaktur('');
+            } else {
+              // Unchanged: auto-select
+              if (active) setDraftItemFaktur(editingInfraction.item_faktur);
+            }
+          } else if (draftItemFaktur === '__pending__') {
+            if (active) setDraftItemFaktur(selectedItemFaktur);
+          }
+          if (active) setItems(fetchedItems);
         } else if (active) {
           setItems([]);
         }
@@ -430,23 +554,35 @@ export default function RecordsForm({
     let active = true;
     async function fetchHpp() {
       if (!selectedOrderName) {
-        if (active) setHppKalkulasiValue(null);
+        if (active) { setHppKalkulasiValue(null); setHppLoading(false); }
         return;
       }
+      if (active) setHppLoading(true);
       try {
         const res = await fetch(`/api/hpp-kalkulasi?order_name=${encodeURIComponent(selectedOrderName)}`);
         if (res.ok && active) {
           const json = await res.json();
           if (json.data && json.data.length > 0) {
             setHppKalkulasiValue(json.data[0].hpp_kalkulasi);
+            setHppLoading(false);
+            if (jenisBarang === 'HPP Kalkulasi') {
+              setSelectedNamaBarang(selectedOrderName);
+              setHarga(String(json.data[0].hpp_kalkulasi || ''));
+            }
           } else {
             setHppKalkulasiValue(0);
+            setHppLoading(false);
+            if (jenisBarang === 'HPP Kalkulasi') {
+              setSelectedNamaBarang(''); // Not found → clear nama barang
+              setHarga('');
+            }
           }
         } else if (active) {
-           setHppKalkulasiValue(null);
+          setHppKalkulasiValue(null);
+          setHppLoading(false);
         }
       } catch {
-        if (active) setHppKalkulasiValue(null);
+        if (active) { setHppKalkulasiValue(null); setHppLoading(false); }
       }
     }
     fetchHpp();
@@ -459,16 +595,25 @@ export default function RecordsForm({
       return; 
     }
 
+    // HPP Kalkulasi doesn't need an item match — price comes directly from order
+    if (jenisBarang === 'HPP Kalkulasi') {
+      setHarga(hppKalkulasiValue != null && hppKalkulasiValue > 0 ? String(hppKalkulasiValue) : '');
+      return;
+    }
+
     const actualItemName = selectedNamaBarang;
     if (!actualItemName) {
       setHarga('');
       return;
     }
 
-    const matchedItem = items.find(i => 
-      (selectedItemFaktur && i.faktur === selectedItemFaktur) || 
-      (!selectedItemFaktur && i.nama_barang === actualItemName)
-    );
+    const matchedItem = items.find(i => {
+      // Prioritaskan ID unik (faktur item itu sendiri) jika ada
+      if (selectedItemFaktur && i.faktur === selectedItemFaktur) return true;
+      // Fallback ke nama jika tidak ada faktur terpilih
+      if (!selectedItemFaktur && i.nama_barang === actualItemName) return true;
+      return false;
+    });
     if (!matchedItem) {
       setHarga('');
       return;
@@ -483,8 +628,6 @@ export default function RecordsForm({
     } else if (jenisBarang === 'Barang Jadi') {
       if (jenisHarga === 'HPP Digit') {
         calculatedHarga = matchedItem.harga;
-      } else if (jenisHarga === 'HPP Kalkulasi') {
-        calculatedHarga = hppKalkulasiValue || 0;
       }
     } else if (jenisBarang === 'Penjualan Barang') {
       if (jenisHarga === 'Harga Jual Digit') {
@@ -494,7 +637,7 @@ export default function RecordsForm({
 
     setHarga(calculatedHarga > 0 ? String(calculatedHarga) : '');
 
-  }, [jenisBarang, jenisHarga, selectedNamaBarang, selectedOrderName, items, hppKalkulasiValue]);
+  }, [jenisBarang, jenisHarga, selectedNamaBarang, selectedItemFaktur, selectedOrderName, items, hppKalkulasiValue]);
 
   // Run calculation when dependencies change
   useEffect(() => {
@@ -504,7 +647,7 @@ export default function RecordsForm({
        // However, to deeply mimic excel, we overwrite it when these parameters change.
        calculateAutoHarga();
     }
-  }, [jenisBarang, jenisHarga, selectedNamaBarang, selectedOrderName, items, calculateAutoHarga, editingInfraction]);
+  }, [jenisBarang, jenisHarga, selectedNamaBarang, selectedItemFaktur, selectedOrderName, items, calculateAutoHarga, editingInfraction]);
 
   // Derived Total
   const totalValue = useMemo(() => {
@@ -589,6 +732,8 @@ export default function RecordsForm({
       headers = { 'Content-Type': 'application/json' };
       const updateData: Record<string, any> = {};
       formData.forEach((value, key) => { updateData[key] = value });
+      // Pass faktur so PUT handler doesn't need an extra SELECT
+      updateData.faktur = editingInfraction?.faktur || null;
       body = JSON.stringify(updateData);
     }
 
@@ -624,7 +769,12 @@ export default function RecordsForm({
             resetFormStates();
             setResetKey(k => k + 1);
           }
-          router.refresh(); // Sync data without full reload
+          // Refresh data client-side (fast) instead of full router.refresh()
+          if (onRefreshInfractions) {
+            onRefreshInfractions();
+          } else {
+            router.refresh();
+          }
         });
       } else {
         closeDialog(); // Clear confirm dialog
@@ -640,8 +790,10 @@ export default function RecordsForm({
     }
   };
 
-  const inputCls = 'w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-emerald-500 transition-colors text-slate-800';
-  const labelCls = 'block text-[10px] font-bold text-slate-500 uppercase mb-1.5';
+  const inputCls = 'w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all text-slate-800 placeholder:text-slate-300';
+  const labelCls = 'block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2';
+  const sectionHeaderCls = 'flex items-center gap-2 pb-2 border-b border-slate-100 mb-4';
+  const sectionTitleCls = 'text-[11px] font-extrabold text-slate-400 uppercase tracking-[0.2em]';
 
   // Helper to format string with dots for thousands and keep comma for decimal
   const formatDisplay = (val: string) => {
@@ -663,259 +815,322 @@ export default function RecordsForm({
   };
 
   return (
-    <div className="card glass overflow-visible">
-      <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
-        <AlertTriangle className="text-amber-500" size={18} />
-        {editingInfraction ? 'Edit Kesalahan' : 'Catat Kesalahan'}
-      </h3>
-
-      {/* Faktur preview */}
-      <div className="mb-4 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
-        <span className="text-[10px] text-slate-400 uppercase font-semibold tracking-wide">No. Faktur</span>
-        <span className="ml-auto font-mono text-xs text-emerald-600 font-semibold tracking-wide">
-          {fakturPreview}
-        </span>
-      </div>
-
-      <form ref={formRef} onSubmit={handleSubmit} className="space-y-3">
-        {/* ROW 1 */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1">
-            <DatePicker 
-              name="date" 
-              required 
-              label="Tanggal" 
-              onChange={setSelectedDate} 
-              value={selectedDate} 
-            />
+    <div className="card glass overflow-visible p-0 border-none shadow-none bg-transparent">
+      {/* Dynamic Header Banner */}
+      <div className={`p-5 rounded-t-2xl flex flex-col sm:flex-row items-center justify-between gap-4 border-b ${
+        editingInfraction ? 'bg-amber-50/50 border-amber-100' : 'bg-emerald-50/50 border-emerald-100'
+      }`}>
+        <div className="flex items-center gap-4">
+          <div className={`p-2.5 rounded-xl shadow-sm ${
+            editingInfraction ? 'bg-amber-500 text-white' : 'bg-emerald-600 text-white'
+          }`}>
+            <AlertTriangle size={20} />
           </div>
-          <div className="flex-[2]">
-            <SearchableSelect
-              key={`emp-${resetKey}`}
-              label="Nama Karyawan"
-              name="employee_id"
-              options={employees}
-              placeholder="Pilih karyawan..."
-              required
-              displayFn={(e) => `${e.employee_no ? `${e.employee_no} — ` : ''}${e.name}${e.position ? ` — ${e.position}` : ''}`}
-              valueFn={(e) => e.id}
-              defaultValue={editingInfraction?.employee_name ? employees.find(e => e.name === editingInfraction.employee_name)?.id : draftEmployeeId}
-              onChange={(e) => setDraftEmployeeId(e ? e.id : null)}
-            />
+          <div>
+            <h3 className="text-lg font-extrabold text-slate-800 tracking-tight leading-none mb-1">
+              {editingInfraction ? 'Edit Kesalahan' : 'Catat Kesalahan'}
+            </h3>
+            <p className="text-[10px] text-slate-500 font-medium uppercase tracking-widest">
+              {editingInfraction ? 'Perbarui data yang sudah ada' : 'Input data pelanggaran baru'}
+            </p>
           </div>
         </div>
 
-        {/* NAMA ORDER */}
-        <SearchableSelect
-          key={`ord-${resetKey}`}
-          label={<>Nama Order <span className="text-red-500 ml-1">*</span></>}
-          name="order_faktur"
-          options={orders}
-          placeholder="Pilih order..."
-          required
-          displayFn={(o) => `${o.faktur} — ${o.nama_prd}`}
-          valueFn={(o) => o.faktur}
-          defaultValue={selectedOrderFaktur}
-          onChange={(o) => {
-            setSelectedOrderFaktur(o ? o.faktur : '');
-            setSelectedOrderName(o ? o.nama_prd : '');
-            // Reset items when order changes
-            setSelectedNamaBarang('');
-            setSelectedItemFaktur('');
-            setManualNamaBarang('');
-            setHppKalkulasiValue(null);
-          }}
-        />
+        <div className="flex flex-col items-end">
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-widest bg-white shadow-sm ${
+            editingInfraction ? 'text-amber-600 border-amber-200' : 'text-emerald-700 border-emerald-200'
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+              editingInfraction ? 'bg-amber-500' : 'bg-emerald-500'
+            }`} />
+            NO. FAKTUR: {fakturPreview}
+          </div>
+        </div>
+      </div>
 
-        {/* JENIS BARANG & NAMA BARANG */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1">
+      <form ref={formRef} onSubmit={handleSubmit} className="p-6 space-y-8 bg-white rounded-b-2xl border border-slate-100 shadow-sm">
+        {/* SECTION 1: INFORMASI DASAR */}
+        <section>
+          <div className={sectionHeaderCls}>
+            <Users size={14} className="text-slate-400" />
+            <h4 className={sectionTitleCls}>Informasi Dasar</h4>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <DatePicker 
+                name="date" 
+                required 
+                label="Tanggal" 
+                onChange={setSelectedDate} 
+                value={selectedDate} 
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <SearchableSelect
+                key={`emp-${resetKey}`}
+                label="Nama Karyawan Pelaku"
+                name="employee_id"
+                options={employees}
+                placeholder={
+                  !draftEmployeeId && editingInfraction?.employee_name
+                    ? `${editingInfraction.employee_no ? `${editingInfraction.employee_no} — ` : ''}${editingInfraction.employee_name}${editingInfraction.employee_position ? ` — ${editingInfraction.employee_position}` : ''}`
+                    : 'Pilih karyawan...'
+                }
+                required
+                displayFn={(e) => `${e.employee_no ? `${e.employee_no} — ` : ''}${e.name}${e.position ? ` — ${e.position}` : ''}`}
+                valueFn={(e) => e.id}
+                defaultValue={draftEmployeeId}
+                onChange={(e) => setDraftEmployeeId(e ? e.id : null)}
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 2: DETAIL ORDER & ITEM */}
+        <section>
+          <div className={sectionHeaderCls}>
+            <Box size={14} className="text-slate-400" />
+            <h4 className={sectionTitleCls}>Detail Order & Barang</h4>
+          </div>
+          <div className="space-y-4">
             <SearchableSelect
-              key={`jb-${resetKey}`}
-              label={<>Jenis Barang <span className="text-red-500 ml-1">*</span></>}
-              name="jenis_barang"
-              options={jenisBarangOptions}
-              placeholder="Pilih jenis barang..."
+              key={`ord-${resetKey}`}
+              label={<>Nama Order Terkait <span className="text-red-500 ml-1">*</span></>}
+              name="order_faktur"
+              options={allOrders}
+              placeholder={
+                !draftOrderFaktur && editingInfraction?.order_faktur
+                  ? `${editingInfraction.order_faktur} — ${editingInfraction.order_name || 'Data Terhapus/Berubah'}`
+                  : 'Pilih order...'
+              }
               required
-              displayFn={(o) => o.label}
-              valueFn={(o) => o.value}
-              defaultValue={jenisBarang}
+              displayFn={(o) => `${o.faktur} — ${o.nama_prd}${(o as any).is_ghost ? ' (Arsip)' : ''}`}
+              valueFn={(o) => o.faktur}
+              defaultValue={draftOrderFaktur}
               onChange={(o) => {
-                setJenisBarang(o.value);
+                setSelectedOrderFaktur(o ? o.faktur : '');
+                setSelectedOrderName(o ? o.nama_prd : '');
+                setDraftOrderFaktur(o ? o.faktur : '');
+                // Reset items when order changes
                 setSelectedNamaBarang('');
                 setSelectedItemFaktur('');
+                setDraftItemFaktur(null);
                 setManualNamaBarang('');
                 setHppKalkulasiValue(null);
               }}
             />
-          </div>
-          <div className="flex-[1.5]">
-            <label className={labelCls}>
-              Nama Barang <span className="text-red-500 ml-1">*</span>
-              {itemsLoading && <Loader2 size={12} className="inline ml-2 animate-spin text-emerald-500" />}
-            </label>
-            {jenisBarang === 'Input Manual' ? (
-              <input 
-                type="text"
-                className={inputCls}
-                placeholder="Ketik nama barang manual..."
-                value={manualNamaBarang}
-                onChange={(e) => setManualNamaBarang(e.target.value)}
-                required
-              />
-            ) : (
-            <SearchableSelect
-                key={`nb-${selectedOrderName}-${jenisBarang}-${resetKey}`}
-                label=""
-                name="nama_barang"
-                options={items}
-                placeholder={
-                  !selectedOrderName 
-                    ? "Pilih Order Dulu" 
-                    : itemsLoading 
-                      ? "Memuat barang..." 
-                      : items.length === 0 
-                        ? `Data ${jenisBarang} tidak ditemukan`
-                        : "Pilih Barang..."
-                }
-                displayFn={(o) => o.faktur ? `${o.faktur} — ${o.nama_barang}` : o.nama_barang}
-                valueFn={(o) => o.faktur}
-                defaultValue={selectedItemFaktur}
-                disabled={!selectedOrderName}
-                isLoading={itemsLoading}
-                noOptionsMessage={items.length === 0 ? `Data ${jenisBarang} untuk order ini kosong (Cek Jenis Barang)` : 'Tidak ada hasil'}
-                onChange={(o) => {
-                  setSelectedNamaBarang(o ? o.nama_barang : '');
-                  setSelectedItemFaktur(o ? o.faktur : '');
-                }}
-              />
-            )}
-          </div>
-        </div>
 
-        {/* KETERANGAN */}
-        <div>
-          <label className={labelCls}>
-            Deskripsi Kesalahan <span className="text-slate-400 font-normal normal-case">(opsional)</span>
-          </label>
-          <textarea
-            name="description"
-            rows={3}
-            className={`${inputCls} resize-none`}
-            placeholder="Jelaskan detail kesalahan secara lengkap..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </div>
-
-        {/* QUANTITY, HARGA, TOTAL */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-slate-50/50 border border-slate-100 rounded-xl relative">
-          <div className="absolute top-0 right-0 p-2 text-[9px] font-bold text-slate-300 uppercase tracking-widest pointer-events-none">
-            Penilaian Harga
-          </div>
-          
-          <div>
-            <SearchableSelect
-                key={`jh-${resetKey}`}
-                label={<>Jenis Harga <span className="text-red-500 ml-1">*</span></>}
-                name="jenis_harga"
-                options={jenisHargaOptions}
-                placeholder="Pilih jenis harga..."
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <SearchableSelect
+                key={`jb-${resetKey}`}
+                label={<>Jenis Barang <span className="text-red-500 ml-1">*</span></>}
+                name="jenis_barang"
+                options={jenisBarangOptions}
+                placeholder="Pilih jenis barang..."
                 required
                 displayFn={(o) => o.label}
                 valueFn={(o) => o.value}
-                defaultValue={jenisHarga}
-                dropdownPos="down"
-                onChange={(o) => setJenisHarga(o.value)}
+                defaultValue={jenisBarang}
+                onChange={(o) => {
+                  setJenisBarang(o.value);
+                  setSelectedNamaBarang('');
+                  setSelectedItemFaktur('');
+                  setManualNamaBarang('');
+                  setDraftItemFaktur(null);
+                  setHppKalkulasiValue(null);
+                }}
               />
+              <div>
+                <label className={labelCls}>
+                  Nama Barang <span className="text-red-500 ml-1">*</span>
+                  {itemsLoading && <Loader2 size={12} className="inline ml-2 animate-spin text-emerald-500" />}
+                </label>
+                {jenisBarang === 'Input Manual' || jenisBarang === 'HPP Kalkulasi' ? (
+                  <input 
+                    type="text"
+                    className={inputCls}
+                    placeholder={
+                      jenisBarang === 'HPP Kalkulasi'
+                        ? (hppLoading ? 'Memuat HPP...' : hppKalkulasiValue != null && hppKalkulasiValue > 0 ? 'Otomatis Nama Order...' : 'Data HPP Kalkulasi tidak ditemukan')
+                        : 'Ketik nama barang manual...'
+                    }
+                    value={jenisBarang === 'HPP Kalkulasi' ? (hppKalkulasiValue != null && hppKalkulasiValue > 0 ? selectedOrderName : '') : manualNamaBarang}
+                    onChange={(e) => setManualNamaBarang(e.target.value)}
+                    readOnly={jenisBarang === 'HPP Kalkulasi'}
+                    required
+                  />
+                ) : (
+                <SearchableSelect
+                    key={`nb-${selectedOrderName}-${jenisBarang}-${resetKey}`}
+                    label=""
+                    name="nama_barang"
+                    options={items}
+                    placeholder={
+                      itemsLoading 
+                        ? "Memuat barang..."
+                        : draftItemFaktur === ''
+                          ? `${editingInfraction?.item_faktur} — ${editingInfraction?.nama_barang}`
+                          : items.length === 0 
+                            ? `Data ${jenisBarang} tidak ditemukan`
+                            : "Pilih Barang (Bisa ketik Nomor Faktur)..."
+                    }
+                    displayFn={(o) => `${o.faktur && !o.faktur.endsWith('__hist') ? `${o.faktur} — ` : ''}${o.nama_barang}${o.is_ghost ? ' (Arsip)' : ''}`}
+                    valueFn={(o) => o.faktur}
+                    defaultValue={draftItemFaktur && draftItemFaktur !== '__pending__' ? draftItemFaktur : undefined}
+                    isLoading={itemsLoading}
+                    noOptionsMessage={items.length === 0 ? `Data ${jenisBarang} kosong` : 'Tidak ada hasil'}
+                    onChange={(o) => {
+                      setSelectedNamaBarang(o ? o.nama_barang : '');
+                      setSelectedItemFaktur(o ? o.faktur : '');
+                      setDraftItemFaktur(o ? o.faktur : '');
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className={labelCls}>
+                Deskripsi Kesalahan <span className="text-slate-400 font-normal normal-case ml-1">(Boleh Dikosongkan)</span>
+              </label>
+              <textarea
+                name="description"
+                rows={2}
+                className={`${inputCls} resize-none py-3`}
+                placeholder="Jelaskan detail kesalahan secara lengkap..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
           </div>
-          <div>
-            <label className={labelCls}>Jumlah (Qty) <span className="text-red-500 ml-1">*</span></label>
-            <input 
-              type="text" 
-              className={inputCls}
-              placeholder="0"
-              value={formatDisplay(jumlah)}
-              onChange={(e) => {
-                const parsed = parseInput(e.target.value);
-                if (parsed !== null) setJumlah(parsed);
-              }}
-              required
-            />
+        </section>
+
+        {/* SECTION 3: PENILAIAN HARGA */}
+        <section>
+          <div className={sectionHeaderCls}>
+            <Star size={14} className="text-slate-400" />
+            <h4 className={sectionTitleCls}>Kalkulasi Beban & Biaya</h4>
           </div>
-          <div>
-            <label className={labelCls}>Harga <span className="text-red-500 ml-1">*</span></label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-xs">Rp</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-5 bg-slate-50 border border-slate-100 rounded-2xl">
+            <div>
+              <SearchableSelect
+                  key={`jh-${resetKey}`}
+                  label={<>Jenis Harga <span className="text-red-500 ml-1">*</span></>}
+                  name="jenis_harga"
+                  options={jenisHargaOptions}
+                  placeholder="Pilih jenis harga..."
+                  required
+                  displayFn={(o) => o.label}
+                  valueFn={(o) => o.value}
+                  defaultValue={jenisHarga}
+                  dropdownPos="down"
+                  onChange={(o) => setJenisHarga(o.value)}
+                />
+            </div>
+            <div>
+              <label className={labelCls}>Jumlah (Qty) <span className="text-red-500 ml-1">*</span></label>
               <input 
                 type="text" 
-                className={`${inputCls} pl-8 ${jenisHarga !== 'Input Manual' ? 'bg-slate-50 text-slate-500 cursor-not-allowed font-medium' : ''}`}
+                className={inputCls}
                 placeholder="0"
-                value={
-                  jenisHarga === 'Input Manual' 
-                    ? formatDisplay(harga)
-                    : harga 
-                      ? parseFloat(harga).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
-                      : '0,00'
-                }
+                value={formatDisplay(jumlah)}
                 onChange={(e) => {
-                  if (jenisHarga === 'Input Manual') {
-                    const parsed = parseInput(e.target.value);
-                    if (parsed !== null) setHarga(parsed);
-                  }
+                  const parsed = parseInput(e.target.value);
+                  if (parsed !== null) setJumlah(parsed);
                 }}
-                readOnly={jenisHarga !== 'Input Manual'}
                 required
               />
             </div>
+            <div>
+              <label className={labelCls}>Harga Satuan <span className="text-red-500 ml-1">*</span></label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-[10px]">RP</span>
+                <input 
+                  type="text" 
+                  className={`${inputCls} pl-9 ${jenisHarga !== 'Input Manual' ? 'bg-slate-100/50 text-slate-500 cursor-not-allowed font-medium border-slate-200' : ''}`}
+                  placeholder="0"
+                  value={
+                    jenisHarga === 'Input Manual' 
+                      ? formatDisplay(harga)
+                      : harga 
+                        ? parseFloat(harga).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
+                        : '0,00'
+                  }
+                  onChange={(e) => {
+                    if (jenisHarga === 'Input Manual') {
+                      const parsed = parseInput(e.target.value);
+                      if (parsed !== null) setHarga(parsed);
+                    }
+                  }}
+                  readOnly={jenisHarga !== 'Input Manual'}
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Total Beban</label>
+              <div className="relative group">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-600 font-bold text-[10px]">RP</span>
+                <input 
+                  type="text" 
+                  className={`${inputCls} pl-9 bg-emerald-50 font-extrabold text-emerald-700 border-emerald-200 shadow-sm shadow-emerald-500/5`}
+                  value={totalValue > 0 ? totalValue.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
+                  readOnly
+                />
+              </div>
+            </div>
           </div>
-          <div>
-            <label className={labelCls}>Total</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-xs">Rp</span>
-              <input 
-                type="text" 
-                className={`${inputCls} pl-8 bg-emerald-50/30 font-bold text-emerald-700 pointer-events-none outline-none border-emerald-100`}
-                value={totalValue > 0 ? totalValue.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
-                readOnly
+        </section>
+
+        {/* SECTION 4: OTORITAS */}
+        <section>
+          <div className={sectionHeaderCls}>
+            <CheckCircle2 size={14} className="text-slate-400" />
+            <h4 className={sectionTitleCls}>Otoritas & Validasi</h4>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="sm:col-span-2">
+              <SearchableSelect
+                key={`rec-${resetKey}`}
+                label="Data Dicatat Oleh"
+                name="recorded_by_id"
+                options={employees}
+                placeholder={
+                  !draftRecordedById && editingInfraction?.recorded_by_name
+                    ? `${editingInfraction.recorded_by_no ? `${editingInfraction.recorded_by_no} — ` : ''}${editingInfraction.recorded_by_name}${editingInfraction.recorded_by_position ? ` — ${editingInfraction.recorded_by_position}` : ''}`
+                    : 'Pilih nama pencatat...'
+                }
+                required
+                displayFn={(e) => `${e.employee_no ? `${e.employee_no} — ` : ''}${e.name}${e.position ? ` — ${e.position}` : ''}`}
+                valueFn={(e) => e.id}
+                defaultValue={draftRecordedById}
+                onChange={(e) => setDraftRecordedById(e ? e.id : null)}
+                dropdownPos={'up'}
               />
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* DICATAT OLEH */}
-        <SearchableSelect
-          key={`rec-${resetKey}`}
-          label="Dicatat Oleh"
-          name="recorded_by_id"
-          options={employees}
-          placeholder="Pilih pencatat..."
-          required
-          displayFn={(e) => `${e.employee_no ? `${e.employee_no} — ` : ''}${e.name}${e.position ? ` — ${e.position}` : ''}`}
-          valueFn={(e) => e.id}
-          defaultValue={editingInfraction?.recorded_by_id || (editingInfraction?.recorded_by ? employees.find(e => e.name === editingInfraction.recorded_by)?.id : draftRecordedById)}
-          onChange={(e) => setDraftRecordedById(e ? e.id : null)}
-          dropdownPos={'up'}
-        />
-
-        <div className="flex gap-3 pt-2">
+        <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-slate-100">
           {editingInfraction && (
             <button
               type="button"
               onClick={onCancelEdit}
-              className="flex-1 py-3 bg-white rounded-lg font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors shadow-sm"
+              className="flex-1 py-4 bg-white rounded-xl font-extrabold border-2 border-slate-100 text-slate-400 hover:text-slate-600 hover:border-slate-200 hover:bg-slate-50 transition-all shadow-sm"
             >
-              Batal
+              Batalkan Edit
             </button>
           )}
           <button
             type="submit"
             disabled={loading}
-            className={`flex-1 py-3 rounded-lg font-bold text-white transition-all shadow-sm shadow-emerald-500/20 disabled:opacity-60 ${
-              editingInfraction ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20' : 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600'
+            className={`flex-[2] py-4 rounded-xl font-extrabold text-white transition-all shadow-lg active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none uppercase tracking-widest text-xs ${
+              editingInfraction 
+                ? 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 shadow-amber-500/25' 
+                : 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 shadow-emerald-500/25'
             }`}
           >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : (editingInfraction ? 'Simpan Perubahan' : 'Simpan Pencatatan')}
+            {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto text-white" /> : (editingInfraction ? 'Simpan Perubahan Data' : 'Simpan & Catat Kesalahan')}
           </button>
         </div>
 

@@ -21,7 +21,7 @@ export default async function Home() {
   ];
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
       <header className="flex justify-between items-start shrink-0">
         <div>
           <div className="flex items-center gap-2">
@@ -32,16 +32,16 @@ export default async function Home() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 shrink-0">
         {statCards.map((card) => (
-          <Link key={card.title} href={card.href} className="card relative overflow-hidden cursor-pointer hover:border-emerald-300 transition-colors block p-6">
-            <div className="flex items-center gap-4 mb-4">
-              <div className={`p-3 rounded-xl border ${card.classes}`}>
-                <card.icon size={24} />
+          <Link key={card.title} href={card.href} className="card relative overflow-hidden cursor-pointer hover:border-emerald-300 transition-colors block p-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className={`p-2 rounded-lg border ${card.classes}`}>
+                <card.icon size={18} />
               </div>
-              <h3 className="text-slate-400 font-medium text-sm">{card.title}</h3>
+              <h3 className="text-slate-400 font-medium text-xs">{card.title}</h3>
             </div>
-            <p className="text-4xl font-bold text-slate-800">{card.value}</p>
+            <p className="text-2xl font-bold text-slate-800">{card.value}</p>
           </Link>
         ))}
       </div>
