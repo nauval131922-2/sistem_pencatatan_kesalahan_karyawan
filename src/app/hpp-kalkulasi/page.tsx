@@ -2,6 +2,7 @@ import HppKalkulasiClient from './HppKalkulasiClient';
 import type { Metadata } from 'next';
 import { getLastHppImport } from '@/lib/actions';
 import { FileSpreadsheet, Clock } from 'lucide-react';
+import HelpButton from '@/components/HelpButton';
 
 export const metadata: Metadata = {
   title: 'SIKKA | HPP Kalkulasi',
@@ -30,22 +31,24 @@ export default async function HppKalkulasiPage() {
       });
     } catch(e) {}
   }
-
   return (
-    <div className="space-y-6 pb-24">
-      <header className="flex justify-between items-start mb-6">
+    <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
+      <header className="flex justify-between items-start shrink-0">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">HPP Kalkulasi</h2>
-          <p className="text-zinc-500 mt-1">Upload data HPP Kalkulasi dari file Excel.</p>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-800">HPP Kalkulasi</h2>
+            <HelpButton />
+          </div>
+          <p className="text-slate-500 text-sm mt-0.5">Upload data HPP Kalkulasi dari file Excel.</p>
           
           {importFileName && (
-            <div className="flex items-center gap-3 mt-3 text-xs font-medium">
-              <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2.5 py-1 rounded shadow-sm">
-                <FileSpreadsheet size={12} className="text-emerald-500" />
-                <span className="max-w-[150px] truncate" title={importFileName}>{importFileName}</span>
+            <div className="flex items-center gap-3 mt-2 text-[11px] font-medium">
+              <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded shadow-sm">
+                <FileSpreadsheet size={10} className="text-emerald-500" />
+                <span className="max-w-[120px] truncate" title={importFileName}>{importFileName}</span>
               </div>
-              <div className="flex items-center gap-1.5 text-slate-500">
-                <Clock size={12} className="opacity-70" />
+              <div className="flex items-center gap-1.5 text-slate-400">
+                <Clock size={10} className="opacity-70" />
                 Diperbarui: {importTime}
               </div>
             </div>
@@ -53,7 +56,9 @@ export default async function HppKalkulasiPage() {
         </div>
       </header>
 
-      <HppKalkulasiClient />
+      <div className="flex-1 min-h-0">
+        <HppKalkulasiClient />
+      </div>
     </div>
   );
 }

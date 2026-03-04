@@ -23,7 +23,7 @@ export default function MainContentWrapper({
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <main 
-        className="flex-1 min-w-0 min-h-0 transition-all duration-300 ease-in-out flex flex-col p-6 md:p-8 h-full overflow-hidden"
+        className="flex-1 min-w-0 min-h-0 transition-all duration-300 ease-in-out flex flex-col p-4 md:p-6 h-full overflow-hidden"
       >
         {children}
       </main>

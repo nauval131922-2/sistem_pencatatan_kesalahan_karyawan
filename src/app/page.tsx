@@ -3,6 +3,7 @@ import { Users, AlertTriangle, Package } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import ActivityTable from '@/components/ActivityTable';
+import HelpButton from '@/components/HelpButton';
 
 export const metadata: Metadata = {
   title: 'SIKKA | Dashboard',
@@ -23,7 +24,10 @@ export default async function Home() {
     <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden">
       <header className="flex justify-between items-start shrink-0">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-800">Dashboard</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-800">Dashboard</h2>
+            <HelpButton />
+          </div>
           <p className="text-slate-500 mt-1 text-sm">Ringkasan aktivitas dan metrik sistem.</p>
         </div>
       </header>

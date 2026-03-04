@@ -114,20 +114,20 @@ export default function HppKalkulasiClient() {
   const paginatedData = filteredData.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Upload Panel */}
-      <div className="card glass p-6 border border-emerald-500/20 relative overflow-hidden">
-        <div className="absolute right-0 top-0 -mt-10 -mr-10 opacity-5 pointer-events-none">
-           <FileSpreadsheet size={200} />
+      <div className="card glass p-3 border border-emerald-500/20 relative overflow-hidden">
+        <div className="absolute right-0 top-0 -mt-8 -mr-8 opacity-5 pointer-events-none">
+           <FileSpreadsheet size={120} />
         </div>
         
-        <div className="flex flex-col md:flex-row gap-6 items-center justify-between relative z-10">
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between relative z-10">
           <div className="flex-1">
-            <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2 mb-2">
-              <Upload className="text-emerald-500" size={20}/>
+            <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 mb-0.5">
+              <Upload className="text-emerald-500" size={16}/>
               Upload Data HPP Kalkulasi
             </h3>
-            <p className="text-sm text-slate-500">
+            <p className="text-[11px] text-slate-500">
               Unggah file Excel yang berisi Data HPP Kalkulasi. Data yang lama akan dihapus dan digantikan seluruhnya oleh data dari file baru.
             </p>
           </div>
@@ -142,11 +142,11 @@ export default function HppKalkulasiClient() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="w-full relative px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed group overflow-hidden"
+              className="w-full relative px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-semibold rounded-lg shadow-lg shadow-emerald-500/10 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed group overflow-hidden"
             >
-              {uploading && <Loader2 size={18} className="animate-spin" />}
-              {!uploading && <FileSpreadsheet size={18} className="group-hover:scale-110 transition-transform" />}
-              <span>{uploading ? 'Mengunggah File...' : 'Pilih & Upload File Excel'}</span>
+              {uploading && <Loader2 size={16} className="animate-spin" />}
+              {!uploading && <FileSpreadsheet size={16} className="group-hover:scale-110 transition-transform" />}
+              <span className="text-xs">{uploading ? 'Mengunggah...' : 'Pilih & Upload File'}</span>
             </button>
           </div>
         </div>
@@ -192,11 +192,11 @@ export default function HppKalkulasiClient() {
           </div>
 
           <div className="relative">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
               placeholder="Cari berdasarkan nama order..." 
-              className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
+              className="w-full pl-9 pr-4 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
             />
@@ -206,10 +206,10 @@ export default function HppKalkulasiClient() {
             <div className="overflow-auto" style={{ maxHeight: '450px' }}>
               <table className="w-full text-left relative">
                 <thead className="sticky top-0 z-10">
-                  <tr className="text-slate-500 text-sm border-b border-slate-200 bg-slate-50">
-                    <th className="px-5 py-3 font-medium whitespace-nowrap w-20 text-center">No</th>
-                    <th className="px-5 py-3 font-medium whitespace-nowrap">Nama Order</th>
-                    <th className="px-5 py-3 font-medium text-right whitespace-nowrap w-48">HPP Kalkulasi</th>
+                  <tr className="text-slate-500 text-[10px] uppercase tracking-wider border-b border-slate-200 bg-slate-50">
+                    <th className="px-4 py-2 font-semibold whitespace-nowrap w-16 text-center">No</th>
+                    <th className="px-4 py-2 font-semibold whitespace-nowrap">Nama Order</th>
+                    <th className="px-4 py-2 font-semibold text-right whitespace-nowrap w-48">HPP Kalkulasi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -221,14 +221,14 @@ export default function HppKalkulasiClient() {
                     </tr>
                   ) : (
                     paginatedData.map((row, idx) => (
-                      <tr key={row.id} className="text-sm hover:bg-slate-50 transition-colors">
-                        <td className="px-5 py-3 text-slate-400 font-medium text-center">
+                      <tr key={row.id} className="text-[11px] hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-1.5 text-slate-400 font-medium text-center">
                           {(currentPage - 1) * PAGE_SIZE + idx + 1}
                         </td>
-                        <td className="px-5 py-3 font-medium text-slate-700">
+                        <td className="px-4 py-1.5 font-medium text-slate-700">
                            {row.nama_order}
                         </td>
-                        <td className="px-5 py-3 font-mono font-medium text-emerald-600 text-right whitespace-nowrap">
+                        <td className="px-4 py-1.5 font-mono font-medium text-emerald-600 text-right whitespace-nowrap">
                           {row.hpp_kalkulasi.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
                         </td>
                       </tr>

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { Package, Hash, Calendar, Loader2, Download, Search, AlertCircle, ChevronLeft, ChevronRight, Clock, Box } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { Package, Hash, Calendar, Loader2, Download, Search, AlertCircle, ChevronLeft, ChevronRight, Clock, Box, RefreshCw, BarChart3, Printer, User, Tag } from 'lucide-react';
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { splitDateRangeIntoMonths } from '@/lib/date-utils';
 
 // Helper to format Date to YYYY-MM-DD
 function formatDateToYYYYMMDD(date: Date) {
@@ -42,7 +43,13 @@ export default function BahanBakuClient() {
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [loadTime, setLoadTime] = useState<number | null>(null);
-  const mountedRef = useMemo(() => ({ current: true }), []);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const mountedRef = useRef(true);
+
+  // Batch states
+  const [isBatching, setIsBatching] = useState(false);
+  const [batchProgress, setBatchProgress] = useState(0);
+  const [batchStatus, setBatchStatus] = useState('');
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -53,6 +60,7 @@ export default function BahanBakuClient() {
   }, [searchQuery]);
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => { mountedRef.current = false; };
   }, []);
 
@@ -70,7 +78,7 @@ export default function BahanBakuClient() {
       setLoading(true);
       const startTime = performance.now();
       try {
-        const res = await fetch(`/api/bahan-baku?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}&_t=${Date.now()}`);
+        const res = await fetch(`/api/bahan-baku?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}&from=${formatDateToYYYYMMDD(startDate)}&to=${formatDateToYYYYMMDD(endDate)}&_t=${Date.now()}`);
         if (res.ok && active) {
           const json = await res.json();
           const endTime = performance.now();
@@ -97,7 +105,7 @@ export default function BahanBakuClient() {
     }
     loadData();
     return () => { active = false; };
-  }, [page, debouncedQuery]);
+  }, [page, debouncedQuery, refreshKey, startDate, endDate]);
 
   // Restore state on mount
   useEffect(() => {
@@ -126,52 +134,102 @@ export default function BahanBakuClient() {
     setLoading(true);
     setError('');
     setData(null);
+    setRefreshKey(prev => prev + 1);
     setPage(1);
     setSearchQuery('');
 
     const startStr = formatDateToYYYYMMDD(startDate);
     const endStr = formatDateToYYYYMMDD(endDate);
+    const chunks = splitDateRangeIntoMonths(startStr, endStr);
+    setIsBatching(true);
+    setLoading(true);
+    setBatchProgress(0);
+    
+    let successCount = 0;
+    let lastUpdatedFromScrape: string | null = null;
+    let completedChunks = 0;
 
-    try {
-      const res = await fetch(`/api/scrape-bahan-baku?start=${startStr}&end=${endStr}`);
-      const json = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(json.error || 'Terjadi kesalahan saat mengambil data.');
-      }
-      
-      const fetchedData = json.data || [];
-      setData(fetchedData);
-      if (json.lastUpdated) {
-        const latestDate = new Date(json.lastUpdated);
-        if (!isNaN(latestDate.getTime())) {
-          const timestamp = latestDate.toLocaleString('id-ID', {
-            day: '2-digit', month: 'short', year: 'numeric',
-            hour: '2-digit', minute: '2-digit', second: '2-digit'
-          });
-          setLastUpdated(timestamp);
-
-          // Save to localStorage
-          localStorage.setItem('bahanBakuState', JSON.stringify({
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            lastUpdated: timestamp
-          }));
+    const processChunk = async (chunk: any) => {
+      try {
+        const res = await fetch(`/api/scrape-bahan-baku?start=${chunk.start}&end=${chunk.end}`);
+        if (res.ok) {
+          successCount++;
+          const json = await res.json();
+          if (json.lastUpdated) {
+            lastUpdatedFromScrape = json.lastUpdated;
+          }
+        } else {
+          console.error(`Failed to scrape chunk: ${chunk.start} - ${chunk.end}`);
         }
+      } catch (err) {
+        console.error("Chunk error:", err);
+      } finally {
+        completedChunks++;
+        const progress = Math.round((completedChunks / chunks.length) * 100);
+        setBatchProgress(progress);
+        setBatchStatus(`Memproses ${completedChunks}/${chunks.length} bulan...`);
       }
-
-      setDialog({
-        isOpen: true,
-        type: 'success',
-        title: 'Berhasil',
-        message: `Berhasil menarik ${json.total || fetchedData.length} data pengeluaran bahan baku.`
+    };
+    
+    try {
+      // Parallel execution with concurrency limit 15 (Pol Mentok)
+      const concurrency = 15;
+      const queue = [...chunks];
+      const workers = Array(Math.min(concurrency, queue.length)).fill(null).map(async () => {
+        while (queue.length > 0) {
+          const chunk = queue.shift();
+          if (chunk) await processChunk(chunk);
+        }
       });
 
+      await Promise.all(workers);
+      
+      setBatchProgress(100);
+      setBatchStatus('Selesai! Memperbarui tampilan...');
+      
+      if (successCount > 0) {
+        setRefreshKey(prev => prev + 1);
+        const failCount = chunks.length - successCount;
+        const message = failCount > 0 
+          ? `Selesai dengan catatan: ${successCount} bulan berhasil, ${failCount} bulan gagal.` 
+          : `Berhasil menarik data untuk ${successCount} periode (Parallel Sync).`;
+        
+        setDialog({
+          isOpen: true,
+          type: failCount > 0 ? 'alert' : 'success',
+          title: failCount > 0 ? 'Selesai Sebagian' : 'Berhasil',
+          message: message
+        });
+
+        if (lastUpdatedFromScrape) {
+          const latestDate = new Date(lastUpdatedFromScrape);
+          if (!isNaN(latestDate.getTime())) {
+            const timestamp = latestDate.toLocaleString('id-ID', {
+              day: '2-digit', month: 'short', year: 'numeric',
+              hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+            setLastUpdated(timestamp);
+
+            localStorage.setItem('bahanBakuState', JSON.stringify({
+              startDate: startDate.toISOString(),
+              endDate: endDate.toISOString(),
+              lastUpdated: timestamp
+            }));
+          }
+        }
+      } else {
+        setError("Gagal menarik data. Periksa koneksi atau log sistem.");
+      }
     } catch (err: any) {
       if (!mountedRef.current) return;
-      setError(err.message || 'Gagal mengambil data dari server.');
+      setError(err.message || 'Terjadi kesalahan saat menarik data');
     } finally {
-      if (mountedRef.current) setLoading(false);
+      if (mountedRef.current) {
+        setIsBatching(false);
+        setLoading(false);
+        setBatchStatus('');
+        setRefreshKey(prev => prev + 1);
+      }
     }
   };
 
@@ -189,10 +247,10 @@ export default function BahanBakuClient() {
     <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
       {/* Control Panel */}
       <div className="flex justify-center w-full shrink-0">
-        <div className="card glass relative z-20 overflow-visible p-5 px-8 border border-amber-500/10 w-fit">
-          <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="card glass relative z-20 overflow-visible p-3 px-5 border border-amber-500/10 w-fit">
+          <div className="flex flex-col sm:flex-row items-center gap-3">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Periode</span>
-            <div className="w-[160px] relative">
+            <div className="w-[140px] relative">
               <DatePicker 
                 name="startDate"
                 value={startDate}
@@ -200,7 +258,7 @@ export default function BahanBakuClient() {
               />
             </div>
             <span className="text-slate-400 font-medium whitespace-nowrap">-</span>
-            <div className="w-[160px] relative">
+            <div className="w-[140px] relative">
               <DatePicker 
                 name="endDate"
                 value={endDate}
@@ -208,18 +266,31 @@ export default function BahanBakuClient() {
               />
             </div>
 
-            <button 
-              onClick={handleFetch}
-              disabled={loading}
-              className="w-full sm:w-auto shrink-0 h-[42px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-600 hover:to-amber-500 text-white px-8 rounded-xl text-sm font-semibold shadow-md shadow-amber-500/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap lg:ml-2"
-            >
-              {loading ? (
-                <Loader2 key="loading" size={16} className="animate-spin" />
-              ) : (
-                <Download key="download" size={16} />
-              )}
-              {loading ? 'Menarik...' : 'Tarik Data'}
-            </button>
+            <div className="flex flex-col gap-2">
+                <button 
+                  key={isBatching ? "btn-syncing" : "btn-idle"}
+                  onClick={handleFetch}
+                  disabled={loading || isBatching || !startDate || !endDate}
+                  className="w-full sm:w-auto shrink-0 h-[38px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white px-6 rounded-xl text-sm font-semibold shadow-md shadow-amber-500/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap lg:ml-2"
+                >
+                  {isBatching ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 size={16} className="animate-spin" />
+                      {batchProgress || 0}%
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+                      Tarik Data
+                    </span>
+                  )}
+                </button>
+                {isBatching && (
+                  <div className="text-[10px] text-amber-600 font-medium animate-pulse text-center">
+                    {batchStatus}
+                  </div>
+                )}
+              </div>
           </div>
         </div>
       </div>
@@ -252,8 +323,8 @@ export default function BahanBakuClient() {
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 shrink-0">
             <div className="flex items-center gap-3">
-              <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-base">
-                  <Box size={18} className="text-amber-500" /> Hasil Scrapping
+              <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-sm">
+                  <Package size={16} className="text-emerald-500" /> Hasil Scrapping
               </h3>
               {lastUpdated && (
                 <div className="flex items-center gap-1.5 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100 px-2.5 py-1 rounded shadow-sm">
@@ -268,8 +339,8 @@ export default function BahanBakuClient() {
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
-              placeholder="Cari barang, tanggal, order produksi..." 
-              className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-amber-500 transition-colors"
+              placeholder="Cari faktur, barang, supplier..." 
+              className="w-full pl-9 pr-4 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
               value={searchQuery}
               onChange={handleSearch}
             />
@@ -288,15 +359,15 @@ export default function BahanBakuClient() {
             <div className="overflow-auto bg-white flex-1 min-h-0">
               <table className="w-full text-left relative min-w-[800px]">
                 <thead className="sticky top-0 z-10">
-                  <tr className="text-slate-500 text-sm border-b border-slate-200 bg-slate-50/90 backdrop-blur-sm">
-                    <th className="px-5 py-3 font-semibold whitespace-nowrap">Tanggal</th>
-                    <th className="px-5 py-3 font-semibold whitespace-nowrap">Faktur</th>
-                    <th className="px-5 py-3 font-semibold whitespace-nowrap text-[11px] uppercase tracking-wider text-slate-400">Faktur PRD</th>
-                    <th className="px-5 py-3 font-semibold whitespace-nowrap">Nama Barang</th>
-                    <th className="px-5 py-3 font-semibold whitespace-nowrap text-right">Qty</th>
-                    <th className="px-5 py-3 font-semibold whitespace-nowrap">Satuan</th>
-                    <th className="px-5 py-3 font-semibold whitespace-nowrap text-right">HPP</th>
-                    <th className="px-5 py-3 font-semibold whitespace-nowrap">Order Produksi (Prd)</th>
+                  <tr className="text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-200 bg-slate-50/90 backdrop-blur-sm">
+                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">Tanggal</th>
+                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">Faktur</th>
+                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap text-[10px] uppercase tracking-wider text-slate-400">Faktur PRD</th>
+                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">Nama Barang</th>
+                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap text-right">Qty</th>
+                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">Satuan</th>
+                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap text-right">HPP</th>
+                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">Prd</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -308,35 +379,35 @@ export default function BahanBakuClient() {
                     </tr>
                   ) : (
                     paginatedData.map((item: any, idx) => (
-                      <tr key={item.id || idx} className="text-sm hover:bg-slate-50 transition-colors group">
-                        <td className="px-5 py-3 text-slate-500 text-xs whitespace-nowrap">
+                      <tr key={item.id || idx} className="text-xs hover:bg-slate-50 transition-colors group">
+                        <td className="px-5 py-2 text-slate-500 text-[11px] whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <Calendar size={14} className="opacity-40" />
+                            <Calendar size={12} className="opacity-40" />
                             {formatIndoDateStr(item.tgl)}
                           </div>
                         </td>
-                        <td className="px-5 py-3 font-mono text-[11px] text-slate-400">
+                        <td className="px-5 py-2 font-mono text-[10px] text-slate-400">
                           {item.faktur || '-'}
                         </td>
-                        <td className="px-5 py-3 font-mono text-[11px] text-slate-400/70 italic">
+                        <td className="px-5 py-2 font-mono text-[10px] text-slate-400/70 italic">
                           {item.faktur_prd || '-'}
                         </td>
-                        <td className="px-5 py-3 font-medium text-slate-700">
+                        <td className="px-5 py-2 font-medium text-slate-700">
                           <div className="max-w-xs md:max-w-xs xl:max-w-md truncate" title={item.nama_barang}>
                             {item.nama_barang}
                           </div>
                         </td>
-                        <td className="px-5 py-3 text-emerald-600 font-semibold text-right tabular-nums">
+                        <td className="px-5 py-2 text-emerald-600 font-semibold text-right tabular-nums">
                           {item.qty}
                         </td>
-                        <td className="px-5 py-3 text-slate-500 whitespace-nowrap text-xs uppercase tracking-wide">
+                        <td className="px-5 py-2 text-slate-500 whitespace-nowrap text-[10px] uppercase tracking-wide">
                           {item.satuan}
                         </td>
-                        <td className="px-5 py-3 text-slate-600 font-medium text-right tabular-nums">
+                        <td className="px-5 py-2 text-slate-600 font-medium text-right tabular-nums text-[11px]">
                           {item.hp ? item.hp.toLocaleString('id-ID') : '-'}
                         </td>
-                        <td className="px-5 py-3 text-slate-500 text-xs">
-                           <div className="truncate max-w-[200px] border border-slate-200 bg-white rounded px-2 py-0.5 inline-block" title={item.nama_prd}>
+                        <td className="px-5 py-2 text-slate-500 text-[10px]">
+                           <div className="truncate max-w-[150px] border border-slate-200 bg-white rounded px-2 py-0.5 inline-block" title={item.nama_prd}>
                                {item.nama_prd}
                            </div>
                         </td>
@@ -348,7 +419,7 @@ export default function BahanBakuClient() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-sm text-slate-500">
+          <div className="flex items-center justify-between text-[11px] text-slate-500">
             <div className="flex items-center gap-3">
               <span>
                 {totalCount === 0

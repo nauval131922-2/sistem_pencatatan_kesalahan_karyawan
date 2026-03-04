@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { Package, Hash, User, Calendar, Loader2, Download, Search, AlertCircle, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Package, Calendar, User, Tag, Hash, RefreshCw, BarChart3, Download, Printer, Loader2, AlertCircle, Clock } from 'lucide-react';
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { splitDateRangeIntoMonths } from '@/lib/date-utils';
 
 // Helper to format Date to YYYY-MM-DD
 function formatDateToYYYYMMDD(date: Date) {
@@ -42,6 +43,13 @@ export default function OrderProduksiClient() {
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [loadTime, setLoadTime] = useState<number | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0); // Add this to force refresh
+
+  // Batch states
+  const [isBatching, setIsBatching] = useState(false);
+  const [batchProgress, setBatchProgress] = useState(0);
+  const [batchStatus, setBatchStatus] = useState('');
+
   const mountedRef = useMemo(() => ({ current: true }), []);
 
   useEffect(() => {
@@ -70,7 +78,7 @@ export default function OrderProduksiClient() {
       setLoading(true);
       const startTime = performance.now();
       try {
-        const res = await fetch(`/api/orders?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}&_t=${Date.now()}`);
+        const res = await fetch(`/api/orders?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}&from=${formatDateToYYYYMMDD(startDate)}&to=${formatDateToYYYYMMDD(endDate)}&_t=${Date.now()}`);
         if (res.ok && active) {
           const json = await res.json();
           const endTime = performance.now();
@@ -97,7 +105,7 @@ export default function OrderProduksiClient() {
     }
     loadData();
     return () => { active = false; };
-  }, [page, debouncedQuery]);
+  }, [page, debouncedQuery, refreshKey, startDate, endDate]); // Add dates and refreshKey here
 
   // Restore state on mount
   useEffect(() => {
@@ -114,68 +122,107 @@ export default function OrderProduksiClient() {
 
   const handleFetch = async () => {
     if (!startDate || !endDate) {
-      setError('Pilih tanggal mulai dan akhir terlebih dahulu.');
+      alert("Pilih rentang tanggal terlebih dahulu");
       return;
     }
 
-    if (startDate > endDate) {
-      setError('Tanggal mulai tidak boleh lebih dari tanggal akhir.');
-      return;
-    }
-
-    setLoading(true);
     setError('');
     setData(null);
     setPage(1);
     setSearchQuery('');
 
-    const startStr = formatDateToYYYYMMDD(startDate);
-    const endStr = formatDateToYYYYMMDD(endDate);
+    const chunks = splitDateRangeIntoMonths(formatDateToYYYYMMDD(startDate), formatDateToYYYYMMDD(endDate));
+    setIsBatching(true);
+    setLoading(true);
+    setBatchProgress(0);
+    
+    let successCount = 0;
+    let lastUpdatedFromScrape: string | null = null;
+    let completedChunks = 0;
 
-    try {
-      const res = await fetch(`/api/scrape-orders?start=${startStr}&end=${endStr}`);
-      const json = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(json.error || 'Terjadi kesalahan saat mengambil data.');
-      }
-      
-      // We no longer set large data directly here to avoid UI freezing.
-      // Instead, we just refresh the current view by resetting search/page
-      // which will trigger the loadData useEffect to fetch ONLY the first PAGE.
-      setPage(1);
-      setSearchQuery('');
-      
-      if (json.lastUpdated) {
-        const latestDate = new Date(json.lastUpdated);
-        if (!isNaN(latestDate.getTime())) {
-          const timestamp = latestDate.toLocaleString('id-ID', {
-            day: '2-digit', month: 'short', year: 'numeric',
-            hour: '2-digit', minute: '2-digit', second: '2-digit'
-          });
-          setLastUpdated(timestamp);
-
-          // Save to localStorage
-          localStorage.setItem('orderProduksiState', JSON.stringify({
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            lastUpdated: timestamp
-          }));
+    const processChunk = async (chunk: any) => {
+      try {
+        const res = await fetch(`/api/scrape-orders?start=${chunk.start}&end=${chunk.end}`);
+        if (res.ok) {
+          successCount++;
+          const json = await res.json();
+          if (json.lastUpdated) {
+            lastUpdatedFromScrape = json.lastUpdated;
+          }
+        } else {
+          console.error(`Failed to scrape chunk: ${chunk.start} - ${chunk.end}`);
         }
+      } catch (err) {
+        console.error("Chunk error:", err);
+      } finally {
+        completedChunks++;
+        const progress = Math.round((completedChunks / chunks.length) * 100);
+        setBatchProgress(progress);
+        setBatchStatus(`Memproses ${completedChunks}/${chunks.length} bulan...`);
       }
-
-      setDialog({
-        isOpen: true,
-        type: 'success',
-        title: 'Berhasil',
-        message: `Berhasil menarik ${json.total} data order produksi.`
+    };
+    
+    try {
+      // Parallel execution with concurrency limit 15 (Pol Mentok - Ultra)
+      const concurrency = 15;
+      const queue = [...chunks];
+      const workers = Array(Math.min(concurrency, queue.length)).fill(null).map(async () => {
+        while (queue.length > 0) {
+          const chunk = queue.shift();
+          if (chunk) await processChunk(chunk);
+        }
       });
 
-    } catch (err: any) {
+      await Promise.all(workers);
+      
+      setBatchProgress(100);
+      setBatchStatus('Selesai! Memperbarui tampilan...');
+      
+      if (successCount > 0) {
+        setRefreshKey(prev => prev + 1);
+        const failCount = chunks.length - successCount;
+        const message = failCount > 0 
+          ? `Selesai dengan catatan: ${successCount} bulan berhasil, ${failCount} bulan gagal.` 
+          : `Berhasil menarik data untuk ${successCount} periode (Parallel Sync).`;
+        
+        setDialog({
+          isOpen: true,
+          type: failCount > 0 ? 'alert' : 'success',
+          title: failCount > 0 ? 'Selesai Sebagian' : 'Berhasil',
+          message: message
+        });
+
+        if (lastUpdatedFromScrape) {
+          const latestDate = new Date(lastUpdatedFromScrape);
+          if (!isNaN(latestDate.getTime())) {
+            const timestamp = latestDate.toLocaleString('id-ID', {
+              day: '2-digit', month: 'short', year: 'numeric',
+              hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+            setLastUpdated(timestamp);
+
+            // Save to localStorage
+            localStorage.setItem('orderProduksiState', JSON.stringify({
+              startDate: startDate.toISOString(),
+              endDate: endDate.toISOString(),
+              lastUpdated: timestamp
+            }));
+          }
+        }
+      } else {
+        setError("Gagal menarik data. Periksa koneksi atau log sistem.");
+      }
+    } catch (error: any) {
+      console.error("Scrape error:", error);
       if (!mountedRef.current) return;
-      setError(err.message || 'Gagal mengambil data dari server.');
+      setError(error.message || "Terjadi kesalahan saat menarik data");
     } finally {
-      if (mountedRef.current) setLoading(false);
+      if (mountedRef.current) {
+        setIsBatching(false);
+        setLoading(false);
+        setBatchStatus('');
+        setRefreshKey(prev => prev + 1);
+      }
     }
   };
 
@@ -193,10 +240,10 @@ export default function OrderProduksiClient() {
     <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
       {/* Control Panel */}
       <div className="flex justify-center w-full shrink-0">
-        <div className="card glass relative z-20 overflow-visible p-5 px-8 border border-emerald-500/10 w-fit">
-          <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="card glass relative z-20 overflow-visible p-3 px-5 border border-emerald-500/10 w-fit">
+          <div className="flex flex-col sm:flex-row items-center gap-3">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Periode</span>
-            <div className="w-[160px] relative">
+            <div className="w-[140px] relative">
               <DatePicker 
                 name="startDate"
                 value={startDate}
@@ -204,7 +251,7 @@ export default function OrderProduksiClient() {
               />
             </div>
             <span className="text-slate-400 font-medium whitespace-nowrap">-</span>
-            <div className="w-[160px] relative">
+            <div className="w-[140px] relative">
               <DatePicker 
                 name="endDate"
                 value={endDate}
@@ -212,18 +259,31 @@ export default function OrderProduksiClient() {
               />
             </div>
 
-            <button 
-              onClick={handleFetch}
-              disabled={loading}
-              className="w-full sm:w-auto shrink-0 h-[42px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white px-8 rounded-xl text-sm font-semibold shadow-md shadow-emerald-500/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap lg:ml-2"
-            >
-              {loading ? (
-                <Loader2 key="loading" size={16} className="animate-spin" />
-              ) : (
-                <Download key="download" size={16} />
-              )}
-              {loading ? 'Menarik...' : 'Tarik Data'}
-            </button>
+            <div className="flex flex-col gap-2">
+                <button 
+                  key={isBatching ? "btn-syncing" : "btn-idle"}
+                  onClick={handleFetch}
+                  disabled={loading || isBatching || !startDate || !endDate}
+                  className="w-full sm:w-auto shrink-0 h-[38px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white px-6 rounded-xl text-sm font-semibold shadow-md shadow-emerald-500/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap lg:ml-2"
+                >
+                  {isBatching ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 size={16} className="animate-spin" />
+                      {batchProgress || 0}%
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+                      Tarik Data
+                    </span>
+                  )}
+                </button>
+                {isBatching && (
+                  <div className="text-[10px] text-emerald-600 font-medium animate-pulse text-center">
+                    {batchStatus}
+                  </div>
+                )}
+              </div>
           </div>
         </div>
       </div>
@@ -256,8 +316,8 @@ export default function OrderProduksiClient() {
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 shrink-0">
             <div className="flex items-center gap-4 w-full flex-wrap">
-              <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-base">
-                  <Package size={18} className="text-emerald-500" /> Hasil Scrapping
+              <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-sm">
+                  <Package size={16} className="text-emerald-500" /> Hasil Scrapping
               </h3>
               {lastUpdated && (
                 <div className="flex items-center gap-1.5 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100 px-2.5 py-1 rounded shadow-sm w-fit">
@@ -273,7 +333,7 @@ export default function OrderProduksiClient() {
             <input 
               type="text" 
               placeholder="Cari faktur, produk, pelanggan..." 
-              className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
+              className="w-full pl-9 pr-4 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
               value={searchQuery}
               onChange={handleSearch}
             />
@@ -292,12 +352,12 @@ export default function OrderProduksiClient() {
             <div className="overflow-auto bg-white flex-1 min-h-0">
               <table className="w-full text-left relative min-w-[800px]">
                 <thead className="sticky top-0 z-10">
-                  <tr className="text-slate-500 text-sm border-b border-slate-200 bg-slate-50">
-                    <th className="px-5 py-3 font-medium whitespace-nowrap">No. Faktur</th>
-                    <th className="px-5 py-3 font-medium whitespace-nowrap">Nama Produk</th>
-                    <th className="px-5 py-3 font-medium whitespace-nowrap">Pelanggan</th>
-                    <th className="px-5 py-3 font-medium whitespace-nowrap">Tanggal</th>
-                    <th className="px-5 py-3 font-medium text-center whitespace-nowrap">Qty Order</th>
+                  <tr className="text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-200 bg-slate-50">
+                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">No. Faktur</th>
+                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">Nama Produk</th>
+                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">Pelanggan</th>
+                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">Tanggal</th>
+                    <th className="px-5 py-2.5 font-semibold text-center whitespace-nowrap">Qty Ord</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -309,33 +369,33 @@ export default function OrderProduksiClient() {
                     </tr>
                   ) : (
                     paginatedData.map((order: any, idx) => (
-                      <tr key={order.id || idx} className="text-sm hover:bg-slate-50 transition-colors group">
-                        <td className="px-5 py-3 font-mono text-emerald-600 font-medium whitespace-nowrap">
+                      <tr key={order.id || idx} className="text-xs hover:bg-slate-50 transition-colors group">
+                        <td className="px-5 py-2 font-mono text-emerald-600 font-medium whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <Hash size={14} className="opacity-40" />
+                            <Hash size={12} className="opacity-40" />
                             {order.faktur}
                           </div>
                         </td>
-                        <td className="px-5 py-3 font-medium text-slate-700">
+                        <td className="px-5 py-2 font-medium text-slate-700">
                           <div className="max-w-xs md:max-w-xs xl:max-w-md truncate" title={order.nama_prd}>
                             {order.nama_prd}
                           </div>
                         </td>
-                        <td className="px-5 py-3 text-slate-500 text-xs">
+                        <td className="px-5 py-2 text-slate-500 text-[11px]">
                           <div className="flex items-center gap-2 whitespace-nowrap">
-                            <User size={14} className="opacity-40" />
+                            <User size={12} className="opacity-40" />
                             <span className="truncate max-w-[150px]" title={order.nama_pelanggan || order.kd_pelanggan}>
                               {order.nama_pelanggan || order.kd_pelanggan}
                             </span>
                           </div>
                         </td>
-                        <td className="px-5 py-3 text-slate-500 text-xs whitespace-nowrap">
+                        <td className="px-5 py-2 text-slate-500 text-[11px] whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <Calendar size={14} className="opacity-40" />
+                            <Calendar size={12} className="opacity-40" />
                             {formatIndoDateStr(order.tgl)}
                           </div>
                         </td>
-                        <td className="px-5 py-3 text-slate-600 font-medium text-center">
+                        <td className="px-5 py-2 text-slate-600 font-medium text-center">
                           {order.qty}
                         </td>
                       </tr>
@@ -347,7 +407,7 @@ export default function OrderProduksiClient() {
           </div>
 
           {/* Global Style Pagination */}
-          <div className="flex items-center justify-between text-sm text-slate-500">
+          <div className="flex items-center justify-between text-[11px] text-slate-500">
             <div className="flex items-center gap-3">
               <span>
                 {totalCount === 0
@@ -366,14 +426,6 @@ export default function OrderProduksiClient() {
             </div>
 
             <div className="flex items-center gap-1">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft size={16} />
-              </button>
-
               {/* Page numbers */}
               {Array.from({ length: totalPages }, (_, i) => i + 1)
                 .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)

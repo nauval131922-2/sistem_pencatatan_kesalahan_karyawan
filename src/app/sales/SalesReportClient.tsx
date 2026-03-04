@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
-import { Search, Download, Loader2, ChevronLeft, ChevronRight, AlertCircle, Clock, BarChart3, Hash, User, Calendar, Tag } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { Search, ChevronLeft, ChevronRight, Package, Calendar, User, Tag, Hash, RefreshCw, BarChart3, Download, Printer, Loader2, TrendingUp, History } from 'lucide-react';
+import { splitDateRangeIntoMonths } from '@/lib/date-utils';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import DatePicker from '@/components/DatePicker';
 
@@ -39,7 +40,15 @@ export default function SalesReportClient() {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [loadTime, setLoadTime] = useState<number | null>(null);
-  const mountedRef = useMemo(() => ({ current: true }), []);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+
+  // Batch states
+  const [isBatching, setIsBatching] = useState(false);
+  const [batchProgress, setBatchProgress] = useState(0);
+  const [batchStatus, setBatchStatus] = useState('');
+
+  const mountedRef = useRef(true);
   
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -49,6 +58,7 @@ export default function SalesReportClient() {
   }, [query]);
   
   useEffect(() => {
+    mountedRef.current = true;
     return () => { mountedRef.current = false; };
   }, []);
   
@@ -66,7 +76,7 @@ export default function SalesReportClient() {
       setLoading(true);
       const startTime = performance.now();
       try {
-        const res = await fetch(`/api/sales?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}&_t=${Date.now()}`);
+        const res = await fetch(`/api/sales?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}&from=${formatDateToYYYYMMDD(startDate)}&to=${formatDateToYYYYMMDD(endDate)}&_t=${Date.now()}`);
         if (res.ok && active) {
            const json = await res.json();
            const endTime = performance.now();
@@ -94,7 +104,7 @@ export default function SalesReportClient() {
     }
     loadData();
     return () => { active = false; };
-  }, [page, debouncedQuery]);
+  }, [page, debouncedQuery, refreshKey, startDate, endDate]);
 
   // Restore dates from localStorage on mount
   useEffect(() => {
@@ -109,23 +119,75 @@ export default function SalesReportClient() {
     }
   }, []);
 
-  const handleScrape = async () => {
+  const handleFetch = async () => {
+    if (!startDate || !endDate) {
+      alert("Pilih rentang tanggal terlebih dahulu");
+      return;
+    }
+
+    const chunks = splitDateRangeIntoMonths(formatDateToYYYYMMDD(startDate), formatDateToYYYYMMDD(endDate));
+    setIsBatching(true);
     setLoading(true);
+    setBatchProgress(0);
+    
+    let successCount = 0;
+    let lastUpdatedFromScrape: string | null = null;
+    let completedChunks = 0;
+
+    const processChunk = async (chunk: any) => {
+      try {
+        const res = await fetch(`/api/scrape-sales?start=${chunk.start}&end=${chunk.end}`);
+        if (res.ok) {
+          successCount++;
+          const json = await res.json();
+          if (json.lastUpdated) {
+            lastUpdatedFromScrape = json.lastUpdated;
+          }
+        } else {
+          console.error(`Failed to scrape chunk: ${chunk.start} - ${chunk.end}`);
+        }
+      } catch (err) {
+        console.error("Chunk error:", err);
+      } finally {
+        completedChunks++;
+        const progress = Math.round((completedChunks / chunks.length) * 100);
+        setBatchProgress(progress);
+        setBatchStatus(`Memproses ${completedChunks}/${chunks.length} bulan...`);
+      }
+    };
+    
     try {
-      const startStr = formatDateToYYYYMMDD(startDate);
-      const endStr = formatDateToYYYYMMDD(endDate);
+      // Parallel execution with concurrency limit 15 (Pol Mentok)
+      const concurrency = 15;
+      const queue = [...chunks];
+      const workers = Array(Math.min(concurrency, queue.length)).fill(null).map(async () => {
+        while (queue.length > 0) {
+          const chunk = queue.shift();
+          if (chunk) await processChunk(chunk);
+        }
+      });
+
+      await Promise.all(workers);
       
-      const res = await fetch(`/api/scrape-sales?start=${startStr}&end=${endStr}`);
-      const result = await res.json();
+      setBatchProgress(100);
+      setBatchStatus('Selesai! Memperbarui tampilan...');
       
-      if (res.ok) {
-        // Refresh data
-        const dataRes = await fetch('/api/sales');
-        const newData = await dataRes.json();
-        setData(newData.data || []);
+      if (successCount > 0) {
+        setRefreshKey(prev => prev + 1);
+        const failCount = chunks.length - successCount;
+        const message = failCount > 0 
+          ? `Selesai dengan catatan: ${successCount} bulan berhasil, ${failCount} bulan gagal.` 
+          : `Berhasil menarik data untuk ${successCount} periode (Parallel Sync).`;
         
-        if (result.lastUpdated) {
-          const latestDate = new Date(result.lastUpdated);
+        setDialog({
+          isOpen: true,
+          type: failCount > 0 ? 'alert' : 'success',
+          title: failCount > 0 ? 'Selesai Sebagian' : 'Berhasil',
+          message: message
+        });
+
+        if (lastUpdatedFromScrape) {
+          const latestDate = new Date(lastUpdatedFromScrape);
           if (!isNaN(latestDate.getTime())) {
             const timestamp = latestDate.toLocaleString('id-ID', {
               day: '2-digit', month: 'short', year: 'numeric',
@@ -133,7 +195,6 @@ export default function SalesReportClient() {
             });
             setLastUpdated(timestamp);
 
-            // Save state
             localStorage.setItem('salesReportState', JSON.stringify({
               startDate: startDate.toISOString(),
               endDate: endDate.toISOString(),
@@ -141,31 +202,20 @@ export default function SalesReportClient() {
             }));
           }
         }
-
-        setDialog({
-          isOpen: true,
-          type: 'success',
-          title: 'Berhasil',
-          message: `Berhasil menarik ${result.total} data laporan penjualan.`
-        });
       } else {
-        setDialog({
-          isOpen: true,
-          type: 'error',
-          title: 'Gagal',
-          message: result.error || 'Terjadi kesalahan saat menarik data.'
-        });
+        setError("Gagal menarik data. Periksa koneksi atau log sistem.");
       }
-    } catch (err) {
+    } catch (error: any) {
+      console.error("Scrape error:", error);
       if (!mountedRef.current) return;
-      setDialog({
-        isOpen: true,
-        type: 'error',
-        title: 'Error',
-        message: 'Gagal terhubung ke server.'
-      });
+      setError(error.message || "Terjadi kesalahan saat menarik data");
     } finally {
-      if (mountedRef.current) setLoading(false);
+      if (mountedRef.current) {
+        setIsBatching(false);
+        setLoading(false);
+        setBatchStatus('');
+        setRefreshKey(prev => prev + 1);
+      }
     }
   };
 
@@ -182,10 +232,10 @@ export default function SalesReportClient() {
     <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
       {/* Control Panel */}
       <div className="flex justify-center w-full shrink-0">
-        <div className="card glass relative z-20 overflow-visible p-5 px-8 border border-blue-500/10 w-fit">
-          <div className="flex flex-col sm:flex-row items-center gap-4">
+        <div className="card glass relative z-20 overflow-visible p-3 px-5 border border-blue-500/10 w-fit">
+          <div className="flex flex-col sm:flex-row items-center gap-3">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Periode</span>
-            <div className="w-[160px] relative">
+            <div className="w-[140px] relative">
               <DatePicker 
                 name="startDate"
                 value={startDate}
@@ -193,7 +243,7 @@ export default function SalesReportClient() {
               />
             </div>
             <span className="text-slate-400 font-medium whitespace-nowrap">-</span>
-            <div className="w-[160px] relative">
+            <div className="w-[140px] relative">
               <DatePicker 
                 name="endDate"
                 value={endDate}
@@ -201,18 +251,31 @@ export default function SalesReportClient() {
               />
             </div>
 
-            <button 
-              onClick={handleScrape}
-              disabled={loading}
-              className="w-full sm:w-auto shrink-0 h-[42px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-8 rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap lg:ml-2"
-            >
-              {loading ? (
-                <Loader2 key="loading" size={16} className="animate-spin" />
-              ) : (
-                <Download key="download" size={16} />
-              )}
-              {loading ? 'Menarik...' : 'Tarik Data'}
-            </button>
+            <div className="flex flex-col gap-2">
+                <button 
+                  key={isBatching ? "btn-syncing" : "btn-idle"}
+                  onClick={handleFetch}
+                  disabled={loading || isBatching || !startDate || !endDate}
+                  className="w-full sm:w-auto shrink-0 h-[38px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white px-6 rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap lg:ml-2"
+                >
+                  {isBatching ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 size={16} className="animate-spin" />
+                      {batchProgress || 0}%
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+                      Tarik Data
+                    </span>
+                  )}
+                </button>
+                {isBatching && (
+                  <div className="text-[10px] text-blue-600 font-medium animate-pulse text-center">
+                    {batchStatus}
+                  </div>
+                )}
+              </div>
           </div>
         </div>
       </div>
@@ -238,12 +301,12 @@ export default function SalesReportClient() {
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 shrink-0">
             <div className="flex items-center gap-4 w-full flex-wrap">
-              <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-base">
-                  <BarChart3 size={18} className="text-blue-500" /> Hasil Scrapping
+              <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-sm">
+                  <TrendingUp size={16} className="text-blue-500" /> Hasil Scrapping
               </h3>
               {lastUpdated && (
                 <div className="flex items-center gap-1.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded shadow-sm w-fit">
-                  <Clock size={12} className="text-blue-500 opacity-80" />
+                  <History size={12} className="text-blue-500 opacity-80" />
                   Diperbarui: {lastUpdated}
                 </div>
               )}
@@ -255,8 +318,8 @@ export default function SalesReportClient() {
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
               type="text" 
-              placeholder="Cari Order, Pelanggan, atau Kode..." 
-              className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
+              placeholder="Cari faktur, pelanggan, produk..." 
+              className="w-full pl-9 pr-4 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 transition-colors shadow-sm"
               value={query}
               onChange={handleSearch}
             />
@@ -275,15 +338,15 @@ export default function SalesReportClient() {
             <div className="overflow-auto bg-white flex-1 min-h-0">
               <table className="w-full text-left relative">
                 <thead className="sticky top-0 z-10">
-                  <tr className="text-slate-500 text-sm border-b border-slate-200 bg-slate-50">
-                    <th className="px-5 py-3 font-medium whitespace-nowrap">Tanggal</th>
-                    <th className="px-5 py-3 font-medium whitespace-nowrap">Faktur</th>
-                    <th className="px-5 py-3 font-medium whitespace-nowrap">Nama Order</th>
-                    <th className="px-5 py-3 font-medium whitespace-nowrap">Pelanggan</th>
-                    <th className="px-5 py-3 font-medium whitespace-nowrap">Nama Barang</th>
-                    <th className="px-5 py-3 font-medium text-center whitespace-nowrap">Qty</th>
-                    <th className="px-5 py-3 font-medium text-right whitespace-nowrap">Harga Jual</th>
-                    <th className="px-5 py-3 font-medium text-right whitespace-nowrap">Total</th>
+                  <tr className="text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-200 bg-slate-50">
+                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">Tanggal</th>
+                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">Faktur</th>
+                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">Nama Order</th>
+                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">Pelanggan</th>
+                    <th className="px-5 py-2.5 font-semibold whitespace-nowrap">Nama Barang</th>
+                    <th className="px-5 py-2.5 font-semibold text-center whitespace-nowrap">Qty</th>
+                    <th className="px-5 py-2.5 font-semibold text-right whitespace-nowrap">Harga</th>
+                    <th className="px-5 py-2.5 font-semibold text-right whitespace-nowrap">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -295,41 +358,41 @@ export default function SalesReportClient() {
                     </tr>
                   ) : (
                     paginatedData.map((row) => (
-                      <tr key={row.id} className="text-sm hover:bg-slate-50 transition-colors group">
-                        <td className="px-5 py-3 text-slate-500 text-xs whitespace-nowrap">
+                      <tr key={row.id} className="text-xs hover:bg-slate-50 transition-colors group">
+                        <td className="px-5 py-2 text-slate-500 text-[11px] whitespace-nowrap">
                           <div className="flex items-center gap-2">
-                            <Calendar size={14} className="opacity-40" />
+                            <Calendar size={12} className="opacity-40" />
                             {formatIndoDateStr(row.tgl)}
                           </div>
                         </td>
-                        <td className="px-5 py-3 text-blue-600 font-medium whitespace-nowrap">
+                        <td className="px-5 py-2 text-blue-600 font-medium whitespace-nowrap text-[11px]">
                           {row.faktur}
                         </td>
-                        <td className="px-5 py-3 font-medium text-slate-800">
+                        <td className="px-5 py-2 font-medium text-slate-800">
                           <div className="flex items-center gap-2">
-                            <Hash size={14} className="text-blue-500 opacity-40 shrink-0" />
+                            <Hash size={12} className="text-blue-500 opacity-40 shrink-0" />
                             <span className="max-w-xs truncate" title={row.nama_prd}>{row.nama_prd}</span>
                           </div>
                         </td>
-                        <td className="px-5 py-3 text-slate-500 text-xs">
+                        <td className="px-5 py-2 text-slate-500 text-[11px]">
                           <div className="flex items-center gap-2">
-                             <User size={14} className="opacity-40" />
+                             <User size={12} className="opacity-40" />
                              <span className="truncate max-w-[150px]" title={row.nama_pelanggan}>{row.nama_pelanggan}</span>
                           </div>
                         </td>
-                        <td className="px-5 py-3 text-slate-500 text-xs">
+                        <td className="px-5 py-2 text-slate-500 text-[11px]">
                           <div className="flex items-center gap-2">
-                            <Tag size={13} className="opacity-40" />
+                            <Tag size={12} className="opacity-40" />
                             <span className="truncate max-w-[120px]" title={row.kd_barang}>{row.kd_barang}</span>
                           </div>
                         </td>
-                        <td className="px-5 py-3 text-slate-600 font-medium text-center">
+                        <td className="px-5 py-2 text-slate-600 font-medium text-center">
                           {row.qty?.toLocaleString('id-ID')}
                         </td>
-                        <td className="px-5 py-3 text-blue-600 font-semibold text-right whitespace-nowrap">
+                        <td className="px-5 py-2 text-blue-600 font-semibold text-right whitespace-nowrap">
                           Rp {row.harga?.toLocaleString('id-ID')}
                         </td>
-                        <td className="px-5 py-3 text-slate-800 font-bold text-right whitespace-nowrap">
+                        <td className="px-5 py-2 text-slate-800 font-bold text-right whitespace-nowrap">
                           Rp {row.jumlah?.toLocaleString('id-ID')}
                         </td>
                       </tr>
@@ -341,7 +404,7 @@ export default function SalesReportClient() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between text-sm text-slate-500 px-2 py-2">
+          <div className="flex items-center justify-between text-[11px] text-slate-500 px-2 py-2">
             <div className="flex items-center gap-3">
               <span>
                 {totalCount === 0

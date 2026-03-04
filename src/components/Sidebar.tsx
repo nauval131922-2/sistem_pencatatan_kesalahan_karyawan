@@ -40,7 +40,7 @@ export default function Sidebar() {
         isCollapsed ? 'w-[80px]' : 'w-[210px]'
       }`}
     >
-      <div className={`p-6 transition-all duration-300 ${isCollapsed ? 'px-4 text-center' : 'px-6'}`}>
+      <div className={`p-4 transition-all duration-300 ${isCollapsed ? 'px-3 text-center' : 'px-4'}`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
           {!isCollapsed && (
             <h1 className="text-lg font-bold gradient-text whitespace-nowrap overflow-hidden">
@@ -65,7 +65,7 @@ export default function Sidebar() {
         )}
       </div>
 
-      <nav className="mt-4 px-3 overflow-y-auto h-[calc(100vh-100px)] custom-scrollbar pb-10">
+      <nav className="mt-2 px-3 overflow-y-auto h-[calc(100vh-80px)] custom-scrollbar pb-10">
         <ul className="space-y-1">
           {/* Top Menus */}
           {topMenus.map((item) => (
@@ -102,21 +102,21 @@ export default function Sidebar() {
             {!isCollapsed ? (
               <button 
                 onClick={() => setIsMasterOpen(!isMasterOpen)}
-                className="w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider hover:text-slate-600 transition-colors"
+                className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider hover:text-slate-600 transition-colors"
               >
-                <div className="flex items-center gap-3">
-                  <Database size={18} className="opacity-70" />
+                <div className="flex items-center gap-2.5">
+                  <Database size={16} className="opacity-70" />
                   <span>Data Master</span>
                 </div>
-                <ChevronDown size={16} className={`transition-transform duration-200 ${isMasterOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={14} className={`transition-transform duration-200 ${isMasterOpen ? 'rotate-180' : ''}`} />
               </button>
             ) : (
                 <button 
                   onClick={() => setIsMasterOpen(!isMasterOpen)}
-                  className="w-full flex items-center justify-center py-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" 
+                  className="w-full flex items-center justify-center py-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" 
                   title="Data Master"
                 >
-                    <Database size={17} className={`transition-all ${isMasterOpen ? 'opacity-100 text-emerald-600' : 'opacity-70'}`} />
+                    <Database size={16} className={`transition-all ${isMasterOpen ? 'opacity-100 text-emerald-600' : 'opacity-70'}`} />
                 </button>
             )}
             
@@ -125,8 +125,8 @@ export default function Sidebar() {
                 <li key={item.name}>
                   <Link
                     href={item.href}
-                    className={`relative flex items-center gap-3 py-2 rounded-lg transition-all group text-sm ${
-                      isCollapsed ? 'justify-center px-0 py-3' : 'px-3 ml-2'
+                    className={`relative flex items-center gap-3 py-1.5 rounded-lg transition-all group text-sm ${
+                      isCollapsed ? 'justify-center px-0 py-2.5' : 'px-3 ml-2'
                     } ${
                       pathname === item.href
                         ? 'bg-emerald-50 text-emerald-600 font-semibold'
@@ -152,7 +152,7 @@ export default function Sidebar() {
             </ul>
           </li>
 
-          <div className="my-2 border-t border-slate-100" />
+          <div className="my-1 border-t border-slate-100" />
 
           {/* Bottom Menus */}
           {bottomMenus.map((item) => (
