@@ -8,33 +8,59 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const search = searchParams.get('search') || '';
     const offset = (page - 1) * limit;
-    console.log(`[API] Fetching bahan-baku: page=${page}, limit=${limit}, search="${search}"`);
+    const fromDate = searchParams.get('from') || '';
+    const toDate = searchParams.get('to') || '';
+    console.log(`[API] Fetching bahan-baku: page=${page}, limit=${limit}, search="${search}", from="${fromDate}", to="${toDate}"`);
 
     let records;
     let total;
 
+    const dateFilterSQL = (fromDate && toDate) 
+      ? ` AND (substr(tgl, 7, 4) || '-' || substr(tgl, 4, 2) || '-' || substr(tgl, 1, 2) BETWEEN ? AND ?)`
+      : ``;
+
     if (search) {
       const query = `%${search}%`;
+      const sqlParams: any[] = [query, query, query, query];
+      if (fromDate && toDate) { sqlParams.push(fromDate, toDate); }
+      sqlParams.push(limit, offset);
+
       records = db.prepare(`
         SELECT id, tgl, nama_barang, kd_barang, qty, satuan, hp, nama_prd, faktur, faktur_prd, created_at 
         FROM bahan_baku 
-        WHERE nama_barang LIKE ? OR nama_prd LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?
+        WHERE (nama_barang LIKE ? OR nama_prd LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
         ORDER BY substr(tgl, 7, 4) ASC, substr(tgl, 4, 2) ASC, substr(tgl, 1, 2) ASC, id ASC 
         LIMIT ? OFFSET ?
-      `).all(query, query, query, query, limit, offset);
-      total = (db.prepare(`
+      `).all(...sqlParams);
+
+      const totalSqlParams = [query, query, query, query];
+      if (fromDate && toDate) { totalSqlParams.push(fromDate, toDate); }
+
+      total = ((db.prepare(`
         SELECT COUNT(*) as count FROM bahan_baku 
-        WHERE nama_barang LIKE ? OR nama_prd LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?
-      `).get(query, query, query, query) as any).count;
+        WHERE (nama_barang LIKE ? OR nama_prd LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
+      `).get(...totalSqlParams)) as any).count;
     } else {
+      const sqlParams: any[] = [];
+      if (fromDate && toDate) { sqlParams.push(fromDate, toDate); }
+      sqlParams.push(limit, offset);
+
       records = db.prepare(`
         SELECT id, tgl, nama_barang, kd_barang, qty, satuan, hp, nama_prd, faktur, faktur_prd, created_at 
         FROM bahan_baku 
+        ${(fromDate && toDate) ? `WHERE 1=1 ${dateFilterSQL}` : ''}
         ORDER BY substr(tgl, 7, 4) ASC, substr(tgl, 4, 2) ASC, substr(tgl, 1, 2) ASC, id ASC 
         LIMIT ? OFFSET ?
-      `).all(limit, offset);
+      `).all(...sqlParams);
       console.log(`[API] Default branch returned ${records.length} records`);
-      total = (db.prepare(`SELECT COUNT(*) as count FROM bahan_baku`).get() as any).count;
+
+      const totalSqlParams = [];
+      if (fromDate && toDate) { totalSqlParams.push(fromDate, toDate); }
+
+      total = ((db.prepare(`
+        SELECT COUNT(*) as count FROM bahan_baku
+        ${(fromDate && toDate) ? `WHERE 1=1 ${dateFilterSQL}` : ''}
+      `).get(...totalSqlParams)) as any).count;
     }
 
     const lastScrape = (db.prepare(`SELECT value FROM system_settings WHERE key = ?`).get('last_scrape_bahan_baku') as any);

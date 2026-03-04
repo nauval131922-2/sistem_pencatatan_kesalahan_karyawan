@@ -9,29 +9,60 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const search = searchParams.get('search') || '';
     const offset = (page - 1) * limit;
+    const fromDate = searchParams.get('from') || '';
+    const toDate = searchParams.get('to') || '';
 
     let data;
     let total;
+
+    const dateFilterSQL = (fromDate && toDate) 
+      ? ` AND (substr(tgl, 7, 4) || '-' || substr(tgl, 4, 2) || '-' || substr(tgl, 1, 2) BETWEEN ? AND ?)`
+      : ``;
 
     if (orderName) {
       data = db.prepare("SELECT id, tgl, kd_barang, nama_prd, nama_pelanggan, dati_2, qty, harga, jumlah, faktur, created_at FROM sales_reports WHERE nama_prd = ? ORDER BY substr(tgl, 7, 4) ASC, substr(tgl, 4, 2) ASC, substr(tgl, 1, 2) ASC LIMIT 1").all(orderName);
       total = data.length;
     } else if (search) {
       const query = `%${search}%`;
+      const sqlParams: any[] = [query, query, query, query];
+      if (fromDate && toDate) { sqlParams.push(fromDate, toDate); }
+      sqlParams.push(limit, offset);
+
       data = db.prepare(`
         SELECT id, tgl, kd_barang, nama_prd, nama_pelanggan, dati_2, qty, harga, jumlah, faktur, created_at 
         FROM sales_reports 
-        WHERE nama_prd LIKE ? OR nama_pelanggan LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?
+        WHERE (nama_prd LIKE ? OR nama_pelanggan LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
         ORDER BY substr(tgl, 7, 4) ASC, substr(tgl, 4, 2) ASC, substr(tgl, 1, 2) ASC, id ASC 
         LIMIT ? OFFSET ?
-      `).all(query, query, query, query, limit, offset);
-      total = (db.prepare(`
+      `).all(...sqlParams);
+
+      const totalSqlParams = [query, query, query, query];
+      if (fromDate && toDate) { totalSqlParams.push(fromDate, toDate); }
+
+      total = ((db.prepare(`
         SELECT COUNT(*) as count FROM sales_reports 
-        WHERE nama_prd LIKE ? OR nama_pelanggan LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?
-      `).get(query, query, query, query) as any).count;
+        WHERE (nama_prd LIKE ? OR nama_pelanggan LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
+      `).get(...totalSqlParams)) as any).count;
     } else {
-      data = db.prepare("SELECT id, tgl, kd_barang, nama_prd, nama_pelanggan, dati_2, qty, harga, jumlah, faktur, created_at FROM sales_reports ORDER BY substr(tgl, 7, 4) ASC, substr(tgl, 4, 2) ASC, substr(tgl, 1, 2) ASC, id ASC LIMIT ? OFFSET ?").all(limit, offset);
-      total = (db.prepare('SELECT COUNT(*) as count FROM sales_reports').get() as any).count;
+      const sqlParams: any[] = [];
+      if (fromDate && toDate) { sqlParams.push(fromDate, toDate); }
+      sqlParams.push(limit, offset);
+
+      data = db.prepare(`
+        SELECT id, tgl, kd_barang, nama_prd, nama_pelanggan, dati_2, qty, harga, jumlah, faktur, created_at 
+        FROM sales_reports 
+        ${(fromDate && toDate) ? `WHERE 1=1 ${dateFilterSQL}` : ''}
+        ORDER BY substr(tgl, 7, 4) ASC, substr(tgl, 4, 2) ASC, substr(tgl, 1, 2) ASC, id ASC 
+        LIMIT ? OFFSET ?
+      `).all(...sqlParams);
+
+      const totalSqlParams = [];
+      if (fromDate && toDate) { totalSqlParams.push(fromDate, toDate); }
+
+      total = ((db.prepare(`
+        SELECT COUNT(*) as count FROM sales_reports
+        ${(fromDate && toDate) ? `WHERE 1=1 ${dateFilterSQL}` : ''}
+      `).get(...totalSqlParams)) as any).count;
     }
     
     const lastScrape = (db.prepare('SELECT value FROM system_settings WHERE key = ?').get('last_scrape_sales') as any);
