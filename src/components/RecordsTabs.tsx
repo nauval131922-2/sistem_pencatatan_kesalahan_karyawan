@@ -48,30 +48,30 @@ export default function RecordsTabs({ employees, orders, infractions }: RecordsT
             setActiveTab('list');
             handleCancelEdit();
           }}
-          className={`flex items-center justify-center gap-2 py-3 px-6 text-sm font-medium transition-all duration-200 border-b-2 -mb-px ${
+          className={`flex items-center justify-center gap-2 py-2 px-4 text-sm font-medium transition-all duration-200 border-b-2 -mb-px ${
             activeTab === 'list'
               ? 'border-emerald-500 text-emerald-600'
               : 'border-transparent text-zinc-500 hover:text-zinc-700 hover:border-zinc-300'
           }`}
         >
-          <ClipboardList className="w-5 h-5" />
+          <ClipboardList className="w-4 h-4" />
           <span>Daftar Kesalahan</span>
         </button>
         <button
           onClick={() => { setActiveTab('form'); handleCancelEdit(); }}
-          className={`flex items-center justify-center gap-2 py-3 px-6 text-sm font-medium transition-all duration-200 border-b-2 -mb-px ${
+          className={`flex items-center justify-center gap-2 py-2 px-4 text-sm font-medium transition-all duration-200 border-b-2 -mb-px ${
             activeTab === 'form'
               ? 'border-emerald-500 text-emerald-600'
               : 'border-transparent text-zinc-500 hover:text-zinc-700 hover:border-zinc-300'
           }`}
         >
-          {editingInfraction ? <Pencil className="w-5 h-5" /> : <PlusCircle className="w-5 h-5" />}
+          {editingInfraction ? <Pencil className="w-4 h-4" /> : <PlusCircle className="w-4 h-4" />}
           <span>{editingInfraction ? 'Edit Data' : 'Tambah Data'}</span>
         </button>
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 flex flex-col overflow-hidden pt-4">
+      <div className="flex-1 flex flex-col overflow-hidden pt-2">
         {activeTab === 'list' && (
           <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="flex-1 flex flex-col bg-white rounded-xl border border-zinc-200/60 p-4 shadow-sm overflow-hidden">

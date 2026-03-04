@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, ChevronLeft, ChevronRight, Pencil, Trash2, Calendar, FileText, Printer, Download, RefreshCw } from 'lucide-react';
 import ConfirmDialog, { DialogType } from '@/components/ConfirmDialog';
@@ -74,11 +74,7 @@ export default function InfractionsTable({
 }) {
   const router = useRouter();
   const [infractions, setInfractions] = useState<Infraction[]>(initial);
-  const [startDate, setStartDate] = useState<Date>(() => {
-    const d = new Date();
-    d.setDate(1); // Mulai dari awal bulan
-    return d;
-  });
+  const [startDate, setStartDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -90,6 +86,16 @@ export default function InfractionsTable({
   useEffect(() => {
     setInfractions(initial);
   }, [initial]);
+
+  // Auto-fetch data on date change
+  const initialMount = useRef(true);
+  useEffect(() => {
+    if (initialMount.current) {
+      initialMount.current = false;
+      return;
+    }
+    fetchFilteredData();
+  }, [startDate, endDate]);
 
   const fetchFilteredData = async () => {
     setIsRefreshing(true);
@@ -238,7 +244,7 @@ export default function InfractionsTable({
     doc.setFontSize(16);
     doc.setTextColor(30, 41, 59); // slate-800
     doc.setFont('helvetica', 'bold');
-    doc.text('FORMULIR CATATAN KESALAHAN', 105, 45, { align: 'center' });
+    doc.text('FORMULIR KESALAHAN KARYAWAN', 105, 45, { align: 'center' });
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 116, 139);
@@ -437,7 +443,7 @@ export default function InfractionsTable({
       {/* Search */}
       {/* Date Filter & PDF Export Panel */}
       <div className="flex justify-center w-full shrink-0">
-        <div className="card glass relative z-20 overflow-visible p-5 px-8 border border-emerald-500/10 w-fit flex flex-col sm:flex-row items-center gap-6">
+        <div className="card glass relative z-20 overflow-visible p-3 px-6 border border-emerald-500/10 w-fit flex flex-col sm:flex-row items-center gap-4">
           <div className="flex items-center gap-4">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Filter Periode</span>
             <div className="w-[160px] relative">
@@ -455,23 +461,20 @@ export default function InfractionsTable({
                 onChange={setEndDate}
               />
             </div>
-            <button 
-              onClick={fetchFilteredData}
-              disabled={isRefreshing}
-              className="p-2.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-xl transition-colors disabled:opacity-50"
-              title="Refresh Data"
-            >
-              <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
-            </button>
+            {isRefreshing && (
+              <div className="p-2.5 text-emerald-600">
+                <RefreshCw size={18} className="animate-spin" />
+              </div>
+            )}
           </div>
 
           <div className="w-px h-8 bg-slate-200 hidden sm:block"></div>
 
           <button 
             onClick={generatePDF}
-            className="w-full sm:w-auto h-[42px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white px-8 rounded-xl text-sm font-semibold shadow-md shadow-red-500/20 transition-all whitespace-nowrap"
+            className="w-full sm:w-auto h-[36px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white px-6 rounded-xl text-xs font-semibold shadow-md shadow-red-500/20 transition-all whitespace-nowrap"
           >
-            <FileText size={16} />
+            <FileText size={14} />
             Cetak PDF (A4)
           </button>
         </div>
@@ -480,8 +483,8 @@ export default function InfractionsTable({
       {/* Search & Header */}
       <div className="flex flex-col sm:flex-row justify-between items-end gap-2 shrink-0">
         <div className="flex items-center gap-4 w-full flex-wrap">
-          <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-base">
-            <Printer size={18} className="text-emerald-500" /> Riwayat Kesalahan
+          <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-sm">
+            <Printer size={16} className="text-emerald-500" /> Riwayat Kesalahan
           </h3>
           <div className="text-[10px] text-slate-400 font-medium px-2 py-0.5 bg-slate-100 rounded-full uppercase tracking-tighter">
             {filtered.length} Record Ditemukan
@@ -489,13 +492,13 @@ export default function InfractionsTable({
         </div>
 
         <div className="relative w-full sm:w-72">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={query}
             onChange={handleSearch}
             placeholder="Cari karyawan, deskripsi..."
-            className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors shadow-sm"
+            className="w-full pl-9 pr-4 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors shadow-sm"
           />
         </div>
       </div>
@@ -504,21 +507,21 @@ export default function InfractionsTable({
       <div className="card p-0 overflow-hidden flex-1 flex flex-col border border-slate-200 shadow-sm min-h-0">
         <div className="overflow-auto bg-white flex-1 min-h-0">
           <table className="w-full text-left relative min-w-[1000px]">
-            <thead className="sticky top-0 z-10">
-              <tr className="text-slate-500 text-sm border-b border-slate-200 bg-slate-50">
-                <th className="px-5 py-3 font-medium w-32 whitespace-nowrap">Aksi</th>
-                <th className="px-5 py-3 font-medium whitespace-nowrap">Faktur</th>
-                <th className="px-5 py-3 font-medium whitespace-nowrap">Tanggal</th>
-                <th className="px-5 py-3 font-medium whitespace-nowrap">Karyawan</th>
-                <th className="px-5 py-3 font-medium whitespace-nowrap">Deskripsi</th>
-                <th className="px-5 py-3 font-medium whitespace-nowrap">Info Barang</th>
-                <th className="px-5 py-3 font-medium whitespace-nowrap text-right">Qty</th>
-                <th className="px-5 py-3 font-medium whitespace-nowrap text-right">Harga</th>
-                <th className="px-5 py-3 font-medium whitespace-nowrap text-right">Total</th>
-                <th className="px-5 py-3 font-medium whitespace-nowrap">Order</th>
-                <th className="px-5 py-3 font-medium whitespace-nowrap">Dicatat Oleh</th>
-              </tr>
-            </thead>
+                <thead className="sticky top-0 z-10">
+                  <tr className="text-slate-500 text-[10px] uppercase tracking-wider border-b border-slate-200 bg-slate-50">
+                    <th className="px-3 py-2 font-semibold w-24 whitespace-nowrap">Aksi</th>
+                    <th className="px-3 py-2 font-semibold whitespace-nowrap">Faktur</th>
+                    <th className="px-3 py-2 font-semibold whitespace-nowrap">Tanggal</th>
+                    <th className="px-3 py-2 font-semibold whitespace-nowrap">Karyawan</th>
+                    <th className="px-3 py-2 font-semibold whitespace-nowrap">Deskripsi</th>
+                    <th className="px-3 py-2 font-semibold whitespace-nowrap">Barang</th>
+                    <th className="px-3 py-2 font-semibold whitespace-nowrap text-right">Qty</th>
+                    <th className="px-3 py-2 font-semibold whitespace-nowrap text-right">Harga</th>
+                    <th className="px-3 py-2 font-semibold whitespace-nowrap text-right">Total</th>
+                    <th className="px-3 py-2 font-semibold whitespace-nowrap">Order</th>
+                    <th className="px-3 py-2 font-semibold whitespace-nowrap">Admin</th>
+                  </tr>
+                </thead>
             <tbody className="divide-y divide-slate-100">
               {paginated.length === 0 ? (
                 <tr>
@@ -528,94 +531,94 @@ export default function InfractionsTable({
                 </tr>
               ) : (
                 paginated.map((inf) => (
-                  <tr key={inf.id} className="text-sm hover:bg-slate-50 transition-colors group">
-                    <td className="px-5 py-3 w-32 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
+                  <tr key={inf.id} className="text-xs hover:bg-slate-50 transition-colors group">
+                    <td className="px-3 py-1.5 w-24 whitespace-nowrap">
+                      <div className="flex items-center gap-1">
                         <button
                           onClick={() => generateSinglePDF(inf)}
-                          className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-2 py-1.5 rounded-md transition-colors shadow-sm"
+                          className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-1.5 py-0.5 rounded transition-colors shadow-sm"
                           title="Cetak PDF Faktur"
                         >
-                          <FileText size={14} />
-                          <span className="text-[10px] font-bold">PDF</span>
+                          <FileText size={11} />
+                          <span className="text-[9px] font-bold">PDF</span>
                         </button>
                         <button
                           onClick={() => startEdit(inf)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                          className="p-1 rounded-lg text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
                           title="Edit"
                         >
-                          <Pencil size={15} />
+                          <Pencil size={12} />
                         </button>
                         <button
                           onClick={() => requestDelete(inf.id)}
                           disabled={deleting === inf.id}
-                          className="p-1.5 rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-40"
+                          className="p-1 rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-40"
                           title="Hapus"
                         >
-                          <Trash2 size={15} />
+                          <Trash2 size={12} />
                         </button>
                       </div>
                     </td>
-                    <td className="px-5 py-3 font-mono text-xs text-slate-500 whitespace-nowrap">
+                    <td className="px-3 py-1.5 font-mono text-[9px] text-slate-500 whitespace-nowrap">
                       {inf.faktur || '-'}
                     </td>
-                    <td className="px-5 py-3 text-slate-600 text-xs whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <Calendar size={14} className="opacity-40" />
+                    <td className="px-3 py-1.5 text-slate-600 text-[10px] whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar size={11} className="opacity-40" />
                         {formatIndoDateStr(inf.date)}
                       </div>
                     </td>
-                    <td className="px-5 py-3 font-semibold text-emerald-600 truncate max-w-[150px]">
+                    <td className="px-3 py-1.5 font-semibold text-emerald-600 truncate max-w-[150px]">
                       {inf.employee_name || 'Karyawan Dihapus'}
                       {inf.employee_position && (
-                        <div className="text-[10px] text-slate-400 font-normal mt-0.5 truncate max-w-[150px]" title={inf.employee_position}>
+                        <div className="text-[9px] text-slate-400 font-normal mt-0.5 truncate max-w-[150px]" title={inf.employee_position}>
                           {inf.employee_position}
                         </div>
                       )}
                     </td>
-                    <td className="px-5 py-3 text-slate-600 max-w-[300px]">
-                      <div className="text-xs line-clamp-3 leading-relaxed" title={inf.description}>
+                    <td className="px-3 py-1.5 text-slate-600 max-w-[300px]">
+                      <div className="text-[10px] line-clamp-2 leading-relaxed" title={inf.description}>
                         {inf.description || '-'}
                       </div>
                     </td>
-                    <td className="px-5 py-3 truncate max-w-[200px]" title={inf.nama_barang_display || inf.nama_barang || ''}>
-                      <div className="font-medium text-slate-700">{inf.nama_barang_display || inf.nama_barang || '-'}</div>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[10px] text-slate-400 uppercase tracking-wider font-medium">
+                    <td className="px-3 py-1.5 truncate max-w-[200px]" title={inf.nama_barang_display || inf.nama_barang || ''}>
+                      <div className="font-medium text-slate-700 text-[10px]">{inf.nama_barang_display || inf.nama_barang || '-'}</div>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className="text-[9px] text-slate-400 uppercase tracking-wider font-medium">
                           {inf.jenis_barang || '-'}
                         </span>
                         {inf.item_faktur && (
                           <>
-                            <span className="text-slate-300">•</span>
-                            <span className="text-[10px] font-mono text-slate-400 border border-slate-200 bg-slate-50 px-1 rounded">
+                            <span className="text-slate-300 text-[9px]">•</span>
+                            <span className="text-[9px] font-mono text-slate-400 border border-slate-200 bg-slate-50 px-1 rounded">
                               {inf.item_faktur}
                             </span>
                           </>
                         )}
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-right tabular-nums">
+                    <td className="px-3 py-1.5 text-right tabular-nums text-[11px]">
                       {inf.jumlah || 0}
                     </td>
-                    <td className="px-5 py-3 text-right tabular-nums" title={inf.jenis_harga || ''}>
-                      <div className="text-slate-600">
+                    <td className="px-3 py-1.5 text-right tabular-nums" title={inf.jenis_harga || ''}>
+                      <div className="text-slate-600 text-[11px]">
                         {inf.harga ? inf.harga.toLocaleString('id-ID') : '-'}
                       </div>
                       <div className="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5 truncate max-w-[80px] ml-auto">
                         {inf.jenis_harga || '-'}
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-right tabular-nums font-medium text-emerald-700">
+                    <td className="px-3 py-1.5 text-right tabular-nums font-medium text-emerald-700">
                       {inf.total ? inf.total.toLocaleString('id-ID') : '-'}
                     </td>
-                    <td className="px-5 py-3 text-xs">
+                    <td className="px-3 py-1.5 text-[10px]">
                       {(inf.order_name_display || inf.order_name) ? (
-                        <span className="inline-block bg-emerald-500/10 text-emerald-600 px-2 py-1 rounded border border-emerald-500/20 max-w-[150px] truncate" title={inf.order_name_display || inf.order_name || ''}>
+                        <span className="inline-block bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded border border-emerald-500/20 max-w-[150px] truncate" title={inf.order_name_display || inf.order_name || ''}>
                           {inf.order_name_display || inf.order_name}
                         </span>
                       ) : '-'}
                     </td>
-                    <td className="px-5 py-3 text-xs text-slate-400 whitespace-nowrap">
+                    <td className="px-3 py-1.5 text-[10px] text-slate-400 whitespace-nowrap">
                       <div>{inf.recorded_by_name || inf.recorded_by}</div>
                       {inf.recorded_by_position && (
                         <div className="text-[10px] text-slate-300 font-normal mt-0.5" title={inf.recorded_by_position}>
@@ -632,7 +635,7 @@ export default function InfractionsTable({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between text-sm text-slate-500">
+      <div className="flex items-center justify-between text-[11px] text-slate-500">
         <span>
           {filtered.length === 0
             ? 'Tidak ada data'

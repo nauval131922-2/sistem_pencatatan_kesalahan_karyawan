@@ -97,7 +97,7 @@ function SearchableSelect({
   const filtered = options.filter((o) =>
     displayFn(o).toLowerCase().includes(query.toLowerCase())
   );
-  const inputCls = `w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors text-slate-800 ${disabled ? 'opacity-60 cursor-not-allowed bg-slate-50' : 'cursor-pointer'}`;
+  const inputCls = `w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-emerald-500 transition-colors text-slate-800 ${disabled ? 'opacity-60 cursor-not-allowed bg-slate-50' : 'cursor-pointer'}`;
   const handleSelect = (o: any) => {
     setSelected(o);
     setOpen(false);
@@ -640,8 +640,8 @@ export default function RecordsForm({
     }
   };
 
-  const inputCls = 'w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-emerald-500 transition-colors text-slate-800';
-  const labelCls = 'block text-xs font-semibold text-slate-500 uppercase mb-2';
+  const inputCls = 'w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-emerald-500 transition-colors text-slate-800';
+  const labelCls = 'block text-[10px] font-bold text-slate-500 uppercase mb-1.5';
 
   // Helper to format string with dots for thousands and keep comma for decimal
   const formatDisplay = (val: string) => {
@@ -677,9 +677,9 @@ export default function RecordsForm({
         </span>
       </div>
 
-      <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+      <form ref={formRef} onSubmit={handleSubmit} className="space-y-3">
         {/* ROW 1 */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1">
             <DatePicker 
               name="date" 
@@ -728,7 +728,7 @@ export default function RecordsForm({
         />
 
         {/* JENIS BARANG & NAMA BARANG */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1">
             <SearchableSelect
               key={`jb-${resetKey}`}
@@ -809,7 +809,7 @@ export default function RecordsForm({
         </div>
 
         {/* QUANTITY, HARGA, TOTAL */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-slate-50/50 border border-slate-100 rounded-xl relative">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 p-3 bg-slate-50/50 border border-slate-100 rounded-xl relative">
           <div className="absolute top-0 right-0 p-2 text-[9px] font-bold text-slate-300 uppercase tracking-widest pointer-events-none">
             Penilaian Harga
           </div>
