@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
+import { getCachedSession, setCachedSession, clearCachedSession, getSession } from "@/lib/session-cache";
 
-const USERNAME = process.env.SCRAPER_USERNAME || "nauval";
-const PASSWORD = process.env.SCRAPER_PASSWORD || "312admin2";
+const API_EMAIL = process.env.SCRAPER_EMAIL || "nauval";
+const API_PASSWORD = process.env.SCRAPER_PASSWORD || "312admin2";
 const BASE_URL = "https://buyapercetakan.mdthoster.com/il/";
 const API_KEY = "bismillah-m377-4j76-bb34-c450-7a62-ad3f";
 
@@ -47,24 +48,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Invalid date format. Use YYYY-MM-DD" }, { status: 400 });
     }
 
-    // 1. Login to get cookies
-    const loginReqUrl = BASE_URL + "v1/auth/login";
-    const loginBody = JSON.stringify({
-      username: USERNAME,
-      password: PASSWORD,
+    const startTime = Date.now();
+    
+    let cookies = await getSession(async () => {
+      // 1. Login to get cookies
+      const loginReqUrl = BASE_URL + "v1/auth/login";
+      const loginBody = JSON.stringify({
+        username: API_EMAIL,
+        password: API_PASSWORD,
+      });
+
+      const loginRes = await fetch(loginReqUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json; charset=utf-8",
+          "X-Bismillah-Api-Key": API_KEY,
+        },
+        body: loginBody,
+      });
+
+      return loginRes.headers.get("set-cookie");
     });
 
-    const loginRes = await fetch(loginReqUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json; charset=utf-8",
-        "X-Bismillah-Api-Key": API_KEY,
-      },
-      body: loginBody,
-    });
-
-    const cookies = loginRes.headers.get("set-cookie");
     if (!cookies) {
       return NextResponse.json({ error: "Failed to login. No cookies returned." }, { status: 401 });
     }
@@ -93,6 +99,11 @@ export async function GET(request: NextRequest) {
         Cookie: cookies,
       },
     });
+
+    if (res.status === 401) {
+      clearCachedSession();
+      return NextResponse.json({ error: "Unauthorized. Session may have expired." }, { status: 401 });
+    }
 
     const jsonData = await res.json();
     const rawRecords = jsonData.records || jsonData.data || jsonData.rows || jsonData.result || [];
