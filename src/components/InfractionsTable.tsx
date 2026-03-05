@@ -173,10 +173,14 @@ export default function InfractionsTable({
       inf.total ? `Rp ${inf.total.toLocaleString('id-ID')}` : '-'
     ]);
 
+    const grandTotal = infractions.reduce((sum, inf) => sum + (inf.total || 0), 0);
+    const grandTotalStr = grandTotal > 0 ? `Rp ${grandTotal.toLocaleString('id-ID')}` : '-';
+
     autoTable(doc, {
       startY: 59,
       head: [['No', 'Tanggal', 'Karyawan', 'No. Faktur', 'Order Produksi', 'Nama Barang', 'Deskripsi', 'Total']],
       body: tableData,
+      foot: [['', '', '', '', '', '', 'TOTAL KESELURUHAN', grandTotalStr]],
       theme: 'grid',
       headStyles: {
         fillColor: [5, 150, 105],
@@ -184,6 +188,14 @@ export default function InfractionsTable({
         fontSize: 7.5,
         fontStyle: 'bold',
         halign: 'center',
+        valign: 'middle'
+      },
+      footStyles: {
+        fillColor: [241, 245, 249],
+        textColor: [30, 41, 59],
+        fontSize: 7.5,
+        fontStyle: 'bold',
+        halign: 'right',
         valign: 'middle'
       },
       columnStyles: {

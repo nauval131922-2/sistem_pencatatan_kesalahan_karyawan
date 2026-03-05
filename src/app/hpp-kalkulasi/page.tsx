@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: 'SIKKA | HPP Kalkulasi',
 };
 
+export const dynamic = 'force-dynamic';
+
+
 export default async function HppKalkulasiPage() {
   const lastImport = await getLastHppImport();
 

@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   title: 'SIKKA | Daftar Karyawan',
 };
 
+export const dynamic = 'force-dynamic';
+
+
 export default async function EmployeesPage() {
   const employees = await getEmployees();
   const lastImport = await getLastEmployeeImport();

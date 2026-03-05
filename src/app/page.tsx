@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   title: 'SIKKA | Dashboard',
 };
 
+export const dynamic = 'force-dynamic';
+
+
 export default async function Home() {
   const [stats, logs] = await Promise.all([
     getStats(),

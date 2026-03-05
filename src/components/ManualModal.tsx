@@ -26,8 +26,7 @@ export default function ManualModal() {
         'Pantau angka **Total Karyawan** dan **Total Kesalahan** pada kartu statistik.',
         'Klik pada **Kartu Statistik** untuk langsung berpindah ke menu yang relevan.',
         'Lihat tabel **Aktivitas Terkini** untuk memantau log perubahan data terbaru.'
-      ],
-      tips: 'Gunakan Dashboard untuk audit cepat performa harian tanpa harus membuka menu detail.'
+      ]
     },
     '/employees': {
       title: 'Data Karyawan',

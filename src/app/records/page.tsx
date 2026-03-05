@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: 'SIKKA | Pencatatan Kesalahan',
 };
 
+export const dynamic = 'force-dynamic';
+
+
 export default async function RecordsPage() {
   // Gunakan timezone WIB (UTC+7) agar tanggal konsisten dengan tampilan lokal
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());

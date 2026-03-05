@@ -270,7 +270,7 @@ const allJenisHargaOptions = [
       return allJenisHargaOptions.filter(o => o.value === 'HPP Digit' || o.value === 'Input Manual');
     }
     if (jenisBarang === 'Barang Jadi') {
-      return allJenisHargaOptions.filter(o => o.value === 'HPP Digit' || o.value === 'HPP Kalkulasi' || o.value === 'Input Manual');
+      return allJenisHargaOptions.filter(o => o.value === 'HPP Digit' || o.value === 'Input Manual');
     }
     if (jenisBarang === 'Penjualan Barang') {
       return allJenisHargaOptions.filter(o => o.value === 'Harga Jual Digit' || o.value === 'Input Manual');
@@ -279,10 +279,7 @@ const allJenisHargaOptions = [
       return allJenisHargaOptions.filter(o => o.value === 'Input Manual');
     }
     if (jenisBarang === 'HPP Kalkulasi') {
-      return allJenisHargaOptions.filter(o => o.value === 'HPP Kalkulasi');
-    }
-    if (jenisBarang === 'Penjualan Barang') {
-      return allJenisHargaOptions.filter(o => o.value === 'Harga Jual Digit');
+      return allJenisHargaOptions.filter(o => o.value === 'HPP Kalkulasi' || o.value === 'Input Manual');
     }
     return [{ label: 'Pilih Jenis Barang Dulu', value: '' }];
   }, [jenisBarang]);
@@ -302,8 +299,10 @@ const allJenisHargaOptions = [
       setJenisHarga('HPP Digit');
     } else if (jenisBarang === 'Penjualan Barang' && (jenisHarga !== 'Harga Jual Digit' && jenisHarga !== 'Input Manual')) {
       setJenisHarga('Harga Jual Digit');
-    } else if (jenisBarang === 'Barang Jadi' && (jenisHarga !== 'HPP Digit' && jenisHarga !== 'HPP Kalkulasi' && jenisHarga !== 'Input Manual')) {
+    } else if (jenisBarang === 'Barang Jadi' && (jenisHarga !== 'HPP Digit' && jenisHarga !== 'Input Manual')) {
       setJenisHarga('HPP Digit');
+    } else if (jenisBarang === 'HPP Kalkulasi' && (jenisHarga !== 'HPP Kalkulasi' && jenisHarga !== 'Input Manual')) {
+      setJenisHarga('HPP Kalkulasi');
     }
   }, [jenisBarang]);
 
@@ -553,6 +552,7 @@ const allJenisHargaOptions = [
   useEffect(() => {
     let active = true;
     async function fetchHpp() {
+      // Use selectedOrderName as requested (Exact Match)
       if (!selectedOrderName) {
         if (active) { setHppKalkulasiValue(null); setHppLoading(false); }
         return;
@@ -587,7 +587,7 @@ const allJenisHargaOptions = [
     }
     fetchHpp();
     return () => { active = false; };
-  }, [selectedOrderName]);
+  }, [selectedOrderName, selectedOrderFaktur, jenisBarang]);
 
   // Handle Logic Harga recalculation (Based heavily on the VBA Logic)
   const calculateAutoHarga = useCallback(() => {

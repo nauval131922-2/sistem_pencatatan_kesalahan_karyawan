@@ -8,11 +8,23 @@ import { Home, Users, AlertCircle, Package, ChevronLeft, ChevronRight, Box, Star
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMasterOpen, setIsMasterOpen] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
 
+  // Load from localStorage on mount
+  useEffect(() => {
+    setIsMounted(true);
+    const saved = localStorage.getItem('sidebar_collapsed');
+    if (saved !== null) {
+      setIsCollapsed(saved === 'true');
+    }
+  }, []);
+
   // Sync with layout via event or shared state if needed, 
+  // and save to localStorage
   // but for now we'll use a custom event to notify layout
   useEffect(() => {
+    localStorage.setItem('sidebar_collapsed', String(isCollapsed));
     const event = new CustomEvent('sidebar-toggle', { detail: { isCollapsed } });
     window.dispatchEvent(event);
   }, [isCollapsed]);
@@ -36,11 +48,11 @@ export default function Sidebar() {
 
   return (
     <aside 
-      className={`h-screen glass border-r border-slate-200 transition-all duration-300 ease-in-out shrink-0 ${
+      className={`h-screen glass border-r border-slate-200 shrink-0 ${isMounted ? 'transition-all duration-300 ease-in-out' : ''} ${
         isCollapsed ? 'w-[80px]' : 'w-[210px]'
       }`}
     >
-      <div className={`p-4 transition-all duration-300 ${isCollapsed ? 'px-3 text-center' : 'px-4'}`}>
+      <div className={`p-4 ${isMounted ? 'transition-all duration-300' : ''} ${isCollapsed ? 'px-3 text-center' : 'px-4'}`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
           {!isCollapsed && (
             <h1 className="text-lg font-bold gradient-text whitespace-nowrap overflow-hidden">

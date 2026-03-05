@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: 'SIKKA | Order Produksi',
 };
 
+export const dynamic = 'force-dynamic';
+
+
 export default function OrdersPage() {
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">

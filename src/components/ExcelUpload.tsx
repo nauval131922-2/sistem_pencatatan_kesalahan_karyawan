@@ -2,7 +2,6 @@
 
 import { useState, useRef } from 'react';
 import { Upload, FileSpreadsheet, CheckCircle, XCircle, Loader2, X, Clock } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import ConfirmDialog from './ConfirmDialog';
 
 export default function ExcelUpload() {
@@ -17,7 +16,6 @@ export default function ExcelUpload() {
     message: ''
   });
   const fileRef = useRef<HTMLInputElement>(null);
-  const router = useRouter();
 
   const handleFile = async (file: File) => {
     if (!file) return;
@@ -51,7 +49,6 @@ export default function ExcelUpload() {
           title: 'Berhasil',
           message: `Berhasil mengimpor ${data.imported} karyawan.`
         });
-        router.refresh();
       } else {
         setStatus('error');
         setMessage(data.error || 'Gagal mengimpor data.');
@@ -60,7 +57,6 @@ export default function ExcelUpload() {
       setStatus('error');
       setMessage('Terjadi kesalahan koneksi.');
     }
-
     // Reset file input
     if (fileRef.current) fileRef.current.value = '';
   };
@@ -103,7 +99,10 @@ export default function ExcelUpload() {
               onChange={onFileChange}
             />
             <button
-              onClick={() => fileRef.current?.click()}
+              onClick={() => {
+                if (fileRef.current) fileRef.current.value = '';
+                fileRef.current?.click();
+              }}
               disabled={status === 'loading'}
               className="w-full md:w-[200px] relative px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-semibold rounded-lg shadow-md shadow-emerald-500/10 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed group overflow-hidden"
             >
@@ -126,7 +125,10 @@ export default function ExcelUpload() {
           type={dialog.type}
           title={dialog.title}
           message={dialog.message}
-          onConfirm={() => setDialog(prev => ({ ...prev, isOpen: false }))}
+          onConfirm={() => {
+            setDialog(prev => ({ ...prev, isOpen: false }));
+            window.location.reload();
+          }}
         />
       </div>
     </div>
