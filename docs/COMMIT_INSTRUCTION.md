@@ -9,7 +9,8 @@ Gunakan prompt ini jika Anda ingin saya melakukan commit dan push semua perubaha
 1. Kelompokkan commit berdasarkan fitur atau perbaikan (jangan digabung semua jadi satu).
 2. Tulis pesan commit yang deskriptif dalam bahasa Indonesia.
 3. Periksa `.gitignore` agar tidak ada file sampah atau database yang ikut ter-push.
-4. Lakukan push ke branch master."
+4. **PENTING**: Periksa pola `.gitignore` yang terlalu serakah (seperti tanda bintang `*`). Pastikan file penting (seperti `.md`) tidak terabaikan secara tidak sengaja seperti kasus sebelumnya.
+5. Lakukan push ke branch master."
 
 ---
 
