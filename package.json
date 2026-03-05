@@ -6,7 +6,8 @@
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "migrate:sales2025": "node scripts/migrate-sales-2025.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^12.6.2",
