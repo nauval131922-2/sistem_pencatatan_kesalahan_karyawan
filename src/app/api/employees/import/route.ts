@@ -21,7 +21,14 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    const workbook = XLSX.read(buffer, { 
+      type: 'buffer',
+      cellFormula: false,
+      cellHTML: false,
+      cellStyles: false,
+      cellText: false,
+      cellDates: false
+    });
 
     // Cari sheet "A.DATA KARYAWAN"
     if (!workbook.SheetNames.includes(SHEET_NAME)) {
@@ -52,7 +59,10 @@ export async function POST(req: NextRequest) {
 
     const insertMany = db.transaction((validRows: any[][]) => {
       let count = 0;
-      const importedNoSet = new Set<string>();
+
+      // Pre-emptively soft-delete all employees that have an employee_no.
+      // The upsert below will reactivate the ones found in the Excel file.
+      db.prepare(`UPDATE employees SET is_active = 0 WHERE employee_no IS NOT NULL AND employee_no != ''`).run();
 
       for (const row of validRows) {
         const colA = String(row[COL_A] ?? '').trim();
@@ -65,14 +75,7 @@ export async function POST(req: NextRequest) {
         if (!name || /^\d+$/.test(name)) continue;
 
         upsert.run(name, position || '-', '-', colA);
-        importedNoSet.add(colA);
         count++;
-      }
-
-      // Soft-delete karyawan yang tidak ada di Excel (Archive)
-      if (count > 0) {
-        const placeholders = Array.from(importedNoSet).map(() => '?').join(',');
-        db.prepare(`UPDATE employees SET is_active = 0 WHERE employee_no NOT IN (${placeholders})`).run(...Array.from(importedNoSet));
       }
 
       return count;

@@ -212,20 +212,23 @@ export async function GET(request: NextRequest) {
       }
     };
 
-    try {
-      db.prepare(`
-        INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(
-        'SCRAPE', 
-        'orders', 
-        0, 
-        `Tarik Data Order Produksi (${startParam} s/d ${endParam})`, 
-        JSON.stringify(stats), 
-        'System'
-      );
-    } catch (e) {
-      console.error("Failed to log activity:", e);
+    const silent = searchParams.get('silent') === 'true';
+    if (!silent) {
+      try {
+        db.prepare(`
+          INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `).run(
+          'SCRAPE', 
+          'orders', 
+          0, 
+          `Tarik Data Order Produksi (${startParam} s/d ${endParam})`, 
+          JSON.stringify(stats), 
+          'System'
+        );
+      } catch (e) {
+        console.error("Failed to log activity:", e);
+      }
     }
 
     const lastUpdated = new Date().toISOString();

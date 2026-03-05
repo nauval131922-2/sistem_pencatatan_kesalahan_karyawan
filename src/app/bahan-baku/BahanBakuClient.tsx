@@ -150,7 +150,7 @@ export default function BahanBakuClient() {
 
     const processChunk = async (chunk: any) => {
       try {
-        const res = await fetch(`/api/scrape-bahan-baku?start=${chunk.start}&end=${chunk.end}`);
+        const res = await fetch(`/api/scrape-bahan-baku?start=${chunk.start}&end=${chunk.end}&silent=true`);
         if (res.ok) {
           successCount++;
           const json = await res.json();
@@ -187,6 +187,19 @@ export default function BahanBakuClient() {
       setBatchStatus('Selesai! Memperbarui tampilan...');
       
       if (successCount > 0) {
+        // Post one summary log for the full range
+        await fetch('/api/activity-log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action_type: 'SCRAPE',
+            table_name: 'bahan_baku',
+            message: `Tarik Data Bahan Baku Produksi (${startStr} s/d ${endStr}) — ${successCount} periode`,
+            raw_data: JSON.stringify({ chunks: chunks.length, success: successCount }),
+            recorded_by: 'System'
+          })
+        });
+
         setRefreshKey(prev => prev + 1);
         const failCount = chunks.length - successCount;
         const message = failCount > 0 

@@ -151,10 +151,13 @@ export async function GET(request: NextRequest) {
     })();
 
     // Log activity
-    db.prepare(`
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run('SCRAPE', 'sales_reports', 0, `Tarik Laporan Penjualan (${startParam} s/d ${endParam})`, JSON.stringify({ total: allRecords.length }), 'System');
+    const silent = searchParams.get('silent') === 'true';
+    if (!silent) {
+      db.prepare(`
+        INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run('SCRAPE', 'sales_reports', 0, `Tarik Laporan Penjualan (${startParam} s/d ${endParam})`, JSON.stringify({ total: allRecords.length }), 'System');
+    }
 
     // Update last_scrape_at for this module
     try {
