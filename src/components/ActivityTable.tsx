@@ -1,13 +1,28 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useTransition } from 'react';
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 50;
 
 export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sikka_data_updated') {
+        startTransition(() => {
+          router.refresh();
+        });
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [router]);
 
   const fmtDateTime = (dt: string | null | undefined) => {
     if (!dt) return null;
@@ -58,21 +73,29 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
     });
   }, [initialLogs, search]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const paginated = filtered.slice(0, visibleCount);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
-    setPage(1);
+    setVisibleCount(PAGE_SIZE);
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight + 50) {
+      if (visibleCount < filtered.length) {
+        setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, filtered.length));
+      }
+    }
   };
 
   return (
     <div className="flex flex-col gap-4 overflow-hidden">
       {/* Search */}
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 shrink-0 px-1 mt-1">
+      {/* Search */}
+      <div className="flex flex-col gap-2 shrink-0 px-1 mt-1">
         <h3 className="text-sm font-semibold text-slate-800">Aktivitas Terkini</h3>
-        <div className="relative w-full sm:w-64">
+        <div className="relative w-full">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
@@ -86,7 +109,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
 
       {/* Table */}
       <div className="card p-0 overflow-hidden flex flex-col border border-slate-200 shadow-sm min-h-0">
-        <div className="overflow-auto bg-white flex-1 min-h-0">
+        <div className="overflow-auto bg-white flex-1 min-h-0 custom-scrollbar" onScroll={handleScroll}>
           <table className="w-full text-left relative min-w-[800px]">
             <thead className="sticky top-0 z-10">
               <tr className="text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-200 bg-slate-50">
@@ -139,57 +162,13 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
         </div>
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between text-[11px] text-slate-500 px-1">
-        <span>
+      {/* Footer Info */}
+      <div className="flex items-center justify-between text-[11px] text-slate-500 px-2 mt-2">
+        <span className="font-medium">
           {filtered.length === 0
             ? 'Tidak ada data'
-            : `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, filtered.length)} dari ${filtered.length} entri`}
+            : `Menampilkan ${paginated.length} dari ${filtered.length} entri`}
         </span>
-
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronLeft size={16} />
-          </button>
-
-          {/* Page numbers */}
-          {Array.from({ length: totalPages }, (_, i) => i + 1)
-            .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
-            .reduce<(number | '...')[]>((acc, p, i, arr) => {
-              if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push('...');
-              acc.push(p);
-              return acc;
-            }, [])
-            .map((p, i) =>
-              p === '...' ? (
-                <span key={`dots-${i}`} className="px-2">…</span>
-              ) : (
-                <button
-                  key={p}
-                  onClick={() => setPage(p as number)}
-                  className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${
-                    currentPage === p
-                      ? 'bg-emerald-500 text-white border border-emerald-600'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  {p}
-                </button>
-              )
-            )}
-
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
       </div>
     </div>
   );

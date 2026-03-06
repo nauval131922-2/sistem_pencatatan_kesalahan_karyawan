@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Upload, FileSpreadsheet, CheckCircle, XCircle, Loader2, X, Clock } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
 
@@ -16,6 +17,7 @@ export default function ExcelUpload() {
     message: ''
   });
   const fileRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   const handleFile = async (file: File) => {
     if (!file) return;
@@ -127,7 +129,8 @@ export default function ExcelUpload() {
           message={dialog.message}
           onConfirm={() => {
             setDialog(prev => ({ ...prev, isOpen: false }));
-            window.location.reload();
+            localStorage.setItem('sikka_data_updated', Date.now().toString());
+            router.refresh();
           }}
         />
       </div>

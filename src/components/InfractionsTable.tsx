@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useCallback, useTransition, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, ChevronLeft, ChevronRight, Pencil, Trash2, Calendar, FileText, Printer, Download, RefreshCw } from 'lucide-react';
 import ConfirmDialog, { DialogType } from '@/components/ConfirmDialog';
@@ -9,7 +9,7 @@ import { getInfractions } from '@/lib/actions';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 50;
 
 // Helper to format Date to YYYY-MM-DD
 function formatDateToYYYYMMDD(date: Date) {
@@ -77,13 +77,14 @@ export default function InfractionsTable({
   onRefresh?: (period?: { start: string; end: string }) => Promise<void>;
 }) {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const [infractions, setInfractions] = useState<Infraction[]>(initial);
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [query, setQuery] = useState('');
-  const [page, setPage] = useState(1);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [deleting, setDeleting] = useState<number | null>(null);
   
   // Sync state with props when server data changes
@@ -113,7 +114,7 @@ export default function InfractionsTable({
         setInfractions(json.data || []);
         if (onPeriodChange) onPeriodChange(start, end);
       }
-      setPage(1);
+      setVisibleCount(PAGE_SIZE);
     } catch (e) {
       console.error('Fetch error:', e);
     } finally {
@@ -400,9 +401,7 @@ export default function InfractionsTable({
     );
   }, [infractions, query]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const curPage = Math.min(page, totalPages);
-  const paginated = filtered.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
+  const paginated = filtered.slice(0, visibleCount);
 
   const startEdit = (inf: Infraction) => {
     onEdit?.(inf);
@@ -456,8 +455,30 @@ export default function InfractionsTable({
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuery(e.target.value);
-    setPage(1);
+    setVisibleCount(PAGE_SIZE);
   };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight + 50) {
+      if (visibleCount < filtered.length) {
+        setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, filtered.length));
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sikka_data_updated') {
+        fetchFilteredData();
+        startTransition(() => {
+          router.refresh();
+        });
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [router, startDate, endDate]);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
@@ -501,24 +522,21 @@ export default function InfractionsTable({
         </div>
       </div>
 
-      {/* Search & Header */}
-      <div className="flex flex-col sm:flex-row justify-end items-end gap-2 shrink-0">
-
-        <div className="relative w-full sm:w-72">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
-            type="text"
-            value={query}
-            onChange={handleSearch}
-            placeholder="Cari karyawan, deskripsi..."
-            className="w-full pl-9 pr-4 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors shadow-sm"
-          />
-        </div>
+      {/* Search */}
+      <div className="relative w-full shrink-0">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <input
+          type="text"
+          value={query}
+          onChange={handleSearch}
+          placeholder="Cari karyawan, deskripsi..."
+          className="w-full pl-9 pr-4 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors shadow-sm"
+        />
       </div>
 
       {/* Table */}
       <div className="card p-0 overflow-hidden flex-1 flex flex-col border border-slate-200 shadow-sm min-h-0">
-        <div className="overflow-auto bg-white flex-1 min-h-0">
+        <div className="overflow-auto bg-white flex-1 min-h-0 custom-scrollbar" onScroll={handleScroll}>
           <table className="w-full text-left relative min-w-[1000px]">
                 <thead className="sticky top-0 z-10">
                   <tr className="text-slate-500 text-[10px] uppercase tracking-wider border-b border-slate-200 bg-slate-50">
@@ -647,57 +665,13 @@ export default function InfractionsTable({
         </div>
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between text-[11px] text-slate-500">
-        <span>
+      {/* Footer Info */}
+      <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2">
+        <span className="font-medium">
           {filtered.length === 0
             ? 'Tidak ada data'
-            : `${(curPage - 1) * PAGE_SIZE + 1}–${Math.min(curPage * PAGE_SIZE, filtered.length)} dari ${filtered.length} riwayat`}
+            : `Menampilkan ${paginated.length} dari ${filtered.length} riwayat`}
         </span>
-
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={curPage === 1}
-            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronLeft size={16} />
-          </button>
-
-          {/* Page numbers */}
-          {Array.from({ length: totalPages }, (_, i) => i + 1)
-            .filter((p) => p === 1 || p === totalPages || Math.abs(p - curPage) <= 1)
-            .reduce<(number | '...')[]>((acc, p, i, arr) => {
-              if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push('...');
-              acc.push(p);
-              return acc;
-            }, [])
-            .map((p, i) =>
-              p === '...' ? (
-                <span key={`dots-${i}`} className="px-2">…</span>
-              ) : (
-                <button
-                  key={p}
-                  onClick={() => setPage(p as number)}
-                  className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${
-                    curPage === p
-                      ? 'bg-emerald-500 text-white border border-emerald-600'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  {p}
-                </button>
-              )
-            )}
-
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={curPage === totalPages}
-            className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
       </div>
 
       {/* Dialogs */}

@@ -55,7 +55,10 @@ export default function Sidebar() {
       <div className={`p-4 ${isMounted ? 'transition-all duration-300' : ''} ${isCollapsed ? 'px-3 text-center' : 'px-4'}`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
           {!isCollapsed && (
-            <h1 className="text-lg font-bold gradient-text whitespace-nowrap overflow-hidden">
+            <h1 
+              className="text-lg font-bold gradient-text whitespace-nowrap overflow-hidden cursor-help"
+              title="Sistem Informasi Pencatatan Kesalahan Karyawan"
+            >
               SIKKA
             </h1>
           )}

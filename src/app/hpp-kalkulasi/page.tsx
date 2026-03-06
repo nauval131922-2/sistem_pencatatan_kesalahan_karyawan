@@ -59,7 +59,7 @@ export default async function HppKalkulasiPage() {
         </div>
       </header>
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         <HppKalkulasiClient />
       </div>
     </div>
