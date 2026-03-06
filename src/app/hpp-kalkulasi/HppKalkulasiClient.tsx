@@ -5,14 +5,14 @@ import { Upload, FileSpreadsheet, Loader2, Search, CheckCircle, AlertCircle, Che
 import { useRouter } from 'next/navigation';
 import ConfirmDialog from '@/components/ConfirmDialog';
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 20;
 
-export default function HppKalkulasiClient() {
+  export default function HppKalkulasiClient() {
   const [data, setData] = useState<any[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
-   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   
   const [dialog, setDialog] = useState<{isOpen: boolean, type: 'success' | 'error', title: string, message: string}>({
     isOpen: false,
@@ -22,7 +22,7 @@ export default function HppKalkulasiClient() {
   });
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [page, setPage] = useState(1);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -58,7 +58,17 @@ export default function HppKalkulasiClient() {
 
   useEffect(() => {
     fetchHppData();
-  }, []);
+    
+    // Sync with other tabs
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sikka_data_updated') {
+        fetchHppData();
+        router.refresh();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [router]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -94,6 +104,7 @@ export default function HppKalkulasiClient() {
         title: 'Berhasil',
         message: json.message || 'Data HPP Kalkulasi berhasil diperbarui.'
       });
+      localStorage.setItem('sikka_data_updated', Date.now().toString());
       await fetchHppData(); // Refresh table
       router.refresh(); // Refresh page data (like the header timestamps)
     } catch (err: any) {
@@ -109,14 +120,21 @@ export default function HppKalkulasiClient() {
     d.nama_order.toLowerCase().includes(searchQuery.toLowerCase())
   ) : [];
 
-  const totalPages = Math.max(1, Math.ceil(filteredData.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const paginatedData = filteredData.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const paginatedData = filteredData.slice(0, visibleCount);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight + 50) {
+      if (visibleCount < filteredData.length) {
+        setVisibleCount((prev) => Math.min(prev + PAGE_SIZE, filteredData.length));
+      }
+    }
+  };
 
   return (
-    <div className="space-y-4">
+    <div className="h-full flex flex-col gap-4">
       {/* Upload Panel */}
-      <div className="card glass p-3 border border-emerald-500/20 relative overflow-hidden">
+      <div className="card glass p-3 border border-emerald-500/20 relative overflow-hidden shrink-0">
         <div className="absolute right-0 top-0 -mt-8 -mr-8 opacity-5 pointer-events-none">
            <FileSpreadsheet size={120} />
         </div>
@@ -169,14 +187,14 @@ export default function HppKalkulasiClient() {
 
       {/* Results View */}
       {data === null && loading && (
-        <div className="card text-center py-24 text-slate-500 flex flex-col items-center bg-slate-50/50 border-dashed">
+        <div className="card text-center py-24 text-slate-500 flex flex-col items-center bg-slate-50/50 border-dashed shrink-0">
           <Loader2 size={48} className="mb-4 opacity-20 text-emerald-600 animate-spin" />
           <p className="font-medium text-slate-600">Sedang memuat data...</p>
         </div>
       )}
 
       {data !== null && data.length === 0 && !loading && (
-        <div className="card text-center py-20 text-slate-500 flex flex-col items-center border-dashed">
+        <div className="card text-center py-20 text-slate-500 flex flex-col items-center border-dashed shrink-0">
           <Calculator size={48} className="mb-4 opacity-20 text-slate-400" />
           <p className="font-medium text-slate-600">Belum ada data HPP yang diunggah.</p>
           <p className="text-sm mt-1">Gunakan tombol upload di atas untuk memasukkan data dari Excel.</p>
@@ -184,32 +202,32 @@ export default function HppKalkulasiClient() {
       )}
 
       {data !== null && data.length > 0 && (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
-            <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-base">
-              <Calculator size={18} className="text-emerald-500" /> Data HPP Kalkulasi
+        <div className="flex-1 min-h-0 flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500 px-0.5">
+          <div className="flex flex-col gap-2 mb-1 shrink-0">
+            <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-sm">
+              <Calculator size={16} className="text-emerald-500" /> Data HPP Kalkulasi
             </h3>
+            
+            <div className="relative shrink-0">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder="Cari berdasarkan nama order..." 
+                className="w-full pl-9 pr-4 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setVisibleCount(PAGE_SIZE); }}
+              />
+            </div>
           </div>
 
-          <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Cari berdasarkan nama order..." 
-              className="w-full pl-9 pr-4 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
-              value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-            />
-          </div>
-
-          <div className="card p-0 overflow-hidden">
-            <div className="overflow-auto" style={{ maxHeight: '450px' }}>
+          <div className="card p-0 flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div className="flex-1 overflow-auto custom-scrollbar relative" onScroll={handleScroll}>
               <table className="w-full text-left relative">
                 <thead className="sticky top-0 z-10">
-                  <tr className="text-slate-500 text-[10px] uppercase tracking-wider border-b border-slate-200 bg-slate-50">
-                    <th className="px-4 py-2 font-semibold whitespace-nowrap w-16 text-center">No</th>
-                    <th className="px-4 py-2 font-semibold whitespace-nowrap">Nama Order</th>
-                    <th className="px-4 py-2 font-semibold text-right whitespace-nowrap w-48">HPP Kalkulasi</th>
+                  <tr className="text-slate-500 text-[10px] uppercase tracking-wider border-b border-slate-200 bg-slate-50 backdrop-blur-sm">
+                    <th className="px-4 py-2 font-semibold whitespace-nowrap w-16 text-center shadow-sm">No</th>
+                    <th className="px-4 py-2 font-semibold whitespace-nowrap shadow-sm">Nama Order</th>
+                    <th className="px-4 py-2 font-semibold text-right whitespace-nowrap w-48 shadow-sm">HPP Kalkulasi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -223,7 +241,7 @@ export default function HppKalkulasiClient() {
                     paginatedData.map((row, idx) => (
                       <tr key={row.id} className="text-[11px] hover:bg-slate-50 transition-colors">
                         <td className="px-4 py-1.5 text-slate-400 font-medium text-center">
-                          {(currentPage - 1) * PAGE_SIZE + idx + 1}
+                          {idx + 1}
                         </td>
                         <td className="px-4 py-1.5 font-medium text-slate-700">
                            {row.nama_order}
@@ -237,55 +255,15 @@ export default function HppKalkulasiClient() {
                 </tbody>
               </table>
             </div>
-          </div>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-between text-sm text-slate-500">
-            <span>
-              {filteredData.length === 0
-                ? 'Tidak ada data'
-                : `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, filteredData.length)} dari ${filteredData.length} data`}
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
-                .reduce<(number|string)[]>((acc, p, i, arr) => {
-                  if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push('...');
-                  acc.push(p);
-                  return acc;
-                }, [])
-                .map((p, i) =>
-                  p === '...' ? (
-                    <span key={`dots-${i}`} className="px-2">…</span>
-                  ) : (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p as number)}
-                      className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${
-                        currentPage === p
-                          ? 'bg-emerald-500 text-white border border-emerald-600'
-                          : 'text-slate-600 hover:bg-slate-100'
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  )
-                )}
-              <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
+            
+            {/* Footer info Banner within Card Bottom */}
+            <div className="p-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-[11px] text-slate-500 shrink-0">
+             <span className="font-medium">
+               {filteredData.length === 0
+                 ? 'Tidak ada data'
+                 : `Menampilkan ${paginatedData.length} dari ${filteredData.length} data`}
+             </span>
+           </div>
           </div>
         </div>
       )}

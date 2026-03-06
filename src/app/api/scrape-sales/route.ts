@@ -113,8 +113,8 @@ export async function GET(request: NextRequest) {
 
     // 3. Save to database - Use UPSERT logic
     // Ensure UNIQUE constraint exists for UPSERT to work effectively. 
-    // In this case, we use 'faktur' and 'kd_barang' and 'nama_prd' as unique combo if needed, 
-    // but usually faktur+item is unique enough.
+    let newInsertedCount = 0;
+    const checkStmt = db.prepare('SELECT 1 FROM sales_reports WHERE faktur = ? AND kd_barang = ? AND tgl = ?');
     
     const insertStmt = db.prepare(`
       INSERT INTO sales_reports (tgl, kd_barang, nama_prd, nama_pelanggan, dati_2, qty, harga, jumlah, faktur, raw_data)
@@ -132,6 +132,9 @@ export async function GET(request: NextRequest) {
     db.transaction(() => {
       for (const record of allRecords) {
         try {
+          const exists = checkStmt.get(record.faktur || '', record.kd_barang || '', record.tgl || '');
+          if (!exists) newInsertedCount++;
+
           insertStmt.run(
             record.tgl || '',
             record.kd_barang || '',
@@ -181,7 +184,7 @@ export async function GET(request: NextRequest) {
       console.error("Failed to update system_settings:", e);
     }
 
-    return NextResponse.json({ success: true, total: allRecords.length, lastUpdated });
+    return NextResponse.json({ success: true, total: allRecords.length, newly_inserted: newInsertedCount, lastUpdated });
 
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

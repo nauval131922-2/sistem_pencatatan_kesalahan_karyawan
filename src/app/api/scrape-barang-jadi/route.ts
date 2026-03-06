@@ -135,7 +135,10 @@ export async function GET(request: NextRequest) {
 
     // Save to database
     let importedCount = 0;
+    let newInsertedCount = 0;
     
+    const checkStmt = db.prepare('SELECT 1 FROM barang_jadi WHERE faktur = ? AND kd_barang = ? AND tgl = ?');
+
     const insertStmt = db.prepare(`
       INSERT INTO barang_jadi (tgl, nama_barang, kd_barang, faktur, faktur_prd, qty, satuan, nama_prd, hp, raw_data)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -153,6 +156,9 @@ export async function GET(request: NextRequest) {
       for (const record of finalRecords) {
         if (!record.nama_barang) continue; // Skip invalid rows
         try {
+          const exists = checkStmt.get(record.faktur || '', record.kd_barang || '', record.tgl || '');
+          if (!exists) newInsertedCount++;
+
           insertStmt.run(
             record.tgl || '',
             record.nama_barang || '',
@@ -205,6 +211,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       total: finalRecords.length,
+      newly_inserted: newInsertedCount,
       data: finalRecords,
       lastUpdated
     }, {

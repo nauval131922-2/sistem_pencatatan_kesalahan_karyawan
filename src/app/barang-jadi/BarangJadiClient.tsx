@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Package, Hash, Calendar, Loader2, Download, Search, AlertCircle, ChevronLeft, ChevronRight, Clock, Star, RefreshCw, User, Tag, BarChart3, Printer } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { splitDateRangeIntoMonths } from '@/lib/date-utils';
@@ -27,9 +28,10 @@ function formatIndoDateStr(tglStr: string) {
   return tglStr;
 }
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 50;
 
 export default function BarangJadiClient() {
+  const router = useRouter();
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
@@ -61,8 +63,20 @@ export default function BarangJadiClient() {
 
   useEffect(() => {
     mountedRef.current = true;
-    return () => { mountedRef.current = false; };
-  }, []);
+    
+    // Sync with other tabs
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sikka_data_updated') {
+        setRefreshKey(prev => prev + 1);
+        router.refresh();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      mountedRef.current = false;
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [router]);
 
   const [dialog, setDialog] = useState<{isOpen: boolean, type: 'success' | 'error' | 'danger' | 'confirm' | 'alert', title: string, message: string}>({
     isOpen: false,
@@ -83,7 +97,7 @@ export default function BarangJadiClient() {
           const json = await res.json();
           const endTime = performance.now();
           setLoadTime(Math.round(endTime - startTime));
-          setData(json.data || []);
+          setData(prev => page === 1 ? (json.data || []) : [...(prev || []), ...(json.data || [])]);
           setTotalCount(json.total || 0);
 
           if (json.lastUpdated) {
@@ -148,6 +162,8 @@ export default function BarangJadiClient() {
     setBatchProgress(0);
     
     let successCount = 0;
+    let totalScraped = 0;
+    let totalNewInserted = 0;
     let lastUpdatedFromScrape: string | null = null;
     let completedChunks = 0;
 
@@ -157,6 +173,8 @@ export default function BarangJadiClient() {
         if (res.ok) {
           successCount++;
           const json = await res.json();
+          totalScraped += (json.total || 0);
+          totalNewInserted += (json.newly_inserted || 0);
           if (json.lastUpdated) {
             lastUpdatedFromScrape = json.lastUpdated;
           }
@@ -197,8 +215,8 @@ export default function BarangJadiClient() {
           body: JSON.stringify({
             action_type: 'SCRAPE',
             table_name: 'barang_jadi',
-            message: `Tarik Data Barang Hasil Produksi (${startStr} s/d ${endStr}) — ${successCount} periode`,
-            raw_data: JSON.stringify({ chunks: chunks.length, success: successCount }),
+            message: `Tarik Data Barang Hasil Produksi (${startStr} s/d ${endStr})`,
+            raw_data: JSON.stringify({ "Total Data Ditarik dari Digit": totalScraped, "Data Baru Ditambahkan": totalNewInserted }),
             recorded_by: 'System'
           })
         });
@@ -215,6 +233,8 @@ export default function BarangJadiClient() {
           title: failCount > 0 ? 'Selesai Sebagian' : 'Berhasil',
           message: message
         });
+
+        localStorage.setItem('sikka_data_updated', Date.now().toString());
 
         if (lastUpdatedFromScrape) {
           const latestDate = new Date(lastUpdatedFromScrape);
@@ -243,19 +263,26 @@ export default function BarangJadiClient() {
         setIsBatching(false);
         setLoading(false);
         setBatchStatus('');
+        setBatchProgress(0); // Clear progress when done
         setRefreshKey(prev => prev + 1);
       }
     }
   };
 
-  // Filter and paginate data
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
   const paginatedData = data || [];
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setPage(1); // Reset page on search
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight + 50 && !loading) {
+      if (data && data.length < totalCount) {
+        setPage(prev => prev + 1);
+      }
+    }
   };
 
   return (
@@ -379,7 +406,7 @@ export default function BarangJadiClient() {
             <>
               <div className="card p-0 overflow-hidden border border-slate-200 shadow-sm flex-1 flex flex-col min-h-0">
 
-            <div className="overflow-auto bg-white flex-1 min-h-0">
+            <div className="overflow-auto bg-white flex-1 min-h-0 custom-scrollbar" onScroll={handleScroll}>
               <table className="w-full text-left relative min-w-[800px]">
                 <thead className="sticky top-0 z-10">
                   <tr className="text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-200 bg-slate-50/90 backdrop-blur-sm">
@@ -442,12 +469,13 @@ export default function BarangJadiClient() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-[11px] text-slate-500">
+          {/* Global Style Banner */}
+          <div className="flex items-center justify-between text-[11px] text-slate-500 shrink-0 mt-3 border-t border-slate-100 pt-3">
             <div className="flex items-center gap-3">
-              <span>
+              <span className="font-medium">
                 {totalCount === 0
                   ? 'Tidak ada data'
-                  : `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, totalCount)} dari ${totalCount} data`}
+                  : `Menampilkan ${paginatedData.length} dari ${totalCount} data`}
               </span>
               {loadTime !== null && (
                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono flex items-center gap-1 ${
@@ -459,49 +487,13 @@ export default function BarangJadiClient() {
                 </span>
               )}
             </div>
-
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft size={16} />
-              </button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
-                .reduce<(number | '...')[]>((acc, p, i, arr) => {
-                  if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push('...');
-                  acc.push(p);
-                  return acc;
-                }, [])
-                .map((p, i) =>
-                  p === '...' ? (
-                    <span key={`dots-${i}`} className="px-2">…</span>
-                  ) : (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p as number)}
-                      className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${
-                        currentPage === p
-                          ? 'bg-indigo-500 text-white border border-indigo-600'
-                          : 'text-slate-600 hover:bg-slate-100'
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  )
-                )}
-
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
+            
+            {loading && page > 1 && (
+              <span className="text-indigo-500 font-medium flex items-center gap-2">
+                <Loader2 size={12} className="animate-spin" />
+                Memuat data...
+              </span>
+            )}
           </div>
             </>
           )}

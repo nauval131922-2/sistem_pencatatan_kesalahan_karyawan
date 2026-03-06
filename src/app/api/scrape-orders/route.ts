@@ -162,7 +162,10 @@ export async function GET(request: NextRequest) {
 
     // Save to database
     let importedCount = 0;
+    let newInsertedCount = 0;
     
+    const checkStmt = db.prepare('SELECT 1 FROM orders WHERE faktur = ?');
+
     const insertStmt = db.prepare(`
       INSERT INTO orders (faktur, nama_prd, nama_pelanggan, tgl, qty, harga, jumlah, raw_data)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -180,6 +183,9 @@ export async function GET(request: NextRequest) {
       for (const record of finalRecords) {
         if (!record.faktur) continue; // Skip invalid rows
         try {
+          const exists = checkStmt.get(record.faktur);
+          if (!exists) newInsertedCount++;
+
           insertStmt.run(
             record.faktur,
             record.nama_prd || '',
@@ -197,7 +203,7 @@ export async function GET(request: NextRequest) {
       }
     })();
 
-    console.log(`[SCRAPE] Database insertion completed in ${Date.now() - parseTime}ms`);
+    console.log(`[SCRAPE] Database insertion completed in ${Date.now() - parseTime}ms. New records: ${newInsertedCount}`);
     console.log(`[SCRAPE] Total scrape time: ${Date.now() - startTime}ms`);
 
     const totalTime = Date.now() - startTime;
@@ -245,6 +251,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       total: finalRecords.length,
+      newly_inserted: newInsertedCount,
       lastUpdated
     }, {
       headers: {

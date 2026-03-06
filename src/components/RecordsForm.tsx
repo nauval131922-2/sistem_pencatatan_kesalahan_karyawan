@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, ChevronDown, AlertTriangle, Loader2, Users, Box, Star, CheckCircle2 } from 'lucide-react';
 import ConfirmDialog, { DialogType } from '@/components/ConfirmDialog';
@@ -68,20 +68,15 @@ function SearchableSelect({
     if (isLoading) return;
 
     if (defaultValue !== undefined && defaultValue !== null) {
-      const found = options.find((o) => String(valueFn(o)) === String(defaultValue));
-      if (found) setSelected(found);
+      const currentId = selected ? String(valueFn(selected)) : '';
+      if (String(defaultValue) !== currentId) {
+        const found = options.find((o) => String(valueFn(o)) === String(defaultValue));
+        if (found) setSelected(found);
+        else if (defaultValue === '' || defaultValue === null) setSelected(null);
+      }
     } else if (defaultValue === null) {
       // Explicitly requested to clear
       setSelected(null);
-    } else if (selected && options.length > 0) {
-      // If we already have a selection and options are present,
-      // check if our selection is still valid in the new options.
-      // If options are empty but we have a selection, KEEP it (resilience).
-      const stillExists = options.find((o) => String(valueFn(o)) === String(valueFn(selected)));
-      if (!stillExists) {
-        // Selection is truly no longer in the provided options
-        setSelected(null);
-      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultValue, options, isLoading]);
@@ -192,6 +187,23 @@ export default function RecordsForm({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [refreshSyncCount, setRefreshSyncCount] = useState(0);
+  const [isRefreshing, startTransition] = useTransition();
+
+  // Sync with other tabs when employee data is updated
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sikka_data_updated') {
+        setRefreshSyncCount(prev => prev + 1);
+        startTransition(() => {
+          router.refresh();
+        });
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [router]);
+
   const [success, setSuccess] = useState(false);
   const [lastFaktur, setLastFaktur] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -383,6 +395,8 @@ const allJenisHargaOptions = [
           setHarga(draft.harga || '');
           setDraftEmployeeId(draft.employeeId || null);
           setDraftRecordedById(draft.recordedById || null);
+          setDraftOrderFaktur(draft.selectedOrderFaktur || '');
+          setDraftItemFaktur(draft.selectedItemFaktur || '');
         } catch (e) {
           console.error('Failed to load draft', e);
         }
@@ -546,7 +560,7 @@ const allJenisHargaOptions = [
     }
     fetchItems();
     return () => { active = false; };
-  }, [selectedOrderName, selectedOrderFaktur, jenisBarang]);
+  }, [selectedOrderName, selectedOrderFaktur, jenisBarang, refreshSyncCount]);
 
   // Fetch HPP Kalkulasi for selectedOrder
   useEffect(() => {
@@ -587,7 +601,7 @@ const allJenisHargaOptions = [
     }
     fetchHpp();
     return () => { active = false; };
-  }, [selectedOrderName, selectedOrderFaktur, jenisBarang]);
+  }, [selectedOrderName, selectedOrderFaktur, jenisBarang, refreshSyncCount]);
 
   // Handle Logic Harga recalculation (Based heavily on the VBA Logic)
   const calculateAutoHarga = useCallback(() => {
@@ -831,7 +845,7 @@ const allJenisHargaOptions = [
               {editingInfraction ? 'Edit Kesalahan' : 'Catat Kesalahan'}
             </h3>
             <p className="text-[10px] text-slate-500 font-medium uppercase tracking-widest">
-              {editingInfraction ? 'Perbarui data yang sudah ada' : 'Input data pelanggaran baru'}
+              {editingInfraction ? 'Perbarui data Kesalahan Karyawan' : 'Input data Kesalahan Karyawan'}
             </p>
           </div>
         </div>
@@ -904,13 +918,14 @@ const allJenisHargaOptions = [
                   : 'Pilih order...'
               }
               required
-              displayFn={(o) => `${o.faktur} — ${o.nama_prd}${(o as any).is_ghost ? ' (Arsip)' : ''}`}
+              displayFn={(o) => `${o.nama_prd} (${o.faktur})`}
               valueFn={(o) => o.faktur}
               defaultValue={draftOrderFaktur}
+              disabled={loading}
               onChange={(o) => {
-                setSelectedOrderFaktur(o ? o.faktur : '');
-                setSelectedOrderName(o ? o.nama_prd : '');
-                setDraftOrderFaktur(o ? o.faktur : '');
+                setSelectedOrderFaktur(o?.faktur || '');
+                setSelectedOrderName(o?.nama_prd || '');
+                setDraftOrderFaktur(o?.faktur || '');
                 // Reset items when order changes
                 setSelectedNamaBarang('');
                 setSelectedItemFaktur('');
