@@ -85,8 +85,12 @@ export async function addInfraction(employeeId: number, description: string, sev
 }
 
 export async function fetchProductionOrders() {
-  // Ordered by id ASC because we sorted them by descending date before bulk insertion
-  return db.prepare('SELECT id, faktur, nama_prd FROM orders ORDER BY id ASC').all();
+  // Sort by date descending (latest first) to match Orders menu behavior
+  return db.prepare(`
+    SELECT id, faktur, nama_prd 
+    FROM orders 
+    ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC
+  `).all();
 }
 
 export async function getStats() {

@@ -24,8 +24,8 @@ export default function ManualModal() {
       description: 'Ringkasan aktivitas dan metrik sistem untuk audit cepat performa harian.',
       steps: [
         'Pantau angka **Total Karyawan** dan **Total Kesalahan** pada kartu statistik.',
-        'Klik pada **Kartu Statistik** untuk langsung berpindah ke menu yang relevan.',
-        'Lihat tabel **Aktivitas Terkini** untuk memantau log perubahan data terbaru.'
+        'Lihat tabel **Aktivitas Terkini** untuk memantau aktivitas sistem (Scroll ke bawah untuk melihat lebih lama).',
+        'Klik menu di sidebar kiri untuk berpindah halaman.'
       ]
     },
     '/employees': {
@@ -34,9 +34,11 @@ export default function ManualModal() {
       description: 'Manajemen database karyawan yang terintegrasi dengan sistem pencatatan.',
       steps: [
         'Klik tombol **Pilih & Upload File Excel** untuk memperbarui seluruh daftar karyawan.',
-        'Sistem akan **menghapus data lama** dan menggantinya dengan data baru.',
+        'Sistem akan **menonaktifkan data lama** dan menggantinya dengan data baru, sehingga riwayat pencatatan kesalahan tetap aman.',
         'Pantau status **Diperbarui** di bagian atas untuk melihat nama file terakhir.',
-        'Gunakan **kotak pencarian** untuk memfilter tabel secara cepat.'
+        'Scroll tabel ke bawah untuk **melihat lebih banyak data** (Infinite Scroll).',
+        'Gunakan **kotak pencarian** untuk memfilter tabel secara cepat.',
+        'Data di menu **Data Karyawan** akan digunakan untuk menjadi **source di form record kesalahan karyawan** pada bagian **Nama Karyawan** dan **Nama Pencatat**.'
       ]
     },
     '/orders': {
@@ -46,8 +48,10 @@ export default function ManualModal() {
       steps: [
         'Pilih **Tanggal Mulai** dan **Tanggal Akhir** pada kotak Periode.',
         'Klik tombol **Tarik Data** untuk mengambil data terbaru dari sistem Digit.',
-        'Tunggu hingga proses selesai (**indikator loading** akan muncul).',
-        '**Nomor Faktur** dan **Nama Order** akan tersedia otomatis saat Catat Kesalahan.'
+        'Tunggu hingga proses selesai (**indikator persentase** akan berjalan).',
+        '**Scraping tidak menghapus keseluruhan data**, data lama masih tersimpan di Database.',
+        'Data di Order Produksi akan menjadi **source di form record kesalahan karyawan**, yang akan muncul di *field* **Nama Order Terkait** dalam bentuk Faktur dan Nama Order Produksi.',
+        'Terus scroll tabel ke bawah jika ingin melihat data order yang lebih lama (Infinite Scroll).'
       ],
       tips: 'Jika data order terbaru belum muncul, pastikan Anda sudah mengeklik tombol "Tarik Data" untuk periode tanggal yang sesuai.'
     },
@@ -58,8 +62,10 @@ export default function ManualModal() {
       steps: [
         'Pilih **Tanggal Mulai** dan **Tanggal Akhir** pada kotak Periode.',
         'Klik tombol **Tarik Data** untuk mengambil data terbaru dari sistem Digit.',
-        'Tunggu hingga proses selesai (**indikator loading** akan muncul).',
-        'Data **Bahan Baku** muncul otomatis setelah memilih Nama Order dan Jenis Barang.'
+        'Tunggu hingga proses selesai (**indikator persentase** akan muncul berjalan).',
+        '**Scraping tidak menghapus keseluruhan data**, data lama masih tersimpan di Database.',
+        'Data di Daftar Bahan Baku Keluar akan menjadi **source di form record kesalahan karyawan**, yang akan muncul di *field* Nama Barang dalam bentuk **Faktur** dan **Nama Barang** saat memilih Jenis Barang **Bahan Baku (Digit)**, dan mengambil **Harga** dari kolom **HPP** saat memilih Jenis Harga **HPP Digit**.',
+        'Scroll tabel ke bawah untuk melihat data sebelumnya (Infinite Scroll).'
       ],
       tips: 'Jika data bahan baku terbaru belum muncul, pastikan Anda sudah mengeklik tombol "Tarik Data" untuk periode tanggal yang memuat faktur tersebut.'
     },
@@ -70,8 +76,10 @@ export default function ManualModal() {
       steps: [
         'Pilih Tanggal Mulai dan Tanggal Akhir pada kotak "Periode".',
         'Klik tombol "Tarik Data" untuk mengambil data terbaru dari sistem Digit.',
-        'Tunggu hingga proses selesai (indikator loading akan muncul).',
-        'Data Barang Jadi akan muncul saat Pencatatan Kesalahan setelah memilih Nama Order.'
+        'Tunggu hingga proses selesai (**indikator persentase** akan muncul berjalan).',
+        '**Scraping tidak menghapus keseluruhan data**, data lama masih tersimpan di Database.',
+        'Data di Barang Jadi akan menjadi **source di form record kesalahan karyawan**, yang akan muncul di *field* Nama Barang dalam bentuk **Faktur** dan **Nama Barang** saat memilih Jenis Barang **Barang Jadi (Digit)**, dan mengambil **Harga** dari kolom **HPP** saat memilih Jenis Harga **Barang Jadi (Digit)**.',
+        'Scroll tabel ke bawah untuk melihat lebih banyak data (Infinite Scroll).'
       ],
       tips: 'Jika data barang jadi terbaru belum muncul, pastikan Anda sudah mengeklik tombol "Tarik Data" untuk periode tanggal yang memuat faktur tersebut.'
     },
@@ -80,10 +88,12 @@ export default function ManualModal() {
       icon: BarChart3,
       description: 'Untuk menyinkronkan data Laporan Penjualan secara langsung dari sistem Digit.',
       steps: [
-        'Pilih Tanggal Mulai dan Tanggal Akhir pada kotak "Periode".',
-        'Klik tombol "Tarik Data" untuk mengambil data terbaru dari sistem Digit.',
-        'Tunggu hingga proses selesai (indikator loading akan muncul).',
-        'Data Laporan Penjualan akan muncul saat Pencatatan Kesalahan setelah Anda memilih Nama Order.'
+        'Pilih **Tanggal Mulai** dan **Tanggal Akhir** pada kotak "Periode".',
+        'Klik tombol **Tarik Data** untuk mengambil data terbaru dari sistem Digit.',
+        'Tunggu hingga proses selesai (**indikator persentase** akan muncul berjalan).',
+        '**Scraping tidak menghapus keseluruhan data**, data lama masih tersimpan di Database.',
+        'Data di Laporan Penjualan akan menjadi **source di form record kesalahan karyawan**, yang akan muncul di *field* Nama Barang dalam bentuk **Faktur** dan **Nama Barang** saat memilih Jenis Barang **Penjualan Barang (Digit)**, dan mengambil **Harga** dari kolom **Harga** saat memilih Jenis Harga **Penjualan Barang (Digit)**.',
+        'Scroll tabel ke bawah untuk memuat data lama (Infinite Scroll).'
       ],
       tips: 'Jika data penjualan terbaru belum muncul, pastikan Anda sudah mengeklik tombol "Tarik Data" untuk periode tanggal yang memuat faktur tersebut.'
     },
@@ -93,9 +103,10 @@ export default function ManualModal() {
       description: 'Menarik data HPP Kalkulasi dari file excel.',
       steps: [
         'Klik tombol **Pilih & Upload File Excel** untuk memperbarui database HPP.',
-        'Sistem akan **menghapus data lama** dan menggantinya dengan data baru.',
+        'Sistem akan **menonaktifkan data lama** dan menggantinya dengan data baru.',
         'Gunakan kotak pencarian untuk menemukan nilai HPP berdasarkan **Nama Order**.',
-        'Data muncul otomatis saat memilih **Jenis Harga: HPP Kalkulasi**.'
+        'Scroll tabel ke bawah untuk melihat lebih banyak data HPP (Infinite Scroll).',
+        'Data di HPP Kalkulasi akan menjadi **source di form record kesalahan karyawan**, yang akan muncul di *field* Nama Barang dalam bentuk **Nama Order** saat memilih Jenis Barang **HPP Kalkulasi (Excel)**, dan mengambil **Harga** dari kolom **HPP Kalkulasi** saat memilih Jenis Harga **HPP Kalkulasi**.'
       ]
     },
     '/records': {
@@ -106,20 +117,21 @@ export default function ManualModal() {
         'TAB DAFTAR KESALAHAN:',
         'Atur **Tgl Mulai & Akhir** untuk memfilter data riwayat kesalahan.',
         '**Data Otomatis Memuat**: Tabel akan terupdate otomatis setiap kali tanggal diubah.',
-        'Klik tombol **Cetak PDF** untuk membuat laporan rekap atau formulir detail.',
+        'Scroll tabel ke bawah untuk memuat data sebelumnya (Infinite Scroll).',
+        'Klik tombol **Cetak PDF** untuk membuat laporan rekap atau formulir detail per baris.',
         'TAB TAMBAH/EDIT DATA:',
-        '**Faktur**: Otomatis di-generate berdasarkan hari, bulan dan tahun pilihan Tanggal Input Data.',
+        '**Faktur**: Otomatis di-generate dengan format **ERR-DDMMYY-XXX** (di mana XXX adalah nomor urut yang mereset setiap harinya).',
         '**Pilih Tanggal**: Pilih tanggal pencatatan kesalahan karyawan.',
-        '**Nama Karyawan**: Pilih karyawan yang melakukan kesalahan dari daftar yang tersedia (data ini diambil dari menu **Data Karyawan** via Upload Excel).',
-        '**Nama Order**: Pilih order terkait (data diambil dari menu **Order Produksi**).',
+        '**Nama Karyawan**: Pilih karyawan yang melakukan kesalahan (data ditarik dari menu **Data Karyawan**).',
+        '**Nama Order**: Pilih order terkait (data ditarik dari menu **Order Produksi**).',
         '**Jenis Barang**: Pilih kategori barang sesuai sumber harganya:',
-        '  • **Bahan Baku (Digit)**: Barang mentah, harga diambil dari menu **Bahan Baku**.',
-        '  • **Barang Jadi (Digit)**: Hasil produksi, harga diambil dari menu **Barang Jadi**.',
-        '  • **HPP Kalkulasi (Excel)**: Perhitungan HPP per-Order, harga diambil dari database Excel yang diupload di menu **HPP Kalkulasi**.',
-        '  • **Penjualan Barang (Digit)**: Barang keluar/jual, harga diambil dari menu **Laporan Penjualan**.',
+        '  • **Bahan Baku (Digit)**: Barang mentah, harga ditarik dari menu **Bahan Baku**.',
+        '  • **Barang Jadi (Digit)**: Hasil produksi, harga ditarik dari menu **Barang Jadi**.',
+        '  • **HPP Kalkulasi (Excel)**: Perhitungan HPP per-Order, harga ditarik dari database di menu **HPP Kalkulasi**.',
+        '  • **Penjualan Barang (Digit)**: Barang keluar/jual, harga ditarik dari menu **Laporan Penjualan**.',
         '**Nama Barang**: Pilih barang spesifik. Anda bisa mengetik **Nomor Faktur** barang untuk pencarian cepat antar-Order.',
         '**Deskripsi**: Jelaskan detail kesalahan karyawan (opsional).',
-        '**Jenis Harga**: Dipilihkan otomatis sesuai **Jenis Barang**. Nilai harga akan ditarik dari menu referensi masing-masing.',
+        '**Jenis Harga**: Dipilihkan otomatis sesuai **Jenis Barang**. Nilai harga akan otomatis terisi.',
         '**Jumlah (Qty)**: Isi jumlah barang yang rusak/salah untuk menghitung **Total Beban** otomatis.',
         '**Dicatat Oleh**: Pilih petugas yang melakukan pencatatan data ini (data diambil dari menu **Data Karyawan**).'
       ]
@@ -153,9 +165,9 @@ export default function ManualModal() {
                   <currentGuide.icon size={18} />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.2em] mb-0.5">Panduan Penggunaan</span>
+                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.2em] mb-0.5">Detail Menu {currentGuide.title}</span>
                   <h2 className="text-lg font-extrabold text-slate-800 flex items-center gap-2">
-                    Menu <span className="bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded-lg text-sm border border-emerald-200">{currentGuide.title}</span>
+                    Bantuan & Panduan
                   </h2>
                 </div>
               </div>

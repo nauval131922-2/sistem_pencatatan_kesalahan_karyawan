@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 
 const isDev = process.env.NODE_ENV === 'development';
-const defaultDbName = isDev ? 'database-dev.sqlite' : 'database.sqlite';
+const defaultDbName = isDev ? 'database_dev.sqlite' : 'database.sqlite';
 const dbPath = path.join(process.cwd(), process.env.DB_PATH || defaultDbName);
 
 const db = new Database(dbPath, { timeout: 10000 });

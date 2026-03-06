@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 // Determine if we want to run against development or production DB
 // By default, it will use the production database (database.sqlite)
 const isDev = process.env.NODE_ENV === 'development';
-const defaultDbName = isDev ? 'database-dev.sqlite' : 'database.sqlite';
+const defaultDbName = isDev ? 'database_dev.sqlite' : 'database.sqlite';
 const dbPathArg = process.env.DB_PATH || defaultDbName;
 const dbPath = path.resolve(process.cwd(), dbPathArg);
 
@@ -18,12 +18,23 @@ const db = new Database(dbPath);
 
 // Find all records that contain "penggantian karyawan" in kd_barang
 // Note: We use lower() to make it case-insensitive
-const stmnt = db.prepare(`
-  SELECT * FROM sales_reports
-  WHERE substr(tgl, 7, 4) = '2025'
-  AND lower(kd_barang) LIKE '%penggantian karyawan%'
-`);
-const records = stmnt.all();
+let records = [];
+try {
+  const stmnt = db.prepare(`
+    SELECT * FROM sales_reports
+    WHERE substr(tgl, 7, 4) = '2025'
+    AND lower(kd_barang) LIKE '%penggantian karyawan%'
+  `);
+  records = stmnt.all();
+} catch (error) {
+  if (error.message.includes('no such table: sales_reports')) {
+    console.log('Table "sales_reports" does not exist yet in the database.');
+    console.log('This means there is no sales data to migrate. Exiting smoothly.');
+    process.exit(0);
+  } else {
+    throw error;
+  }
+}
 
 console.log(`Found ${records.length} sales report records matching criteria from 2025.`);
 
