@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "init-db": "npx tsx scripts/init-db.ts",
+    "prebuild": "npm run init-db",
     "migrate:sales2025": "node scripts/migrate-sales-2025.mjs"
   },
   "dependencies": {
@@ -29,6 +31,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }
