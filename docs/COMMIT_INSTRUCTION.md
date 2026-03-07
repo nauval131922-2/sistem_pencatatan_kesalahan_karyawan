@@ -10,7 +10,17 @@ Gunakan prompt ini jika Anda ingin saya melakukan commit dan push semua perubaha
 2. Tulis pesan commit yang deskriptif dalam bahasa Indonesia.
 3. Periksa `.gitignore` agar tidak ada file sampah atau database yang ikut ter-push.
 4. **PENTING**: Periksa pola `.gitignore` yang terlalu serakah (seperti tanda bintang `*`). Pastikan file penting (seperti `.md`) tidak terabaikan secara tidak sengaja seperti kasus sebelumnya.
-5. Lakukan push ke branch master."
+5. **Sinkronisasi AI**: Sebelum mengakhiri sesi, minta AI membuat ringkasan status di `docs/AI_SESSION_SUMMARY.md` atau perbarui `task.md` agar progres bisa dilanjutkan di perangkat lain (Rumah/Kantor).
+6. Lakukan push ke branch master."
+
+---
+
+## Cara Melanjutkan Sesi di PC Lain (Rumah/Kantor)
+
+Saat Anda berpindah PC dan membuka chat baru, gunakan prompt ini agar saya langsung paham konteks terakhir:
+
+**Prompt:**
+"Saya baru pindah PC. Tolong baca `docs/AI_SESSION_SUMMARY.md` dan `docs/task.md` (jika ada) untuk memahami progres terakhir, lalu lanjutkan tugas kita."
 
 ---
 
