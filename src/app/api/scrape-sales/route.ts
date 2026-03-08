@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+export const dynamic = 'force-dynamic';
 import db from "@/lib/db";
-import { getCachedSession, setCachedSession, clearCachedSession, getSession } from "@/lib/session-cache";
+import { getCachedSession, setCachedSession, clearCachedSession, getSession as getScraperSession } from "@/lib/session-cache";
+import { getSession } from "@/lib/session";
 
 const API_EMAIL = process.env.SCRAPER_EMAIL || "nauval"; 
 const API_PASSWORD = process.env.SCRAPER_PASSWORD || "312admin2";
@@ -34,8 +36,9 @@ export async function GET(request: NextRequest) {
     }
 
     const startTime = Date.now();
+    const currentUserSession = await getSession();
     
-    let cookies = await getSession(async () => {
+    let cookies = await getScraperSession(async () => {
       const loginReqUrl = BASE_URL + "v1/auth/login";
       const loginBody = JSON.stringify({
         username: API_EMAIL,
@@ -151,7 +154,7 @@ export async function GET(request: NextRequest) {
           INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
           VALUES (?, ?, ?, ?, ?, ?)
         `,
-        args: ['SCRAPE', 'sales_reports', 0, `Tarik Laporan Penjualan (${startParam} s/d ${endParam})`, JSON.stringify({ total: allRecords.length }), 'System'] as any[]
+        args: ['SCRAPE', 'sales_reports', 0, `Tarik Laporan Penjualan (${startParam} s/d ${endParam})`, JSON.stringify({ total: allRecords.length }), currentUserSession?.username || 'System'] as any[]
       });
     }
 

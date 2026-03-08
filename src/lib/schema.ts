@@ -3,6 +3,15 @@ import path from 'path';
 export async function initSchema(db: any) {
   // 1. Initialize core schema using batch for efficiency
   await db.batch([
+    `CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      name TEXT NOT NULL,
+      photo TEXT,
+      role TEXT DEFAULT 'Admin',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
     `CREATE TABLE IF NOT EXISTS employees (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -101,6 +110,7 @@ export async function initSchema(db: any) {
 
   // 2. Incremental Migrations (catch errors if already exists)
   const migrations = [
+    "ALTER TABLE users ADD COLUMN photo TEXT;",
     "ALTER TABLE employees ADD COLUMN employee_no TEXT;",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_employee_no ON employees(employee_no);",
     "ALTER TABLE employees ADD COLUMN is_active INTEGER DEFAULT 1;",
@@ -159,5 +169,17 @@ export async function initSchema(db: any) {
     } catch (e) {
       // Ignore errors (usually "column already exists")
     }
+  }
+
+  // 3. Insert default admin user if users table is empty
+  const userCount = await db.execute("SELECT COUNT(*) as count FROM users");
+  if (userCount.rows[0].count === 0 || userCount.rows[0].count === BigInt(0)) {
+    // Hash for 'admin123' generated with bcryptjs
+    const defaultPasswordHash = "$2a$10$wYvQ4Q0eZ7.G0LQXlDZb1eW1vJ/l78hB/hNlA1JtWvQ9MOMj/Q4J.";
+    await db.execute({
+      sql: `INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?)`,
+      args: ['admin', defaultPasswordHash, 'Administrator', 'Super Admin']
+    });
+    console.log("[DB] Default admin user created (admin / admin123)");
   }
 }

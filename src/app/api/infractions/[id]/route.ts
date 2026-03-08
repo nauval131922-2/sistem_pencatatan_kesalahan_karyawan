@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getSession } from '@/lib/session';
 
 function getTimeString() {
   const now = new Date();
@@ -12,6 +13,7 @@ function getTimeString() {
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    const session = await getSession();
     const body = await req.json();
     const { 
       description, date, recorded_by_id, order_name, order_faktur, item_faktur, employee_id,
@@ -73,7 +75,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
           INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
           VALUES (?, ?, ?, ?, ?, ?)
         `,
-        args: ['UPDATE', 'infractions', id, `Edit data kesalahan: ${employeeNo ? `${employeeNo} - ` : ''}${employeeName}`, rawData, recName]
+        args: ['UPDATE', 'infractions', id, `Edit data kesalahan: ${employeeNo ? `${employeeNo} - ` : ''}${employeeName}`, rawData, session?.username || recName]
       }
     ], "write");
 
@@ -86,6 +88,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    const session = await getSession();
     
     // 1. Fetch existing for log
     const existingRes = await db.execute({
@@ -110,7 +113,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
             INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
             VALUES (?, ?, ?, ?, ?, ?)
           `,
-          args: ['DELETE', 'infractions', id, `Hapus data kesalahan: ${existing.employee_no ? `${existing.employee_no} - ` : ''}${existing.employee_name}`, rawData, 'Sistem']
+          args: ['DELETE', 'infractions', id, `Hapus data kesalahan: ${existing.employee_no ? `${existing.employee_no} - ` : ''}${existing.employee_name}`, rawData, session?.username || 'System']
         },
         { sql: 'DELETE FROM infractions WHERE id = ?', args: [id] }
       ], "write");

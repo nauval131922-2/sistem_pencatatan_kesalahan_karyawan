@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import * as xlsx from "xlsx";
+import { getSession } from "@/lib/session";
 
 export async function GET(request: NextRequest) {
   try {
@@ -87,6 +88,8 @@ export async function POST(request: NextRequest) {
     // Execute batch
     await db.batch(batchOps, "write");
 
+    const session = await getSession();
+
     // Log Activity
     try {
       await db.execute({
@@ -100,7 +103,7 @@ export async function POST(request: NextRequest) {
           0, 
           `Upload data HPP Kalkulasi (${importedCount} data)`, 
           JSON.stringify({ fileName: file.name, total: importedCount }), 
-          'System'
+          session?.username || 'System'
         ]
       });
     } catch (e) {

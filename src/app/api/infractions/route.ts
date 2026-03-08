@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getSession } from '@/lib/session';
 
 export async function GET(req: NextRequest) {
   try {
@@ -53,7 +54,6 @@ export async function POST(req: NextRequest) {
     const employeeId = parseInt(formData.get('employee_id') as string);
     const description = (formData.get('description') as string)?.trim() || '';
     const date = (formData.get('date') as string)?.trim();
-    const recordedById = parseInt(formData.get('recorded_by_id') as string);
     const orderFaktur = (formData.get('order_faktur') as string)?.trim();
     const orderName = (formData.get('order_name') as string)?.trim();
     const itemFaktur = (formData.get('item_faktur') as string)?.trim();
@@ -64,8 +64,13 @@ export async function POST(req: NextRequest) {
     const harga = parseFloat(formData.get('harga') as string) || 0;
     const total = parseFloat(formData.get('total') as string) || 0;
     const severity = 'Low';
- 
-    if (!employeeId || !date || !recordedById || !orderFaktur) {
+
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Sesi tidak ditemukan. Silakan login kembali.' }, { status: 401 });
+    }
+
+    if (!employeeId || !date || !orderFaktur) {
       return NextResponse.json({ error: 'Data tidak lengkap. Pastikan Order Produksi sudah dipilih.' }, { status: 400 });
     }
 
@@ -78,10 +83,11 @@ export async function POST(req: NextRequest) {
     const datePrefix = `${dd}${mm}${yy}`;
 
     // 1. Fetch sequence and snapshots first
+    // Prefer lookup by session name for recorded by details
     const [seqRes, empRes, recRes] = await Promise.all([
       db.execute({ sql: `SELECT last_seq FROM faktur_sequences WHERE prefix = ?`, args: [datePrefix] }),
       db.execute({ sql: 'SELECT name, position, employee_no FROM employees WHERE id = ?', args: [employeeId] }),
-      db.execute({ sql: 'SELECT name, position, employee_no FROM employees WHERE id = ?', args: [recordedById] })
+      db.execute({ sql: 'SELECT id, name, position, employee_no FROM employees WHERE name = ? ORDER BY id ASC LIMIT 1', args: [session.name] })
     ]);
 
     const countRow = seqRes.rows[0] as any;
@@ -94,8 +100,11 @@ export async function POST(req: NextRequest) {
     const empName = emp?.name || 'Unknown';
     const empPos = emp?.position || '-';
     const employeeNo = emp?.employee_no || null;
-    const recName = rec?.name || 'Unknown';
-    const recPos = rec?.position || '-';
+
+    // Use session value if employee match not found
+    const recordedById = rec?.id || 0;
+    const recName = rec?.name || session.name;
+    const recPos = rec?.position || 'User';
     const recNo = rec?.employee_no || null;
 
     // 2. Execute writes in a batch
@@ -135,7 +144,7 @@ export async function POST(req: NextRequest) {
         INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
         VALUES (?, ?, 0, ?, ?, ?)
       `,
-      args: ['INSERT', 'infractions', `Tambah data kesalahan: ${employeeNo ? `${employeeNo} - ` : ''}${empName}`, rawData, recName]
+      args: ['INSERT', 'infractions', `Tambah data kesalahan: ${employeeNo ? `${employeeNo} - ` : ''}${empName}`, rawData, session.username]
     });
 
     return NextResponse.json({ success: true, faktur });

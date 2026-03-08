@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
 import db from '@/lib/db';
+import { getSession } from '@/lib/session';
 
 const SHEET_NAME = 'A.DATA KARYAWAN';
 const START_ROW = 6; 
@@ -79,12 +80,14 @@ export async function POST(req: NextRequest) {
       file_size: file.size
     });
     
+    const session = await getSession();
+
     await db.execute({
       sql: `
         INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-        VALUES (?, ?, 0, ?, ?, 'Admin')
+        VALUES (?, ?, 0, ?, ?, ?)
       `,
-      args: ['IMPORT', 'employees', `Update Master Data Karyawan (${importedCount} baris)`, rawData]
+      args: ['IMPORT', 'employees', `Update Master Data Karyawan (${importedCount} baris)`, rawData, session?.username || 'System']
     });
 
     return NextResponse.json({ success: true, imported: importedCount });

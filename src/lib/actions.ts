@@ -1,10 +1,11 @@
 'use server';
 
 import db from '@/lib/db';
+import { getSession } from '@/lib/session';
 
 export async function getEmployees() {
   const result = await db.execute('SELECT * FROM employees WHERE is_active = 1 ORDER BY id ASC');
-  return result.rows;
+  return result.rows.map(row => ({ ...row }));
 }
 
 export async function addEmployee(name: string, position: string, department: string) {
@@ -13,13 +14,14 @@ export async function addEmployee(name: string, position: string, department: st
     args: [name, position, department]
   });
 
+  const session = await getSession();
   const rawData = JSON.stringify({ name, position, department });
   await db.execute({
     sql: `
       INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
       VALUES (?, ?, ?, ?, ?, ?)
     `,
-    args: ['INSERT', 'employees', Number(result.lastInsertRowid), `Tambah Data Karyawan Master: ${name}`, rawData, 'Admin']
+    args: ['INSERT', 'employees', Number(result.lastInsertRowid), `Tambah Data Karyawan Master: ${name}`, rawData, session?.username || 'System']
   });
 
   return result;
@@ -56,7 +58,7 @@ export async function getInfractions(startDate?: string, endDate?: string) {
     sql: query,
     args: params
   });
-  return result.rows;
+  return result.rows.map(row => ({ ...row }));
 }
 
 export async function getActivityLogs(limit = 1000) {
@@ -68,7 +70,7 @@ export async function getActivityLogs(limit = 1000) {
     `,
     args: [limit]
   });
-  return result.rows;
+  return result.rows.map(row => ({ ...row }));
 }
 
 export async function addInfraction(employeeId: number, description: string, severity: string, date: string, recordedById: number|string, orderName?: string) {
@@ -116,7 +118,7 @@ export async function fetchProductionOrders() {
     FROM orders 
     ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC
   `);
-  return result.rows;
+  return result.rows.map(row => ({ ...row }));
 }
 
 export async function getStats() {
@@ -145,7 +147,7 @@ export async function getStats() {
 export async function getLastEmployeeImport() {
   try {
     const result = await db.execute(`SELECT * FROM activity_logs WHERE table_name = 'employees' AND action_type = 'IMPORT' ORDER BY id DESC LIMIT 1`);
-    return result.rows[0] || null;
+    return result.rows.length > 0 ? { ...result.rows[0] } : null;
   } catch (err) {
     console.error('Failed to get last employee import log', err);
     return null;
@@ -155,7 +157,7 @@ export async function getLastEmployeeImport() {
 export async function getLastHppImport() {
   try {
     const result = await db.execute(`SELECT * FROM activity_logs WHERE table_name = 'hpp_kalkulasi' AND action_type = 'UPLOAD' ORDER BY id DESC LIMIT 1`);
-    return result.rows[0] || null;
+    return result.rows.length > 0 ? { ...result.rows[0] } : null;
   } catch (err) {
     console.error('Failed to get last hpp kalkulasi import log', err);
     return null;
