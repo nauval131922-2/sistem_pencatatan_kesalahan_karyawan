@@ -1,32 +1,26 @@
-# AI Session Summary - 08-03-2026
+# AI Session Summary - 09-03-2026
 
 ## Context
-- **Last Task**: Migrasi penuh ke Cloud (Vercel + Turso), perbaikan build error, dan migrasi data produksi.
+- **Last Task**: Sinkronisasi repository, pembersihan `.gitignore`, dan dokumentasi session.
 - **Branch**: master
 
 ## Completed in this session
-- [x] Instalasi `@libsql/client` dan penghapusan `better-sqlite3`.
-- [x] Refactoring `src/lib/db.ts` untuk mendukung dual-mode (Local & Turso Remote).
-- [x] Refactoring **SELURUH** API routes (`/api/*`) dan `src/lib/actions.ts` menjadi asynchronous.
-- [x] Perbaikan khusus pada `api/bahan-baku` dan `api/barang-jadi` yang sempat tertinggal dan menyebabkan build error di Vercel.
-- [x] Perbaikan TypeScript Type Errors pada `src/app/employees/page.tsx` dan `src/app/hpp-kalkulasi/page.tsx` terkait tipe data kembalian LibSQL Client.
-- [x] Implementasi `db.batch()` pada scraper dan import untuk efisiensi cloud.
-- [x] Pembaruan `src/lib/schema.ts` dan `scripts/init-db.ts` agar kompatibel dengan LibSQL/Turso.
-- [x] Inisialisasi skema pada database remote Turso (Berhasil).
-- [x] **Migrasi Data**: Transfer data produksi lokal (`database.sqlite`) ke Turso Cloud menggunakan script migrasi batch.
+- [x] **Pembaruan UI/UX**: Implementasi sistem layout baru dengan `Header`, `Sidebar` yang lebih modern, dan perbaikan styling global menggunakan CSS Variables.
+- [x] **Sistem Autentikasi**: Implementasi autentikasi berbasis session menggunakan `jose`, halaman login, profil, dan manajemen user.
+- [x] **Optimasi Records**: Perbaikan pada `RecordsForm`, `InfractionsTable`, dan `EmployeeTable` untuk pengalaman pengguna yang lebih baik.
+- [x] **Database Schema**: Penyesuaian skema Prisma untuk mendukung relasi user dan metadata tambahan.
+- [x] **Maintenance**: Pembersihan repository dari file sampah dan verifikasi pola `.gitignore`.
 
 ## Pending / Next Steps
-- [ ] Verifikasi kestabilan dashboard online setelah data dimigrasikan.
-- [ ] Pengetesan scraper di environment Vercel menggunakan scheduler atau manual trigger.
+- [ ] Pengetesan menyeluruh pada alur login dan proteksi route.
+- [ ] Sinkronisasi dengan database Turso untuk skema user yang baru.
 
 ## Key Files Modified
-- `src/lib/db.ts`, `src/lib/schema.ts`, `src/lib/actions.ts`
-- `src/app/api/...` (Seluruh API refactor)
-- `src/app/employees/page.tsx` & `src/app/hpp-kalkulasi/page.tsx` (Fix Type error)
-- `package.json`, `package-lock.json`
-- `scripts/init-db.ts`
+- `src/app/layout.tsx`, `src/app/globals.css` (UI Refresh)
+- `src/lib/auth.ts`, `src/lib/session.ts` (Auth Logic)
+- `prisma/schema.prisma` (Database Update)
+- `src/components/RecordsForm.tsx` (Form improvement)
 
 ## Important Notes for next session
-- Seluruh data produksi (2500+ record sales, 110+ karyawan, dll) sudah berada di Turso.
-- Aplikasi di Vercel ([sistem-pencatatan-kesalahan-karyawa.vercel.app](https://sistem-pencatatan-kesalahan-karyawa.vercel.app/)) sudah operasional.
-- Database lokal `database.sqlite` tetap dipertahankan sebagai backup namun tidak lagi digunakan oleh aplikasi utama (kecuali dijalankan lokal tanpa env Turso).
+- Pastikan environment variables untuk `JWT_SECRET` sudah terkonfigurasi di Vercel/Produksi.
+- Gunakan branch `master` untuk push utama sesuai instruksi user.
