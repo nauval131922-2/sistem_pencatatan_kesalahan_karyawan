@@ -3,9 +3,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, AlertCircle, Package, ChevronLeft, ChevronRight, Box, Star, Calculator, ChevronDown, Database, BarChart3 } from 'lucide-react';
+import { Home, Users, AlertCircle, Package, ChevronLeft, ChevronRight, Box, Star, Calculator, ChevronDown, Database, BarChart3, ShieldCheck } from 'lucide-react';
 
-export default function Sidebar() {
+interface SidebarProps {
+  userRole?: string;
+}
+
+export default function Sidebar({ userRole }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMasterOpen, setIsMasterOpen] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
@@ -41,6 +45,10 @@ export default function Sidebar() {
     { name: 'Laporan Penjualan', icon: BarChart3, href: '/sales' },
     { name: 'HPP Kalkulasi', icon: Calculator, href: '/hpp-kalkulasi' },
   ];
+
+  if (userRole === 'Super Admin') {
+    masterMenus.push({ name: 'Kelola User', icon: ShieldCheck, href: '/users' });
+  }
 
   const bottomMenus = [
     { name: 'Catat Kesalahan', icon: AlertCircle, href: '/records' },
