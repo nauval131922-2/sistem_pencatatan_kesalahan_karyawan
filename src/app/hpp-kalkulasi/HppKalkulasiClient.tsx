@@ -7,7 +7,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 
 const PAGE_SIZE = 20;
 
-  export default function HppKalkulasiClient() {
+export default function HppKalkulasiClient() {
   const [data, setData] = useState<any[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -134,18 +134,19 @@ const PAGE_SIZE = 20;
   return (
     <div className="h-full flex flex-col gap-4">
       {/* Upload Panel */}
-      <div className="card glass p-3 border border-emerald-500/20 relative overflow-hidden shrink-0">
-        <div className="absolute right-0 top-0 -mt-8 -mr-8 opacity-5 pointer-events-none">
-           <FileSpreadsheet size={120} />
+      <div className="bg-white border border-gray-100 shadow-sm rounded-xl px-5 py-4 relative overflow-hidden shrink-0">
+        <div className="absolute right-0 top-0 -mt-8 -mr-8 opacity-[0.03] pointer-events-none text-gray-400">
+           <FileSpreadsheet size={160} />
         </div>
         
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between relative z-10">
+        <div className="flex flex-col md:flex-row gap-6 items-center justify-between relative z-10">
           <div className="flex-1">
-            <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2 mb-0.5">
-              <Upload className="text-emerald-500" size={16}/>
-              Upload Data HPP Kalkulasi
-            </h3>
-            <p className="text-[11px] text-slate-500">
+            <div className="flex items-center gap-3 mb-2">
+              <h3 className="text-sm font-semibold text-gray-700">
+                Upload Data HPP Kalkulasi
+              </h3>
+            </div>
+            <p className="text-xs text-gray-400 leading-relaxed max-w-2xl">
               Unggah file Excel yang berisi Data HPP Kalkulasi. Data yang lama akan dihapus dan digantikan seluruhnya oleh data dari file baru.
             </p>
           </div>
@@ -160,11 +161,11 @@ const PAGE_SIZE = 20;
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="w-full relative px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-semibold rounded-lg shadow-lg shadow-emerald-500/10 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed group overflow-hidden"
+              className="w-full relative px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed group overflow-hidden text-sm"
             >
               {uploading && <Loader2 size={16} className="animate-spin" />}
               {!uploading && <FileSpreadsheet size={16} className="group-hover:scale-110 transition-transform" />}
-              <span className="text-xs">{uploading ? 'Mengunggah...' : 'Pilih & Upload File'}</span>
+              <span>{uploading ? 'Mengunggah...' : 'Pilih & Upload File'}</span>
             </button>
           </div>
         </div>
@@ -187,66 +188,70 @@ const PAGE_SIZE = 20;
 
       {/* Results View */}
       {data === null && loading && (
-        <div className="card text-center py-24 text-slate-500 flex flex-col items-center bg-slate-50/50 border-dashed shrink-0">
-          <Loader2 size={48} className="mb-4 opacity-20 text-emerald-600 animate-spin" />
-          <p className="font-medium text-slate-600">Sedang memuat data...</p>
+        <div className="bg-white border border-gray-100 shadow-sm rounded-xl py-24 text-center flex flex-col items-center justify-center shrink-0">
+          <Loader2 size={48} className="mb-4 opacity-20 text-green-600 animate-spin" />
+          <p className="font-medium text-gray-600">Sedang memuat data...</p>
         </div>
       )}
 
       {data !== null && data.length === 0 && !loading && (
-        <div className="card text-center py-20 text-slate-500 flex flex-col items-center border-dashed shrink-0">
-          <Calculator size={48} className="mb-4 opacity-20 text-slate-400" />
-          <p className="font-medium text-slate-600">Belum ada data HPP yang diunggah.</p>
-          <p className="text-sm mt-1">Gunakan tombol upload di atas untuk memasukkan data dari Excel.</p>
+        <div className="bg-white border border-gray-100 shadow-sm rounded-xl py-20 text-center flex flex-col items-center justify-center shrink-0">
+          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+            <Calculator className="text-gray-100" size={32} />
+          </div>
+          <h3 className="text-sm font-semibold text-gray-700 mb-1">Belum ada data HPP yang diunggah</h3>
+          <p className="text-xs text-gray-400 max-w-[240px] mx-auto leading-relaxed">
+            Gunakan tombol upload di atas untuk memasukkan data dari Excel.
+          </p>
         </div>
       )}
 
       {data !== null && data.length > 0 && (
-        <div className="flex-1 min-h-0 flex flex-col gap-3 animate-in fade-in slide-in-from-bottom-2 duration-500 px-0.5">
-          <div className="flex flex-col gap-2 mb-1 shrink-0">
-            <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-sm">
-              <Calculator size={16} className="text-emerald-500" /> Data HPP Kalkulasi
+        <div className="flex-1 min-h-0 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 shrink-0">
+            <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                Data HPP Kalkulasi
             </h3>
             
-            <div className="relative shrink-0">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <div className="relative w-full sm:w-64">
+              <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input 
                 type="text" 
                 placeholder="Cari berdasarkan nama order..." 
-                className="w-full pl-9 pr-4 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
+                className="w-full pr-10 pl-4 h-9 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-sm"
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setVisibleCount(PAGE_SIZE); }}
               />
             </div>
           </div>
 
-          <div className="card p-0 flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-0 overflow-hidden flex-1 flex flex-col min-h-0">
             <div className="flex-1 overflow-auto custom-scrollbar relative" onScroll={handleScroll}>
-              <table className="w-full text-left relative">
-                <thead className="sticky top-0 z-10">
-                  <tr className="text-slate-500 text-[10px] uppercase tracking-wider border-b border-slate-200 bg-slate-50 backdrop-blur-sm">
-                    <th className="px-4 py-2 font-semibold whitespace-nowrap w-16 text-center shadow-sm">No</th>
-                    <th className="px-4 py-2 font-semibold whitespace-nowrap shadow-sm">Nama Order</th>
-                    <th className="px-4 py-2 font-semibold text-right whitespace-nowrap w-48 shadow-sm">HPP Kalkulasi</th>
+              <table className="w-full text-left relative min-w-[500px]">
+                <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-sm">
+                  <tr className="text-[11px] uppercase tracking-wider text-gray-400 font-medium border-b border-gray-100">
+                    <th className="px-5 py-3 w-16 text-center">No</th>
+                    <th className="px-5 py-3">Nama Order</th>
+                    <th className="px-5 py-3 text-right">HPP Kalkulasi</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-gray-100">
                   {paginatedData.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="py-8 text-center text-slate-500 italic text-sm">
+                      <td colSpan={3} className="py-12 text-center text-gray-400 italic text-sm">
                         Data "{searchQuery}" tidak ditemukan.
                       </td>
                     </tr>
                   ) : (
                     paginatedData.map((row, idx) => (
-                      <tr key={row.id} className="text-[11px] hover:bg-slate-50 transition-colors">
-                        <td className="px-4 py-1.5 text-slate-400 font-medium text-center">
+                      <tr key={row.id} className="hover:bg-gray-50 transition-colors group">
+                        <td className="px-5 py-3 text-gray-400 text-center text-xs w-10">
                           {idx + 1}
                         </td>
-                        <td className="px-4 py-1.5 font-medium text-slate-700">
-                           {row.nama_order}
+                        <td className="px-5 py-3 font-medium text-gray-700 text-sm">
+                           <div className="truncate max-w-md" title={row.nama_order}>{row.nama_order}</div>
                         </td>
-                        <td className="px-4 py-1.5 font-mono font-medium text-emerald-600 text-right whitespace-nowrap">
+                        <td className="px-5 py-3 font-medium text-gray-700 text-right whitespace-nowrap text-sm">
                           {row.hpp_kalkulasi.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
                         </td>
                       </tr>
@@ -257,11 +262,11 @@ const PAGE_SIZE = 20;
             </div>
             
             {/* Footer info Banner within Card Bottom */}
-            <div className="p-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-[11px] text-slate-500 shrink-0">
+            <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between text-xs text-gray-400 shrink-0">
              <span className="font-medium">
                {filteredData.length === 0
                  ? 'Tidak ada data'
-                 : `Menampilkan ${paginatedData.length} dari ${filteredData.length} data`}
+                 : `Menampilkan ${paginatedData.length} dari ${filteredData.length} data kalkulasi`}
              </span>
            </div>
           </div>

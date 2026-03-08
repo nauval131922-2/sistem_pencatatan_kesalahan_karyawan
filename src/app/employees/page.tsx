@@ -42,21 +42,21 @@ export default async function EmployeesPage() {
     <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
       <header className="flex justify-between items-start shrink-0">
         <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-800">Daftar Karyawan</h2>
+          <div className="border-l-4 border-green-500 pl-4 flex items-center gap-2">
+            <h1 className="text-xl font-semibold text-gray-800 leading-tight">Daftar Karyawan</h1>
             <HelpButton />
           </div>
-          <p className="text-slate-500 text-sm mt-0.5">Upload data Karyawan dari file Excel.</p>
+          <p className="text-sm text-gray-400 mt-0.5 pl-4">Upload data Karyawan dari file Excel.</p>
           
           {importFileName && (
-            <div className="flex items-center gap-3 mt-2 text-[11px] font-medium">
-              <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-100 px-2 py-0.5 rounded shadow-sm">
-                <FileSpreadsheet size={10} className="text-emerald-500" />
-                <span className="max-w-[120px] truncate" title={importFileName}>{importFileName}</span>
+            <div className="flex items-center gap-3 mt-2 pl-4 text-xs">
+              <div className="flex items-center gap-1.5 bg-gray-50 text-gray-600 border border-gray-200 px-2 py-1 rounded-md shadow-sm">
+                <FileSpreadsheet size={14} className="text-gray-400" />
+                <span className="max-w-[120px] truncate font-medium" title={importFileName}>{importFileName}</span>
               </div>
-              <div className="flex items-center gap-1.5 text-slate-400">
-                <Clock size={10} className="opacity-70" />
-                Diperbarui: {importTime}
+              <div className="flex items-center gap-1.5 text-gray-400">
+                <Clock size={12} className="text-gray-300" />
+                <span>Diperbarui: {importTime}</span>
               </div>
             </div>
           )}
