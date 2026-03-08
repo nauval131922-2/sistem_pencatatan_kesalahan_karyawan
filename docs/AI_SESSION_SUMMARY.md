@@ -1,30 +1,31 @@
-# AI Session Summary - 07-03-2026
+# AI Session Summary - 08-03-2026
 
 ## Context
-- **Last Task**: Perbaikan error `SQLITE_BUSY` saat build dan implementasi sistem sinkronisasi antar perangkat.
+- **Last Task**: Migrasi penuh ke Cloud (Vercel + Turso) dan refactoring database driver ke `@libsql/client`.
 - **Branch**: master
 
 ## Completed in this session
-- [x] Memindahkan logika skema database ke `src/lib/schema.ts` untuk menghindari locking saat build.
-- [x] Membuat script `scripts/init-db.ts` dan menambahkannya ke tahap `prebuild` di `package.json`.
-- [x] Menginstal `tsx` sebagai devDependency untuk menjalankan script TypeScript secara headless.
-- [x] Menambahkan proteksi database produksi di `src/lib/db.ts` dengan logging jalur database.
-- [x] Membuat file `.env.development` untuk memastikan pengerjaan lokal selalu menggunakan `database_dev.sqlite`.
-- [x] Memperbarui workflow `debug-safe-fixing.md` dengan langkah verifikasi wajib bagi AI.
-- [x] Menyiapkan sistem sinkronisasi sesi AI via `docs/AI_SESSION_SUMMARY.md` dan `docs/task.md`.
+- [x] Instalasi `@libsql/client` dan penghapusan `better-sqlite3` untuk kompatibilitas cloud.
+- [x] Refactoring `src/lib/db.ts` untuk mendukung dual-mode (Local file & Turso Remote).
+- [x] Refactoring seluruh API routes (`/api/*`) dan `src/lib/actions.ts` menjadi asynchronous.
+- [x] Implementasi `db.batch()` pada scraper dan import untuk efisiensi di infrastruktur cloud.
+- [x] Pembaruan `src/lib/schema.ts` dan `scripts/init-db.ts` agar kompatibel dengan LibSQL/Turso.
+- [x] Perbaikan linting pada log aktivitas (type mismatch).
+- [x] Inisialisasi skema pada database remote Turso.
 
 ## Pending / Next Steps
-- [x] Verifikasi build penuh oleh User.
-- [ ] Pengetesan workflow `/debug-safe-fixing` pada bug nyata berikutnya.
+- [ ] User melakukan Deployment ulang di Vercel dengan Environment Variables baru:
+    - `TURSO_DATABASE_URL`
+    - `TURSO_AUTH_TOKEN`
+- [ ] Verifikasi dashboard online setelah deployment berhasil.
 
 ## Key Files Modified
 - `src/lib/db.ts`, `src/lib/schema.ts`
-- `scripts/init-db.ts`
+- `src/lib/actions.ts`
 - `package.json`, `package-lock.json`
-- `.agents/workflows/debug-safe-fixing.md`
-- `.env.development`
-- `docs/COMMIT_INSTRUCTION.md`, `docs/task.md`
+- `scripts/init-db.ts`
+- Seluruh file di `src/app/api/` (Refactor async)
 
 ## Important Notes for next session
-- Database produksi tidak lagi diinisialisasi otomatis oleh worker build Next.js, melainkan via `npm run init-db` (otomatis saat `npm run build`).
-- Selalu gunakan `docs/AI_SESSION_SUMMARY.md` untuk melanjutkan konteks jika berpindah PC.
+- Library `better-sqlite3` telah dihapus sepenuhnya dari dependencies untuk menghindari error "unable to open database file" di environment serverless Vercel.
+- Selalu gunakan `await db.execute()` atau `await db.batch()` untuk interaksi database.
