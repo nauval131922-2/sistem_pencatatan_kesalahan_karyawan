@@ -24,45 +24,68 @@ export async function GET(request: Request) {
       if (fromDate && toDate) { sqlParams.push(fromDate, toDate); }
       sqlParams.push(limit, offset);
 
-      records = db.prepare(`
-        SELECT id, tgl, nama_barang, kd_barang, qty, satuan, hp, nama_prd, faktur, faktur_prd, created_at 
-        FROM barang_jadi 
-        WHERE (nama_barang LIKE ? OR nama_prd LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
-        ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
-        LIMIT ? OFFSET ?
-      `).all(...sqlParams);
+      const result = await db.execute({
+        sql: `
+          SELECT id, tgl, nama_barang, kd_barang, qty, satuan, hp, nama_prd, faktur, faktur_prd, created_at 
+          FROM barang_jadi 
+          WHERE (nama_barang LIKE ? OR nama_prd LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
+          ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
+          LIMIT ? OFFSET ?
+        `,
+        args: sqlParams
+      });
+      records = result.rows;
 
       const totalSqlParams = [query, query, query, query];
       if (fromDate && toDate) { totalSqlParams.push(fromDate, toDate); }
 
-      total = ((db.prepare(`
-        SELECT COUNT(*) as count FROM barang_jadi 
-        WHERE (nama_barang LIKE ? OR nama_prd LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
-      `).get(...totalSqlParams)) as any).count;
+      const totalResult = await db.execute({
+        sql: `
+          SELECT COUNT(*) as count FROM barang_jadi 
+          WHERE (nama_barang LIKE ? OR nama_prd LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
+        `,
+        args: totalSqlParams
+      });
+      total = Number((totalResult.rows[0] as any).count);
     } else {
       const sqlParams: any[] = [];
       if (fromDate && toDate) { sqlParams.push(fromDate, toDate); }
       sqlParams.push(limit, offset);
 
-      records = db.prepare(`
-        SELECT id, tgl, nama_barang, kd_barang, qty, satuan, hp, nama_prd, faktur, faktur_prd, created_at 
-        FROM barang_jadi 
-        ${(fromDate && toDate) ? `WHERE 1=1 ${dateFilterSQL}` : ''}
-        ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
-        LIMIT ? OFFSET ?
-      `).all(...sqlParams);
+      const result = await db.execute({
+        sql: `
+          SELECT id, tgl, nama_barang, kd_barang, qty, satuan, hp, nama_prd, faktur, faktur_prd, created_at 
+          FROM barang_jadi 
+          ${(fromDate && toDate) ? `WHERE 1=1 ${dateFilterSQL}` : ''}
+          ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
+          LIMIT ? OFFSET ?
+        `,
+        args: sqlParams
+      });
+      records = result.rows;
 
       const totalSqlParams = [];
       if (fromDate && toDate) { totalSqlParams.push(fromDate, toDate); }
 
-      total = ((db.prepare(`
-        SELECT COUNT(*) as count FROM barang_jadi
-        ${(fromDate && toDate) ? `WHERE 1=1 ${dateFilterSQL}` : ''}
-      `).get(...totalSqlParams)) as any).count;
+      const totalResult = await db.execute({
+        sql: `
+          SELECT COUNT(*) as count FROM barang_jadi
+          ${(fromDate && toDate) ? `WHERE 1=1 ${dateFilterSQL}` : ''}
+        `,
+        args: totalSqlParams
+      });
+      total = Number((totalResult.rows[0] as any).count);
     }
 
-    const lastScrape = (db.prepare(`SELECT value FROM system_settings WHERE key = ?`).get('last_scrape_barang_jadi') as any);
-    const lastUpdatedRaw = (db.prepare(`SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM barang_jadi`).get() as any).lastUpdated;
+    const lastScrapeRes = await db.execute({
+      sql: `SELECT value FROM system_settings WHERE key = ?`,
+      args: ['last_scrape_barang_jadi']
+    });
+    const lastScrape = lastScrapeRes.rows[0] as any;
+
+    const lastUpdatedRawRes = await db.execute(`SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM barang_jadi`);
+    const lastUpdatedRaw = (lastUpdatedRawRes.rows[0] as any).lastUpdated;
+    
     const lastUpdated = lastScrape ? lastScrape.value : lastUpdatedRaw;
 
     return NextResponse.json({
@@ -74,6 +97,7 @@ export async function GET(request: Request) {
       limit
     });
   } catch (error: any) {
+    console.error("Fetch barang-jadi error:", error);
     return NextResponse.json(
       { error: "Failed to fetch cached barang_jadi", details: error.message },
       { status: 500 }
