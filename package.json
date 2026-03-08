@@ -12,7 +12,7 @@
     "migrate:sales2025": "node scripts/migrate-sales-2025.mjs"
   },
   "dependencies": {
-    "better-sqlite3": "^12.6.2",
+    "@libsql/client": "^0.17.0",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.575.0",
@@ -24,7 +24,6 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
