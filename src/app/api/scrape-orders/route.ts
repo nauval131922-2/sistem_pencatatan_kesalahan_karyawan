@@ -7,28 +7,12 @@ const API_PASSWORD = process.env.SCRAPER_PASSWORD || "312admin2";
 const BASE_URL = "https://buyapercetakan.mdthoster.com/il/";
 const API_KEY = "bismillah-m377-4j76-bb34-c450-7a62-ad3f";
 
-// Types
-type ScrapeRecord = Record<string, any>;
-
 // Helper to format date object to DD-MM-YYYY
 function formatDate(date: Date): string {
   const d = date.getDate().toString().padStart(2, "0");
   const m = (date.getMonth() + 1).toString().padStart(2, "0");
   const y = date.getFullYear();
   return `${d}-${m}-${y}`;
-}
-
-// Generate array of dates between start and end
-function getDatesInRange(startDate: Date, endDate: Date): Date[] {
-  const dates = [];
-  const currentDate = new Date(startDate.getTime());
-
-  while (currentDate <= endDate) {
-    dates.push(new Date(currentDate));
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-
-  return dates;
 }
 
 export async function GET(request: NextRequest) {
@@ -38,7 +22,6 @@ export async function GET(request: NextRequest) {
     let endParam = searchParams.get("end");
 
     if (!startParam || !endParam) {
-      // Default to today
       const today = new Date();
       startParam = today.toISOString().split("T")[0];
       endParam = startParam;
@@ -55,7 +38,6 @@ export async function GET(request: NextRequest) {
     console.log(`[SCRAPE] Starting Order Produksi scrape for range: ${startParam} - ${endParam}`);
 
     let cookies = await getSession(async () => {
-      // 1. Login to get cookies
       const loginReqUrl = BASE_URL + "v1/auth/login";
       const loginBody = JSON.stringify({
         username: API_EMAIL,
@@ -73,12 +55,8 @@ export async function GET(request: NextRequest) {
       });
 
       if (!loginRes.ok) {
-        const errText = await loginRes.text();
-        console.error(`[SCRAPE] Login failed with status ${loginRes.status}: ${errText}`);
         return null;
       }
-
-      console.log(`[SCRAPE] Login completed in ${Date.now() - startTime}ms`);
       return loginRes.headers.get("set-cookie");
     });
 
@@ -86,7 +64,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Failed to login. No cookies returned." }, { status: 401 });
     }
 
-    // 2. Fetch data using range
     const startStr = formatDate(startDate);
     const endStr = formatDate(endDate);
     
@@ -118,20 +95,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (!res.ok) {
-      const errText = await res.text();
-      console.error(`[SCRAPE] Data fetch failed with status ${res.status}: ${errText}`);
-      return NextResponse.json({ error: `Fetch failed with status ${res.status}` }, { status: res.status });
+       return NextResponse.json({ error: `Fetch failed with status ${res.status}` }, { status: res.status });
     }
 
-    console.log(`[SCRAPE] Fetch completed in ${Date.now() - startTime}ms`);
-    const fetchTime = Date.now();
-
     const jsonData = await res.json();
-    console.log(`[SCRAPE] JSON parsing completed in ${Date.now() - fetchTime}ms`);
-    const parseTime = Date.now();
     const rawRecords = jsonData.records || jsonData.data || jsonData.rows || jsonData.result || [];
     
-    // Filter out totals row
     const filteredRecords = rawRecords.filter((r: any) => 
         String(r.kd_barang || "").toLowerCase().trim() !== "total"
     );
@@ -147,106 +116,93 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Sort descending by date (Tgl = DD-MM-YYYY)
-    finalRecords.sort((a: any, b: any) => {
-      const parseDate = (dStr: string) => {
-        if (!dStr) return 0;
-        const parts = dStr.split('-');
-        if (parts.length === 3) {
-           return new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00Z`).getTime();
-        }
-        return 0;
-      };
-      return parseDate(b.tgl) - parseDate(a.tgl);
-    });
+    // 1. Fetch existing fakturs to calculate new records accurately
+    const fakturs = finalRecords.map((r: any) => r.faktur).filter(Boolean);
+    let existingFakturs = new Set<string>();
+    if (fakturs.length > 0) {
+        // Since sqlite IN range might be limited, but small enough here usually. 
+        // For larger data, chunking would be better.
+        const placeholders = fakturs.map(() => '?').join(',');
+        const existingRes = await db.execute({
+            sql: `SELECT faktur FROM orders WHERE faktur IN (${placeholders})`,
+            args: fakturs
+        });
+        existingFakturs = new Set(existingRes.rows.map((row: any) => row.faktur));
+    }
 
-    // Save to database
-    let importedCount = 0;
+    // 2. Prepare batch inserts
+    const batchOps: any[] = [];
     let newInsertedCount = 0;
     
-    const checkStmt = db.prepare('SELECT 1 FROM orders WHERE faktur = ?');
+    for (const record of finalRecords) {
+        if (!record.faktur) continue;
+        if (!existingFakturs.has(record.faktur)) newInsertedCount++;
+        
+        batchOps.push({
+            sql: `
+              INSERT INTO orders (faktur, nama_prd, nama_pelanggan, tgl, qty, harga, jumlah, raw_data)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+              ON CONFLICT(faktur) DO UPDATE SET
+                nama_prd = excluded.nama_prd,
+                nama_pelanggan = excluded.nama_pelanggan,
+                tgl = excluded.tgl,
+                qty = excluded.qty,
+                harga = excluded.harga,
+                jumlah = excluded.jumlah,
+                raw_data = excluded.raw_data
+            `,
+            args: [
+              record.faktur,
+              (record.nama_prd || '').trim(),
+              record.nama_pelanggan || record.kd_pelanggan || '',
+              record.tgl || '',
+              record.qty || 0,
+              record.harga || 0,
+              record.jumlah || 0,
+              JSON.stringify(record)
+            ]
+        });
+    }
 
-    const insertStmt = db.prepare(`
-      INSERT INTO orders (faktur, nama_prd, nama_pelanggan, tgl, qty, harga, jumlah, raw_data)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(faktur) DO UPDATE SET
-        nama_prd = excluded.nama_prd,
-        nama_pelanggan = excluded.nama_pelanggan,
-        tgl = excluded.tgl,
-        qty = excluded.qty,
-        harga = excluded.harga,
-        jumlah = excluded.jumlah,
-        raw_data = excluded.raw_data
-    `);
-
-    db.transaction(() => {
-      for (const record of finalRecords) {
-        if (!record.faktur) continue; // Skip invalid rows
-        try {
-          const exists = checkStmt.get(record.faktur);
-          if (!exists) newInsertedCount++;
-
-          insertStmt.run(
-            record.faktur,
-            record.nama_prd || '',
-            record.nama_pelanggan || record.kd_pelanggan || '',
-            record.tgl || '',
-            record.qty || 0,
-            record.harga || 0,
-            record.jumlah || 0,
-            JSON.stringify(record)
-          );
-          importedCount++;
-        } catch (err) {
-          console.error('Failed to import order:', record.faktur, err);
-        }
-      }
-    })();
-
-    console.log(`[SCRAPE] Database insertion completed in ${Date.now() - parseTime}ms. New records: ${newInsertedCount}`);
-    console.log(`[SCRAPE] Total scrape time: ${Date.now() - startTime}ms`);
-
-    const totalTime = Date.now() - startTime;
-    const stats = {
-      total: finalRecords.length,
-      metrics: {
-        login_time: 0,
-        fetch_time: Date.now() - startTime,
-        parse_ms: parseTime - fetchTime,
-        db_ms: Date.now() - parseTime,
-        total_ms: totalTime
-      }
-    };
-
-    const silent = searchParams.get('silent') === 'true';
-    if (!silent) {
-      try {
-        db.prepare(`
-          INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `).run(
-          'SCRAPE', 
-          'orders', 
-          0, 
-          `Tarik Data Order Produksi (${startParam} s/d ${endParam})`, 
-          JSON.stringify(stats), 
-          'System'
-        );
-      } catch (e) {
-        console.error("Failed to log activity:", e);
-      }
+    // Process batch in chunks if very large (libsql limit is ~5000 by default)
+    const chunkSize = 100;
+    for (let i = 0; i < batchOps.length; i += chunkSize) {
+        await db.batch(batchOps.slice(i, i + chunkSize), "write");
     }
 
     const lastUpdated = new Date().toISOString();
-    try {
-      db.prepare(`
-        INSERT INTO system_settings (key, value, updated_at)
-        VALUES (?, ?, CURRENT_TIMESTAMP)
-        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
-      `).run('last_scrape_orders', lastUpdated);
-    } catch (e) {
-      console.error("Failed to update system_settings:", e);
+    
+    // 3. Final settings and log
+    const silent = searchParams.get('silent') === 'true';
+    const finalOps = [
+        {
+            sql: `
+              INSERT INTO system_settings (key, value, updated_at)
+              VALUES (?, ?, CURRENT_TIMESTAMP)
+              ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+            `,
+            args: ['last_scrape_orders', lastUpdated]
+        }
+    ];
+
+    if (!silent) {
+        finalOps.push({
+            sql: `
+              INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+              VALUES (?, ?, ?, ?, ?, ?)
+            `,
+            args: [
+              'SCRAPE', 
+              'orders', 
+              0, 
+              `Tarik Data Order Produksi (${startParam} s/d ${endParam})`, 
+              JSON.stringify({ total: finalRecords.length, new: newInsertedCount }), 
+              'System'
+            ] as any[]
+        });
     }
+
+    await db.batch(finalOps, "write");
 
     return NextResponse.json({
       success: true,
@@ -254,10 +210,7 @@ export async function GET(request: NextRequest) {
       newly_inserted: newInsertedCount,
       lastUpdated
     }, {
-      headers: {
-        // Prevent caching
-        "Cache-Control": "no-store, max-age=0"
-      }
+      headers: { "Cache-Control": "no-store, max-age=0" }
     });
 
   } catch (error: any) {

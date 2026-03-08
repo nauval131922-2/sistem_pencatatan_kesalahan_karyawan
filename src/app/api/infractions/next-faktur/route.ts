@@ -20,9 +20,11 @@ export async function GET(req: NextRequest) {
     const yy = String(dateObj.getFullYear()).substring(2);
     const datePrefix = `${dd}${mm}${yy}`;
 
-    const countRow = db.prepare(
-      `SELECT last_seq FROM faktur_sequences WHERE prefix = ?`
-    ).get(datePrefix) as { last_seq: number } | undefined;
+    const result = await db.execute({
+      sql: `SELECT last_seq FROM faktur_sequences WHERE prefix = ?`,
+      args: [datePrefix]
+    });
+    const countRow = result.rows[0] as any;
 
     const seq = String((countRow?.last_seq ?? 0) + 1).padStart(3, '0');
     const nextFaktur = `ERR-${datePrefix}-${seq}`;

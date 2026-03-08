@@ -31,14 +31,13 @@ export async function GET(req: NextRequest) {
     }
     query += ` ORDER BY i.date DESC, i.id DESC`;
 
-    const data = db.prepare(query).all(...params);
-    return NextResponse.json({ data });
+    const result = await db.execute({ sql: query, args: params });
+    return NextResponse.json({ data: result.rows });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
-// Fast manual time formatter (avoids toLocaleTimeString locale overhead)
 function getTimeString() {
   const now = new Date();
   const h = String(now.getHours()).padStart(2, '0');
@@ -72,62 +71,74 @@ export async function POST(req: NextRequest) {
 
     const fullDate = date.length === 10 ? `${date} ${getTimeString()}` : date;
 
-    // Generate faktur datePrefix from the input date
     const dateObj = new Date(date.substring(0, 10));
     const dd = String(dateObj.getDate()).padStart(2, '0');
     const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
     const yy = String(dateObj.getFullYear()).substring(2);
     const datePrefix = `${dd}${mm}${yy}`;
 
-    // All DB writes in one transaction (saves 1 fsync vs separate INSERT calls)
-    const result = db.transaction(() => {
-      // Faktur sequence
-      const countRow = db.prepare(
-        `SELECT last_seq FROM faktur_sequences WHERE prefix = ?`
-      ).get(datePrefix) as { last_seq: number } | undefined;
-      const newSeq = (countRow?.last_seq ?? 0) + 1;
-      const faktur = `ERR-${datePrefix}-${String(newSeq).padStart(3, '0')}`;
-      db.prepare(`
-        INSERT INTO faktur_sequences (prefix, last_seq) VALUES (?, ?)
-        ON CONFLICT(prefix) DO UPDATE SET last_seq = ?, updated_at = CURRENT_TIMESTAMP
-      `).run(datePrefix, newSeq, newSeq);
+    // 1. Fetch sequence and snapshots first
+    const [seqRes, empRes, recRes] = await Promise.all([
+      db.execute({ sql: `SELECT last_seq FROM faktur_sequences WHERE prefix = ?`, args: [datePrefix] }),
+      db.execute({ sql: 'SELECT name, position, employee_no FROM employees WHERE id = ?', args: [employeeId] }),
+      db.execute({ sql: 'SELECT name, position, employee_no FROM employees WHERE id = ?', args: [recordedById] })
+    ]);
 
-      // Separate .get() per employee — avoids IN(?,?) type-coercion issues
-      const emp = db.prepare('SELECT name, position, employee_no FROM employees WHERE id = ?').get(employeeId) as { name: string, position: string, employee_no: string } | undefined;
-      const rec = db.prepare('SELECT name, position, employee_no FROM employees WHERE id = ?').get(recordedById) as { name: string, position: string, employee_no: string } | undefined;
+    const countRow = seqRes.rows[0] as any;
+    const newSeq = (Number(countRow?.last_seq) ?? 0) + 1;
+    const faktur = `ERR-${datePrefix}-${String(newSeq).padStart(3, '0')}`;
 
-      const empName = emp?.name || 'Unknown';
-      const empPos = emp?.position || '-';
-      const employeeNo = emp?.employee_no || null;
-      const recName = rec?.name || 'Unknown';
-      const recPos = rec?.position || '-';
-      const recNo = rec?.employee_no || null;
+    const emp = empRes.rows[0] as any;
+    const rec = recRes.rows[0] as any;
 
-      const insertResult = db.prepare(
-        `INSERT INTO infractions (
+    const empName = emp?.name || 'Unknown';
+    const empPos = emp?.position || '-';
+    const employeeNo = emp?.employee_no || null;
+    const recName = rec?.name || 'Unknown';
+    const recPos = rec?.position || '-';
+    const recNo = rec?.employee_no || null;
+
+    // 2. Execute writes in a batch
+    const batchOps: any[] = [
+      {
+        sql: `
+          INSERT INTO faktur_sequences (prefix, last_seq) VALUES (?, ?)
+          ON CONFLICT(prefix) DO UPDATE SET last_seq = ?, updated_at = CURRENT_TIMESTAMP
+        `,
+        args: [datePrefix, newSeq, newSeq]
+      },
+      {
+        sql: `INSERT INTO infractions (
           employee_id, employee_no, employee_name, employee_position,
           description, severity, date,
           recorded_by, recorded_by_id, recorded_by_no, recorded_by_name, recorded_by_position,
           order_name, order_faktur, item_faktur, faktur, jenis_barang, nama_barang, jenis_harga, jumlah, harga, total
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(
-        employeeId, employeeNo, empName, empPos,
-        description, severity, fullDate,
-        recName, recordedById, recNo, recName, recPos,
-        orderName, orderFaktur, itemFaktur, faktur, jenisBarang, namaBarang, jenisHarga, jumlah, harga, total
-      );
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [
+          employeeId, employeeNo, empName, empPos,
+          description, severity, fullDate,
+          recName, recordedById, recNo, recName, recPos,
+          orderName, orderFaktur, itemFaktur, faktur, jenisBarang, namaBarang, jenisHarga, jumlah, harga, total
+        ]
+      }
+    ];
 
-      // Activity log in same transaction (one fewer commit/fsync)
-      const rawData = JSON.stringify({ employee_no: employeeNo, employee_name: empName, description, faktur, date: fullDate, order_name: orderName });
-      db.prepare(`
+    const batchRes = await db.batch(batchOps, "write");
+    const infractionInsertRowsAffected = batchRes[1] as any;
+    
+    // 3. Log Activity (Can be separate or in batch if we knew the ID, but we use lastInsertRowid)
+    // In libsql batch, we don't easily get the lastInsertRowid for intermediate steps to use in next ones unless we use RETURNING
+    // But we can just use the faktur for the log message.
+    const rawData = JSON.stringify({ employee_no: employeeNo, employee_name: empName, description, faktur, date: fullDate, order_name: orderName });
+    await db.execute({
+      sql: `
         INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run('INSERT', 'infractions', insertResult.lastInsertRowid, `Tambah data kesalahan: ${employeeNo ? `${employeeNo} - ` : ''}${empName}`, rawData, recName);
+        VALUES (?, ?, 0, ?, ?, ?)
+      `,
+      args: ['INSERT', 'infractions', `Tambah data kesalahan: ${employeeNo ? `${employeeNo} - ` : ''}${empName}`, rawData, recName]
+    });
 
-      return { faktur };
-    })();
-
-    return NextResponse.json({ success: true, faktur: result.faktur });
+    return NextResponse.json({ success: true, faktur });
   } catch (err: any) {
     console.error('Add infraction error:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

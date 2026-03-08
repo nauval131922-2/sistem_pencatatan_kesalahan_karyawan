@@ -10,10 +10,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    db.prepare(`
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES (?, ?, 0, ?, ?, ?)
-    `).run(action_type, table_name, message, raw_data || '{}', recorded_by || 'System');
+    await db.execute({
+      sql: `
+        INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+        VALUES (?, ?, 0, ?, ?, ?)
+      `,
+      args: [action_type, table_name, message, raw_data || '{}', recorded_by || 'System']
+    });
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

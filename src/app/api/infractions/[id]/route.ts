@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 
-// Fast manual time formatter (avoids toLocaleTimeString locale overhead)
 function getTimeString() {
   const now = new Date();
   const h = String(now.getHours()).padStart(2, '0');
@@ -29,45 +28,54 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       ? `${date} ${getTimeString()}`
       : date;
 
-    // All writes in one transaction (saves 1 fsync vs separate commits)
-    db.transaction(() => {
-      // Separate .get() per employee — avoids IN(?,?) type-coercion issues
-      const emp = db.prepare('SELECT name, position, employee_no FROM employees WHERE id = ?').get(employee_id) as { name: string, position: string, employee_no: string } | undefined;
-      const rec = db.prepare('SELECT name, position, employee_no FROM employees WHERE id = ?').get(parseInt(recorded_by_id)) as { name: string, position: string, employee_no: string } | undefined;
+    // 1. Fetch snapshots
+    const [empRes, recRes] = await Promise.all([
+      db.execute({ sql: 'SELECT name, position, employee_no FROM employees WHERE id = ?', args: [employee_id] }),
+      db.execute({ sql: 'SELECT name, position, employee_no FROM employees WHERE id = ?', args: [parseInt(recorded_by_id)] })
+    ]);
 
-      const employeeNo = emp?.employee_no || null;
-      const employeeName = emp?.name || 'Unknown';
-      const employeePosition = emp?.position || '-';
-      const recName = rec?.name || 'Unknown';
-      const recPos = rec?.position || '-';
-      const recNo = rec?.employee_no || null;
+    const emp = empRes.rows[0] as any;
+    const rec = recRes.rows[0] as any;
 
-      db.prepare(`
-        UPDATE infractions
-        SET
-          employee_id = ?, employee_no = ?, employee_name = ?, employee_position = ?,
-          description = ?, severity = ?, date = ?,
-          recorded_by = ?, recorded_by_id = ?, recorded_by_no = ?, recorded_by_name = ?, recorded_by_position = ?,
-          order_name = ?, order_faktur = ?, item_faktur = ?, jenis_barang = ?, nama_barang = ?, jenis_harga = ?,
-          jumlah = ?, harga = ?, total = ?,
-          updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(
-        employee_id, employeeNo, employeeName, employeePosition,
-        description || '', severity, fullDate,
-        recName, parseInt(recorded_by_id), recNo, recName, recPos,
-        order_name, order_faktur, item_faktur, jenis_barang, nama_barang, jenis_harga,
-        parseFloat(jumlah) || 0, parseFloat(harga) || 0, parseFloat(total) || 0,
-        id
-      );
+    const employeeNo = emp?.employee_no || null;
+    const employeeName = emp?.name || 'Unknown';
+    const employeePosition = emp?.position || '-';
+    const recName = rec?.name || 'Unknown';
+    const recPos = rec?.position || '-';
+    const recNo = rec?.employee_no || null;
 
-      // Activity log in same transaction (one fewer commit/fsync)
-      const rawData = JSON.stringify({ employee_no: employeeNo, employee_name: employeeName, description, faktur: bodyFaktur, date, order_name });
-      db.prepare(`
-        INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run('UPDATE', 'infractions', id, `Edit data kesalahan: ${employeeNo ? `${employeeNo} - ` : ''}${employeeName}`, rawData, recName);
-    })();
+    // 2. Execute batch update and log
+    const rawData = JSON.stringify({ employee_no: employeeNo, employee_name: employeeName, description, faktur: bodyFaktur, date, order_name });
+    await db.batch([
+      {
+        sql: `
+          UPDATE infractions
+          SET
+            employee_id = ?, employee_no = ?, employee_name = ?, employee_position = ?,
+            description = ?, severity = ?, date = ?,
+            recorded_by = ?, recorded_by_id = ?, recorded_by_no = ?, recorded_by_name = ?, recorded_by_position = ?,
+            order_name = ?, order_faktur = ?, item_faktur = ?, jenis_barang = ?, nama_barang = ?, jenis_harga = ?,
+            jumlah = ?, harga = ?, total = ?,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `,
+        args: [
+          employee_id, employeeNo, employeeName, employeePosition,
+          description || '', severity, fullDate,
+          recName, parseInt(recorded_by_id), recNo, recName, recPos,
+          order_name, order_faktur, item_faktur, jenis_barang, nama_barang, jenis_harga,
+          parseFloat(jumlah) || 0, parseFloat(harga) || 0, parseFloat(total) || 0,
+          id
+        ]
+      },
+      {
+        sql: `
+          INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `,
+        args: ['UPDATE', 'infractions', id, `Edit data kesalahan: ${employeeNo ? `${employeeNo} - ` : ''}${employeeName}`, rawData, recName]
+      }
+    ], "write");
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
@@ -79,29 +87,36 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params;
     
-    db.transaction(() => {
-      const existing = db.prepare(`
-        SELECT faktur, employee_name, employee_no, description, date, order_name
-        FROM infractions WHERE id = ?
-      `).get(id) as any;
+    // 1. Fetch existing for log
+    const existingRes = await db.execute({
+      sql: `SELECT faktur, employee_name, employee_no, description, date, order_name FROM infractions WHERE id = ?`,
+      args: [id]
+    });
+    const existing = existingRes.rows[0] as any;
 
-      if (existing) {
-        const rawData = JSON.stringify({
-          employee_id: existing.employee_no || 'Unknown',
-          employee_name: existing.employee_name,
-          description: existing.description,
-          faktur: existing.faktur,
-          date: existing.date,
-          order_name: existing.order_name
-        });
-        db.prepare(`
-          INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `).run('DELETE', 'infractions', id, `Hapus data kesalahan: ${existing.employee_no ? `${existing.employee_no} - ` : ''}${existing.employee_name}`, rawData, 'Sistem');
-      }
+    if (existing) {
+      const rawData = JSON.stringify({
+        employee_id: existing.employee_no || 'Unknown',
+        employee_name: existing.employee_name,
+        description: existing.description,
+        faktur: existing.faktur,
+        date: existing.date,
+        order_name: existing.order_name
+      });
 
-      db.prepare('DELETE FROM infractions WHERE id = ?').run(id);
-    })();
+      await db.batch([
+        {
+          sql: `
+            INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+            VALUES (?, ?, ?, ?, ?, ?)
+          `,
+          args: ['DELETE', 'infractions', id, `Hapus data kesalahan: ${existing.employee_no ? `${existing.employee_no} - ` : ''}${existing.employee_name}`, rawData, 'Sistem']
+        },
+        { sql: 'DELETE FROM infractions WHERE id = ?', args: [id] }
+      ], "write");
+    } else {
+      await db.execute({ sql: 'DELETE FROM infractions WHERE id = ?', args: [id] });
+    }
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

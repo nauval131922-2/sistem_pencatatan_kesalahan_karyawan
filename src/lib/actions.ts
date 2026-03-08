@@ -3,18 +3,24 @@
 import db from '@/lib/db';
 
 export async function getEmployees() {
-  return db.prepare('SELECT * FROM employees WHERE is_active = 1 ORDER BY id ASC').all();
+  const result = await db.execute('SELECT * FROM employees WHERE is_active = 1 ORDER BY id ASC');
+  return result.rows;
 }
 
 export async function addEmployee(name: string, position: string, department: string) {
-  const result = db.prepare('INSERT INTO employees (name, position, department) VALUES (?, ?, ?)')
-    .run(name, position, department);
+  const result = await db.execute({
+    sql: 'INSERT INTO employees (name, position, department) VALUES (?, ?, ?)',
+    args: [name, position, department]
+  });
 
   const rawData = JSON.stringify({ name, position, department });
-  db.prepare(`
-    INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run('INSERT', 'employees', result.lastInsertRowid, `Tambah Data Karyawan Master: ${name}`, rawData, 'Admin');
+  await db.execute({
+    sql: `
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `,
+    args: ['INSERT', 'employees', Number(result.lastInsertRowid), `Tambah Data Karyawan Master: ${name}`, rawData, 'Admin']
+  });
 
   return result;
 }
@@ -46,15 +52,23 @@ export async function getInfractions(startDate?: string, endDate?: string) {
 
   query += ` ORDER BY i.date DESC, i.id DESC `;
   
-  return db.prepare(query).all(...params);
+  const result = await db.execute({
+    sql: query,
+    args: params
+  });
+  return result.rows;
 }
 
 export async function getActivityLogs(limit = 1000) {
-  return db.prepare(`
-    SELECT * FROM activity_logs
-    ORDER BY created_at DESC
-    LIMIT ?
-  `).all(limit);
+  const result = await db.execute({
+    sql: `
+      SELECT * FROM activity_logs
+      ORDER BY created_at DESC
+      LIMIT ?
+    `,
+    args: [limit]
+  });
+  return result.rows;
 }
 
 export async function addInfraction(employeeId: number, description: string, severity: string, date: string, recordedById: number|string, orderName?: string) {
@@ -66,58 +80,72 @@ export async function addInfraction(employeeId: number, description: string, sev
   }
 
   // Fetch snapshots
-  const emp = db.prepare('SELECT name, position, employee_no FROM employees WHERE id = ?').get(employeeId) as any;
-  const rec = db.prepare('SELECT name, position, employee_no FROM employees WHERE id = ?').get(recordedById) as any;
+  const empRes = await db.execute({
+    sql: 'SELECT name, position, employee_no FROM employees WHERE id = ?',
+    args: [employeeId]
+  });
+  const recRes = await db.execute({
+    sql: 'SELECT name, position, employee_no FROM employees WHERE id = ?',
+    args: [recordedById]
+  });
 
-  return db.prepare(`
-    INSERT INTO infractions (
-      employee_id, employee_no, employee_name, employee_position,
-      description, severity, date, 
-      recorded_by, recorded_by_id, recorded_by_no, recorded_by_name, recorded_by_position,
-      order_name
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    employeeId, emp?.employee_no, emp?.name, emp?.position,
-    description, severity, fullDate,
-    rec?.name, recordedById, rec?.employee_no, rec?.name, rec?.position,
-    orderName || null
-  );
+  const emp = empRes.rows[0] as any;
+  const rec = recRes.rows[0] as any;
+
+  return await db.execute({
+    sql: `
+      INSERT INTO infractions (
+        employee_id, employee_no, employee_name, employee_position,
+        description, severity, date, 
+        recorded_by, recorded_by_id, recorded_by_no, recorded_by_name, recorded_by_position,
+        order_name
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    args: [
+      employeeId, emp?.employee_no, emp?.name, emp?.position,
+      description, severity, fullDate,
+      rec?.name, recordedById, rec?.employee_no, rec?.name, rec?.position,
+      orderName || null
+    ]
+  });
 }
 
 export async function fetchProductionOrders() {
-  // Sort by date descending (latest first) to match Orders menu behavior
-  return db.prepare(`
+  const result = await db.execute(`
     SELECT id, faktur, nama_prd 
     FROM orders 
     ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC
-  `).all();
+  `);
+  return result.rows;
 }
 
 export async function getStats() {
-  const totalEmployees = db.prepare('SELECT COUNT(*) as count FROM employees WHERE is_active = 1').get() as { count: number };
-  const totalInfractions = db.prepare(`
-    SELECT COUNT(*) as count FROM infractions i
-    LEFT JOIN employees e ON (i.employee_id = e.id OR (i.employee_no IS NOT NULL AND i.employee_no = e.employee_no))
-  `).get() as { count: number };
-  const highSeverity = db.prepare(`
-    SELECT COUNT(*) as count FROM infractions i
-    LEFT JOIN employees e ON (i.employee_id = e.id OR (i.employee_no IS NOT NULL AND i.employee_no = e.employee_no))
-    WHERE i.severity = 'High'
-  `).get() as { count: number };
-  const totalOrders = db.prepare('SELECT COUNT(*) as count FROM orders').get() as { count: number };
+  const results = await Promise.all([
+    db.execute('SELECT COUNT(*) as count FROM employees WHERE is_active = 1'),
+    db.execute(`
+      SELECT COUNT(*) as count FROM infractions i
+      LEFT JOIN employees e ON (i.employee_id = e.id OR (i.employee_no IS NOT NULL AND i.employee_no = e.employee_no))
+    `),
+    db.execute(`
+      SELECT COUNT(*) as count FROM infractions i
+      LEFT JOIN employees e ON (i.employee_id = e.id OR (i.employee_no IS NOT NULL AND i.employee_no = e.employee_no))
+      WHERE i.severity = 'High'
+    `),
+    db.execute('SELECT COUNT(*) as count FROM orders')
+  ]);
   
   return {
-    totalEmployees: totalEmployees.count,
-    totalInfractions: totalInfractions.count,
-    highSeverity: highSeverity.count,
-    totalOrders: totalOrders.count
+    totalEmployees: Number(results[0].rows[0]?.count || 0),
+    totalInfractions: Number(results[1].rows[0]?.count || 0),
+    highSeverity: Number(results[2].rows[0]?.count || 0),
+    totalOrders: Number(results[3].rows[0]?.count || 0)
   };
 }
 
 export async function getLastEmployeeImport() {
   try {
-    const log = db.prepare(`SELECT * FROM activity_logs WHERE table_name = 'employees' AND action_type = 'IMPORT' ORDER BY id DESC LIMIT 1`).get() as any;
-    return log || null;
+    const result = await db.execute(`SELECT * FROM activity_logs WHERE table_name = 'employees' AND action_type = 'IMPORT' ORDER BY id DESC LIMIT 1`);
+    return result.rows[0] || null;
   } catch (err) {
     console.error('Failed to get last employee import log', err);
     return null;
@@ -126,8 +154,8 @@ export async function getLastEmployeeImport() {
 
 export async function getLastHppImport() {
   try {
-    const log = db.prepare(`SELECT * FROM activity_logs WHERE table_name = 'hpp_kalkulasi' AND action_type = 'UPLOAD' ORDER BY id DESC LIMIT 1`).get() as any;
-    return log || null;
+    const result = await db.execute(`SELECT * FROM activity_logs WHERE table_name = 'hpp_kalkulasi' AND action_type = 'UPLOAD' ORDER BY id DESC LIMIT 1`);
+    return result.rows[0] || null;
   } catch (err) {
     console.error('Failed to get last hpp kalkulasi import log', err);
     return null;

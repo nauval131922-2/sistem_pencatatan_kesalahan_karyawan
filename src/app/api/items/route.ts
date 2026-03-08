@@ -19,31 +19,31 @@ export async function GET(request: NextRequest) {
       ? `AND (faktur_prd = ? OR nama_prd = ?)` 
       : '';
     const queryParams = (orderFaktur || orderName) ? [orderFaktur || '', orderName || ''] : [];
+    
     if (jenisBarang === 'Bahan Baku') {
       // Find all unique items for this specific order from bahan_baku table
-      const stmt = db.prepare(`
+      const sql = `
         SELECT DISTINCT nama_barang, kd_barang, faktur, hp as harga 
         FROM bahan_baku 
         WHERE nama_barang IS NOT NULL AND nama_barang != '' ${orderFilter}
         ORDER BY nama_barang ASC
-      `);
-      items = stmt.all(...queryParams) as any[];
+      `;
+      const result = await db.execute({ sql, args: queryParams });
+      items = result.rows;
       
     } else if (jenisBarang === 'Barang Jadi') {
       // Find all unique items for this specific order from barang_jadi table
-      const stmt = db.prepare(`
+      const sql = `
         SELECT DISTINCT nama_barang, kd_barang, faktur, hp as harga 
         FROM barang_jadi 
         WHERE nama_barang IS NOT NULL AND nama_barang != '' ${orderFilter}
         ORDER BY nama_barang ASC
-      `);
-      items = stmt.all(...queryParams) as any[];
-      
-      items = stmt.all(orderFaktur || '', orderName) as any[];
+      `;
+      const result = await db.execute({ sql, args: queryParams });
+      items = result.rows;
     } else if (jenisBarang === 'Penjualan Barang') {
       // Find items from sales_reports table
-      // We format kd_barang as 'faktur - nama_prd' and nama_barang as 'faktur - nama_prd' as requested
-      const stmt = db.prepare(`
+      const sql = `
         SELECT 
           nama_prd as nama_barang,
           kd_barang,
@@ -53,8 +53,9 @@ export async function GET(request: NextRequest) {
         FROM sales_reports 
         WHERE nama_prd IS NOT NULL AND nama_prd != '' ${(orderFaktur || orderName) ? `AND (faktur = ? OR nama_prd = ?)` : ''}
         ORDER BY substr(tgl, 7, 4) ASC, substr(tgl, 4, 2) ASC, substr(tgl, 1, 2) ASC
-      `);
-      items = stmt.all(...queryParams) as any[];
+      `;
+      const result = await db.execute({ sql, args: queryParams });
+      items = result.rows;
     }
 
     return NextResponse.json({

@@ -9,9 +9,14 @@ export async function GET(request: NextRequest) {
 
     let data;
     if (orderName) {
-      data = db.prepare(`SELECT * FROM hpp_kalkulasi WHERE nama_order = ? ORDER BY id ASC`).all(orderName);
+      const result = await db.execute({
+        sql: `SELECT * FROM hpp_kalkulasi WHERE TRIM(nama_order) = ? ORDER BY id ASC`,
+        args: [orderName.trim()]
+      });
+      data = result.rows;
     } else {
-      data = db.prepare(`SELECT * FROM hpp_kalkulasi ORDER BY id ASC`).all();
+      const result = await db.execute(`SELECT * FROM hpp_kalkulasi ORDER BY id ASC`);
+      data = result.rows;
     }
     
     return NextResponse.json({ success: true, data });
@@ -41,72 +46,63 @@ export async function POST(request: NextRequest) {
     const worksheet = workbook.Sheets[sheetName];
 
     // Convert sheet to JSON array
-    // Assuming the first row is headers: e.g. ["No.", "Nama Order", "HPP Kalkulasi"]
     const rawData: any[] = xlsx.utils.sheet_to_json(worksheet, { defval: "" });
 
     if (rawData.length === 0) {
        return NextResponse.json({ error: "File Excel kosong atau format tidak sesuai." }, { status: 400 });
     }
 
-    // Prepare to save
+    // Prepare batch operations
+    const batchOps: any[] = [
+      { sql: 'DELETE FROM hpp_kalkulasi', args: [] }
+    ];
+
     let importedCount = 0;
+    for (const row of rawData) {
+      let namaOrder = '';
+      let hppValue = 0;
 
-    // Delete existing rows
-    db.prepare('DELETE FROM hpp_kalkulasi').run();
-
-    const insertStmt = db.prepare(`
-      INSERT INTO hpp_kalkulasi (nama_order, hpp_kalkulasi)
-      VALUES (?, ?)
-    `);
-
-    db.transaction(() => {
-      for (const row of rawData) {
-        // Based on user's image, column names are likely "Nama Order" and "HPP Kalkulasi"
-        // Let's find those keys flexibly (case insensitive, trim spaces)
-        
-        let namaOrder = '';
-        let hppValue = 0;
-
-        for (const key of Object.keys(row)) {
-          const lowerKey = key.toLowerCase().trim();
-          if (lowerKey.includes('nama order')) {
-            namaOrder = String(row[key] || '').trim();
-          } else if (lowerKey.includes('hpp kalkulasi')) {
-            // Parse robustly since it could be a string or number in excel
-            let val = row[key];
-            if (typeof val === 'string') {
-              // remove thousands separators (dot or comma depending on locale), parse
-              val = val.replace(/[^0-9,-]+/g, "").replace(',', '.');
-            }
-            hppValue = parseFloat(val) || 0;
+      for (const key of Object.keys(row)) {
+        const lowerKey = key.toLowerCase().trim();
+        if (lowerKey.includes('nama order')) {
+          namaOrder = String(row[key] || '').trim();
+        } else if (lowerKey.includes('hpp kalkulasi')) {
+          let val = row[key];
+          if (typeof val === 'string') {
+            val = val.replace(/[^0-9,-]+/g, "").replace(',', '.');
           }
-        }
-
-        if (!namaOrder || hppValue <= 0) continue; // Skip empty rows or invalid hpp
-
-        try {
-          insertStmt.run(namaOrder, hppValue);
-          importedCount++;
-        } catch (err: any) {
-          // Might hit UNIQUE constraint if there are duplicate Nama Order in excel, ignore
-          console.error("Duplicate or error in HPP import:", err.message);
+          hppValue = parseFloat(val) || 0;
         }
       }
-    })();
+
+      if (!namaOrder || hppValue <= 0) continue;
+
+      batchOps.push({
+        sql: `INSERT INTO hpp_kalkulasi (nama_order, hpp_kalkulasi) VALUES (?, ?)`,
+        args: [namaOrder, hppValue]
+      });
+      importedCount++;
+    }
+
+    // Execute batch
+    await db.batch(batchOps, "write");
 
     // Log Activity
     try {
-      db.prepare(`
-        INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(
-        'UPLOAD', 
-        'hpp_kalkulasi', 
-        0, 
-        `Upload data HPP Kalkulasi (${importedCount} baris)`, 
-        JSON.stringify({ fileName: file.name, total: importedCount }), 
-        'System'
-      );
+      await db.execute({
+        sql: `
+          INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `,
+        args: [
+          'UPLOAD', 
+          'hpp_kalkulasi', 
+          0, 
+          `Upload data HPP Kalkulasi (${importedCount} data)`, 
+          JSON.stringify({ fileName: file.name, total: importedCount }), 
+          'System'
+        ]
+      });
     } catch (e) {
       console.error("Failed to log activity:", e);
     }
