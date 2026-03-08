@@ -15,3 +15,4 @@
     - [x] Integrasi `db.batch()` untuk bulk ops
     - [x] Inisialisasi Remote Database (Turso)
     - [x] Hapus dependency `better-sqlite3` (fix Vercel 500 error)
+    - [x] Migrasi data produksi lokal ke Cloud (Turso)

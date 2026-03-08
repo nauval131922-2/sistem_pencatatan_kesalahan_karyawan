@@ -1,7 +1,7 @@
 # AI Session Summary - 08-03-2026
 
 ## Context
-- **Last Task**: Migrasi penuh ke Cloud (Vercel + Turso) dan perbaikan build error TypeScript.
+- **Last Task**: Migrasi penuh ke Cloud (Vercel + Turso), perbaikan build error, dan migrasi data produksi.
 - **Branch**: master
 
 ## Completed in this session
@@ -13,19 +13,20 @@
 - [x] Implementasi `db.batch()` pada scraper dan import untuk efisiensi cloud.
 - [x] Pembaruan `src/lib/schema.ts` dan `scripts/init-db.ts` agar kompatibel dengan LibSQL/Turso.
 - [x] Inisialisasi skema pada database remote Turso (Berhasil).
+- [x] **Migrasi Data**: Transfer data produksi lokal (`database.sqlite`) ke Turso Cloud menggunakan script migrasi batch.
 
 ## Pending / Next Steps
-- [ ] User melakukan Deployment ulang di Vercel (Redeploy tanpa cache).
-- [ ] Verifikasi dashboard online.
+- [ ] Verifikasi kestabilan dashboard online setelah data dimigrasikan.
+- [ ] Pengetesan scraper di environment Vercel menggunakan scheduler atau manual trigger.
 
 ## Key Files Modified
 - `src/lib/db.ts`, `src/lib/schema.ts`, `src/lib/actions.ts`
-- `src/app/api/bahan-baku/route.ts` & `src/app/api/barang-jadi/route.ts` (Fix build error)
+- `src/app/api/...` (Seluruh API refactor)
 - `src/app/employees/page.tsx` & `src/app/hpp-kalkulasi/page.tsx` (Fix Type error)
 - `package.json`, `package-lock.json`
 - `scripts/init-db.ts`
 
 ## Important Notes for next session
-- Seluruh kode sekarang 100% menggunakan `@libsql/client` dan kompatibel dengan TypeScript strict mode.
-- Tidak ada lagi penggunaan `db.prepare()` atau `db.get()/all()` secara synchronous.
-- Environment variables `TURSO_DATABASE_URL` dan `TURSO_AUTH_TOKEN` wajib ada di Vercel.
+- Seluruh data produksi (2500+ record sales, 110+ karyawan, dll) sudah berada di Turso.
+- Aplikasi di Vercel ([sistem-pencatatan-kesalahan-karyawa.vercel.app](https://sistem-pencatatan-kesalahan-karyawa.vercel.app/)) sudah operasional.
+- Database lokal `database.sqlite` tetap dipertahankan sebagai backup namun tidak lagi digunakan oleh aplikasi utama (kecuali dijalankan lokal tanpa env Turso).
