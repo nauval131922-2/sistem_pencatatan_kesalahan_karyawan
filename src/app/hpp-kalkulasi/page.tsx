@@ -19,10 +19,10 @@ export default async function HppKalkulasiPage() {
 
   if (lastImport) {
     try {
-      const raw = JSON.parse(lastImport.raw_data);
+      const raw = JSON.parse(lastImport.raw_data as string);
       importFileName = raw.fileName || '';
       
-      let dateString = lastImport.created_at;
+      let dateString = lastImport.created_at as string;
       if (!dateString.includes('T')) dateString = dateString.replace(' ', 'T');
       if (!dateString.endsWith('Z')) dateString += 'Z';
       

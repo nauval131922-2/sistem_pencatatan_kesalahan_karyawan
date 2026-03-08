@@ -21,10 +21,10 @@ export default async function EmployeesPage() {
 
   if (lastImport) {
     try {
-      const raw = JSON.parse(lastImport.raw_data);
+      const raw = JSON.parse(lastImport.raw_data as string);
       importFileName = raw.filename || '';
       
-      let dateString = lastImport.created_at;
+      let dateString = lastImport.created_at as string;
       // Pastikan format ISO 8601 valid dengan indikator UTC (Z)
       if (!dateString.includes('T')) dateString = dateString.replace(' ', 'T');
       if (!dateString.endsWith('Z')) dateString += 'Z';
