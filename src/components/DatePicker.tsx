@@ -225,18 +225,18 @@ export default function DatePicker({ name, required, label, onChange, value }: D
   return (
     <div ref={ref} className="relative">
       {label && (
-        <label className="block text-xs font-semibold text-slate-500 uppercase mb-2">{label}</label>
+        <label className="block text-xs font-medium text-slate-500 mb-1.5">{label}</label>
       )}
       <input type="hidden" name={name} value={valueStr} required={required} />
 
       <div
         onClick={() => setOpen(o => !o)}
-        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm cursor-pointer flex items-center justify-between hover:border-emerald-400 transition-colors"
+        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm cursor-pointer flex items-center justify-between hover:border-emerald-500 transition-all shadow-sm"
       >
-        <span className={formatted ? 'text-slate-800' : 'text-slate-400'}>
+        <span className={formatted ? 'text-slate-700 font-medium' : 'text-slate-400'}>
           {formatted || 'Pilih tanggal...'}
         </span>
-        <Calendar size={15} className="text-emerald-500 shrink-0" />
+        <Calendar size={14} className="text-slate-400 group-hover:text-emerald-500" />
       </div>
 
       {open && (

@@ -61,47 +61,45 @@ export default function RecordsTabs({ employees, orders, infractions: initialInf
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden min-h-0">
-      {/* Tab Navigation */}
-      <div className="flex w-full shrink-0 border-b border-zinc-200">
+      {/* Tab Navigation - Modern Underline Style */}
+      <div className="flex items-center gap-6 w-full shrink-0 border-b border-slate-200 mb-6">
         <button
           onClick={() => {
             setActiveTab('list');
             handleCancelEdit();
           }}
-          className={`flex items-center justify-center gap-2 py-2 px-4 text-sm font-medium transition-all duration-200 border-b-2 -mb-px ${
+          className={`pb-2 text-sm font-medium transition-all relative ${
             activeTab === 'list'
-              ? 'border-emerald-500 text-emerald-600'
-              : 'border-transparent text-zinc-500 hover:text-zinc-700 hover:border-zinc-300'
+              ? 'text-emerald-600 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-emerald-500 after:rounded-full'
+              : 'text-slate-400 hover:text-slate-600'
           }`}
         >
-          <ClipboardList className="w-4 h-4" />
-          <span>Daftar Kesalahan</span>
+          Daftar Kesalahan
         </button>
         <button
           onClick={() => { setActiveTab('form'); handleCancelEdit(); }}
-          className={`flex items-center justify-center gap-2 py-2 px-4 text-sm font-medium transition-all duration-200 border-b-2 -mb-px ${
+          className={`pb-2 text-sm font-medium transition-all relative ${
             activeTab === 'form'
-              ? 'border-emerald-500 text-emerald-600'
-              : 'border-transparent text-zinc-500 hover:text-zinc-700 hover:border-zinc-300'
+              ? 'text-emerald-600 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-emerald-500 after:rounded-full'
+              : 'text-slate-400 hover:text-slate-600'
           }`}
         >
-          {editingInfraction ? <Pencil className="w-4 h-4" /> : <PlusCircle className="w-4 h-4" />}
-          <span>{editingInfraction ? 'Edit Data' : 'Tambah Data'}</span>
+          {editingInfraction ? 'Edit Data' : 'Tambah Data'}
         </button>
       </div>
 
-      {/* Tab Content */}
-      <div className="flex-1 flex flex-col overflow-hidden pt-2">
+      {/* Tab Content - Clean & Spacious */}
+      <div className="flex-1 flex flex-col overflow-hidden">
         {activeTab === 'list' && (
           <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="flex-1 flex flex-col bg-white rounded-xl border border-zinc-200/60 p-4 shadow-sm overflow-hidden">
-              <InfractionsTable
-                infractions={localInfractions}
-                onEdit={handleEdit}
-                onPeriodChange={handlePeriodChange}
-                onRefresh={refreshInfractions}
-              />
-            </div>
+            <InfractionsTable
+              infractions={localInfractions}
+              onEdit={handleEdit}
+              onPeriodChange={handlePeriodChange}
+              onRefresh={refreshInfractions}
+              initialStartDate={currentPeriod.start}
+              initialEndDate={currentPeriod.end}
+            />
           </div>
         )}
 

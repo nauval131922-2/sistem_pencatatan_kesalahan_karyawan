@@ -61,49 +61,51 @@ export default function EmployeeTable({ employees }: { employees: Employee[] }) 
   return (
     <div className="h-full flex flex-col gap-3 overflow-hidden">
       {/* Heading & Search */}
-      {/* Heading & Search */}
       <div className="flex flex-col gap-2 mb-1 shrink-0">
-        <h3 className="font-semibold text-slate-800 flex items-center gap-2 text-sm">
-            <Users size={16} className="text-emerald-500" /> Data Karyawan
+        <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+            <Users size={16} className="text-gray-400" /> Data Karyawan
         </h3>
         <div className="relative w-full shrink-0">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={query}
             onChange={handleSearch}
             placeholder="Cari karyawan..."
-            className="w-full pl-9 pr-4 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors"
+            className="w-full pl-10 pr-4 h-9 bg-white border border-gray-200 rounded-md focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-sm"
           />
         </div>
       </div>
 
       {/* Table */}
-      <div className="card p-0 overflow-hidden flex flex-col border border-slate-200/60 shadow-sm flex-1 min-h-0 relative">
+      <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-0 overflow-hidden flex flex-col flex-1 min-h-0 relative">
         <div className="flex-1 overflow-auto custom-scrollbar relative min-h-0 bg-white" onScroll={handleScroll}>
           <table className="w-full text-left relative min-w-[600px]">
             <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-sm">
-              <tr className="text-slate-500 text-[10px] uppercase tracking-wider border-b border-slate-200">
-                <th className="px-3 py-2 font-semibold w-10 text-center">No.</th>
-                <th className="px-3 py-2 font-semibold">Nama</th>
-                <th className="px-3 py-2 font-semibold">Jabatan</th>
-                <th className="px-3 py-2 font-semibold w-32">ID Karyawan</th>
+              <tr className="text-[11px] uppercase tracking-wider text-gray-400 font-medium border-b border-gray-100">
+                <th className="px-4 py-3 w-10 text-center">NO.</th>
+                <th className="px-4 py-3">NAMA</th>
+                <th className="px-4 py-3">JABATAN</th>
+                <th className="px-4 py-3 text-right">ID KARYAWAN</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-gray-100">
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-10 text-center text-slate-500 italic text-xs h-full align-top">
-                    {query ? 'Tidak ada hasil yang cocok.' : 'Belum ada data karyawan.'}
+                  <td colSpan={4} className="py-10 text-center h-full align-top">
+                    <div className="flex flex-col items-center justify-center text-center">
+                      <Users className="text-slate-100 mb-2" size={40} />
+                      <p className="text-sm font-semibold text-slate-700">{query ? 'Tidak ada hasil yang cocok.' : 'Belum ada data karyawan.'}</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 paginated.map((emp, index) => (
-                  <tr key={emp.id} className="text-[11px] hover:bg-slate-50/80 transition-colors group">
-                    <td className="px-3 py-1.5 text-slate-400 w-10 text-center">{index + 1}</td>
-                    <td className="px-3 py-1.5 font-medium text-slate-700">{emp.name}</td>
-                    <td className="px-3 py-1.5 text-slate-500">{emp.position}</td>
-                    <td className="px-3 py-1.5 text-slate-400 font-mono text-[9px] w-32">{emp.employee_no ?? '-'}</td>
+                  <tr key={emp.id} className="hover:bg-gray-50 transition-colors group">
+                    <td className="px-4 py-3 text-xs text-gray-400 w-10 text-center">{index + 1}</td>
+                    <td className="px-4 py-3 font-medium text-gray-700 text-sm">{emp.name}</td>
+                    <td className="px-4 py-3 text-gray-500 text-sm">{emp.position}</td>
+                    <td className="px-4 py-3 text-gray-400 font-mono text-xs text-right">{emp.employee_no ?? '-'}</td>
                   </tr>
                 ))
               )}
@@ -112,8 +114,8 @@ export default function EmployeeTable({ employees }: { employees: Employee[] }) 
         </div>
         
         {/* Footer info Banner within Card Bottom */}
-        <div className="p-2.5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-[11px] text-slate-500 shrink-0">
-          <span className="font-medium">
+        <div className="p-3 border-t border-gray-100 bg-white flex items-center justify-between text-xs text-gray-400 shrink-0">
+          <span className="">
             {filtered.length === 0
               ? 'Tidak ada data'
               : `Menampilkan ${paginated.length} dari ${filtered.length} karyawan`}

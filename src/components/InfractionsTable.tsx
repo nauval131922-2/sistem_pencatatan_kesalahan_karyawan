@@ -70,17 +70,36 @@ export default function InfractionsTable({
   onEdit,
   onPeriodChange,
   onRefresh,
+  initialStartDate,
+  initialEndDate,
 }: { 
   infractions: Infraction[];
   onEdit?: (inf: Infraction) => void;
   onPeriodChange?: (start: string, end: string) => void;
   onRefresh?: (period?: { start: string; end: string }) => Promise<void>;
+  initialStartDate?: string;
+  initialEndDate?: string;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [infractions, setInfractions] = useState<Infraction[]>(initial);
-  const [startDate, setStartDate] = useState<Date>(new Date());
-  const [endDate, setEndDate] = useState<Date>(new Date());
+  
+  // Initialize dates from props if available, otherwise fallback to today
+  const [startDate, setStartDate] = useState<Date>(() => {
+    if (initialStartDate) {
+      const d = new Date(initialStartDate);
+      if (!isNaN(d.getTime())) return d;
+    }
+    return new Date();
+  });
+  
+  const [endDate, setEndDate] = useState<Date>(() => {
+    if (initialEndDate) {
+      const d = new Date(initialEndDate);
+      if (!isNaN(d.getTime())) return d;
+    }
+    return new Date();
+  });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [query, setQuery] = useState('');
@@ -481,181 +500,169 @@ export default function InfractionsTable({
   }, [router, startDate, endDate]);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
-      {/* Search */}
-      {/* Date Filter & PDF Export Panel */}
-      <div className="flex justify-center w-full shrink-0">
-        <div className="card glass relative z-20 overflow-visible p-3 px-6 border border-emerald-500/10 w-fit flex flex-col sm:flex-row items-center gap-4">
+    <div className="flex-1 min-h-0 flex flex-col gap-6">
+      {/* Filter & Search Panel - Polished & Compact Style */}
+      <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm flex flex-col gap-6">
+        {/* Panel Atas: Filter & PDF */}
+        <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Filter Periode</span>
-            <div className="w-[160px] relative">
-              <DatePicker 
-                name="startDate"
-                value={startDate}
-                onChange={setStartDate}
-              />
-            </div>
-            <span className="text-slate-400 font-medium">-</span>
-            <div className="w-[160px] relative">
-              <DatePicker 
-                name="endDate"
-                value={endDate}
-                onChange={setEndDate}
-              />
-            </div>
-            {isRefreshing && (
-              <div className="p-2.5 text-emerald-600">
-                <RefreshCw size={18} className="animate-spin" />
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Filter Periode</span>
+              <div className="flex items-center gap-2">
+                <div className="w-[160px]">
+                  <DatePicker 
+                    name="startDate"
+                    value={startDate}
+                    onChange={setStartDate}
+                  />
+                </div>
+                <span className="text-gray-300 mx-1">s/d</span>
+                <div className="w-[160px]">
+                  <DatePicker 
+                    name="endDate"
+                    value={endDate}
+                    onChange={setEndDate}
+                  />
+                </div>
+                {isRefreshing && (
+                  <RefreshCw size={16} className="animate-spin text-green-500 ml-2" />
+                )}
               </div>
-            )}
+            </div>
           </div>
-
-          <div className="w-px h-8 bg-slate-200 hidden sm:block"></div>
 
           <button 
             onClick={generatePDF}
-            className="w-full sm:w-auto h-[36px] inline-flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white px-6 rounded-xl text-xs font-semibold shadow-md shadow-red-500/20 transition-all whitespace-nowrap"
+            className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm font-medium hover:bg-red-100 transition-all shadow-sm self-end"
           >
-            <FileText size={14} />
-            Cetak PDF (A4)
+            <Printer size={16} />
+            Cetak Laporan PDF
           </button>
+        </div>
+
+        {/* Panel Bawah: Search */}
+        <div className="relative w-full group">
+          <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+          <input
+            type="text"
+            value={query}
+            onChange={handleSearch}
+            placeholder="Cari karyawan, deskripsi, nomor order..."
+            className="w-full pl-11 pr-4 h-10 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-sm"
+          />
         </div>
       </div>
 
-      {/* Search */}
-      <div className="relative w-full shrink-0">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          type="text"
-          value={query}
-          onChange={handleSearch}
-          placeholder="Cari karyawan, deskripsi..."
-          className="w-full pl-9 pr-4 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 transition-colors shadow-sm"
-        />
-      </div>
-
-      {/* Table */}
-      <div className="card p-0 overflow-hidden flex-1 flex flex-col border border-slate-200 shadow-sm min-h-0">
-        <div className="overflow-auto bg-white flex-1 min-h-0 custom-scrollbar" onScroll={handleScroll}>
-          <table className="w-full text-left relative min-w-[1000px]">
-                <thead className="sticky top-0 z-10">
-                  <tr className="text-slate-500 text-[10px] uppercase tracking-wider border-b border-slate-200 bg-slate-50">
-                    <th className="px-3 py-2 font-semibold w-24 whitespace-nowrap">Aksi</th>
-                    <th className="px-3 py-2 font-semibold whitespace-nowrap">Faktur</th>
-                    <th className="px-3 py-2 font-semibold whitespace-nowrap">Tanggal</th>
-                    <th className="px-3 py-2 font-semibold whitespace-nowrap">Karyawan</th>
-                    <th className="px-3 py-2 font-semibold whitespace-nowrap">Deskripsi</th>
-                    <th className="px-3 py-2 font-semibold whitespace-nowrap">Barang</th>
-                    <th className="px-3 py-2 font-semibold whitespace-nowrap text-right">Qty</th>
-                    <th className="px-3 py-2 font-semibold whitespace-nowrap text-right">Harga</th>
-                    <th className="px-3 py-2 font-semibold whitespace-nowrap text-right">Total</th>
-                    <th className="px-3 py-2 font-semibold whitespace-nowrap">Order</th>
-                    <th className="px-3 py-2 font-semibold whitespace-nowrap">Admin</th>
-                  </tr>
-                </thead>
-            <tbody className="divide-y divide-slate-100">
+      {/* Table Container - Minimalist Content */}
+      <div className="flex-1 flex flex-col bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden min-h-0">
+        <div className="overflow-auto flex-1 min-h-0 custom-scrollbar" onScroll={handleScroll}>
+          <table className="w-full text-left relative min-w-[1200px]">
+             <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-sm">
+              <tr className="text-[11px] uppercase tracking-wider text-gray-400 font-medium border-b border-gray-100">
+                <th className="px-5 py-3 w-32 border-b border-gray-100">Aksi</th>
+                <th className="px-5 py-3 w-28 border-b border-gray-100">Faktur</th>
+                <th className="px-5 py-3 w-32 border-b border-gray-100">Tanggal</th>
+                <th className="px-5 py-3 min-w-[150px] border-b border-gray-100">Karyawan</th>
+                <th className="px-5 py-3 min-w-[200px] border-b border-gray-100">Deskripsi</th>
+                <th className="px-5 py-3 min-w-[180px] border-b border-gray-100">Barang / Item</th>
+                <th className="px-5 py-3 text-right w-16 border-b border-gray-100">Qty</th>
+                <th className="px-5 py-3 text-right w-28 border-b border-gray-100">Harga</th>
+                <th className="px-5 py-3 text-right w-28 border-b border-gray-100">Total</th>
+                <th className="px-5 py-3 min-w-[150px] border-b border-gray-100">Order Ref</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="py-8 text-center text-slate-500 italic text-sm">
-                    {query ? 'Tidak ada hasil yang cocok.' : 'Belum ada riwayat kesalahan.'}
+                  <td colSpan={10}>
+                    <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                      <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                        <FileText className="text-gray-100" size={32} />
+                      </div>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-1">
+                        {query ? 'Tidak ada hasil yang cocok' : 'Belum ada riwayat kesalahan'}
+                      </h3>
+                      <p className="text-xs text-gray-400 max-w-[240px] mx-auto leading-relaxed">
+                        {query 
+                          ? 'Coba gunakan kata kunci lain atau sesuaikan filter periode.'
+                          : 'Gunakan tab Tambah Data untuk mencatat kesalahan baru.'}
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 paginated.map((inf) => (
-                  <tr key={inf.id} className="text-xs hover:bg-slate-50 transition-colors group">
-                    <td className="px-3 py-1.5 w-24 whitespace-nowrap">
+                  <tr key={inf.id} className="hover:bg-gray-50 transition-colors group">
+                    <td className="px-5 py-3 w-32 whitespace-nowrap">
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => generateSinglePDF(inf)}
-                          className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-1.5 py-0.5 rounded transition-colors shadow-sm"
+                          className="text-[10px] font-bold text-red-500 bg-red-50 hover:bg-red-100 border border-red-100 px-1.5 py-0.5 rounded transition-colors mr-1"
                           title="Cetak PDF Faktur"
                         >
-                          <FileText size={11} />
-                          <span className="text-[9px] font-bold">PDF</span>
+                          PDF
                         </button>
                         <button
                           onClick={() => startEdit(inf)}
-                          className="p-1 rounded-lg text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
-                          title="Edit"
+                          className="text-blue-500 hover:text-blue-700 text-sm font-medium px-2 py-1 transition-colors"
                         >
-                          <Pencil size={12} />
+                          Edit
                         </button>
+                        <span className="text-gray-100 text-[10px]">|</span>
                         <button
                           onClick={() => requestDelete(inf.id)}
                           disabled={deleting === inf.id}
-                          className="p-1 rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500 transition-colors disabled:opacity-40"
-                          title="Hapus"
+                          className="text-red-400 hover:text-red-600 text-sm font-medium px-2 py-1 transition-colors disabled:opacity-40"
                         >
-                          <Trash2 size={12} />
+                          Hapus
                         </button>
                       </div>
                     </td>
-                    <td className="px-3 py-1.5 font-mono text-[9px] text-slate-500 whitespace-nowrap">
+                    <td className="px-5 py-3 font-mono text-[10px] text-gray-400 whitespace-nowrap">
                       {inf.faktur || '-'}
                     </td>
-                    <td className="px-3 py-1.5 text-slate-600 text-[10px] whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar size={11} className="opacity-40" />
+                    <td className="px-5 py-3 text-gray-500 text-sm whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        <Calendar size={12} className="opacity-30" />
                         {formatIndoDateStr(inf.date)}
                       </div>
                     </td>
-                    <td className="px-3 py-1.5 font-semibold text-emerald-600 truncate max-w-[150px]">
-                      {inf.employee_name || 'Karyawan Dihapus'}
+                    <td className="px-5 py-3 min-w-[150px]">
+                      <p className="font-semibold text-gray-700 text-sm">{inf.employee_name || 'Karyawan Dihapus'}</p>
                       {inf.employee_position && (
-                        <div className="text-[9px] text-slate-400 font-normal mt-0.5 truncate max-w-[150px]" title={inf.employee_position}>
+                        <p className="text-[11px] text-gray-400 truncate max-w-[150px] mt-0.5" title={inf.employee_position}>
                           {inf.employee_position}
-                        </div>
+                        </p>
                       )}
                     </td>
-                    <td className="px-3 py-1.5 text-slate-600 max-w-[300px]">
-                      <div className="text-[10px] line-clamp-2 leading-relaxed" title={inf.description}>
+                    <td className="px-5 py-3 min-w-[200px]">
+                      <p className="text-sm text-gray-500 truncate max-w-[200px]" title={inf.description}>
                         {inf.description || '-'}
-                      </div>
+                      </p>
                     </td>
-                    <td className="px-3 py-1.5 truncate max-w-[200px]" title={inf.nama_barang_display || inf.nama_barang || ''}>
-                      <div className="font-medium text-slate-700 text-[10px]">{inf.nama_barang_display || inf.nama_barang || '-'}</div>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <span className="text-[9px] text-slate-400 uppercase tracking-wider font-medium">
+                    <td className="px-5 py-3 min-w-[180px]">
+                      <div className="font-semibold text-gray-700 text-sm truncate max-w-[180px]" title={inf.nama_barang_display || inf.nama_barang || ''}>{inf.nama_barang_display || inf.nama_barang || '-'}</div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">
                           {inf.jenis_barang || '-'}
                         </span>
-                        {inf.item_faktur && (
-                          <>
-                            <span className="text-slate-300 text-[9px]">•</span>
-                            <span className="text-[9px] font-mono text-slate-400 border border-slate-200 bg-slate-50 px-1 rounded">
-                              {inf.item_faktur}
-                            </span>
-                          </>
-                        )}
                       </div>
                     </td>
-                    <td className="px-3 py-1.5 text-right tabular-nums text-[11px]">
+                    <td className="px-5 py-3 text-right tabular-nums text-sm font-medium text-gray-700">
                       {inf.jumlah || 0}
                     </td>
-                    <td className="px-3 py-1.5 text-right tabular-nums" title={inf.jenis_harga || ''}>
-                      <div className="text-slate-600 text-[11px]">
-                        {inf.harga ? inf.harga.toLocaleString('id-ID') : '-'}
-                      </div>
-                      <div className="text-[10px] text-slate-400 uppercase tracking-wider mt-0.5 truncate max-w-[80px] ml-auto">
-                        {inf.jenis_harga || '-'}
-                      </div>
+                    <td className="px-5 py-3 text-right tabular-nums text-sm text-gray-500">
+                      {inf.harga ? inf.harga.toLocaleString('id-ID') : '-'}
                     </td>
-                    <td className="px-3 py-1.5 text-right tabular-nums font-medium text-emerald-700">
+                    <td className="px-5 py-3 text-right tabular-nums text-sm font-bold text-emerald-600">
                       {inf.total ? inf.total.toLocaleString('id-ID') : '-'}
                     </td>
-                    <td className="px-3 py-1.5 text-[10px]">
+                    <td className="px-5 py-3 text-xs">
                       {(inf.order_name_display || inf.order_name) ? (
-                        <span className="inline-block bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded border border-emerald-500/20 max-w-[150px] truncate" title={inf.order_name_display || inf.order_name || ''}>
+                        <span className="inline-block bg-gray-50 text-gray-400 px-2 py-0.5 rounded border border-gray-100 max-w-[150px] truncate" title={inf.order_name_display || inf.order_name || ''}>
                           {inf.order_name_display || inf.order_name}
                         </span>
                       ) : '-'}
-                    </td>
-                    <td className="px-3 py-1.5 text-[10px] text-slate-400 whitespace-nowrap">
-                      <div>{inf.recorded_by_name || inf.recorded_by}</div>
-                      {inf.recorded_by_position && (
-                        <div className="text-[10px] text-slate-300 font-normal mt-0.5" title={inf.recorded_by_position}>
-                          {inf.recorded_by_position}
-                        </div>
-                      )}
                     </td>
                   </tr>
                 ))
@@ -665,12 +672,12 @@ export default function InfractionsTable({
         </div>
       </div>
 
-      {/* Footer Info */}
-      <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2">
+      {/* Footer Info - Polished */}
+      <div className="flex items-center justify-between text-xs text-slate-400 shrink-0">
         <span className="font-medium">
           {filtered.length === 0
-            ? 'Tidak ada data'
-            : `Menampilkan ${paginated.length} dari ${filtered.length} riwayat`}
+            ? 'Tidak ada data tersedia'
+            : `Menampilkan ${paginated.length} dari ${filtered.length} riwayat kesalahan terdata`}
         </span>
       </div>
 

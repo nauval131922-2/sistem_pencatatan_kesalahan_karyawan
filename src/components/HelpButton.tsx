@@ -2,7 +2,7 @@
 
 import { HelpCircle } from 'lucide-react';
 
-export default function HelpButton() {
+export default function HelpButton({ className = "" }: { className?: string }) {
   const handleClick = () => {
     window.dispatchEvent(new CustomEvent('open-manual'));
   };
@@ -10,10 +10,10 @@ export default function HelpButton() {
   return (
     <button
       onClick={handleClick}
-      className="p-1.5 text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg transition-all"
+      className={`text-slate-300 hover:text-slate-400 transition-colors inline-flex items-center justify-center ${className}`}
       title="Buka Panduan"
     >
-      <HelpCircle size={18} />
+      <HelpCircle size={16} className="cursor-pointer" />
     </button>
   );
 }

@@ -77,18 +77,18 @@ export default function ExcelUpload() {
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 shrink-0">
-      <div className="card glass p-3 border border-emerald-500/20 relative overflow-hidden">
-        <div className="absolute right-0 top-0 -mt-8 -mr-8 opacity-5 pointer-events-none">
+      <div className="bg-white border border-gray-100 shadow-sm rounded-xl px-5 py-4 relative overflow-hidden">
+        <div className="absolute right-0 top-0 -mt-8 -mr-8 opacity-[0.03] pointer-events-none">
           <FileSpreadsheet size={120} />
         </div>
         
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between relative z-10">
           <div className="flex-1 text-center md:text-left">
-            <h3 className="font-bold text-slate-800 text-sm flex items-center justify-center md:justify-start gap-2 mb-0.5">
-              <Upload className="text-emerald-500" size={16}/>
+            <h3 className="text-sm font-semibold text-gray-700 flex items-center justify-center md:justify-start gap-2 mb-0.5">
+              <Upload className="text-green-500" size={16}/>
               Upload Data Karyawan
             </h3>
-            <p className="text-[11px] text-slate-500 leading-relaxed max-w-2xl">
+            <p className="text-xs text-gray-400 leading-relaxed max-w-2xl">
               Unggah file Excel yang berisi Data Karyawan. Data yang lama akan dihapus dan digantikan seluruhnya oleh data dari file baru.
             </p>
           </div>
@@ -106,11 +106,11 @@ export default function ExcelUpload() {
                 fileRef.current?.click();
               }}
               disabled={status === 'loading'}
-              className="w-full md:w-[200px] relative px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 text-white font-semibold rounded-lg shadow-md shadow-emerald-500/10 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed group overflow-hidden"
+              className="w-full md:w-auto px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {status === 'loading' && <Loader2 size={15} className="animate-spin" />}
-              {status !== 'loading' && <FileSpreadsheet size={15} className="group-hover:scale-110 transition-transform" />}
-              <span className="text-xs">{status === 'loading' ? 'Mengunggah...' : 'Pilih & Upload Excel'}</span>
+              {status === 'loading' && <Loader2 size={16} className="animate-spin" />}
+              {status !== 'loading' && <FileSpreadsheet size={16} />}
+              <span>{status === 'loading' ? 'Mengunggah...' : 'Pilih & Upload Excel'}</span>
             </button>
           </div>
         </div>
