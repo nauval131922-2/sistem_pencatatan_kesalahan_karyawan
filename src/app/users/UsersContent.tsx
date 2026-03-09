@@ -11,7 +11,8 @@ import {
   Crown, 
   Plus,
   Database,
-  ShieldCheck
+  ShieldCheck,
+  Shield
 } from 'lucide-react';
 import { getUsers, deleteUser } from '@/lib/users';
 import UserFormModal from './UserFormModal';
@@ -108,202 +109,197 @@ export default function UsersContent({ currentUser }: { currentUser: string }) {
   };
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-500 w-full">
-      {/* Structural Page Header Row */}
-      <div className="flex items-start justify-between gap-4 mb-6">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="w-1.5 h-8 bg-green-500 rounded-full shrink-0"></div>
-            <h1 className="text-xl font-semibold text-gray-800 leading-tight">Kelola User</h1>
+    <div className="flex-1 min-h-0 flex flex-col gap-6 -m-8 p-8 bg-white animate-in fade-in duration-500 overflow-hidden">
+      {/* Header Section */}
+      <div className="flex items-start justify-between shrink-0">
+        <header className="flex flex-col shrink-0">
+          <div className="flex items-center gap-3 border-l-4 border-green-500 pl-4">
+            <h1 className="text-[22px] font-extrabold text-gray-800 tracking-tight leading-none">Kelola User</h1>
           </div>
-          <p className="text-sm text-gray-400 mt-0.5 pl-4">Manajemen akses dan akun pengguna aplikasi.</p>
-        </div>
+          <p className="text-[13px] text-gray-400 font-medium pl-5 mt-2">
+            Manajemen akses dan akun pengguna aplikasi.
+          </p>
+        </header>
         
         <button
           onClick={handleCreate}
-          className="bg-green-500 hover:bg-green-600 text-white rounded-lg px-4 py-2 text-sm font-medium transition-all active:scale-95 flex items-center gap-2 shadow-sm"
+          className="bg-[#16a34a] hover:bg-[#15803d] text-white rounded-lg px-5 h-10 text-[13px] font-extrabold transition-all active:scale-[0.98] flex items-center gap-2.5 shadow-sm"
         >
-          <Plus size={16} />
+          <Plus size={18} />
           <span>Tambah User Baru</span>
         </button>
       </div>
 
-      {/* Equal-width Grid Stat bar */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-0 mb-6 bg-white border border-gray-100 rounded-xl shadow-sm w-full divide-y md:divide-y-0 md:divide-x divide-gray-100 overflow-hidden shrink-0">
-        <div className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
-          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
-            <Users size={20} className="text-gray-400" />
+      {/* Stat Cards Section */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
+        <div className="bg-white rounded-[10px] border border-[#e5e7eb] p-5 h-[100px] flex items-center gap-4 shadow-sm hover:border-[#16a34a]/30 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
+            <Users size={24} className="text-[#16a34a]" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-semibold text-gray-400">Total Pengguna</span>
-            <span className="text-xl font-bold text-gray-800 leading-none mt-1">{stats.total}</span>
+            <span className="text-2xl font-bold text-gray-800 tracking-tight leading-none mb-1.5">{stats.total}</span>
+            <span className="text-[12px] text-[#9ca3af] font-bold tracking-tight">Total Pengguna</span>
           </div>
         </div>
         
-        <div className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
-          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
-            <Crown size={20} className="text-gray-400" />
+        <div className="bg-white rounded-[10px] border border-[#e5e7eb] p-5 h-[100px] flex items-center gap-4 shadow-sm hover:border-purple-200 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
+            <Crown size={24} className="text-purple-600" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-semibold text-gray-400">Super Admin</span>
-            <span className="text-xl font-bold text-gray-800 leading-none mt-1">{stats.superAdmin}</span>
+            <span className="text-2xl font-bold text-gray-800 tracking-tight leading-none mb-1.5">{stats.superAdmin}</span>
+            <span className="text-[12px] text-[#9ca3af] font-bold tracking-tight">Super Admin</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
-          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
-            <ShieldCheck size={20} className="text-gray-400" />
+        <div className="bg-white rounded-[10px] border border-[#e5e7eb] p-5 h-[100px] flex items-center gap-4 shadow-sm hover:border-blue-200 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+            <ShieldCheck size={24} className="text-blue-600" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-semibold text-gray-400">Admin</span>
-            <span className="text-xl font-bold text-gray-800 leading-none mt-1">{stats.admin}</span>
+            <span className="text-2xl font-bold text-gray-800 tracking-tight leading-none mb-1.5">{stats.admin}</span>
+            <span className="text-[12px] text-[#9ca3af] font-bold tracking-tight">Admin</span>
           </div>
         </div>
       </div>
 
-      {/* Search & Filter bar inner card layout */}
-      <div className="flex flex-col md:flex-row gap-3 items-center justify-between mb-4 shrink-0">
-        <div className="flex-1 w-full max-w-md relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
-          <input
-            type="text"
-            placeholder="Cari nama atau username..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 h-9 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-sm"
-          />
-        </div>
+      {/* Control Panel (Unified Filter Card) */}
+      <div className="shrink-0">
+        <div className="bg-white border border-[#e5e7eb] shadow-sm rounded-[10px] px-5 py-3.5 flex items-center justify-between gap-6">
+          <div className="relative flex-1 group">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#16a34a] transition-colors" size={16} />
+            <input
+              type="text"
+              placeholder="Cari nama atau username..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-11 pr-4 h-10 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-[#16a34a] focus:ring-4 focus:ring-[#16a34a]/10 transition-all text-[13px] font-medium placeholder:text-gray-300 shadow-sm"
+            />
+          </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="w-full md:w-auto px-3 h-9 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-sm text-gray-600 font-medium"
-          >
-            <option value="All">Semua Jabatan</option>
-            <option value="Super Admin">Super Admin</option>
-            <option value="Admin">Admin</option>
-          </select>
-          
-          <button
-            onClick={fetchUsers}
-            disabled={loading}
-            className="h-9 w-9 flex items-center justify-center bg-white border border-gray-200 text-gray-400 hover:text-green-600 hover:border-green-500 rounded-lg transition-all disabled:opacity-50 shadow-sm shrink-0"
-            title="Refresh Data"
-          >
-            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-          </button>
+          <div className="flex items-center gap-3">
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="px-4 h-10 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-[#16a34a] focus:ring-4 focus:ring-[#16a34a]/10 transition-all text-[13px] text-gray-600 font-bold cursor-pointer shadow-sm"
+            >
+              <option value="All">Semua Jabatan</option>
+              <option value="Super Admin">Super Admin</option>
+              <option value="Admin">Admin</option>
+            </select>
+            
+            <button
+              onClick={fetchUsers}
+              disabled={loading}
+              className="h-10 w-10 flex items-center justify-center bg-white border border-gray-200 text-gray-400 hover:text-[#16a34a] hover:border-[#16a34a] rounded-lg transition-all disabled:opacity-50 shadow-sm active:scale-[0.98]"
+              title="Refresh Data"
+            >
+              <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Full-width Table Card */}
-      <div className="bg-white border border-gray-100 shadow-sm rounded-xl overflow-hidden flex-1 flex flex-col min-h-0">
-        {/* Table Content */}
-        <div className="flex-1 overflow-auto custom-scrollbar relative">
-          {error && (
-            <div className="m-5 p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm flex items-start gap-2 max-w-2xl mx-auto">
-              <AlertCircle size={16} className="mt-0.5 shrink-0" />
-              <p>{error}</p>
-            </div>
-          )}
-
-          {loading && filteredUsers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-              <RefreshCw className="animate-spin mb-4" size={32} />
-              <p className="text-sm font-medium">Sinkronisasi Data...</p>
-            </div>
-          ) : filteredUsers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-gray-100">
-                <Database size={48} />
+      {/* Main Container for Results */}
+      <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
+        <div className="bg-white border border-[#e5e7eb] shadow-sm rounded-[10px] overflow-hidden flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-auto custom-scrollbar relative">
+            {error && (
+              <div className="m-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm flex items-start gap-3">
+                <AlertCircle size={18} className="mt-0.5 shrink-0" />
+                <p className="font-bold">{error}</p>
               </div>
-              <h3 className="text-sm font-semibold text-gray-700 mb-1">Data User Kosong</h3>
-              <p className="text-xs text-gray-400 max-w-[240px] mx-auto leading-relaxed">
-                Sistem tidak menemukan data user yang Anda cari. Silakan periksa kembali filter atau tambahkan user baru.
-              </p>
-            </div>
-          ) : (
-            <table className="w-full text-left text-sm text-gray-600 min-w-[700px]">
-              <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-sm">
-                <tr className="text-[11px] text-gray-400 font-medium border-b border-gray-100">
-                  <th className="px-5 py-3">Profil Pengguna</th>
-                  <th className="px-5 py-3">Jabatan / Peran</th>
-                  <th className="px-5 py-3 text-right">Manajemen</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredUsers.map((u) => (
-                  <tr key={u.id} className="hover:bg-gray-50 transition-colors group">
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-3">
-                        {(() => {
-                          const initials = getInitials(u.name);
-                          let bgClass = "bg-gray-50 text-gray-500 border-gray-100";
-                          if (initials === 'MS') bgClass = "bg-blue-50 text-blue-600 border-blue-100";
-                          if (initials === 'NG') bgClass = "bg-emerald-50 text-emerald-600 border-emerald-100";
-                          
-                          return (
-                            <div className={`w-9 h-9 rounded-lg ${bgClass} flex items-center justify-center font-bold text-xs shrink-0 border transition-colors`}>
-                              {initials}
-                            </div>
-                          );
-                        })()}
-                        <div className="flex flex-col min-w-0">
-                          <p className="font-semibold text-gray-700 truncate text-sm">{u.name}</p>
-                          <p className="text-[10px] text-gray-400 font-medium">@{u.username}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
-                        u.role === 'Super Admin' 
-                          ? 'bg-purple-50 text-purple-600 border-purple-100' 
-                          : 'bg-green-50 text-green-700 border-green-100'
-                      }`}>
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => handleEdit(u)}
-                          className="text-blue-500 hover:text-blue-700 text-sm font-medium px-3 py-1.5 transition-colors"
-                        >
-                          Edit
-                        </button>
-                        
-                        {u.username !== currentUser && (
-                          <>
-                            <span className="text-gray-100 text-[10px]">|</span>
-                            <button
-                                onClick={() => handleDelete(u)}
-                                className="text-red-400 hover:text-red-600 text-sm font-medium px-3 py-1.5 transition-colors"
-                              >
-                                Hapus
-                              </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
+            )}
+
+            {loading && filteredUsers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+                <RefreshCw className="animate-spin mb-4" size={40} />
+                <p className="text-sm font-bold tracking-widest uppercase">Sinkronisasi Data...</p>
+              </div>
+            ) : filteredUsers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-5">
+                  <Search className="text-gray-200" size={32} />
+                </div>
+                <h3 className="text-sm font-extrabold text-gray-800 mb-2">Tidak ada pengguna ditemukan</h3>
+                <p className="text-[12px] text-[#9ca3af] max-w-[280px] mx-auto leading-relaxed font-medium">
+                  Silakan coba kata kunci lain atau sesuaikan filter jabatan Anda.
+                </p>
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse min-w-[700px]">
+                <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
+                  <tr className="text-[11px] text-[#6b7280] font-bold uppercase tracking-wider">
+                    <th className="px-6 py-3.5">PROFIL PENGGUNA</th>
+                    <th className="px-6 py-3.5">JABATAN / PERAN</th>
+                    <th className="px-6 py-3.5 text-right">MANAJEMEN</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {filteredUsers.map((u, idx) => (
+                    <tr 
+                      key={u.id} 
+                      className={`hover:bg-green-50/30 transition-colors group h-10 ${idx % 2 === 1 ? 'bg-[#f9fafb]' : 'bg-white'}`}
+                    >
+                      <td className="px-6 py-1">
+                        <div className="flex items-center gap-4">
+                          <div className="w-8 h-8 rounded-lg bg-[#16a34a] flex items-center justify-center font-bold text-xs text-white shrink-0 shadow-sm">
+                            {getInitials(u.name)}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <p className="font-bold text-gray-800 truncate text-[14px] leading-tight mb-0.5">{u.name}</p>
+                            <p className="text-[12px] text-[#9ca3af] font-medium leading-tight">@{u.username}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-1">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border tracking-wider ${
+                          u.role === 'Super Admin' 
+                            ? 'bg-purple-50 text-[#7c3aed] border-purple-100' 
+                            : 'bg-blue-50 text-[#2563eb] border-blue-100'
+                        }`}>
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="px-6 py-1 text-right">
+                        <div className="flex items-center justify-end gap-2.5">
+                          <button
+                            onClick={() => handleEdit(u)}
+                            className="px-4 py-1.5 text-[11px] font-extrabold text-[#16a34a] border border-[#16a34a]/30 hover:bg-[#16a34a] hover:text-white rounded-md transition-all active:scale-[0.95]"
+                          >
+                            Edit
+                          </button>
+                          
+                          {u.username !== currentUser && (
+                            <button
+                              onClick={() => handleDelete(u)}
+                              className="px-4 py-1.5 text-[11px] font-extrabold text-red-500 border border-red-100 hover:bg-red-500 hover:text-white rounded-md transition-all active:scale-[0.95]"
+                            >
+                              Hapus
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+          
+          {/* Footer Banner */}
+          {!loading && (
+            <div className="px-6 py-4 border-t border-gray-100 bg-white flex justify-between items-center shrink-0 shadow-inner">
+              <span className="text-[12px] font-bold text-[#9ca3af]">
+                Menampilkan {filteredUsers.length} dari {users.length} pengguna terdaftar
+              </span>
+              <div className="flex items-center gap-2 text-[#9ca3af] opacity-60 font-bold">
+                <Shield size={14} className="text-[#9ca3af]" />
+                <span className="text-[11px] tracking-widest">SIKKA System Security</span>
+              </div>
+            </div>
           )}
         </div>
-        
-        {/* Footer info banner */}
-        {!loading && filteredUsers.length > 0 && (
-          <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/50 flex justify-between items-center text-xs text-gray-400">
-            <p className="font-medium">
-              Menampilkan {filteredUsers.length} dari {users.length} pengguna terdaftar
-            </p>
-            <div className="flex items-center gap-2 opacity-50 grayscale">
-              <p className="text-[9px] font-bold">SIKKA System Security</p>
-              <ShieldCheck size={12} />
-            </div>
-          </div>
-        )}
       </div>
 
       {isModalOpen && (

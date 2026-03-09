@@ -36,34 +36,31 @@ export default async function Home() {
   ];
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
-      <header className="flex justify-between items-start shrink-0 mb-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="w-1.5 h-8 bg-green-500 rounded-full shrink-0"></div>
-            <h1 className="text-xl font-semibold text-gray-800 leading-tight">Dashboard</h1>
-            <HelpButton />
-          </div>
-          <p className="text-sm text-gray-400 mt-0.5 pl-4">Ringkasan aktivitas dan metrik sistem.</p>
+    <div className="flex-1 min-h-0 flex flex-col gap-6 -m-8 p-8 bg-white animate-in fade-in duration-500 overflow-hidden">
+      <header className="flex flex-col shrink-0">
+        <div className="flex items-center gap-3 border-l-4 border-green-500 pl-4">
+          <h1 className="text-[22px] font-extrabold text-gray-800 tracking-tight leading-none">Dashboard</h1>
+          <HelpButton />
         </div>
+        <p className="text-[13px] text-gray-400 font-medium pl-5 mt-2">
+          Ringkasan aktivitas dan metrik sistem.
+        </p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 shrink-0 px-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
         {statCards.map((card) => (
           <Link 
             key={card.title} 
             href={card.href} 
-            className="group bg-white border border-gray-100 shadow-sm rounded-xl py-4 px-5 cursor-pointer hover:border-emerald-300 transition-all"
+            className="group bg-white border border-[#e5e7eb] rounded-[10px] p-5 h-[100px] flex items-center gap-4 shadow-sm hover:border-[#16a34a]/30 transition-all active:scale-[0.98]"
           >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${card.classes}`}>
-                  <card.icon size={16} />
-                </div>
-                <span className="text-xs text-gray-400 font-medium">{card.title}</span>
-              </div>
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${card.classes}`}>
+              <card.icon size={24} />
             </div>
-            <p className="text-2xl font-semibold text-gray-800">{card.value}</p>
+            <div className="flex flex-col">
+              <span className="text-2xl font-bold text-gray-800 tracking-tight leading-none mb-1.5">{card.value}</span>
+              <span className="text-[12px] text-[#9ca3af] font-bold tracking-tight">{card.title}</span>
+            </div>
           </Link>
         ))}
       </div>

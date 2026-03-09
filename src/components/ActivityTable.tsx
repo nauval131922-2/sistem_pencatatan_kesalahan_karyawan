@@ -117,56 +117,60 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
       </div>
 
       {/* Table */}
-      <div className="card p-0 overflow-hidden flex flex-col border border-slate-200 shadow-sm min-h-0">
-        <div className="overflow-auto bg-white flex-1 min-h-0 custom-scrollbar" onScroll={handleScroll}>
-          <table className="w-full text-left relative min-w-[800px]">
-            <thead className="sticky top-0 z-10 bg-gray-50/80 backdrop-blur-sm">
-              <tr className="text-gray-400 text-[11px] border-b border-gray-100">
-                <th className="px-4 py-2 font-semibold w-40 whitespace-nowrap">Datetime</th>
-                <th className="px-4 py-2 font-semibold w-36 whitespace-nowrap">Menu</th>
-                <th className="px-4 py-2 font-semibold w-32 whitespace-nowrap">User</th>
-                <th className="px-4 py-2 font-semibold w-64 whitespace-nowrap">Keterangan</th>
-                <th className="px-4 py-2 font-semibold whitespace-nowrap">Data</th>
+      <div className="bg-white border border-[#e5e7eb] shadow-sm rounded-[10px] flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div className="overflow-auto flex-1 min-h-0 custom-scrollbar" onScroll={handleScroll}>
+          <table className="w-full text-left relative min-w-[800px] border-collapse">
+            <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
+              <tr className="text-[11px] text-[#6b7280] font-bold uppercase tracking-wider">
+                <th className="px-6 py-3.5 w-48">DATETIME</th>
+                <th className="px-6 py-3.5 w-44">MENU</th>
+                <th className="px-6 py-3.5 w-32">USER</th>
+                <th className="px-6 py-3.5">KETERANGAN</th>
+                <th className="px-6 py-3.5 w-32 text-right">AKSI</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-gray-50">
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-slate-500 italic text-sm">
-                    {search ? 'Tidak ada hasil yang cocok.' : 'Belum ada aktivitas yang dicatat.'}
+                  <td colSpan={5} className="py-24 text-center">
+                    <p className="text-sm font-extrabold text-gray-800 mb-2">
+                      {search ? 'Tidak ada hasil ditemukan' : 'Belum ada aktivitas'}
+                    </p>
+                    <p className="text-[12px] text-[#9ca3af] font-medium">
+                      {search ? 'Coba kata kunci lain.' : 'Aktivitas sistem akan muncul di sini.'}
+                    </p>
                   </td>
                 </tr>
               ) : (
-                paginated.map((log) => {
-                  let parsedData = {};
-                  try { parsedData = JSON.parse(log.raw_data); } catch (e) {}
-                  
-                  return (
-                    <tr key={log.id} className="hover:bg-gray-50/50 transition-colors align-top">
-                      <td className="px-4 py-3 text-xs text-gray-400 font-mono w-48 whitespace-nowrap">
-                        {fmtDateTime(log.created_at)}
-                      </td>
-                      <td className="px-4 py-3 font-medium text-sm text-gray-700 w-44">
+                paginated.map((log, idx) => (
+                  <tr 
+                    key={log.id} 
+                    className={`hover:bg-green-50/30 transition-colors group h-10 ${idx % 2 === 1 ? 'bg-[#f9fafb]' : 'bg-white'}`}
+                  >
+                    <td className="px-6 py-1 text-xs text-gray-400 font-mono whitespace-nowrap">
+                      {fmtDateTime(log.created_at)}
+                    </td>
+                    <td className="px-6 py-1">
+                      <span className="text-[13px] font-bold text-gray-700">
                         {getChannelName(log.table_name)}
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-400 w-32 whitespace-nowrap pt-3.5">
-                        {log.recorded_by || 'System'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500 w-[unset] leading-relaxed truncate max-w-[400px]">
-                        {log.message}
-                      </td>
-                      <td className="px-4 py-3 w-32">
-                        <button
-                          onClick={() => setSelectedLog(log)}
-                          className="text-xs text-green-600 hover:text-green-700 font-medium flex items-center gap-1 transition-colors outline-none"
-                        >
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                          Lihat Data
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })
+                      </span>
+                    </td>
+                    <td className="px-6 py-1 text-xs text-gray-400 font-medium whitespace-nowrap">
+                      {log.recorded_by || 'System'}
+                    </td>
+                    <td className="px-6 py-1 text-[13px] text-gray-500 truncate max-w-[400px]">
+                      {log.message}
+                    </td>
+                    <td className="px-6 py-1 text-right">
+                      <button
+                        onClick={() => setSelectedLog(log)}
+                        className="px-3 py-1 text-[11px] font-extrabold text-[#16a34a] border border-[#16a34a]/30 hover:bg-[#16a34a] hover:text-white rounded-md transition-all active:scale-[0.95]"
+                      >
+                        Detail
+                      </button>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
