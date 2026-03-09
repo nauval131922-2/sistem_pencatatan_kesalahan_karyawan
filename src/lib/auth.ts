@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import { createSession, destroySession, getSession } from '@/lib/session';
 
 export async function login(username: string, password: string):Promise<{success: boolean, message?: string}> {
+  console.log(`[AUTH] Login attempt for user: ${username}`);
   try {
     const result = await db.execute({
       sql: 'SELECT * FROM users WHERE username = ?',
@@ -14,15 +15,19 @@ export async function login(username: string, password: string):Promise<{success
     const user = result.rows[0];
 
     if (!user) {
+      console.log(`[AUTH] User not found: ${username}`);
       return { success: false, message: 'Username tidak ditemukan.' };
     }
 
+    console.log(`[AUTH] User found, comparing password...`);
     const isMatch = await bcrypt.compare(password, user.password as string);
 
     if (!isMatch) {
+      console.log(`[AUTH] Password mismatch for user: ${username}`);
       return { success: false, message: 'Password salah.' };
     }
 
+    console.log(`[AUTH] Password match, creating session...`);
     // Create session
     await createSession({
       userId: Number(user.id),
@@ -31,9 +36,10 @@ export async function login(username: string, password: string):Promise<{success
       role: user.role as string,
     });
 
+    console.log(`[AUTH] Login success for user: ${username}`);
     return { success: true };
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('[AUTH] Login error:', error);
     return { success: false, message: 'Terjadi kesalahan saat login.' };
   }
 }

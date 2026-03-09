@@ -114,12 +114,12 @@ export default function ManualModal() {
       icon: AlertCircle,
       description: 'Kelola data kesalahan karyawan.',
       steps: [
-        'TAB DAFTAR KESALAHAN:',
+        'Tab Daftar Kesalahan:',
         'Atur **Tgl Mulai & Akhir** untuk memfilter data riwayat kesalahan.',
         '**Data Otomatis Memuat**: Tabel akan terupdate otomatis setiap kali tanggal diubah.',
         'Scroll tabel ke bawah untuk memuat data sebelumnya (Infinite Scroll).',
         'Klik tombol **Cetak PDF** untuk membuat laporan rekap atau formulir detail per baris.',
-        'TAB TAMBAH/EDIT DATA:',
+        'Tab Tambah/Edit Data:',
         '**Faktur**: Otomatis di-generate dengan format **ERR-DDMMYY-XXX** (di mana XXX adalah nomor urut yang mereset setiap harinya).',
         '**Pilih Tanggal**: Pilih tanggal pencatatan kesalahan karyawan.',
         '**Nama Karyawan**: Pilih karyawan yang melakukan kesalahan (data ditarik dari menu **Data Karyawan**).',
@@ -165,7 +165,7 @@ export default function ManualModal() {
                   <currentGuide.icon size={18} />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-[0.2em] mb-0.5">Detail Menu {currentGuide.title}</span>
+                  <span className="text-[10px] font-bold text-emerald-600 mb-0.5">Detail Menu {currentGuide.title}</span>
                   <h2 className="text-lg font-extrabold text-slate-800 flex items-center gap-2">
                     Bantuan & Panduan
                   </h2>
@@ -199,7 +199,7 @@ export default function ManualModal() {
                     {/* Description / Kegunaan */}
                     {currentGuide.description && (
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
                           <Database size={12} />
                           <span>Kegunaan Menu:</span>
                         </div>
@@ -212,7 +212,7 @@ export default function ManualModal() {
                     {/* Steps / Cara Penggunaan */}
                     <div className="space-y-3.5 pl-1">
                       {currentGuide.steps.map((step, index) => {
-                        const isHeader = step.endsWith(':') && step === step.toUpperCase() && !step.includes('**');
+                        const isHeader = step.endsWith(':') && (step.startsWith('Tab ') || step.startsWith('A. ') || step.startsWith('B. ') || step.startsWith('C. ')) && !step.includes('**');
                         const isSubStep = step.trimStart().startsWith('•') || step.startsWith('  ');
                         const cleanText = isSubStep ? step.trimStart().replace(/^[•\s]+/, '') : step;
                         
@@ -224,7 +224,7 @@ export default function ManualModal() {
                               <div className="flex-shrink-0 w-1.5 h-1.5 mt-2 rounded-full bg-emerald-500 group-hover:scale-125 transition-all shadow-sm" />
                             )}
                             <p className={`text-sm leading-relaxed ${
-                              isHeader ? 'font-bold text-slate-800 uppercase tracking-widest text-xs' : 
+                              isHeader ? 'font-bold text-slate-800 text-xs' : 
                               isSubStep ? 'text-slate-500 text-[13px]' : 'text-slate-600'
                             }`}>
                               {renderText(cleanText)}
@@ -238,7 +238,7 @@ export default function ManualModal() {
                       <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl flex gap-3">
                         <Info size={18} className="text-amber-500 shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Tips Berguna:</p>
+                          <p className="text-[10px] font-bold text-amber-600 mb-1">Tips Berguna:</p>
                           <p className="text-xs text-amber-700 leading-relaxed italic">
                             "{renderText((currentGuide as any).tips)}"
                           </p>

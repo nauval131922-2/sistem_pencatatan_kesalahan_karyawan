@@ -160,7 +160,121 @@ export async function initSchema(db: any) {
     "CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);",
     "DROP INDEX IF EXISTS idx_sales_reports_tgl_id;",
     "CREATE INDEX IF NOT EXISTS idx_sales_reports_expr_tgl ON sales_reports(substr(tgl, 7, 4), substr(tgl, 4, 2), substr(tgl, 1, 2), id ASC);",
-    "CREATE INDEX IF NOT EXISTS idx_sales_reports_created_at ON sales_reports(created_at);"
+    "CREATE INDEX IF NOT EXISTS idx_sales_reports_created_at ON sales_reports(created_at);",
+    
+    // --- AUTOMATED ACTIVITY LOG TRIGGERS ---
+    
+    // 1. users
+    `CREATE TRIGGER IF NOT EXISTS trg_users_insert AFTER INSERT ON users BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('CREATE', 'users', NEW.id, 'User baru ditambahkan: ' || NEW.name, json_object('name', NEW.name, 'username', NEW.username, 'role', NEW.role), 'System');
+    END;`,
+    `CREATE TRIGGER IF NOT EXISTS trg_users_update AFTER UPDATE ON users BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('UPDATE', 'users', NEW.id, 'Data user diubah: ' || NEW.name, json_object('name', NEW.name, 'username', NEW.username, 'role', NEW.role), 'System');
+    END;`,
+    `CREATE TRIGGER IF NOT EXISTS trg_users_delete AFTER DELETE ON users BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('DELETE', 'users', OLD.id, 'User dihapus: ' || OLD.name, json_object('name', OLD.name, 'username', OLD.username), 'System');
+    END;`,
+
+    // 2. employees
+    `CREATE TRIGGER IF NOT EXISTS trg_employees_insert AFTER INSERT ON employees BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('CREATE', 'employees', NEW.id, 'Karyawan baru: ' || NEW.name || ' (' || NEW.position || ')', json_object('name', NEW.name, 'position', NEW.position, 'department', NEW.department, 'employee_no', NEW.employee_no), 'System');
+    END;`,
+    `CREATE TRIGGER IF NOT EXISTS trg_employees_update AFTER UPDATE ON employees BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('UPDATE', 'employees', NEW.id, 'Data Karyawan diupdate: ' || NEW.name, json_object('name', NEW.name, 'position', NEW.position, 'department', NEW.department, 'is_active', NEW.is_active), 'System');
+    END;`,
+    `CREATE TRIGGER IF NOT EXISTS trg_employees_delete AFTER DELETE ON employees BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('DELETE', 'employees', OLD.id, 'Karyawan dihapus: ' || OLD.name, json_object('name', OLD.name), 'System');
+    END;`,
+
+    // 3. infractions
+    `CREATE TRIGGER IF NOT EXISTS trg_infractions_insert AFTER INSERT ON infractions BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('CREATE', 'infractions', NEW.id, 'Pencatatan Kesalahan baru ditambahkan (' || NEW.severity || ')', json_object('date', NEW.date, 'description', NEW.description, 'severity', NEW.severity), IFNULL(NEW.recorded_by, 'System'));
+    END;`,
+    `CREATE TRIGGER IF NOT EXISTS trg_infractions_update AFTER UPDATE ON infractions BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('UPDATE', 'infractions', NEW.id, 'Catatan Kesalahan diupdate', json_object('date', NEW.date, 'description', NEW.description, 'severity', NEW.severity), IFNULL(NEW.recorded_by, 'System'));
+    END;`,
+    `CREATE TRIGGER IF NOT EXISTS trg_infractions_delete AFTER DELETE ON infractions BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('DELETE', 'infractions', OLD.id, 'Catatan Kesalahan dihapus', json_object('date', OLD.date, 'description', OLD.description), IFNULL(OLD.recorded_by, 'System'));
+    END;`,
+
+    // 4. orders
+    `CREATE TRIGGER IF NOT EXISTS trg_orders_insert AFTER INSERT ON orders BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('CREATE', 'orders', NEW.id, 'Data Order Baru: ' || IFNULL(NEW.faktur, NEW.nama_prd), json_object('faktur', NEW.faktur, 'nama_prd', NEW.nama_prd), 'System');
+    END;`,
+    `CREATE TRIGGER IF NOT EXISTS trg_orders_update AFTER UPDATE ON orders BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('UPDATE', 'orders', NEW.id, 'Data Order Diperbarui: ' || IFNULL(NEW.faktur, NEW.nama_prd), json_object('faktur', NEW.faktur, 'nama_prd', NEW.nama_prd), 'System');
+    END;`,
+    `CREATE TRIGGER IF NOT EXISTS trg_orders_delete AFTER DELETE ON orders BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('DELETE', 'orders', OLD.id, 'Data Order Dihapus: ' || IFNULL(OLD.faktur, OLD.nama_prd), json_object('faktur', OLD.faktur, 'nama_prd', OLD.nama_prd), 'System');
+    END;`,
+
+    // 5. bahan_baku
+    `CREATE TRIGGER IF NOT EXISTS trg_bahan_baku_insert AFTER INSERT ON bahan_baku BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('CREATE', 'bahan_baku', NEW.id, 'Bahan Baku Masuk: ' || NEW.nama_barang, json_object('nama_barang', NEW.nama_barang, 'qty', NEW.qty, 'nama_prd', NEW.nama_prd), 'System');
+    END;`,
+    `CREATE TRIGGER IF NOT EXISTS trg_bahan_baku_update AFTER UPDATE ON bahan_baku BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('UPDATE', 'bahan_baku', NEW.id, 'Bahan Baku Diperbarui: ' || NEW.nama_barang, json_object('nama_barang', NEW.nama_barang, 'qty', NEW.qty), 'System');
+    END;`,
+    `CREATE TRIGGER IF NOT EXISTS trg_bahan_baku_delete AFTER DELETE ON bahan_baku BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('DELETE', 'bahan_baku', OLD.id, 'Bahan Baku Dihapus: ' || OLD.nama_barang, json_object('nama_barang', OLD.nama_barang), 'System');
+    END;`,
+
+    // 6. barang_jadi
+    `CREATE TRIGGER IF NOT EXISTS trg_barang_jadi_insert AFTER INSERT ON barang_jadi BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('CREATE', 'barang_jadi', NEW.id, 'Barang Jadi Masuk: ' || NEW.nama_barang, json_object('nama_barang', NEW.nama_barang, 'qty', NEW.qty, 'nama_prd', NEW.nama_prd), 'System');
+    END;`,
+    `CREATE TRIGGER IF NOT EXISTS trg_barang_jadi_update AFTER UPDATE ON barang_jadi BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('UPDATE', 'barang_jadi', NEW.id, 'Barang Jadi Diperbarui: ' || NEW.nama_barang, json_object('nama_barang', NEW.nama_barang, 'qty', NEW.qty), 'System');
+    END;`,
+    `CREATE TRIGGER IF NOT EXISTS trg_barang_jadi_delete AFTER DELETE ON barang_jadi BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('DELETE', 'barang_jadi', OLD.id, 'Barang Jadi Dihapus: ' || OLD.nama_barang, json_object('nama_barang', OLD.nama_barang), 'System');
+    END;`,
+
+    // 7. hpp_kalkulasi
+    `CREATE TRIGGER IF NOT EXISTS trg_hpp_kalkulasi_insert AFTER INSERT ON hpp_kalkulasi BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('CREATE', 'hpp_kalkulasi', NEW.id, 'HPP Kalkulasi Baru: ' || NEW.nama_order, json_object('nama_order', NEW.nama_order, 'hpp', NEW.hpp_kalkulasi), 'System');
+    END;`,
+    `CREATE TRIGGER IF NOT EXISTS trg_hpp_kalkulasi_update AFTER UPDATE ON hpp_kalkulasi BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('UPDATE', 'hpp_kalkulasi', NEW.id, 'HPP Kalkulasi Diperbarui: ' || NEW.nama_order, json_object('nama_order', NEW.nama_order, 'hpp', NEW.hpp_kalkulasi), 'System');
+    END;`,
+    `CREATE TRIGGER IF NOT EXISTS trg_hpp_kalkulasi_delete AFTER DELETE ON hpp_kalkulasi BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('DELETE', 'hpp_kalkulasi', OLD.id, 'HPP Kalkulasi Dihapus: ' || OLD.nama_order, json_object('nama_order', OLD.nama_order), 'System');
+    END;`,
+
+    // 8. sales_reports
+    `CREATE TRIGGER IF NOT EXISTS trg_sales_reports_insert AFTER INSERT ON sales_reports BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('CREATE', 'sales_reports', NEW.id, 'Laporan Penjualan Masuk: ' || IFNULL(NEW.faktur, NEW.nama_prd), json_object('faktur', NEW.faktur, 'nama_prd', NEW.nama_prd), 'System');
+    END;`,
+    `CREATE TRIGGER IF NOT EXISTS trg_sales_reports_update AFTER UPDATE ON sales_reports BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('UPDATE', 'sales_reports', NEW.id, 'Laporan Penjualan Diperbarui: ' || IFNULL(NEW.faktur, NEW.nama_prd), json_object('faktur', NEW.faktur, 'nama_prd', NEW.nama_prd), 'System');
+    END;`,
+    `CREATE TRIGGER IF NOT EXISTS trg_sales_reports_delete AFTER DELETE ON sales_reports BEGIN
+      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+      VALUES ('DELETE', 'sales_reports', OLD.id, 'Laporan Penjualan Dihapus: ' || IFNULL(OLD.faktur, OLD.nama_prd), json_object('faktur', OLD.faktur, 'nama_prd', OLD.nama_prd), 'System');
+    END;`
   ];
 
   for (const sql of migrations) {

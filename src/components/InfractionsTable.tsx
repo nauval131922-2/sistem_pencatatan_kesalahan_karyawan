@@ -174,7 +174,7 @@ export default function InfractionsTable({
     doc.setFontSize(14);
     doc.setTextColor(30, 41, 59); // slate-800
     doc.setFont('helvetica', 'bold');
-    doc.text('LAPORAN RINCIAN KESALAHAN KARYAWAN', 14, 42);
+    doc.text('Laporan Rincian Kesalahan Karyawan', 14, 42);
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
@@ -285,7 +285,7 @@ export default function InfractionsTable({
     doc.setFontSize(16);
     doc.setTextColor(30, 41, 59); // slate-800
     doc.setFont('helvetica', 'bold');
-    doc.text('FORMULIR KESALAHAN KARYAWAN', 105, 45, { align: 'center' });
+    doc.text('Formulir Kesalahan Karyawan', 105, 45, { align: 'center' });
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 116, 139);
@@ -311,7 +311,7 @@ export default function InfractionsTable({
     const detailY = startY + 30;
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(5, 150, 105);
-    doc.text('A. RINCIAN PRODUKSI & BARANG', 14, detailY);
+    doc.text('a. Rincian Produksi & Barang', 14, detailY);
     doc.setDrawColor(5, 150, 105);
     doc.setLineWidth(0.2);
     doc.line(14, detailY + 2, 196, detailY + 2);
@@ -331,7 +331,7 @@ export default function InfractionsTable({
     const descY = detailY + 40;
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(5, 150, 105);
-    doc.text('B. DESKRIPSI KESALAHAN', 14, descY);
+    doc.text('b. Deskripsi Kesalahan', 14, descY);
     doc.line(14, descY + 2, 196, descY + 2);
 
     doc.setTextColor(30, 41, 59);
@@ -346,7 +346,7 @@ export default function InfractionsTable({
     const finY = descY + descHeight + 15;
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(5, 150, 105);
-    doc.text('C. DAMPAK BIAYA (BEBAN)', 14, finY);
+    doc.text('c. Dampak Biaya (Beban)', 14, finY);
     doc.line(14, finY + 2, 196, finY + 2);
 
     const totalStr = inf.total ? `Rp ${inf.total.toLocaleString('id-ID')}` : '-';
@@ -507,7 +507,7 @@ export default function InfractionsTable({
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Filter Periode</span>
+              <span className="text-[10px] font-semibold text-gray-400">Filter Periode</span>
               <div className="flex items-center gap-2">
                 <div className="w-[160px]">
                   <DatePicker 
@@ -558,7 +558,7 @@ export default function InfractionsTable({
         <div className="overflow-auto flex-1 min-h-0 custom-scrollbar" onScroll={handleScroll}>
           <table className="w-full text-left relative min-w-[1200px]">
              <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-sm">
-              <tr className="text-[11px] uppercase tracking-wider text-gray-400 font-medium border-b border-gray-100">
+              <tr className="text-[11px] text-gray-400 font-medium border-b border-gray-100">
                 <th className="px-5 py-3 w-32 border-b border-gray-100">Aksi</th>
                 <th className="px-5 py-3 w-28 border-b border-gray-100">Faktur</th>
                 <th className="px-5 py-3 w-32 border-b border-gray-100">Tanggal</th>
@@ -643,7 +643,7 @@ export default function InfractionsTable({
                     <td className="px-5 py-3 min-w-[180px]">
                       <div className="font-semibold text-gray-700 text-sm truncate max-w-[180px]" title={inf.nama_barang_display || inf.nama_barang || ''}>{inf.nama_barang_display || inf.nama_barang || '-'}</div>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">
+                        <span className="text-[10px] text-gray-400 font-bold">
                           {inf.jenis_barang || '-'}
                         </span>
                       </div>

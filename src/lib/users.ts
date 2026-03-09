@@ -40,7 +40,7 @@ export async function getUsers() {
 
 export async function createUser(data: { name: string, username: string, role: string, password?: string }) {
   try {
-    await requireSuperAdmin();
+    const session = await requireSuperAdmin();
 
     if (!data.name || !data.username || !data.password || !data.role) {
       return { success: false, message: 'Data tidak lengkap.' };
@@ -55,7 +55,7 @@ export async function createUser(data: { name: string, username: string, role: s
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(data.password, salt);
 
-    await db.execute({
+    const result = await db.execute({
       sql: 'INSERT INTO users (name, username, password, role) VALUES (?, ?, ?, ?)',
       args: [data.name, data.username, hash, data.role]
     });

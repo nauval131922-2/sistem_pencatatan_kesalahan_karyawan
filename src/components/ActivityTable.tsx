@@ -38,7 +38,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
       const month = d.toLocaleString('id-ID', { month: 'short', timeZone: 'Asia/Jakarta' });
       const year = d.toLocaleString('id-ID', { year: 'numeric', timeZone: 'Asia/Jakarta' });
       const time = d.toLocaleString('id-ID', { 
-        hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jakarta' 
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Asia/Jakarta' 
       });
       
       return `${day} ${month} ${year}, ${time}`;
@@ -50,13 +50,14 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
   const getChannelName = (tableName: string) => {
     switch (tableName) {
       case 'employees': return 'Data Karyawan';
+      case 'users': return 'Kelola User';
       case 'orders': return 'Order Produksi';
       case 'bahan_baku': return 'Bahan Baku (BBB)';
       case 'barang_jadi': return 'Barang Hasil Produksi';
       case 'hpp_kalkulasi': return 'HPP Kalkulasi';
       case 'sales_reports': return 'Laporan Penjualan';
       case 'infractions': return 'Catat Kesalahan';
-      default: return 'Catat Kesalahan';
+      default: return tableName || 'Sistem';
     }
   };
 
@@ -120,7 +121,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
         <div className="overflow-auto bg-white flex-1 min-h-0 custom-scrollbar" onScroll={handleScroll}>
           <table className="w-full text-left relative min-w-[800px]">
             <thead className="sticky top-0 z-10 bg-gray-50/80 backdrop-blur-sm">
-              <tr className="text-gray-400 text-[11px] uppercase tracking-wider border-b border-gray-100">
+              <tr className="text-gray-400 text-[11px] border-b border-gray-100">
                 <th className="px-4 py-2 font-semibold w-40 whitespace-nowrap">Datetime</th>
                 <th className="px-4 py-2 font-semibold w-36 whitespace-nowrap">Menu</th>
                 <th className="px-4 py-2 font-semibold w-32 whitespace-nowrap">User</th>
@@ -202,27 +203,27 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
             <div className="p-4">
               <div className="mb-4 grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Menu</span>
+                  <span className="text-[10px] text-slate-400 font-bold">Menu</span>
                   <p className="text-sm font-medium text-slate-700">{getChannelName(selectedLog.table_name)}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">User</span>
+                  <span className="text-[10px] text-slate-400 font-bold">User</span>
                   <p className="text-sm font-medium text-slate-700">{selectedLog.recorded_by || 'System'}</p>
                 </div>
               </div>
               
               <div className="mb-4">
-                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Datetime</span>
+                <span className="text-[10px] text-slate-400 font-bold">Datetime</span>
                 <p className="text-sm font-medium text-slate-700">{fmtDateTime(selectedLog.created_at)}</p>
               </div>
               
               <div className="mb-4">
-                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Keterangan</span>
+                <span className="text-[10px] text-slate-400 font-bold">Keterangan</span>
                 <p className="text-sm text-slate-600 leading-relaxed">{selectedLog.message}</p>
               </div>
 
               <div>
-                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1 block">Raw Data JSON</span>
+                <span className="text-[10px] text-slate-400 font-bold mb-1 block">Raw Data JSON</span>
                 <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 max-h-[300px] overflow-y-auto custom-scrollbar">
                   <pre className="text-[11px] font-mono text-slate-600 whitespace-pre-wrap break-all leading-tight">
                     {(() => {

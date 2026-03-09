@@ -88,6 +88,7 @@ export default function UsersContent({ currentUser }: { currentUser: string }) {
         const res = await deleteUser(user.id);
         if (res.success) {
           fetchUsers();
+          localStorage.setItem('sikka_data_updated', Date.now().toString());
         } else {
           alert('Gagal: ' + res.message);
         }
@@ -111,7 +112,8 @@ export default function UsersContent({ currentUser }: { currentUser: string }) {
       {/* Structural Page Header Row */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
-          <div className="border-l-4 border-green-500 pl-4 flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <div className="w-1.5 h-8 bg-green-500 rounded-full shrink-0"></div>
             <h1 className="text-xl font-semibold text-gray-800 leading-tight">Kelola User</h1>
           </div>
           <p className="text-sm text-gray-400 mt-0.5 pl-4">Manajemen akses dan akun pengguna aplikasi.</p>
@@ -133,7 +135,7 @@ export default function UsersContent({ currentUser }: { currentUser: string }) {
             <Users size={20} className="text-gray-400" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Total Pengguna</span>
+            <span className="text-[10px] font-semibold text-gray-400">Total Pengguna</span>
             <span className="text-xl font-bold text-gray-800 leading-none mt-1">{stats.total}</span>
           </div>
         </div>
@@ -143,7 +145,7 @@ export default function UsersContent({ currentUser }: { currentUser: string }) {
             <Crown size={20} className="text-gray-400" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Super Admin</span>
+            <span className="text-[10px] font-semibold text-gray-400">Super Admin</span>
             <span className="text-xl font-bold text-gray-800 leading-none mt-1">{stats.superAdmin}</span>
           </div>
         </div>
@@ -153,7 +155,7 @@ export default function UsersContent({ currentUser }: { currentUser: string }) {
             <ShieldCheck size={20} className="text-gray-400" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Admin</span>
+            <span className="text-[10px] font-semibold text-gray-400">Admin</span>
             <span className="text-xl font-bold text-gray-800 leading-none mt-1">{stats.admin}</span>
           </div>
         </div>
@@ -223,7 +225,7 @@ export default function UsersContent({ currentUser }: { currentUser: string }) {
           ) : (
             <table className="w-full text-left text-sm text-gray-600 min-w-[700px]">
               <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-sm">
-                <tr className="text-[11px] uppercase tracking-wider text-gray-400 font-medium border-b border-gray-100">
+                <tr className="text-[11px] text-gray-400 font-medium border-b border-gray-100">
                   <th className="px-5 py-3">Profil Pengguna</th>
                   <th className="px-5 py-3">Jabatan / Peran</th>
                   <th className="px-5 py-3 text-right">Manajemen</th>
@@ -248,7 +250,7 @@ export default function UsersContent({ currentUser }: { currentUser: string }) {
                         })()}
                         <div className="flex flex-col min-w-0">
                           <p className="font-semibold text-gray-700 truncate text-sm">{u.name}</p>
-                          <p className="text-[10px] text-gray-400 font-medium tracking-wide">@{u.username}</p>
+                          <p className="text-[10px] text-gray-400 font-medium">@{u.username}</p>
                         </div>
                       </div>
                     </td>
@@ -297,7 +299,7 @@ export default function UsersContent({ currentUser }: { currentUser: string }) {
               Menampilkan {filteredUsers.length} dari {users.length} pengguna terdaftar
             </p>
             <div className="flex items-center gap-2 opacity-50 grayscale">
-              <p className="text-[9px] font-bold uppercase tracking-widest">SIKKA SYSTEM SECURITY</p>
+              <p className="text-[9px] font-bold">SIKKA System Security</p>
               <ShieldCheck size={12} />
             </div>
           </div>

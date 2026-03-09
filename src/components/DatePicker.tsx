@@ -225,7 +225,7 @@ export default function DatePicker({ name, required, label, onChange, value }: D
   return (
     <div ref={ref} className="relative">
       {label && (
-        <label className="block text-xs font-medium text-slate-500 mb-1.5">{label}</label>
+        <label className="block text-xs font-semibold text-slate-500 mb-1.5">{label}</label>
       )}
       <input type="hidden" name={name} value={valueStr} required={required} />
 

@@ -14,15 +14,6 @@ export async function addEmployee(name: string, position: string, department: st
     args: [name, position, department]
   });
 
-  const session = await getSession();
-  const rawData = JSON.stringify({ name, position, department });
-  await db.execute({
-    sql: `
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `,
-    args: ['INSERT', 'employees', Number(result.lastInsertRowid), `Tambah Data Karyawan Master: ${name}`, rawData, session?.username || 'System']
-  });
 
   return result;
 }

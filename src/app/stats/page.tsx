@@ -28,7 +28,8 @@ export default async function StatsPage() {
     <div className="flex flex-col gap-6">
       <header className="flex justify-between items-start shrink-0">
         <div>
-          <div className="border-l-4 border-green-500 pl-4 flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <div className="w-1.5 h-8 bg-green-500 rounded-full shrink-0"></div>
             <h1 className="text-xl font-semibold text-gray-800 leading-tight">Statistik Performa</h1>
           </div>
           <p className="text-sm text-gray-400 mt-0.5 pl-4">Ringkasan data dan metrik kepatuhan karyawan.</p>
@@ -46,7 +47,7 @@ export default async function StatsPage() {
               <card.icon size={24} />
             </div>
             <div>
-              <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wider mb-0.5">{card.label}</p>
+              <p className="text-[11px] font-medium text-gray-400 mb-0.5">{card.label}</p>
               <p className="text-2xl font-bold text-gray-800">{card.value}</p>
             </div>
           </div>

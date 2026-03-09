@@ -39,7 +39,7 @@ export async function createSession(payload: SessionPayload) {
   cookieStore.set('sikka_session', session, {
     expires,
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: false, // Set to false to allow local production testing without HTTPS
     sameSite: 'lax',
     path: '/',
   });

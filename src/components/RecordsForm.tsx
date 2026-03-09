@@ -102,7 +102,7 @@ function SearchableSelect({
 
   return (
     <div ref={ref} className="relative">
-      {label && <label className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">{label}{required && <span className="text-red-500">*</span>}</label>}
+      {label && <label className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1.5">{label}{required && <span className="text-red-500">*</span>}</label>}
       {/* Hidden input for form submission */}
       <input type="hidden" name={name} value={selected ? String(valueFn(selected)) : ''} />
       <div
@@ -796,8 +796,8 @@ const allJenisHargaOptions = [
   };
 
   const inputCls = 'w-full bg-white border border-gray-200 rounded-lg px-4 h-10 text-sm focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-gray-700 placeholder:text-gray-300';
-  const labelCls = 'flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wider';
-  const sectionHeaderCls = 'flex items-center gap-2.5 pb-2 border-b border-gray-50 mb-6 mt-2';
+  const labelCls = 'flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1.5';
+  const sectionHeaderCls = 'flex items-center gap-2 pb-1.5 border-b border-gray-50 mb-3 mt-1';
   const sectionTitleCls = 'text-sm font-bold text-gray-700 h-6 flex items-center';
 
   // Helper to format string with dots for thousands and keep comma for decimal
@@ -820,9 +820,9 @@ const allJenisHargaOptions = [
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in duration-500">
+    <div className="flex-1 min-h-0 flex flex-col gap-3 animate-in fade-in duration-500">
       {/* Dynamic Header Banner */}
-      <div className={`p-5 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 border shadow-sm ${
+      <div className={`p-3 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 border shadow-sm ${
         editingInfraction ? 'bg-amber-50 border-amber-100' : 'bg-green-50 border-green-100'
       }`}>
         <div className="flex items-center gap-3">
@@ -832,7 +832,7 @@ const allJenisHargaOptions = [
             <AlertTriangle size={20} />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-gray-700 leading-none mb-1.5 uppercase tracking-wide">
+            <h3 className="text-sm font-bold text-gray-700 leading-none mb-1.5">
               {editingInfraction ? 'Mode Edit Data' : 'Pencatatan Baru'}
             </h3>
             <p className="text-xs text-gray-400 font-medium">
@@ -848,19 +848,19 @@ const allJenisHargaOptions = [
             <span className={`w-2 h-2 rounded-full ${
               editingInfraction ? 'bg-amber-500 animate-pulse' : 'bg-green-500'
             }`} />
-            NO. FAKTUR: {fakturPreview}
+            No. Faktur: {fakturPreview}
           </div>
         </div>
       </div>
 
-      <form ref={formRef} onSubmit={handleSubmit} className="p-8 space-y-8 bg-white rounded-xl border border-gray-100 shadow-sm">
+      <form ref={formRef} onSubmit={handleSubmit} className="p-5 space-y-5 bg-white rounded-xl border border-gray-100 shadow-sm">
         {/* SECTION 1: INFORMASI DASAR */}
         <section>
           <div className={sectionHeaderCls}>
             <Users size={18} className="text-green-500" />
-            <h4 className={sectionTitleCls}>INFORMASI DASAR PELAKU</h4>
+            <h4 className={sectionTitleCls}>Informasi Dasar Pelaku</h4>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <DatePicker 
                 name="date" 
@@ -895,9 +895,9 @@ const allJenisHargaOptions = [
         <section>
           <div className={sectionHeaderCls}>
             <Box size={18} className="text-green-500" />
-            <h4 className={sectionTitleCls}>RINCIAN ORDER & BARANG</h4>
+            <h4 className={sectionTitleCls}>Rincian Order & Barang</h4>
           </div>
-          <div className="space-y-6">
+          <div className="space-y-4">
             <SearchableSelect
               key={`ord-${resetKey}`}
               label="Nama Order / SPK Terkait"
@@ -925,7 +925,7 @@ const allJenisHargaOptions = [
               }}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <SearchableSelect
                 key={`jb-${resetKey}`}
                 label="Jenis Barang"
@@ -1017,9 +1017,9 @@ const allJenisHargaOptions = [
         <section>
           <div className={sectionHeaderCls}>
             <Star size={18} className="text-green-500" />
-            <h4 className={sectionTitleCls}>KALKULASI BEBAN & BIAYA</h4>
+            <h4 className={sectionTitleCls}>Kalkulasi Beban & Biaya</h4>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 p-6 bg-gray-50 border border-gray-100 rounded-xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 border border-gray-100 rounded-xl">
             <div>
               <SearchableSelect
                   key={`jh-${resetKey}`}
@@ -1091,7 +1091,7 @@ const allJenisHargaOptions = [
         </section>
 
 
-        <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-8 border-t border-gray-100">
+        <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-gray-100">
           {editingInfraction && (
             <button
               type="button"
@@ -1130,15 +1130,7 @@ const allJenisHargaOptions = [
         )}
       </form>
 
-      {/* FOOTER INFO */}
-      <div className="px-2 flex items-center justify-between opacity-40">
-        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">SIKKA SECURE INPUT SYSTEM v2.0</p>
-        <div className="flex items-center gap-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-           <span>Validated Records</span>
-           <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-           <span>PT. Buya Barokah</span>
-        </div>
-      </div>
+
 
       <ConfirmDialog
         isOpen={dialogConfig.isOpen}

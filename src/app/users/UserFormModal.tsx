@@ -47,6 +47,7 @@ export default function UserFormModal({ user, onClose }: UserFormModalProps) {
 
       if (res.success) {
         onClose(true);
+        localStorage.setItem('sikka_data_updated', Date.now().toString());
       } else {
         setError(res.message || 'Gagal menyimpan user.');
       }
