@@ -61,30 +61,38 @@ export default function RecordsTabs({ employees, orders, infractions: initialInf
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden min-h-0">
-      {/* Tab Navigation - Modern Underline Style */}
-      <div className="flex items-center gap-6 w-full shrink-0 border-b border-slate-200 mb-6">
+      {/* Tab Navigation - Minimalist Underline Style */}
+      <div className="flex items-center gap-8 border-b border-gray-100 mb-6 shrink-0">
         <button
           onClick={() => {
             setActiveTab('list');
             handleCancelEdit();
           }}
-          className={`pb-2 text-sm font-medium transition-all relative ${
+          className={`flex items-center gap-2 pb-4 text-[13px] font-bold transition-all relative ${
             activeTab === 'list'
-              ? 'text-emerald-600 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-emerald-500 after:rounded-full'
-              : 'text-slate-400 hover:text-slate-600'
+              ? 'text-emerald-600'
+              : 'text-gray-400 hover:text-gray-600'
           }`}
         >
-          Daftar Kesalahan
+          <ClipboardList size={18} />
+          <span>Daftar Kesalahan</span>
+          {activeTab === 'list' && (
+            <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-emerald-500 rounded-full" />
+          )}
         </button>
         <button
           onClick={() => { setActiveTab('form'); handleCancelEdit(); }}
-          className={`pb-2 text-sm font-medium transition-all relative ${
+          className={`flex items-center gap-2 pb-4 text-[13px] font-bold transition-all relative ${
             activeTab === 'form'
-              ? 'text-emerald-600 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-emerald-500 after:rounded-full'
-              : 'text-slate-400 hover:text-slate-600'
+              ? 'text-emerald-600'
+              : 'text-gray-400 hover:text-gray-600'
           }`}
         >
-          {editingInfraction ? 'Edit Data' : 'Tambah Data'}
+          {editingInfraction ? <Pencil size={18} /> : <PlusCircle size={18} />}
+          <span>{editingInfraction ? 'Edit Data' : 'Tambah Data'}</span>
+          {activeTab === 'form' && (
+            <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-emerald-500 rounded-full" />
+          )}
         </button>
       </div>
 

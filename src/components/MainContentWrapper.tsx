@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from "./Sidebar";
 
 interface MainContentWrapperProps {
@@ -19,6 +19,7 @@ export default function MainContentWrapper({
   user
 }: MainContentWrapperProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -26,9 +27,20 @@ export default function MainContentWrapper({
       setIsCollapsed(e.detail.isCollapsed);
     };
 
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sikka_profile_updated') {
+        router.refresh();
+      }
+    };
+
     window.addEventListener('sidebar-toggle', handleToggle);
-    return () => window.removeEventListener('sidebar-toggle', handleToggle);
-  }, []);
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('sidebar-toggle', handleToggle);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [router]);
 
   const isLoginPage = pathname?.startsWith('/login');
 

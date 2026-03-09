@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo, useCallback, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, ChevronDown, AlertTriangle, Loader2, Users, Box, Star, CheckCircle2 } from 'lucide-react';
+import { Search, ChevronDown, AlertTriangle, Loader2, Users, Box, Star, CheckCircle2, ClipboardList, Pencil, PlusCircle } from 'lucide-react';
 import ConfirmDialog, { DialogType } from '@/components/ConfirmDialog';
 import DatePicker from '@/components/DatePicker';
 
@@ -43,6 +43,13 @@ interface SearchableSelectProps {
   isLoading?: boolean;
 }
 
+function formatLocalYYYYMMDD(date: Date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 function SearchableSelect({
   label,
   name,
@@ -64,9 +71,7 @@ function SearchableSelect({
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // If loading, don't try to sync/clear selection to prevent flickering/loss
     if (isLoading) return;
-
     if (defaultValue !== undefined && defaultValue !== null) {
       const currentId = selected ? String(valueFn(selected)) : '';
       if (String(defaultValue) !== currentId) {
@@ -75,11 +80,9 @@ function SearchableSelect({
         else if (defaultValue === '' || defaultValue === null) setSelected(null);
       }
     } else if (defaultValue === null) {
-      // Explicitly requested to clear
       setSelected(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [defaultValue, options, isLoading]);
+  }, [defaultValue, options, isLoading, selected, valueFn]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -92,7 +95,7 @@ function SearchableSelect({
   const filtered = options.filter((o) =>
     displayFn(o).toLowerCase().includes(query.toLowerCase())
   );
-  const inputCls = `w-full bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-gray-800 ${disabled ? 'opacity-60 cursor-not-allowed bg-gray-50' : 'cursor-pointer hover:border-gray-300'}`;
+  
   const handleSelect = (o: any) => {
     setSelected(o);
     setOpen(false);
@@ -102,22 +105,21 @@ function SearchableSelect({
 
   return (
     <div ref={ref} className="relative">
-      {label && <label className="flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1.5">{label}{required && <span className="text-red-500">*</span>}</label>}
-      {/* Hidden input for form submission */}
+      {label && <label className="flex items-center gap-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">{label}{required && <span className="text-red-500 font-black">*</span>}</label>}
       <input type="hidden" name={name} value={selected ? String(valueFn(selected)) : ''} />
       <div
-        className={`${inputCls} flex items-center justify-between h-10`}
+        className={`w-full bg-gray-50/50 border border-gray-100 rounded-xl px-4 h-11 text-sm flex items-center justify-between transition-all text-gray-800 ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-gray-300 hover:bg-gray-100/50'}`}
         onClick={() => { if (!disabled) { setOpen((o) => !o); setQuery(''); } }}
       >
-        <span className={selected ? 'text-gray-700 truncate block font-medium' : 'text-gray-400 block truncate'}>
+        <span className={selected ? 'text-gray-700 truncate font-bold' : 'text-gray-400 font-medium truncate'}>
           {selected ? displayFn(selected) : placeholder}
         </span>
-        <ChevronDown size={16} className="text-gray-400 shrink-0 ml-2" />
+        <ChevronDown size={16} className={`text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </div>
 
       {open && !disabled && (
-        <div className={`absolute z-[200] w-full bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden ${
-          dropdownPos === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'
+        <div className={`absolute z-[200] w-full bg-white border border-gray-100 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${
+          dropdownPos === 'up' ? 'bottom-full mb-3' : 'top-full mt-3'
         }`}>
           <div className="p-3 border-b border-gray-50 bg-gray-50/50">
             <div className="relative">
@@ -128,36 +130,36 @@ function SearchableSelect({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Cari..."
-                className="w-full pl-9 pr-3 h-9 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10"
+                className="w-full pl-9 pr-3 h-10 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 bg-white"
               />
             </div>
           </div>
           <ul className="max-h-60 overflow-y-auto custom-scrollbar px-1 py-1">
             {!required && (
               <li
-                className="px-3 py-2 text-xs text-gray-400 hover:bg-gray-50 cursor-pointer italic rounded-md"
+                className="px-3 py-2 text-[11px] text-gray-400 hover:bg-gray-50 cursor-pointer italic rounded-lg font-medium"
                 onClick={() => handleSelect(null)}
               >
-                — Tidak dipilih
+                — Kosongkan pilihan
               </li>
             )}
             {isLoading ? (
-              <li className="px-3 py-6 text-xs text-gray-400 flex flex-col items-center justify-center gap-2">
+              <li className="px-3 py-8 text-xs text-gray-400 flex flex-col items-center justify-center gap-3">
                 <Loader2 size={24} className="animate-spin text-green-500" />
-                <span className="font-medium">Memuat data...</span>
+                <span className="font-bold tracking-tight">Memuat data sumber...</span>
               </li>
             ) : filtered.length === 0 ? (
-              <li className="px-3 py-4 text-xs text-gray-400 italic text-center">
+              <li className="px-3 py-6 text-xs text-gray-400 italic text-center font-medium">
                 {noOptionsMessage || 'Tidak ada hasil ditemukan'}
               </li>
             ) : (
               filtered.map((o, i) => (
                 <li
                   key={i}
-                  className={`px-3 py-2.5 text-sm cursor-pointer rounded-md transition-colors ${
+                  className={`px-4 py-3 text-sm cursor-pointer rounded-xl transition-all mb-0.5 last:mb-0 ${
                     selected && valueFn(selected) === valueFn(o) 
-                      ? 'bg-green-50 text-green-700 font-bold' 
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      ? 'bg-green-50 text-green-700 font-black' 
+                      : 'text-gray-700 hover:bg-green-500 hover:text-white'
                   }`}
                   onClick={() => handleSelect(o)}
                 >
@@ -190,9 +192,38 @@ export default function RecordsForm({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [refreshSyncCount, setRefreshSyncCount] = useState(0);
-  const [isRefreshing, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
+  
+  const formatNumberIndo = (val: string | number) => {
+    if (val === undefined || val === null || val === '') return '';
+    
+    // If it's a number (from API), don't strip the decimal dot
+    const isNumType = typeof val === 'number';
+    let s = String(val);
+    if (!isNumType) {
+      s = s.replace(/\./g, '').replace(/,/g, '.');
+    }
+    
+    const num = parseFloat(s);
+    if (isNaN(num)) return String(val);
 
-  // Sync with other tabs when employee data is updated
+    const parts = s.split('.');
+    let res = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    if (parts.length > 1) {
+      // Limit to 2 decimal places to keep it clean
+      const decimalPart = parts[1].substring(0, 2);
+      res += ',' + decimalPart;
+    }
+    return res;
+  };
+
+  const parseNumberIndo = (val: string) => {
+    if (!val) return 0;
+    const clean = val.replace(/\./g, '').replace(/,/g, '.');
+    const num = parseFloat(clean);
+    return isNaN(num) ? 0 : num;
+  };
+
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'sikka_data_updated') {
@@ -206,8 +237,6 @@ export default function RecordsForm({
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [router]);
 
-  const [success, setSuccess] = useState(false);
-  const [lastFaktur, setLastFaktur] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [fakturPreview, setFakturPreview] = useState<string>('Memuat...');
   const [description, setDescription] = useState('');
@@ -240,7 +269,6 @@ export default function RecordsForm({
     setDialogConfig(prev => ({ ...prev, isOpen: false }));
   };
 
-  // New states mimicking Excel Logic
   const [selectedOrderFaktur, setSelectedOrderFaktur] = useState<string>('');
   const [selectedOrderName, setSelectedOrderName] = useState<string>('');
   const [jenisBarang, setJenisBarang] = useState<string>('Bahan Baku');
@@ -256,103 +284,50 @@ export default function RecordsForm({
   const [jenisHarga, setJenisHarga] = useState<string>('HPP Digit');
   const [jumlah, setJumlah] = useState<string>('');
   const [harga, setHarga] = useState<string>('');
+  const prevJenisHargaRef = useRef<string>('');
   const [draftEmployeeId, setDraftEmployeeId] = useState<number | null>(null);
-  // Separate display-only states for order and item (decoupled from items-loading state)
   const [draftOrderFaktur, setDraftOrderFaktur] = useState<string>('');
   const [draftItemFaktur, setDraftItemFaktur] = useState<string | null>('');
+  const [isDraftRestored, setIsDraftRestored] = useState(false);
 
 
-  // Fixed options arrays
   const jenisBarangOptions = [
-  { label: 'Bahan Baku (Digit)', value: 'Bahan Baku' },
-  { label: 'Barang Jadi (Digit)', value: 'Barang Jadi' },
-  { label: 'HPP Kalkulasi (Excel)', value: 'HPP Kalkulasi' },
-  { label: 'Penjualan Barang (Digit)', value: 'Penjualan Barang' },
-  { label: 'Input Manual', value: 'Input Manual' },
-];
+    { label: 'Bahan Baku', value: 'Bahan Baku' },
+    { label: 'Barang Jadi', value: 'Barang Jadi' },
+    { label: 'HPP Kalkulasi', value: 'HPP Kalkulasi' },
+    { label: 'Penjualan', value: 'Penjualan Barang' },
+    { label: 'Manual', value: 'Input Manual' },
+  ];
 
-const allJenisHargaOptions = [
-  { label: 'HPP Digit', value: 'HPP Digit' },
-  { label: 'Harga Jual Digit', value: 'Harga Jual Digit' },
-  { label: 'HPP Kalkulasi', value: 'HPP Kalkulasi' },
-  { label: 'Input Manual', value: 'Input Manual' },
-];
+  const allJenisHargaOptions = [
+    { label: 'HPP Digit', value: 'HPP Digit' },
+    { label: 'Harga Jual Digit', value: 'Harga Jual Digit' },
+    { label: 'HPP Kalkulasi', value: 'HPP Kalkulasi' },
+    { label: 'Input Manual', value: 'Input Manual' },
+  ];
 
   const jenisHargaOptions = useMemo(() => {
-    if (jenisBarang === 'Bahan Baku') {
-      return allJenisHargaOptions.filter(o => o.value === 'HPP Digit' || o.value === 'Input Manual');
-    }
-    if (jenisBarang === 'Barang Jadi') {
-      return allJenisHargaOptions.filter(o => o.value === 'HPP Digit' || o.value === 'Input Manual');
-    }
-    if (jenisBarang === 'Penjualan Barang') {
-      return allJenisHargaOptions.filter(o => o.value === 'Harga Jual Digit' || o.value === 'Input Manual');
-    }
-    if (jenisBarang === 'Input Manual') {
-      return allJenisHargaOptions.filter(o => o.value === 'Input Manual');
-    }
-    if (jenisBarang === 'HPP Kalkulasi') {
-      return allJenisHargaOptions.filter(o => o.value === 'HPP Kalkulasi' || o.value === 'Input Manual');
-    }
-    return [{ label: 'Pilih Jenis Barang Dulu', value: '' }];
+    if (jenisBarang === 'Bahan Baku') return allJenisHargaOptions.filter(o => o.value === 'HPP Digit' || o.value === 'Input Manual');
+    if (jenisBarang === 'Barang Jadi') return allJenisHargaOptions.filter(o => o.value === 'HPP Digit' || o.value === 'Input Manual');
+    if (jenisBarang === 'Penjualan Barang') return allJenisHargaOptions.filter(o => o.value === 'Harga Jual Digit' || o.value === 'Input Manual');
+    if (jenisBarang === 'Input Manual') return allJenisHargaOptions.filter(o => o.value === 'Input Manual');
+    if (jenisBarang === 'HPP Kalkulasi') return allJenisHargaOptions.filter(o => o.value === 'HPP Kalkulasi' || o.value === 'Input Manual');
+    return [{ label: 'Pilih Kategori', value: '' }];
   }, [jenisBarang]);
 
-  // Sync jenisHarga when jenisBarang changes and has only 1 option
-  useEffect(() => {
-    if (jenisHargaOptions.length === 1 && jenisHarga !== jenisHargaOptions[0].value) {
-      setJenisHarga(jenisHargaOptions[0].value);
-    }
-  }, [jenisHargaOptions, jenisHarga]);
-
-  // Reset Jenis Harga if current selection is invalid for the new Jenis Barang
-  useEffect(() => {
-    if (jenisBarang === 'Input Manual') {
-      setJenisHarga('Input Manual');
-    } else if (jenisBarang === 'Bahan Baku' && (jenisHarga !== 'HPP Digit' && jenisHarga !== 'Input Manual')) {
-      setJenisHarga('HPP Digit');
-    } else if (jenisBarang === 'Penjualan Barang' && (jenisHarga !== 'Harga Jual Digit' && jenisHarga !== 'Input Manual')) {
-      setJenisHarga('Harga Jual Digit');
-    } else if (jenisBarang === 'Barang Jadi' && (jenisHarga !== 'HPP Digit' && jenisHarga !== 'Input Manual')) {
-      setJenisHarga('HPP Digit');
-    } else if (jenisBarang === 'HPP Kalkulasi' && (jenisHarga !== 'HPP Kalkulasi' && jenisHarga !== 'Input Manual')) {
-      setJenisHarga('HPP Kalkulasi');
-    }
-  }, [jenisBarang]);
-
-  // Initialize data when editing or from draft
   useEffect(() => {
     if (editingInfraction) {
-      // ... (edit mode logic)
       setDescription(editingInfraction.description || '');
       
       let parsedDate = new Date();
       if (editingInfraction.date) {
-        const dateStr = editingInfraction.date;
-        const parts = dateStr.slice(0, 10).split('-');
-        let d = new Date(dateStr);
-        if (parts.length === 3) {
-          if (parts[2].length === 4) {
-             d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-          } else if (parts[0].length === 4) {
-             d = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`);
-          }
-        }
-        if (!isNaN(d.getTime())) {
-          parsedDate = d;
-        }
+        const d = new Date(editingInfraction.date);
+        if (!isNaN(d.getTime())) parsedDate = d;
       }
       setSelectedDate(parsedDate);
       setFakturPreview(editingInfraction.faktur || 'Tanpa Faktur');
-
-      // Always load from snapshot so items still fetch correctly
       setSelectedOrderFaktur(editingInfraction.order_faktur || '');
       setSelectedOrderName(editingInfraction.order_name || '');
-
-      // Check if order still exists in source with same nama_prd
-      const orderMatch = orders.find(o => o.faktur === editingInfraction.order_faktur);
-      const orderUnchanged = orderMatch && (orderMatch as any).nama_prd === editingInfraction.order_name;
-      setDraftOrderFaktur(orderUnchanged ? (editingInfraction.order_faktur || '') : '');
-
       setJenisBarang(editingInfraction.jenis_barang || 'Bahan Baku');
       setJenisHarga(editingInfraction.jenis_harga || 'HPP Digit');
       
@@ -362,25 +337,30 @@ const allJenisHargaOptions = [
       } else {
         setSelectedNamaBarang(editingInfraction.nama_barang || '');
         setSelectedItemFaktur(editingInfraction.item_faktur || '');
-        // draftItemFaktur will be set after items load (in fetchItems useEffect)
         setDraftItemFaktur('__pending__');
       }
 
       setJumlah(editingInfraction.jumlah ? String(editingInfraction.jumlah) : '');
       setHarga(editingInfraction.harga ? String(editingInfraction.harga) : '');
-      // Pre-select only if still exists AND name/data unchanged
       const empMatch = employees.find(e => e.id === editingInfraction.employee_id);
-      const empUnchanged = empMatch && empMatch.name === editingInfraction.employee_name;
-      setDraftEmployeeId(empUnchanged ? editingInfraction.employee_id : null);
+      setDraftEmployeeId(empMatch ? editingInfraction.employee_id : null);
+      setDraftOrderFaktur(editingInfraction.order_faktur || '');
       
     } else {
-      // Check for draft
       const savedDraft = localStorage.getItem('infraction_form_draft');
       if (savedDraft) {
         try {
           const draft = JSON.parse(savedDraft);
           setDescription(draft.description || '');
-          if (draft.selectedDate) setSelectedDate(new Date(draft.selectedDate));
+          if (draft.selectedDate) {
+            const d = new Date(draft.selectedDate);
+            const todayStr = formatLocalYYYYMMDD(new Date());
+            const draftStr = formatLocalYYYYMMDD(d);
+            
+            if (todayStr === draftStr) {
+              setSelectedDate(d);
+            }
+          }
           setSelectedOrderFaktur(draft.selectedOrderFaktur || '');
           setSelectedOrderName(draft.selectedOrderName || '');
           setJenisBarang(draft.jenisBarang || 'Bahan Baku');
@@ -396,16 +376,13 @@ const allJenisHargaOptions = [
         } catch (e) {
           console.error('Failed to load draft', e);
         }
-      } else {
-        resetFormStates();
       }
     }
-  }, [editingInfraction]);
+    setIsDraftRestored(true);
+  }, [editingInfraction, employees]);
 
-  // Save draft on changes (Debounced ideally, but simple useEffect for now)
   useEffect(() => {
-    if (editingInfraction) return; // Don't save draft in edit mode
-
+    if (editingInfraction || !isDraftRestored) return;
     const draft = {
       description,
       selectedDate: selectedDate.toISOString(),
@@ -421,11 +398,22 @@ const allJenisHargaOptions = [
       employeeId: draftEmployeeId,
     };
     localStorage.setItem('infraction_form_draft', JSON.stringify(draft));
-  }, [
-    description, selectedDate, selectedOrderFaktur, selectedOrderName, 
-    jenisBarang, jenisHarga, selectedNamaBarang, selectedItemFaktur, 
-    manualNamaBarang, jumlah, harga, draftEmployeeId, editingInfraction
-  ]);
+  }, [description, selectedDate, selectedOrderFaktur, selectedOrderName, jenisBarang, jenisHarga, selectedNamaBarang, selectedItemFaktur, manualNamaBarang, jumlah, harga, draftEmployeeId, editingInfraction, isDraftRestored]);
+ 
+  // Handle price type transitions (Manual Mode Activation)
+  useEffect(() => {
+    if (editingInfraction || !isDraftRestored) return;
+    
+    const isNowManual = (jenisHarga === 'Input Manual');
+    const wasManual = (prevJenisHargaRef.current === 'Input Manual');
+
+    // If we just enabled manual mode (and it's not the initial mount/refresh), clear the price
+    if (isNowManual && !wasManual && prevJenisHargaRef.current !== '') {
+      setHarga('');
+    }
+    
+    prevJenisHargaRef.current = jenisHarga;
+  }, [jenisHarga, editingInfraction]);
 
   const resetFormStates = () => {
     setDescription('');
@@ -445,226 +433,93 @@ const allJenisHargaOptions = [
     localStorage.removeItem('infraction_form_draft');
   };
 
-  // Augmented employee list to include historical value if missing
   const allEmployees = useMemo(() => {
     let list = [...employees];
     if (editingInfraction) {
-      // Check for employee_id
-      const empId = editingInfraction.employee_id;
-      if (empId && !list.find(e => e.id === empId)) {
-        list.push({
-          id: empId,
-          name: editingInfraction.employee_name || 'Unknown',
+      if (editingInfraction.employee_id && !list.find(e => e.id === editingInfraction.employee_id)) {
+        list.push({ 
+          id: editingInfraction.employee_id, 
+          name: editingInfraction.employee_name || 'Archived', 
           position: editingInfraction.employee_position || '-',
-          employee_no: editingInfraction.employee_no || '',
-          is_active: 0
-        } as any);
-      }
-      
-      // Check for recorded_by_id
-      const recId = editingInfraction.recorded_by_id;
-      if (recId && !list.find(e => e.id === recId)) {
-        list.push({
-          id: recId,
-          name: editingInfraction.recorded_by_name || 'Unknown',
-          position: editingInfraction.recorded_by_position || '-',
-          employee_no: editingInfraction.recorded_by_no || '',
-          is_active: 0
+          employee_no: editingInfraction.employee_no || '-' 
         } as any);
       }
     }
     return list;
   }, [employees, editingInfraction]);
 
-  // Augmented orders list: only add ghost if order is NOT found at all
   const allOrders = useMemo(() => {
     let list = [...orders];
-    if (editingInfraction && editingInfraction.order_faktur) {
-      const found = list.find(o => o.faktur === editingInfraction.order_faktur);
-      if (!found) {
-        // Deleted: inject ghost so it can be pre-selected
-        list.push({
-          faktur: editingInfraction.order_faktur,
-          nama_prd: editingInfraction.order_name || 'Data Terhapus',
-          is_ghost: true
-        } as any);
-        setDraftOrderFaktur(editingInfraction.order_faktur);
-      }
-      // If found but renamed → draftOrderFaktur stays '' (set in useEffect), no ghost needed
+    if (editingInfraction && editingInfraction.order_faktur && !list.find(o => o.faktur === editingInfraction.order_faktur)) {
+      list.push({ faktur: editingInfraction.order_faktur, nama_prd: editingInfraction.order_name || 'Archived' } as any);
     }
     return list;
   }, [orders, editingInfraction]);
 
-  // Fetch Items when Order or Jenis Barang changes
   useEffect(() => {
     let active = true;
     async function fetchItems() {
-      if (!selectedOrderName || jenisBarang === 'Input Manual') {
-        setItems([]);
-        return;
-      }
+      if (!selectedOrderName || jenisBarang === 'Input Manual') { setItems([]); return; }
       setItemsLoading(true);
       try {
         const res = await fetch(`/api/items?order_name=${encodeURIComponent(selectedOrderName)}&order_faktur=${encodeURIComponent(selectedOrderFaktur)}&jenis_barang=${encodeURIComponent(jenisBarang)}`);
         if (res.ok && active) {
           const json = await res.json();
-          let fetchedItems = json.data || [];
-          
-          // Check if editing item exists in fetched results
-          if (editingInfraction && 
-              editingInfraction.item_faktur && 
-              editingInfraction.jenis_barang === jenisBarang && 
-              (editingInfraction.order_faktur === selectedOrderFaktur || !selectedOrderFaktur)) {
-            const itemInSource = fetchedItems.find((i: any) => i.faktur === editingInfraction.item_faktur);
-            if (!itemInSource) {
-              // Deleted: inject ghost and auto-select
-              fetchedItems.push({
-                faktur: editingInfraction.item_faktur,
-                nama_barang: editingInfraction.nama_barang,
-                harga: editingInfraction.harga,
-                is_ghost: true
-              });
-              if (active) setDraftItemFaktur(editingInfraction.item_faktur);
-            } else if (itemInSource.nama_barang !== editingInfraction.nama_barang) {
-              // Exists but nama_barang renamed: inject ghost for placeholder, but don't auto-select
-              fetchedItems.push({
-                faktur: editingInfraction.item_faktur + '__hist',
-                nama_barang: editingInfraction.nama_barang,
-                harga: editingInfraction.harga,
-                is_ghost: true
-              });
-              if (active) setDraftItemFaktur('');
-            } else {
-              // Unchanged: auto-select
-              if (active) setDraftItemFaktur(editingInfraction.item_faktur);
-            }
-          } else if (draftItemFaktur === '__pending__') {
-            if (active) setDraftItemFaktur(selectedItemFaktur);
-          }
-          if (active) setItems(fetchedItems);
-        } else if (active) {
-          setItems([]);
+          setItems(json.data || []);
+          if (draftItemFaktur === '__pending__') setDraftItemFaktur(selectedItemFaktur);
         }
-      } catch (err) {
-        console.error(err);
-        if (active) setItems([]);
-      } finally {
-        if (active) setItemsLoading(false);
-      }
+      } catch (err) { console.error(err); } finally { if (active) setItemsLoading(false); }
     }
     fetchItems();
     return () => { active = false; };
-  }, [selectedOrderName, selectedOrderFaktur, jenisBarang, refreshSyncCount]);
+  }, [selectedOrderName, selectedOrderFaktur, jenisBarang, refreshSyncCount, draftItemFaktur, selectedItemFaktur]);
 
-  // Fetch HPP Kalkulasi for selectedOrder
   useEffect(() => {
     let active = true;
     async function fetchHpp() {
-      // Use selectedOrderName as requested (Exact Match)
-      if (!selectedOrderName) {
-        if (active) { setHppKalkulasiValue(null); setHppLoading(false); }
-        return;
-      }
-      if (active) setHppLoading(true);
+      if (!selectedOrderName) { setHppKalkulasiValue(null); return; }
+      setHppLoading(true);
       try {
         const res = await fetch(`/api/hpp-kalkulasi?order_name=${encodeURIComponent(selectedOrderName)}`);
         if (res.ok && active) {
           const json = await res.json();
-          if (json.data && json.data.length > 0) {
-            setHppKalkulasiValue(json.data[0].hpp_kalkulasi);
-            setHppLoading(false);
-            if (jenisBarang === 'HPP Kalkulasi') {
-              setSelectedNamaBarang(selectedOrderName);
-              setHarga(String(json.data[0].hpp_kalkulasi || ''));
-            }
-          } else {
-            setHppKalkulasiValue(0);
-            setHppLoading(false);
-            if (jenisBarang === 'HPP Kalkulasi') {
-              setSelectedNamaBarang(''); // Not found → clear nama barang
-              setHarga('');
-            }
+          const val = json.data?.[0]?.hpp_kalkulasi ?? 0;
+          setHppKalkulasiValue(val);
+          if (jenisBarang === 'HPP Kalkulasi' && jenisHarga !== 'Input Manual') {
+            setSelectedNamaBarang(selectedOrderName);
+            setHarga(formatNumberIndo(val));
           }
-        } else if (active) {
-          setHppKalkulasiValue(null);
-          setHppLoading(false);
         }
-      } catch {
-        if (active) { setHppKalkulasiValue(null); setHppLoading(false); }
-      }
+      } catch { } finally { if (active) setHppLoading(false); }
     }
     fetchHpp();
     return () => { active = false; };
-  }, [selectedOrderName, selectedOrderFaktur, jenisBarang, refreshSyncCount]);
+  }, [selectedOrderName, jenisBarang, jenisHarga, refreshSyncCount]);
 
-  // Handle Logic Harga recalculation (Based heavily on the VBA Logic)
-  const calculateAutoHarga = useCallback(() => {
-    if (jenisBarang === 'Input Manual' || !selectedOrderName) {
-      return; 
-    }
-
-    // HPP Kalkulasi doesn't need an item match — price comes directly from order
-    if (jenisBarang === 'HPP Kalkulasi') {
-      setHarga(hppKalkulasiValue != null && hppKalkulasiValue > 0 ? String(hppKalkulasiValue) : '');
-      return;
-    }
-
-    const actualItemName = selectedNamaBarang;
-    if (!actualItemName) {
-      setHarga('');
-      return;
-    }
-
-    const matchedItem = items.find(i => {
-      // Prioritaskan ID unik (faktur item itu sendiri) jika ada
-      if (selectedItemFaktur && i.faktur === selectedItemFaktur) return true;
-      // Fallback ke nama jika tidak ada faktur terpilih
-      if (!selectedItemFaktur && i.nama_barang === actualItemName) return true;
-      return false;
-    });
-    if (!matchedItem) {
-      setHarga('');
-      return;
-    }
-
-    let calculatedHarga = 0;
-
-    if (jenisBarang === 'Bahan Baku') {
-      if (jenisHarga === 'HPP Digit') {
-        calculatedHarga = matchedItem.harga;
-      }
-    } else if (jenisBarang === 'Barang Jadi') {
-      if (jenisHarga === 'HPP Digit') {
-        calculatedHarga = matchedItem.harga;
-      }
-    } else if (jenisBarang === 'Penjualan Barang') {
-      if (jenisHarga === 'Harga Jual Digit') {
-        calculatedHarga = matchedItem.harga_jual || matchedItem.harga;
-      }
-    }
-
-    setHarga(calculatedHarga > 0 ? String(calculatedHarga) : '');
-
-  }, [jenisBarang, jenisHarga, selectedNamaBarang, selectedItemFaktur, selectedOrderName, items, hppKalkulasiValue]);
-
-  // Run calculation when dependencies change
   useEffect(() => {
-    // Only auto-calc if not in editing mode initially or if user interacts
-    if (!editingInfraction || (editingInfraction && items.length > 0)) {
-       // We only want to auto-calculate if taking from DB. If user explicitly types manual harga, don't overwrite indiscriminately.
-       // However, to deeply mimic excel, we overwrite it when these parameters change.
-       calculateAutoHarga();
+    if (!isDraftRestored) return;
+    const isManualBasis = (jenisHarga === 'Input Manual' || jenisBarang === 'Input Manual');
+    if (isManualBasis) return;
+
+    if (jenisBarang === 'HPP Kalkulasi') {
+       setHarga(formatNumberIndo(hppKalkulasiValue || 0));
+    } else if (selectedNamaBarang && items.length > 0) {
+      const match = items.find(i => selectedItemFaktur ? i.faktur === selectedItemFaktur : i.nama_barang === selectedNamaBarang);
+      if (match) {
+        let hValue = match.harga;
+        if (jenisBarang === 'Penjualan Barang' && jenisHarga === 'Harga Jual Digit') hValue = match.harga_jual || match.harga;
+        setHarga(formatNumberIndo(hValue));
+      }
+    } else if (!selectedNamaBarang && jenisBarang !== 'HPP Kalkulasi') {
+      setHarga('');
     }
-  }, [jenisBarang, jenisHarga, selectedNamaBarang, selectedItemFaktur, selectedOrderName, items, calculateAutoHarga, editingInfraction]);
+  }, [isDraftRestored, jenisBarang, jenisHarga, selectedNamaBarang, selectedItemFaktur, items, hppKalkulasiValue]);
 
-  // Derived Total
   const totalValue = useMemo(() => {
-    const j = parseFloat(jumlah);
-    const h = parseFloat(harga);
-    if (!isNaN(j) && !isNaN(h)) return j * h;
-    return 0;
+    const j = parseNumberIndo(jumlah);
+    const h = parseNumberIndo(harga);
+    return j * h;
   }, [jumlah, harga]);
-
 
   useEffect(() => {
     let active = true;
@@ -672,21 +527,13 @@ const allJenisHargaOptions = [
       if (editingInfraction) return;
       setFakturPreview('Memuat...');
       try {
-        const yyyy = selectedDate.getFullYear();
-        const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
-        const dd = String(selectedDate.getDate()).padStart(2, '0');
-        const dateStr = `${yyyy}-${mm}-${dd}`;
-        
+        const dateStr = formatLocalYYYYMMDD(selectedDate);
         const res = await fetch(`/api/infractions/next-faktur?date=${dateStr}`);
         if (res.ok && active) {
           const data = await res.json();
           setFakturPreview(data.nextFaktur);
-        } else if (active) {
-          setFakturPreview('ERR-DDMMYY-AUTO');
         }
-      } catch (err) {
-        if (active) setFakturPreview('ERR-DDMMYY-AUTO');
-      }
+      } catch { if (active) setFakturPreview('ERR-AUTO'); }
     }
     fetchNextFaktur();
     return () => { active = false; };
@@ -695,442 +542,373 @@ const allJenisHargaOptions = [
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-
-    const employeeId = formData.get('employee_id');
-    if (!employeeId) { showDialog('alert', 'Peringatan', 'Pilih karyawan terlebih dahulu'); return; }
+    if (!formData.get('employee_id')) { showDialog('alert', 'Peringatan', 'Pilih karyawan!'); return; }
+    if (!selectedOrderFaktur) { showDialog('alert', 'Peringatan', 'Pilih Order!'); return; }
+    
+    const actualNamaBarang = jenisBarang === 'Input Manual' ? manualNamaBarang : selectedNamaBarang;
+    if (!actualNamaBarang) { showDialog('alert', 'Peringatan', 'Isi Nama Barang!'); return; }
+    if (!jumlah || parseFloat(jumlah) <= 0) { showDialog('alert', 'Peringatan', 'Jumlah tidak valid!'); return; }
+    if (!harga || parseFloat(harga) <= 0) { showDialog('alert', 'Peringatan', 'Harga tidak valid!'); return; }
 
     const isEdit = !!editingInfraction;
+    const body: any = {
+      employee_id: formData.get('employee_id'),
+      date: formatLocalYYYYMMDD(selectedDate),
+      order_faktur: selectedOrderFaktur,
+      order_name: selectedOrderName,
+      jenis_barang: jenisBarang,
+      nama_barang: actualNamaBarang,
+      item_faktur: selectedItemFaktur,
+      jenis_harga: jenisHarga,
+      jumlah,
+      harga,
+      total: String(totalValue),
+      description,
+      faktur: editingInfraction?.faktur || null
+    };
 
-    // Validation
-    if (!selectedOrderFaktur) { showDialog('alert', 'Peringatan', 'Pilih Nama Order terlebih dahulu!'); return; }
-    if (!jenisBarang) { showDialog('alert', 'Peringatan', 'Pilih Jenis Barang terlebih dahulu!'); return; }
-    
-    // Add dynamically calculated values to Form Data
-    const actualNamaBarang = jenisBarang === 'Input Manual' ? manualNamaBarang : selectedNamaBarang;
-    if (!actualNamaBarang) { showDialog('alert', 'Peringatan', 'Isi Nama Barang terlebih dahulu!'); return; }
-    
-    if (!jenisHarga) { showDialog('alert', 'Peringatan', 'Pilih Jenis Harga terlebih dahulu!'); return; }
-    if (!jumlah || parseFloat(jumlah) <= 0) { showDialog('alert', 'Peringatan', 'Jumlah harus diisi dan lebih dari 0!'); return; }
-    if (!harga || parseFloat(harga) <= 0) { showDialog('alert', 'Peringatan', 'Harga harus diisi dan lebih dari 0!'); return; }
-
-    formData.set('order_faktur', selectedOrderFaktur);
-    formData.set('order_name', selectedOrderName);
-    formData.set('jenis_barang', jenisBarang);
-    formData.set('nama_barang', actualNamaBarang);
-    formData.set('item_faktur', selectedItemFaktur);
-    formData.set('jenis_harga', jenisHarga);
-    formData.set('jumlah', jumlah);
-    formData.set('harga', harga);
-    formData.set('total', String(totalValue));
-
-    const confirmMessage = isEdit 
-      ? 'Apakah Anda yakin ingin menyimpan perubahan pada data kesalahan ini?'
-      : 'Apakah Anda yakin ingin mencatat data kesalahan baru ini?';
-      
-    const endpoint = isEdit ? `/api/infractions/${editingInfraction.id}` : '/api/infractions';
-    const method = isEdit ? 'PUT' : 'POST';
-
-    let body: any = formData;
-    let headers: HeadersInit = {};
-    
-    if (isEdit) {
-      headers = { 'Content-Type': 'application/json' };
-      const updateData: Record<string, any> = {};
-      formData.forEach((value, key) => { updateData[key] = value });
-      // Pass faktur so PUT handler doesn't need an extra SELECT
-      updateData.faktur = editingInfraction?.faktur || null;
-      body = JSON.stringify(updateData);
-    }
-
-    pendingSubmitDataRef.current = { endpoint, method, headers, body, isEdit };
-    showDialog('confirm', 'Konfirmasi Simpan', confirmMessage, executeSubmit, 'Ya, Simpan');
+    pendingSubmitDataRef.current = {
+      endpoint: isEdit ? `/api/infractions/${editingInfraction.id}` : '/api/infractions',
+      method: isEdit ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      isEdit
+    };
+    showDialog('confirm', 'Konfirmasi', isEdit ? 'Simpan perubahan?' : 'Catat data baru?', executeSubmit, 'Simpan');
   };
 
   const executeSubmit = async () => {
     if (!pendingSubmitDataRef.current) return;
-    
-    // Set loading in dialog
     setDialogConfig(prev => ({ ...prev, isLoading: true }));
-    
     const { endpoint, method, headers, body, isEdit } = pendingSubmitDataRef.current;
-    
     setLoading(true);
     try {
       const res = await fetch(endpoint, { method, headers, body });
-
       if (res.ok) {
-        closeDialog(); // Clear confirm dialog
-        const data = await res.json();
-        const msg = isEdit 
-          ? 'Perubahan data kesalahan berhasil disimpan.' 
-          : `Data kesalahan berhasil dicatat dengan nomor faktur: ${data.faktur || fakturPreview}`;
-
-        showDialog('success', 'Berhasil', msg, () => {
-          if (onSuccessEdit) {
-            onSuccessEdit(); // Switch tab
-          }
-          if (!isEdit) {
-            formRef.current?.reset();
-            resetFormStates();
-            setResetKey(k => k + 1);
-          }
-          // Refresh data client-side (fast) instead of full router.refresh()
-          if (onRefreshInfractions) {
-            onRefreshInfractions();
-          } else {
-            router.refresh();
-          }
+        closeDialog();
+        showDialog('success', 'Berhasil', isEdit ? 'Data diperbarui.' : 'Data dicatat.', () => {
+          if (onSuccessEdit) onSuccessEdit();
+          if (!isEdit) { resetFormStates(); setResetKey(k => k + 1); }
+          if (onRefreshInfractions) onRefreshInfractions(); else router.refresh();
         });
       } else {
-        closeDialog(); // Clear confirm dialog
-        const err = await res.json();
-        showDialog('error', 'Gagal', 'Gagal menyimpan: ' + (err.error || 'Unknown error'));
+        closeDialog();
+        showDialog('error', 'Gagal', 'Terjadi kesalahan saat menyimpan.');
       }
-    } catch (err) {
-      closeDialog();
-      showDialog('error', 'Gagal', 'Terjadi kesalahan koneksi atau sistem.');
-    } finally {
-      setLoading(false);
-      pendingSubmitDataRef.current = null;
-    }
+    } catch { closeDialog(); showDialog('error', 'Gagal', 'Kesalahan koneksi.'); }
+    finally { setLoading(false); pendingSubmitDataRef.current = null; }
   };
 
-  const inputCls = 'w-full bg-white border border-gray-200 rounded-lg px-4 h-10 text-sm focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-gray-700 placeholder:text-gray-300';
-  const labelCls = 'flex items-center gap-1 text-xs font-semibold text-gray-500 mb-1.5';
-  const sectionHeaderCls = 'flex items-center gap-2 pb-1.5 border-b border-gray-50 mb-3 mt-1';
-  const sectionTitleCls = 'text-sm font-bold text-gray-700 h-6 flex items-center';
-
-  // Helper to format string with dots for thousands and keep comma for decimal
-  const formatDisplay = (val: string) => {
-    if (!val) return '';
-    const [intPart, decPart] = val.split('.');
-    const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    return decPart !== undefined ? `${formattedInt},${decPart}` : formattedInt;
-  };
-
-  // Helper to parse displayed string back to numeric dot-decimal string
-  const parseInput = (val: string) => {
-    // Remove all dots (thousands), change comma to dot
-    let clean = val.replace(/\./g, '').replace(',', '.');
-    // Allow only digits and one dot
-    if (clean === '' || /^-?\d*\.?\d*$/.test(clean)) {
-      return clean;
-    }
-    return null;
-  };
+  const inputCls = 'w-full bg-gray-50/50 border border-gray-100 rounded-xl px-4 h-11 text-sm focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all text-gray-700 font-medium placeholder:text-gray-300';
+  const labelCls = 'flex items-center gap-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1';
+  const sectionHeaderCls = 'flex items-center gap-2.5 pb-2 border-b border-gray-50 mb-6 mt-2';
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-3 animate-in fade-in duration-500">
-      {/* Dynamic Header Banner */}
-      <div className={`p-3 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 border shadow-sm ${
-        editingInfraction ? 'bg-amber-50 border-amber-100' : 'bg-green-50 border-green-100'
-      }`}>
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl shadow-sm flex items-center justify-center ${
-            editingInfraction ? 'bg-amber-500 text-white' : 'bg-green-500 text-white'
-          }`}>
-            <AlertTriangle size={20} />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-gray-700 leading-none mb-1.5">
-              {editingInfraction ? 'Mode Edit Data' : 'Pencatatan Baru'}
-            </h3>
-            <p className="text-xs text-gray-400 font-medium">
-              {editingInfraction ? 'Sistem sedang dalam mode pembaruan rincian' : 'Input data kesalahan ke dalam sistem SIKKA'}
-            </p>
-          </div>
-        </div>
+    <div className="w-full pb-10">
+      <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-6">
+        
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          <div className="lg:col-span-5 flex flex-col gap-4">
+            <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
+              <div className={sectionHeaderCls}>
+                <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                  <ClipboardList size={18} className="text-green-600" />
+                </div>
+                <h3 className="text-base font-bold text-gray-800 tracking-tight">Data Utama</h3>
+              </div>
 
-        <div className="flex flex-col items-end">
-          <div className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg border text-xs font-bold bg-white shadow-sm transition-all ${
-            editingInfraction ? 'text-amber-600 border-amber-200' : 'text-gray-500 border-gray-200'
-          }`}>
-            <span className={`w-2 h-2 rounded-full ${
-              editingInfraction ? 'bg-amber-500 animate-pulse' : 'bg-green-500'
-            }`} />
-            No. Faktur: {fakturPreview}
-          </div>
-        </div>
-      </div>
-
-      <form ref={formRef} onSubmit={handleSubmit} className="p-5 space-y-5 bg-white rounded-xl border border-gray-100 shadow-sm">
-        {/* SECTION 1: INFORMASI DASAR */}
-        <section>
-          <div className={sectionHeaderCls}>
-            <Users size={18} className="text-green-500" />
-            <h4 className={sectionTitleCls}>Informasi Dasar Pelaku</h4>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <DatePicker 
-                name="date" 
-                required 
-                label="Tanggal Kejadian" 
-                onChange={setSelectedDate} 
-                value={selectedDate} 
-              />
-            </div>
-            <div className="md:col-span-2">
-              <SearchableSelect
-                key={`emp-${resetKey}`}
-                label="Nama Karyawan"
-                name="employee_id"
-                options={employees}
-                placeholder={
-                  !draftEmployeeId && editingInfraction?.employee_name
-                    ? `${editingInfraction.employee_no ? `${editingInfraction.employee_no} — ` : ''}${editingInfraction.employee_name || ''}${editingInfraction.employee_position ? ` — ${editingInfraction.employee_position}` : ''}`
-                    : 'Pilih nama karyawan...'
-                }
-                required
-                displayFn={(e) => `${e.employee_no ? `${e.employee_no} — ` : ''}${e.name}${e.position ? ` — ${e.position}` : ''}`}
-                valueFn={(e) => e.id}
-                defaultValue={draftEmployeeId}
-                onChange={(e) => setDraftEmployeeId(e ? e.id : null)}
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* SECTION 2: DETAIL ORDER & ITEM */}
-        <section>
-          <div className={sectionHeaderCls}>
-            <Box size={18} className="text-green-500" />
-            <h4 className={sectionTitleCls}>Rincian Order & Barang</h4>
-          </div>
-          <div className="space-y-4">
-            <SearchableSelect
-              key={`ord-${resetKey}`}
-              label="Nama Order / SPK Terkait"
-              name="order_faktur"
-              options={allOrders}
-              placeholder={
-                !draftOrderFaktur && editingInfraction?.order_faktur
-                  ? `${editingInfraction.order_faktur || ''} — ${editingInfraction.order_name || 'Data Terhapus'}`
-                  : 'Cari nomor order atau nama produk...'
-              }
-              required
-              displayFn={(o) => `${o.nama_prd} (${o.faktur})`}
-              valueFn={(o) => o.faktur}
-              defaultValue={draftOrderFaktur}
-              disabled={loading}
-              onChange={(o) => {
-                setSelectedOrderFaktur(o?.faktur || '');
-                setSelectedOrderName(o?.nama_prd || '');
-                setDraftOrderFaktur(o?.faktur || '');
-                setSelectedNamaBarang('');
-                setSelectedItemFaktur('');
-                setDraftItemFaktur(null);
-                setManualNamaBarang('');
-                setHppKalkulasiValue(null);
-              }}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <SearchableSelect
-                key={`jb-${resetKey}`}
-                label="Jenis Barang"
-                name="jenis_barang"
-                options={jenisBarangOptions}
-                placeholder="Pilih kategori barang..."
-                required
-                displayFn={(o) => o.label}
-                valueFn={(o) => o.value}
-                defaultValue={jenisBarang}
-                onChange={(o) => {
-                  setJenisBarang(o.value);
-                  setSelectedNamaBarang('');
-                  setSelectedItemFaktur('');
-                  setManualNamaBarang('');
-                  setDraftItemFaktur(null);
-                  setHppKalkulasiValue(null);
-                }}
-              />
-              <div>
-                <label className={labelCls}>
-                  Nama Barang / Item <span className="text-red-500 ml-1">*</span>
-                  {itemsLoading && <Loader2 size={12} className="inline ml-2 animate-spin text-green-500" />}
-                </label>
-                {jenisBarang === 'Input Manual' || jenisBarang === 'HPP Kalkulasi' ? (
-                  <div className="relative">
-                    <input 
-                      type="text"
-                      className={`${inputCls} ${jenisBarang === 'HPP Kalkulasi' ? 'bg-gray-50 text-gray-400 font-medium' : ''}`}
-                      placeholder={
-                        jenisBarang === 'HPP Kalkulasi'
-                          ? (hppLoading ? 'Mencari data HPP...' : (hppKalkulasiValue ?? 0) > 0 ? 'Otomatis dari HPP Kalkulasi' : 'HPP tidak ditemukan')
-                          : 'Ketik nama barang secara manual...'
-                      }
-                      value={jenisBarang === 'HPP Kalkulasi' ? ((hppKalkulasiValue ?? 0) > 0 ? selectedOrderName : '') : manualNamaBarang}
-                      onChange={(e) => setManualNamaBarang(e.target.value)}
-                      readOnly={jenisBarang === 'HPP Kalkulasi'}
-                      required
-                    />
-                    {hppLoading && <Loader2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-green-500" />}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1.5">
+                  <label className={labelCls}>Nomor Faktur</label>
+                  <div className="h-11 px-4 bg-gray-50 border border-gray-100 rounded-xl flex items-center text-sm font-mono font-bold text-gray-500 ring-1 ring-inset ring-gray-200/50">
+                    {fakturPreview}
                   </div>
-                ) : (
-                <SearchableSelect
-                    key={`nb-${selectedOrderName}-${jenisBarang}-${resetKey}`}
-                    label=""
-                    name="nama_barang"
-                    options={items}
-                    placeholder={
-                      itemsLoading 
-                        ? "Memuat daftar barang..."
-                        : draftItemFaktur === ''
-                          ? `${editingInfraction?.item_faktur || ''} — ${editingInfraction?.nama_barang || ''}`.trim() || "Pilih item..."
-                          : items.length === 0 
-                            ? `Data ${jenisBarang} tidak tersedia`
-                            : "Cari atau pilih item..."
-                    }
-                    displayFn={(o) => `${o.faktur && !o.faktur.endsWith('__hist') ? `${o.faktur} — ` : ''}${o.nama_barang}${o.is_ghost ? ' (Arsip)' : ''}`}
-                    valueFn={(o) => o.faktur}
-                    defaultValue={draftItemFaktur && draftItemFaktur !== '__pending__' ? draftItemFaktur : undefined}
-                    isLoading={itemsLoading}
-                    noOptionsMessage={items.length === 0 ? `Tidak ada data ${jenisBarang}` : 'Hasil tidak ditemukan'}
-                    onChange={(o) => {
-                      setSelectedNamaBarang(o ? o.nama_barang : '');
-                      setSelectedItemFaktur(o ? o.faktur : '');
-                      setDraftItemFaktur(o ? o.faktur : '');
-                    }}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className={labelCls}>Tanggal</label>
+                  <DatePicker 
+                    name="date"
+                    value={selectedDate}
+                    onChange={setSelectedDate}
                   />
-                )}
+                </div>
+
+                <div className="md:col-span-2">
+                  <SearchableSelect
+                    key={`emp-${resetKey}`}
+                    label="Nama Karyawan"
+                    name="employee_id"
+                    options={allEmployees as any}
+                    placeholder="Cari karyawan..."
+                    required
+                    displayFn={(e) => `${e.name} (${e.position})`}
+                    valueFn={(e) => e.id}
+                    defaultValue={draftEmployeeId}
+                    onChange={(emp) => setDraftEmployeeId(emp ? emp.id : null)}
+                  />
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className={labelCls}>
-                Deskripsi / Kronologi Kesalahan <span className="text-[10px] text-gray-300 font-normal ml-1 lowercase tracking-normal">(opsional)</span>
-              </label>
-              <textarea
-                name="description"
-                rows={5}
-                className={`${inputCls} resize-none py-3 min-h-[120px] custom-scrollbar`}
-                placeholder="Jelaskan detail kesalahan atau kronologi kejadian secara lengkap..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* SECTION 3: PENILAIAN HARGA */}
-        <section>
-          <div className={sectionHeaderCls}>
-            <Star size={18} className="text-green-500" />
-            <h4 className={sectionTitleCls}>Kalkulasi Beban & Biaya</h4>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 border border-gray-100 rounded-xl">
-            <div>
-              <SearchableSelect
-                  key={`jh-${resetKey}`}
-                  label="Jenis Harga"
-                  name="jenis_harga"
-                  options={jenisHargaOptions}
-                  placeholder="Pilih basis harga..."
-                  required
-                  displayFn={(o) => o.label}
-                  valueFn={(o) => o.value}
-                  defaultValue={jenisHarga}
-                  dropdownPos="down"
-                  onChange={(o) => setJenisHarga(o.value)}
+            <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
+              <div className={sectionHeaderCls}>
+                <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+                  <AlertTriangle size={18} className="text-amber-600" />
+                </div>
+                <h3 className="text-base font-bold text-gray-800 tracking-tight">Keterangan Kesalahan</h3>
+              </div>
+              
+              <div className="space-y-1.5">
+                <label className={labelCls}>Deskripsi Detail (Optional)</label>
+                <textarea
+                  name="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className={`${inputCls} min-h-[120px] py-3 leading-relaxed`}
+                  placeholder="Jelaskan secara rinci kesalahan yang terjadi..."
                 />
+              </div>
             </div>
-            <div>
-              <label className={labelCls}>Jumlah (Qty) <span className="text-red-500 ml-1">*</span></label>
-              <input 
-                type="text" 
-                className={inputCls}
-                placeholder="0"
-                value={formatDisplay(jumlah)}
-                onChange={(e) => {
-                  const parsed = parseInput(e.target.value);
-                  if (parsed !== null) setJumlah(parsed as string);
-                }}
-                required
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Harga Satuan <span className="text-red-500 ml-1">*</span></label>
-              <div className="relative group">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-[10px] group-focus-within:text-green-500 transition-colors">RP</span>
-                <input 
-                  type="text" 
-                  className={`${inputCls} pl-10 ${jenisHarga !== 'Input Manual' ? 'bg-white/50 text-gray-400 cursor-not-allowed font-medium' : ''}`}
-                  placeholder="0"
-                  value={
-                    jenisHarga === 'Input Manual' 
-                      ? formatDisplay(harga)
-                      : harga 
-                        ? parseFloat(harga).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) 
-                        : '0,00'
-                  }
-                  onChange={(e) => {
-                    if (jenisHarga === 'Input Manual') {
-                      const parsed = parseInput(e.target.value);
-                      if (parsed !== null) setHarga(parsed as string);
+          </div>
+
+          <div className="lg:col-span-7 flex flex-col gap-4">
+            <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm overflow-visible text-gray-800">
+              <div className={sectionHeaderCls}>
+                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <Box size={18} className="text-blue-600" />
+                </div>
+                <h3 className="text-base font-bold text-gray-800 tracking-tight">Rincian Beban Biaya</h3>
+              </div>
+
+              <div className="flex flex-col gap-5">
+                <SearchableSelect
+                  key={`order-${resetKey}`}
+                  label="Referensi Order"
+                  name="order_ref"
+                  options={allOrders}
+                  placeholder="Pilih Nomor Order..."
+                  required
+                  displayFn={(o) => o.faktur ? `[${o.faktur}] ${o.nama_prd}` : o.nama_prd}
+                  valueFn={(o) => o.faktur}
+                  defaultValue={draftOrderFaktur}
+                  onChange={(o) => {
+                    if (o) {
+                      setSelectedOrderFaktur(o.faktur);
+                      setSelectedOrderName(o.nama_prd);
+                      setDraftOrderFaktur(o.faktur);
+                      // Reset item selection when order changes
+                      setSelectedNamaBarang('');
+                      setSelectedItemFaktur('');
+                      setDraftItemFaktur('');
+                      // Only reset price if NOT in manual mode
+                      if (jenisHarga !== 'Input Manual' && jenisBarang !== 'Input Manual') {
+                        setHarga('');
+                      }
+                    } else {
+                      setSelectedOrderFaktur('');
+                      setSelectedOrderName('');
+                      setDraftOrderFaktur('');
+                      setSelectedNamaBarang('');
+                      setSelectedItemFaktur('');
+                      setDraftItemFaktur('');
+                      if (jenisHarga !== 'Input Manual' && jenisBarang !== 'Input Manual') {
+                        setHarga('');
+                      }
                     }
                   }}
-                  readOnly={jenisHarga !== 'Input Manual'}
-                  required
                 />
+
+                <div className="grid grid-cols-1 gap-5">
+                  <div className="space-y-1.5">
+                    <label className={labelCls}>Kategori Barang</label>
+                    <div className="flex flex-wrap gap-2">
+                      {jenisBarangOptions.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => {
+                            const isManual = (jenisBarang === 'Input Manual' || jenisHarga === 'Input Manual');
+                            const nextIsManual = (opt.value === 'Input Manual');
+                            
+                            setJenisBarang(opt.value);
+                            
+                            // 1. Explicitly Reset Downstream Fields
+                            setSelectedNamaBarang('');
+                            setSelectedItemFaktur('');
+                            setDraftItemFaktur('');
+                            setManualNamaBarang('');
+                            
+                            // 2. Set Default Price Type & Price Reset
+                            if (!nextIsManual) {
+                              if (opt.value === 'Bahan Baku') setJenisHarga('HPP Digit');
+                              else if (opt.value === 'Barang Jadi') setJenisHarga('HPP Digit');
+                              else if (opt.value === 'Penjualan Barang') setJenisHarga('Harga Jual Digit');
+                              else if (opt.value === 'HPP Kalkulasi') setJenisHarga('HPP Kalkulasi');
+                              
+                              // Clear price for system modes to trigger refetch
+                              setHarga('');
+                            } else {
+                              // If entering Manual category
+                              setJenisHarga('Input Manual');
+                              setHarga('');
+                            }
+                          }}
+                          className={`px-3 py-2 text-[11px] font-bold rounded-lg border transition-all text-center leading-tight h-10 flex items-center justify-center ${
+                            jenisBarang === opt.value
+                              ? 'bg-green-600 text-white border-green-600 shadow-md ring-4 ring-green-600/10'
+                              : 'bg-white text-gray-500 border-gray-100 hover:border-gray-300'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {jenisBarang !== 'Input Manual' && jenisBarang !== 'HPP Kalkulasi' ? (
+                    <SearchableSelect
+                      key={`item-${resetKey}-${jenisBarang}-${selectedOrderFaktur}`}
+                      label="Nama Barang"
+                      name="item_id"
+                      options={items}
+                      placeholder={itemsLoading ? "Memuat..." : "Pilih Barang..."}
+                      isLoading={itemsLoading}
+                      required
+                      displayFn={(i) => `[${i.faktur}] ${i.nama_barang}`}
+                      valueFn={(i) => i.faktur}
+                      defaultValue={draftItemFaktur === '__pending__' ? '' : draftItemFaktur}
+                      onChange={(i) => {
+                        if (i) {
+                          setSelectedNamaBarang(i.nama_barang);
+                          setSelectedItemFaktur(i.faktur);
+                          setDraftItemFaktur(i.faktur);
+                        } else {
+                          setSelectedNamaBarang('');
+                          setSelectedItemFaktur('');
+                          setDraftItemFaktur('');
+                        }
+                      }}
+                      noOptionsMessage="Order ini tidak memiliki data barang"
+                    />
+                  ) : jenisBarang === 'Input Manual' ? (
+                    <div className="space-y-1.5">
+                      <label className={labelCls}>Nama Barang Manual</label>
+                      <input
+                        type="text"
+                        value={manualNamaBarang}
+                        onChange={(e) => setManualNamaBarang(e.target.value)}
+                        className={inputCls}
+                        placeholder="Contoh: Kertas Macet, Tinta Tumpah..."
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5 opacity-80">
+                      <label className={labelCls}>Nama Barang (Order)</label>
+                      <div className="h-11 px-4 bg-blue-50/50 border border-blue-100 rounded-xl flex items-center text-sm font-bold text-blue-600">
+                        {hppLoading ? <Loader2 size={16} className="animate-spin mr-2" /> : <Star size={14} className="mr-2" />}
+                        {selectedOrderName || 'Pilih Order Dulu'}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <label className={labelCls}>Jenis Dasar Harga</label>
+                    <div className="flex flex-wrap gap-2">
+                      {jenisHargaOptions.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => {
+                            const wasManual = (jenisHarga === 'Input Manual');
+                            setJenisHarga(opt.value);
+                            if (opt.value === 'Input Manual' && !wasManual) {
+                              setHarga('');
+                            }
+                          }}
+                          className={`px-3 py-2 text-[11px] font-bold rounded-lg border transition-all h-9 flex items-center justify-center ${
+                            jenisHarga === opt.value
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-4 ring-blue-600/10'
+                              : 'bg-white text-gray-500 border-gray-100 hover:border-gray-300'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 pt-2">
+                    <div className="space-y-1.5">
+                      <label className={labelCls}>Kuantitas (Qty)</label>
+                      <input
+                        type="text"
+                        value={jumlah}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9,]/g, '');
+                          setJumlah(formatNumberIndo(val));
+                        }}
+                        className={inputCls}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className={labelCls}>Harga Satuan</label>
+                      <input
+                        type="text"
+                        value={harga}
+                        readOnly={jenisHarga !== 'Input Manual'}
+                        onChange={(e) => {
+                          if (jenisHarga !== 'Input Manual') return;
+                          const val = e.target.value.replace(/[^0-9,]/g, '');
+                          setHarga(formatNumberIndo(val));
+                        }}
+                        className={`${inputCls} ${jenisHarga !== 'Input Manual' ? 'bg-gray-100/80 cursor-not-allowed text-gray-400' : ''}`}
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 p-4 bg-gray-50/50 rounded-xl border border-gray-100 flex justify-between items-center">
+                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Total Estimasi Beban</span>
+                    <span className="text-lg font-bold text-gray-700">
+                      Rp {totalValue.toLocaleString('id-ID')}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-            <div>
-              <label className={labelCls}>Total Beban</label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-600 font-bold text-[10px]">RP</span>
-                <input 
-                   type="text" 
-                   className={`${inputCls} pl-10 bg-emerald-50 font-black text-emerald-700 border-emerald-200 shadow-sm`}
-                   value={totalValue > 0 ? totalValue.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
-                   readOnly
-                />
-              </div>
+
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-500/10 transition-all flex items-center justify-center gap-2.5 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed group"
+              >
+                {loading ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  <>
+                    <CheckCircle2 size={22} className="group-hover:scale-110 transition-transform" />
+                    <span>{editingInfraction ? 'Simpan' : 'Catat Kesalahan'}</span>
+                  </>
+                )}
+              </button>
+              
+              {editingInfraction && (
+                <button
+                  type="button"
+                  onClick={onCancelEdit}
+                  className="flex-1 h-12 rounded-xl bg-white border border-gray-200 text-gray-500 font-bold text-sm hover:bg-gray-50 transition-all active:scale-[0.98]"
+                >
+                  Batal
+                </button>
+              )}
             </div>
           </div>
-        </section>
-
-
-        <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-gray-100">
-          {editingInfraction && (
-            <button
-              type="button"
-              onClick={onCancelEdit}
-              className="px-8 py-3 bg-gray-50 text-gray-500 border border-gray-200 rounded-xl text-sm font-bold hover:bg-gray-100 transition-all active:scale-95"
-            >
-              Batal
-            </button>
-          )}
-          <button
-            type="submit"
-            disabled={loading}
-            className={`px-10 py-3 rounded-xl font-bold text-white transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center gap-2 ${
-              editingInfraction 
-                ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20' 
-                : 'bg-green-500 hover:bg-green-600 shadow-green-500/20'
-            }`}
-          >
-            {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto text-white" /> : (
-              <>
-                <CheckCircle2 size={18} />
-                <span>{editingInfraction ? 'Simpan Perubahan' : 'Simpan & Catat Kesalahan'}</span>
-              </>
-            )}
-          </button>
         </div>
-
-        {success && (
-          <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-center gap-3 animate-in slide-in-from-bottom-2 duration-300">
-            <CheckCircle2 className="text-emerald-500" size={20} />
-            <div className="text-center">
-              <p className="text-sm font-bold text-emerald-800">{editingInfraction ? 'Perubahan berhasil disimpan!' : 'Kesalahan berhasil dicatat!'}</p>
-              {lastFaktur && <p className="text-xs text-emerald-600 mt-0.5">Registrasi: <span className="font-mono font-bold">{lastFaktur}</span></p>}
-            </div>
-          </div>
-        )}
       </form>
-
-
 
       <ConfirmDialog
         isOpen={dialogConfig.isOpen}
@@ -1145,4 +923,3 @@ const allJenisHargaOptions = [
     </div>
   );
 }
-

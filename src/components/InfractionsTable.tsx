@@ -500,24 +500,24 @@ export default function InfractionsTable({
   }, [router, startDate, endDate]);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-6">
-      {/* Filter & Search Panel - Polished & Compact Style */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm flex flex-col gap-6">
+    <div className="flex-1 min-h-0 flex flex-col gap-4">
+      {/* Filter & Search Panel - Polished Grouped Style */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-col gap-4">
         {/* Panel Atas: Filter & PDF */}
         <div className="flex flex-wrap items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-semibold text-gray-400">Filter Periode</span>
+          <div className="flex items-center gap-6">
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Rentang Tanggal</span>
               <div className="flex items-center gap-2">
-                <div className="w-[160px]">
+                <div className="w-[170px]">
                   <DatePicker 
                     name="startDate"
                     value={startDate}
                     onChange={setStartDate}
                   />
                 </div>
-                <span className="text-gray-300 mx-1">s/d</span>
-                <div className="w-[160px]">
+                <div className="w-4 h-[1px] bg-gray-200"></div>
+                <div className="w-[170px]">
                   <DatePicker 
                     name="endDate"
                     value={endDate}
@@ -525,7 +525,9 @@ export default function InfractionsTable({
                   />
                 </div>
                 {isRefreshing && (
-                  <RefreshCw size={16} className="animate-spin text-green-500 ml-2" />
+                  <div className="ml-2 flex items-center justify-center w-8 h-8 rounded-full bg-green-50">
+                    <RefreshCw size={14} className="animate-spin text-green-500" />
+                  </div>
                 )}
               </div>
             </div>
@@ -533,133 +535,135 @@ export default function InfractionsTable({
 
           <button 
             onClick={generatePDF}
-            className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm font-medium hover:bg-red-100 transition-all shadow-sm self-end"
+            className="flex items-center gap-2 px-6 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-xl text-[13px] font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all shadow-sm active:scale-95 group"
           >
-            <Printer size={16} />
-            Cetak Laporan PDF
+            <Printer size={18} className="group-hover:scale-110 transition-transform" />
+            Cetak Rekap PDF
           </button>
         </div>
 
         {/* Panel Bawah: Search */}
         <div className="relative w-full group">
-          <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-green-500 transition-colors" />
           <input
             type="text"
             value={query}
             onChange={handleSearch}
-            placeholder="Cari karyawan, deskripsi, nomor order..."
-            className="w-full pl-11 pr-4 h-10 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-sm"
+            placeholder="Cari nama karyawan, deskripsi kesalahan, nomor faktur, atau referensi order..."
+            className="w-full pl-12 pr-4 h-11 bg-gray-50/50 border border-gray-100 rounded-xl focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all text-sm font-medium"
           />
         </div>
       </div>
 
-      {/* Table Container - Minimalist Content */}
-      <div className="flex-1 flex flex-col bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden min-h-0">
+      {/* Table Container - Premium Elevated Content */}
+      <div className="flex-1 flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden min-h-0">
         <div className="overflow-auto flex-1 min-h-0 custom-scrollbar" onScroll={handleScroll}>
-          <table className="w-full text-left relative min-w-[1200px]">
-             <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-sm">
-              <tr className="text-[11px] text-gray-400 font-medium border-b border-gray-100">
-                <th className="px-5 py-3 w-32 border-b border-gray-100">Aksi</th>
-                <th className="px-5 py-3 w-28 border-b border-gray-100">Faktur</th>
-                <th className="px-5 py-3 w-32 border-b border-gray-100">Tanggal</th>
-                <th className="px-5 py-3 min-w-[150px] border-b border-gray-100">Karyawan</th>
-                <th className="px-5 py-3 min-w-[200px] border-b border-gray-100">Deskripsi</th>
-                <th className="px-5 py-3 min-w-[180px] border-b border-gray-100">Barang / Item</th>
-                <th className="px-5 py-3 text-right w-16 border-b border-gray-100">Qty</th>
-                <th className="px-5 py-3 text-right w-28 border-b border-gray-100">Harga</th>
-                <th className="px-5 py-3 text-right w-28 border-b border-gray-100">Total</th>
-                <th className="px-5 py-3 min-w-[150px] border-b border-gray-100">Order Ref</th>
+          <table className="w-full text-left relative min-w-[1300px] border-collapse">
+             <thead className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-md">
+              <tr className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">
+                <th className="px-6 py-3 w-36 border-b border-gray-100">Action</th>
+                <th className="px-6 py-3 w-28 border-b border-gray-100">Faktur</th>
+                <th className="px-6 py-3 w-36 border-b border-gray-100">Tanggal</th>
+                <th className="px-6 py-3 min-w-[180px] border-b border-gray-100">Karyawan</th>
+                <th className="px-6 py-3 min-w-[220px] border-b border-gray-100">Deskripsi</th>
+                <th className="px-6 py-3 min-w-[200px] border-b border-gray-100">Item Detail</th>
+                <th className="px-6 py-3 text-right w-16 border-b border-gray-100">Qty</th>
+                <th className="px-6 py-3 text-right w-32 border-b border-gray-100">Harga</th>
+                <th className="px-6 py-3 text-right w-32 border-b border-gray-100 font-bold text-gray-800">Total Beban</th>
+                <th className="px-6 py-3 min-w-[160px] border-b border-gray-100">Reference</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-50">
               {paginated.length === 0 ? (
                 <tr>
                   <td colSpan={10}>
-                    <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-                      <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                        <FileText className="text-gray-100" size={32} />
+                    <div className="flex flex-col items-center justify-center py-32 px-6 text-center">
+                      <div className="w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center mb-6 ring-1 ring-gray-100">
+                        <FileText className="text-gray-200" size={32} />
                       </div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-1">
-                        {query ? 'Tidak ada hasil yang cocok' : 'Belum ada riwayat kesalahan'}
+                      <h3 className="text-base font-bold text-gray-800 mb-2">
+                        {query ? 'Pencarian Tidak Ditemukan' : 'Riwayat Masih Kosong'}
                       </h3>
-                      <p className="text-xs text-gray-400 max-w-[240px] mx-auto leading-relaxed">
+                      <p className="text-sm text-gray-400 max-w-[280px] mx-auto leading-relaxed font-medium">
                         {query 
-                          ? 'Coba gunakan kata kunci lain atau sesuaikan filter periode.'
-                          : 'Gunakan tab Tambah Data untuk mencatat kesalahan baru.'}
+                          ? 'Coba gunakan kata kunci lain atau periksa kembali rentang tanggal filter Anda.'
+                          : 'Mulai catat kesalahan karyawan melalui tab "Tambah Data".'}
                       </p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 paginated.map((inf) => (
-                  <tr key={inf.id} className="hover:bg-gray-50 transition-colors group">
-                    <td className="px-5 py-3 w-32 whitespace-nowrap">
-                      <div className="flex items-center gap-1">
+                  <tr key={inf.id} className="hover:bg-slate-50/50 transition-all group relative border-l-4 border-l-transparent hover:border-l-emerald-500">
+                    <td className="px-6 py-3 w-36 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => generateSinglePDF(inf)}
-                          className="text-[10px] font-bold text-red-500 bg-red-50 hover:bg-red-100 border border-red-100 px-1.5 py-0.5 rounded transition-colors mr-1"
+                          className="flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-50 hover:bg-red-500 hover:text-white border border-red-100 px-2 py-1 rounded-lg transition-all"
                           title="Cetak PDF Faktur"
                         >
+                          <FileText size={12} />
                           PDF
                         </button>
                         <button
                           onClick={() => startEdit(inf)}
-                          className="text-blue-500 hover:text-blue-700 text-sm font-medium px-2 py-1 transition-colors"
+                          className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
+                          title="Edit Data"
                         >
-                          Edit
+                          <Pencil size={15} />
                         </button>
-                        <span className="text-gray-100 text-[10px]">|</span>
                         <button
                           onClick={() => requestDelete(inf.id)}
                           disabled={deleting === inf.id}
-                          className="text-red-400 hover:text-red-600 text-sm font-medium px-2 py-1 transition-colors disabled:opacity-40"
+                          className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-all disabled:opacity-40"
+                          title="Hapus Data"
                         >
-                          Hapus
+                          <Trash2 size={15} />
                         </button>
                       </div>
                     </td>
-                    <td className="px-5 py-3 font-mono text-[10px] text-gray-400 whitespace-nowrap">
+                    <td className="px-6 py-3 w-28 font-mono text-[11px] text-gray-400 whitespace-nowrap group-hover:text-gray-600 transition-colors">
                       {inf.faktur || '-'}
                     </td>
-                    <td className="px-5 py-3 text-gray-500 text-sm whitespace-nowrap">
+                    <td className="px-6 py-3 w-36 text-gray-500 text-[13px] font-medium whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        <Calendar size={12} className="opacity-30" />
+                        <Calendar size={13} className="text-gray-300" />
                         {formatIndoDateStr(inf.date)}
                       </div>
                     </td>
-                    <td className="px-5 py-3 min-w-[150px]">
-                      <p className="font-semibold text-gray-700 text-sm">{inf.employee_name || 'Karyawan Dihapus'}</p>
+                    <td className="px-6 py-3 min-w-[180px]">
+                      <p className="font-bold text-gray-800 text-[14px] leading-snug">{inf.employee_name || 'Karyawan Dihapus'}</p>
                       {inf.employee_position && (
-                        <p className="text-[11px] text-gray-400 truncate max-w-[150px] mt-0.5" title={inf.employee_position}>
+                        <p className="text-[11px] text-gray-400 font-medium truncate max-w-[160px] mt-0.5" title={inf.employee_position}>
                           {inf.employee_position}
                         </p>
                       )}
                     </td>
-                    <td className="px-5 py-3 min-w-[200px]">
-                      <p className="text-sm text-gray-500 truncate max-w-[200px]" title={inf.description}>
+                    <td className="px-6 py-3 min-w-[220px]">
+                      <p className="text-[13px] text-gray-500 leading-relaxed max-w-[220px] line-clamp-2" title={inf.description}>
                         {inf.description || '-'}
                       </p>
                     </td>
-                    <td className="px-5 py-3 min-w-[180px]">
-                      <div className="font-semibold text-gray-700 text-sm truncate max-w-[180px]" title={inf.nama_barang_display || inf.nama_barang || ''}>{inf.nama_barang_display || inf.nama_barang || '-'}</div>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[10px] text-gray-400 font-bold">
+                    <td className="px-6 py-3 min-w-[200px]">
+                      <div className="font-bold text-gray-800 text-[13px] truncate max-w-[190px]" title={inf.nama_barang_display || inf.nama_barang || ''}>{inf.nama_barang_display || inf.nama_barang || '-'}</div>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wide bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
                           {inf.jenis_barang || '-'}
                         </span>
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-right tabular-nums text-sm font-medium text-gray-700">
+                    <td className="px-6 py-3 text-right tabular-nums text-[13px] font-bold text-gray-600">
                       {inf.jumlah || 0}
                     </td>
-                    <td className="px-5 py-3 text-right tabular-nums text-sm text-gray-500">
+                    <td className="px-6 py-3 text-right tabular-nums text-[13px] font-medium text-gray-400">
                       {inf.harga ? inf.harga.toLocaleString('id-ID') : '-'}
                     </td>
-                    <td className="px-5 py-3 text-right tabular-nums text-sm font-bold text-emerald-600">
+                    <td className="px-6 py-3 text-right tabular-nums text-[14px] font-black text-emerald-600">
                       {inf.total ? inf.total.toLocaleString('id-ID') : '-'}
                     </td>
-                    <td className="px-5 py-3 text-xs">
+                    <td className="px-6 py-3 min-w-[160px] text-[11px]">
                       {(inf.order_name_display || inf.order_name) ? (
-                        <span className="inline-block bg-gray-50 text-gray-400 px-2 py-0.5 rounded border border-gray-100 max-w-[150px] truncate" title={inf.order_name_display || inf.order_name || ''}>
+                        <span className="inline-block bg-slate-50 text-slate-400 px-2 py-1 rounded-lg border border-slate-100 font-bold max-w-[150px] truncate" title={inf.order_name_display || inf.order_name || ''}>
                           {inf.order_name_display || inf.order_name}
                         </span>
                       ) : '-'}
