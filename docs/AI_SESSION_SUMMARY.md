@@ -1,40 +1,36 @@
-# AI Session Summary - SIKKA Redesign Phase 2
+# AI Session Summary - SIKKA Redesign & Auth Fix
 
 **Tanggal**: 09 Maret 2026
-**Fokus**: Modernisasi Antarmuka (High-Fidelity) & Optimasi Ruang Kerja
+**Fokus**: Redesign Halaman Kelola User, Dashboard, dan Perbaikan Login
 
 ## Perubahan Signifikan
 
-### 1. Global UI & Sidebar Redesign
-- Redesign **Sidebar** menjadi lebih compact (220px) dengan fitur **Expand on Hover**.
-- Penyatuan tema warna menggunakan **Brand Green (#16a34a)**.
-- Implementasi font **Plus Jakarta Sans** secara konsisten.
-- Penghapusan `Header.tsx` lama dan pengintegrasian judul halaman langsung ke dalam layout konten utama untuk menghemat ruang vertikal.
+### 1. Fix Authentication (Login Issue)
+- **Problem**: Gagal login karena mismatch hash password admin default.
+- **Solution**: Sinkronisasi hash password `admin123` di `src/lib/schema.ts` dan pembaruan database via script perbaikan.
+- **Commit**: `fix: Sinkronisasi hash password admin default di schema`
 
-### 2. Redesign Halaman Data Master (High-Performance Tables)
-Seluruh halaman data master telah dimodernisasi dengan pola yang seragam:
-- **Daftar Karyawan**: Upload section menjadi 1 baris, tabel lebih rapat.
-- **Order Produksi & Bahan Baku**: Implementasi **Horizontal Filter Card**, row height ~40px, zebra pattern, dan tooltip pada teks yang terpotong.
-- **Barang Jadi & Laporan Penjualan**: Sinkronisasi desain dengan Order Produksi, optimasi pencarian full-width, dan badge *load time* (⚡ms).
-- **HPP Kalkulasi**: Redesign upload section menjadi horizontal card dan format currency Rp rata kanan.
+### 2. Redesign Halaman "Kelola User" (Exact Match)
+- **Visual DNA**: Menggunakan background putih bersih (`#ffffff`), bukan abu-abu.
+- **Header**: Judul dengan garis hijau tipis (3px) dan padding kiri 12px. Subtitle selaras di bawah judul.
+- **Stat Cards**: 3 kartu compact (100px) dengan ikon di kiri, value di atas, dan label di bawah (Sentence case).
+- **Table**: Row height compact (~40px), header Uppercase Bold Muted, zebra pattern (#f9fafb).
 
-### 3. Fitur & Performa
-- Server-side pagination dan search dioptimalkan untuk responsivitas tinggi (< 300ms pada data lokal).
-- Tooltip otomatis pada kolom tabel yang berisi teks panjang untuk mencegah layout berantakan.
-- Badge performa pada footer tabel untuk monitoring respons API.
+### 3. Redesign Dashboard & Global Sync
+- **Dashboard**: Header dan kartu statistik diselaraskan dengan gaya baru (compact & clean).
+- **Activity Table**: Redesign header dan spacing baris agar konsisten secara universal.
+- **Global Background**: Penerapan `bg-white` pada root container Dashboard, Users, dan Sales untuk keseragaman visual 100%.
+- **Commit**: `style: Redesign Dashboard dan Kelola User serta sinkronisasi visual global`
 
 ## Status Progres (task.md)
-- [x] Redesign Sidebar & Global Layout
-- [x] Redesign Halaman Karyawan
-- [x] Redesign Halaman Order Produksi
-- [x] Redesign Halaman Bahan Baku
-- [x] Redesign Halaman Barang Jadi & Laporan Penjualan
-- [x] Redesign Halaman HPP Kalkulasi
-- [/] Sinkronisasi Database (Dalam Progres)
+- [x] Fix Login Issue (Admin Password Hash)
+- [x] Redesign Kelola User Page (Exact Match with Sales Report)
+- [x] Redesign Dashboard Page
+- [x] Global Visual Sync (White Background & Clean Accents)
 
 ## Instruksi untuk Sesi Berikutnya
-1. Lanjutkan sinkronisasi skema database ke Turso jika diperlukan untuk deployment.
-2. Periksa kembali fitur PDF generator untuk memastikan styling baru tidak merusak hasil cetak.
-3. Optimasi script `migrate-sales-2025.mjs` jika ada data penjualan baru yang perlu diimpor.
+1. **Git Push**: Lakukan `git push origin master` secara manual jika terjadi kendala kredensial otomatis (perubahan sudah di-commit secara lokal).
+2. **Verification**: Periksa konsistensi visual pada perangkat dengan resolusi layar yang berbeda.
+3. **Double-check**: Pastikan tidak ada regresi pada fitur edit/hapus user setelah redesign.
 
-**Catatan Commit**: Perubahan dikelompokkan berdasarkan area fitur untuk memudahkan tracking.
+**Catatan**: Git identity telah dikonfigurasi secara lokal sebagai `nauval131922`.
