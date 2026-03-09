@@ -35,64 +35,66 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 p-4 min-h-screen animate-in fade-in duration-700">
-      <div className="w-full max-w-sm">
-        {/* Logo/Brand */}
-        <div className="text-center mb-8 flex flex-col items-center">
-          <div className="inline-flex items-center justify-center mb-6">
+    <div className="flex-1 flex flex-col items-center justify-center bg-[#f3f4f6] p-4 min-h-screen animate-in fade-in duration-700">
+      <div className="w-full max-w-[340px]">
+        {/* Logo/Brand Header */}
+        <div className="text-center mb-6 flex flex-col items-center">
+          <div className="inline-flex items-center justify-center mb-3">
             <Image
               src={logoPic}
               alt="SIKKA Logo"
-              className="w-20 h-20 object-contain rounded-2xl shadow-xl ring-1 ring-black/5"
+              className="w-12 h-12 object-contain rounded-xl shadow-lg ring-1 ring-black/5"
               priority
             />
           </div>
-          <div className="border-l-4 border-green-500 pl-4 py-1 text-left">
-            <h1 className="text-2xl font-bold text-gray-800 tracking-tight leading-none mb-1">SIKKA LOGIN</h1>
-            <p className="text-xs text-gray-400 font-medium">Sistem Pencatatan Kesalahan Karyawan</p>
+          <div className="text-center px-4">
+            <h1 className="text-xl font-extrabold text-gray-800 tracking-tight leading-none">SIKKA Login</h1>
+            <p className="text-[11px] text-gray-400 font-semibold mt-1.5 uppercase tracking-wide">
+              Sistem Pencatatan Kesalahan Karyawan
+            </p>
           </div>
         </div>
 
         {/* Login Form Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="bg-white rounded-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border border-gray-100 border-t-4 border-t-green-600 overflow-hidden">
+          <form onSubmit={handleSubmit} className="p-5 pt-6 flex flex-col gap-4">
             {error && (
-              <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2 text-red-600 text-sm animate-in shake duration-300">
-                <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                <span>{error}</span>
+              <div className="p-2.5 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2 text-red-600 text-xs animate-in shake duration-300">
+                <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                <span className="font-medium">{error}</span>
               </div>
             )}
 
-            <div className="space-y-5">
-              <div>
-                <label className="flex items-center gap-1 text-xs font-bold text-gray-400 mb-2 ml-1 uppercase tracking-widest">USERNAME</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <User size={18} className="text-gray-300 group-focus-within:text-green-500 transition-colors" />
+            <div className="flex flex-col gap-3.5">
+              <div className="relative group">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1 mb-1 block">Username</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User size={14} className="text-gray-300 group-focus-within:text-green-500 transition-colors" />
                   </div>
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="block w-full h-11 pl-11 pr-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all bg-white hover:border-gray-300 text-gray-700 placeholder:text-gray-300"
-                    placeholder="Masukkan username anda"
+                    className="block w-full h-9 pl-9 pr-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all bg-white hover:border-gray-300 text-gray-700 placeholder:text-gray-300"
+                    placeholder="Username"
                     required
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="flex items-center gap-1 text-xs font-bold text-gray-400 mb-2 ml-1 uppercase tracking-widest">PASSWORD</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                    <KeyRound size={18} className="text-gray-300 group-focus-within:text-green-500 transition-colors" />
+              <div className="relative group">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1 mb-1 block">Password</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <KeyRound size={14} className="text-gray-300 group-focus-within:text-green-500 transition-colors" />
                   </div>
                   <input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full h-11 pl-11 pr-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all bg-white hover:border-gray-300 text-gray-700 placeholder:text-gray-300"
-                    placeholder="Masukkan password anda"
+                    className="block w-full h-9 pl-9 pr-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all bg-white hover:border-gray-300 text-gray-700 placeholder:text-gray-300"
+                    placeholder="Password"
                     required
                   />
                 </div>
@@ -102,25 +104,26 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-11 flex items-center justify-center gap-2 px-4 rounded-lg shadow-md text-sm font-bold text-white bg-green-600 hover:bg-green-700 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-green-500/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+              className="w-full h-10 mt-1 flex items-center justify-center gap-2 px-4 rounded-lg shadow-sm text-sm font-bold text-white bg-green-600 hover:bg-green-700 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-green-500/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  <LogIn size={18} />
-                  <span>MASUK SISTEM</span>
+                  <LogIn size={16} />
+                  <span>Masuk Sistem</span>
                 </>
               )}
             </button>
           </form>
         </div>
         
-        <div className="mt-8 flex flex-col items-center gap-2">
-          <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
-            &copy; {new Date().getFullYear()} PT. Buya Barokah
+        {/* Small Muted Footer */}
+        <div className="mt-6 text-center">
+          <p className="text-[11px] font-medium text-gray-400 opacity-80 leading-relaxed max-w-[200px] mx-auto">
+            &copy; {new Date().getFullYear()} Pt. Buya Barokah<br/>
+            <span className="text-[10px] opacity-60">Div. Percetakan</span>
           </p>
-          <div className="h-1 w-8 bg-gray-200 rounded-full"></div>
         </div>
       </div>
     </div>

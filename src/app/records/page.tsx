@@ -32,7 +32,8 @@ export default async function RecordsPage() {
     <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
       <header className="flex justify-between items-center shrink-0 mb-6">
         <div>
-          <div className="border-l-4 border-green-500 pl-4 flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <div className="w-1.5 h-8 bg-green-500 rounded-full shrink-0"></div>
             <h1 className="text-xl font-semibold text-gray-800 leading-tight">Pencatatan Kesalahan</h1>
             <HelpButton />
           </div>

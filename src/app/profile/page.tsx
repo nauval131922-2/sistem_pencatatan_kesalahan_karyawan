@@ -101,7 +101,8 @@ export default function ProfilePage() {
   return (
     <div className="w-full animate-in fade-in duration-500">
       <div className="mb-6">
-        <div className="border-l-4 border-green-500 pl-4 flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <div className="w-1.5 h-8 bg-green-500 rounded-full shrink-0"></div>
           <h1 className="text-xl font-semibold text-gray-800 leading-tight">Pengaturan Profil</h1>
         </div>
         <p className="text-sm text-gray-400 mt-0.5 pl-4">Kelola informasi data diri dan keamanan akun Anda.</p>
