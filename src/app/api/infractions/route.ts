@@ -49,20 +49,30 @@ function getTimeString() {
 
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData();
+    const contentType = req.headers.get('content-type') || '';
+    let data: any = {};
+    
+    if (contentType.includes('application/json')) {
+      data = await req.json();
+    } else {
+      const formData = await req.formData();
+      formData.forEach((value, key) => {
+        data[key] = value;
+      });
+    }
 
-    const employeeId = parseInt(formData.get('employee_id') as string);
-    const description = (formData.get('description') as string)?.trim() || '';
-    const date = (formData.get('date') as string)?.trim();
-    const orderFaktur = (formData.get('order_faktur') as string)?.trim();
-    const orderName = (formData.get('order_name') as string)?.trim();
-    const itemFaktur = (formData.get('item_faktur') as string)?.trim();
-    const jenisBarang = (formData.get('jenis_barang') as string)?.trim();
-    const namaBarang = (formData.get('nama_barang') as string)?.trim();
-    const jenisHarga = (formData.get('jenis_harga') as string)?.trim();
-    const jumlah = parseFloat(formData.get('jumlah') as string) || 0;
-    const harga = parseFloat(formData.get('harga') as string) || 0;
-    const total = parseFloat(formData.get('total') as string) || 0;
+    const employeeId = parseInt(data.employee_id as string) || 0;
+    const description = (data.description as string)?.trim() || '';
+    const date = (data.date as string)?.trim();
+    const orderFaktur = (data.order_faktur as string)?.trim();
+    const orderName = (data.order_name as string)?.trim();
+    const itemFaktur = (data.item_faktur as string)?.trim();
+    const jenisBarang = (data.jenis_barang as string)?.trim();
+    const namaBarang = (data.nama_barang as string)?.trim();
+    const jenisHarga = (data.jenis_harga as string)?.trim();
+    const jumlah = parseFloat(data.jumlah as string) || 0;
+    const harga = parseFloat(data.harga as string) || 0;
+    const total = parseFloat(data.total as string) || 0;
     const severity = 'Low';
 
     const session = await getSession();
@@ -91,7 +101,8 @@ export async function POST(req: NextRequest) {
     ]);
 
     const countRow = seqRes.rows[0] as any;
-    const newSeq = (Number(countRow?.last_seq) ?? 0) + 1;
+    const lastSeq = countRow?.last_seq;
+    const newSeq = (typeof lastSeq === 'number' ? lastSeq : 0) + 1;
     const faktur = `ERR-${datePrefix}-${String(newSeq).padStart(3, '0')}`;
 
     const emp = empRes.rows[0] as any;

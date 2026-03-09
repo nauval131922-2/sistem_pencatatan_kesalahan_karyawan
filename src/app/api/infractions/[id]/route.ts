@@ -14,16 +14,32 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const session = await getSession();
-    const body = await req.json();
+    const contentType = req.headers.get('content-type') || '';
+    let data: any = {};
+    if (contentType.includes('application/json')) {
+      data = await req.json();
+    } else {
+      const formData = await req.formData();
+      formData.forEach((v, k) => { data[k] = v; });
+    }
+
     const { 
-      description, date, recorded_by_id, order_name, order_faktur, item_faktur, employee_id,
+      description, date, order_name, order_faktur, item_faktur, employee_id,
       jenis_barang, nama_barang, jenis_harga, jumlah, harga, total, faktur: bodyFaktur
-    } = body;
+    } = data;
 
-    const severity = body.severity || 'Low';
+    // Use provided recorded_by_id or find current session user
+    let recordedById = parseInt(data.recorded_by_id as string);
+    if (!recordedById && session?.name) {
+      const recLookup = await db.execute({ 
+        sql: 'SELECT id FROM employees WHERE name = ? ORDER BY id ASC LIMIT 1', 
+        args: [session.name] 
+      });
+      recordedById = (recLookup.rows[0] as any)?.id || 0;
+    }
 
-    if (!order_name || !recorded_by_id || !order_faktur) {
-      return NextResponse.json({ error: 'Data tidak lengkap. Pastikan Order Produksi dan Pencatat sudah dipilih.' }, { status: 400 });
+    if (!order_name || !order_faktur || !employee_id) {
+      return NextResponse.json({ error: 'Data tidak lengkap. Pastikan Karyawan dan Order sudah dipilih.' }, { status: 400 });
     }
 
     const fullDate = date && typeof date === 'string' && date.length === 10
@@ -33,7 +49,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     // 1. Fetch snapshots
     const [empRes, recRes] = await Promise.all([
       db.execute({ sql: 'SELECT name, position, employee_no FROM employees WHERE id = ?', args: [employee_id] }),
-      db.execute({ sql: 'SELECT name, position, employee_no FROM employees WHERE id = ?', args: [parseInt(recorded_by_id)] })
+      db.execute({ sql: 'SELECT name, position, employee_no FROM employees WHERE id = ?', args: [recordedById] })
     ]);
 
     const emp = empRes.rows[0] as any;
@@ -42,12 +58,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const employeeNo = emp?.employee_no || null;
     const employeeName = emp?.name || 'Unknown';
     const employeePosition = emp?.position || '-';
-    const recName = rec?.name || 'Unknown';
-    const recPos = rec?.position || '-';
+    const recName = rec?.name || session?.name || 'Unknown';
+    const recPos = rec?.position || 'User';
     const recNo = rec?.employee_no || null;
 
-    // 2. Execute batch update and log
-    const rawData = JSON.stringify({ employee_no: employeeNo, employee_name: employeeName, description, faktur: bodyFaktur, date, order_name });
+    const severity = data.severity || 'Low';
     await db.execute(
       {
         sql: `
@@ -64,9 +79,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         args: [
           employee_id, employeeNo, employeeName, employeePosition,
           description || '', severity, fullDate,
-          recName, parseInt(recorded_by_id), recNo, recName, recPos,
+          recName, recordedById, recNo, recName, recPos,
           order_name, order_faktur, item_faktur, jenis_barang, nama_barang, jenis_harga,
-          parseFloat(jumlah) || 0, parseFloat(harga) || 0, parseFloat(total) || 0,
+          parseFloat(String(jumlah)) || 0, parseFloat(String(harga)) || 0, parseFloat(String(total)) || 0,
           id
         ]
       }

@@ -62,16 +62,19 @@ export async function POST(req: NextRequest) {
 
         if (!name || /^\d+$/.test(name)) continue;
 
+        const session = await getSession();
+
         batchOps.push({
             sql: `
-              INSERT INTO employees (name, position, department, employee_no, is_active) 
-              VALUES (?, ?, ?, ?, 1)
+              INSERT INTO employees (name, position, department, employee_no, is_active, recorded_by) 
+              VALUES (?, ?, ?, ?, 1, ?)
               ON CONFLICT(employee_no) DO UPDATE SET
                 name = excluded.name,
                 position = excluded.position,
-                is_active = 1
+                is_active = 1,
+                recorded_by = excluded.recorded_by
             `,
-            args: [name, position || '-', '-', colA]
+            args: [name, position || '-', '-', colA, session?.username || 'System']
         });
         importedCount++;
     }

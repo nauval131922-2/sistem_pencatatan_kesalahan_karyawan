@@ -20,7 +20,7 @@ export async function getUsers() {
   try {
     await requireSuperAdmin();
     
-    const result = await db.execute('SELECT id, username, name, role, created_at FROM users ORDER BY name ASC');
+    const result = await db.execute('SELECT id, username, name, role, photo, created_at FROM users ORDER BY name ASC');
     
     // Libsql rows have a null prototype or other properties that Next.js serialization dislikes.
     // Converting to plain objects via mapping or JSON parse/stringify fixes this.
@@ -29,6 +29,7 @@ export async function getUsers() {
       username: String(row.username),
       name: String(row.name),
       role: String(row.role),
+      photo: row.photo ? String(row.photo) : null,
       created_at: row.created_at ? String(row.created_at) : null
     }));
 
