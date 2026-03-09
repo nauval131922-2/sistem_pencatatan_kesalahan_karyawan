@@ -15,10 +15,11 @@ Sesi ini berfokus pada penyempurnaan fitur **Pencatatan Kesalahan (Records)**, p
 - **NaN Protection**: Menambah validasi angka untuk mencegah error "NaN" saat menyimpan data ke SQLite/Turso.
 - **Multi-Format Support**: API sekarang mendukung input dalam format JSON maupun Form-Data.
 
-### 3. Optimasi Performa (Production)
+### 3. Optimasi Performa & Konektivitas Turso
 - **Streaming & Suspense**: Implementasi `loading.tsx` dan `Suspense` pada Dashboard dan Records agar shell aplikasi muncul instan sambil menunggu data Turso.
-- **Server Caching**: Menggunakan React `cache()` pada `actions.ts` untuk mengurangi round-trip ke database (Turso) dalam satu siklus render.
-- **Skeleton UI**: Menambah animasi loading (skeleton) yang profesional untuk meningkatkan *perceived performance*.
+- **Server Caching**: Menggunakan React `cache()` pada `actions.ts` untuk mengurangi database round-trip.
+- **Fix Login Turso**: Memperbaiki `scripts/init-db.ts` agar mendukung pembacaan file `.env` secara manual dan menyediakan script pemulihan password admin untuk menjamin akses ke database remote.
+- **Skeleton UI**: Menambah animasi loading (skeleton) yang profesional.
 
 ## 🛠️ Status Teknis Terakhir
 - **Branch**: `master`
@@ -26,7 +27,8 @@ Sesi ini berfokus pada penyempurnaan fitur **Pencatatan Kesalahan (Records)**, p
   - `src/components/RecordsForm.tsx` (Logic & UI)
   - `src/app/api/infractions/[id]/route.ts` (Robustness)
   - `src/lib/actions.ts` (Caching)
-  - `src/app/page.tsx` & `src/app/records/page.tsx` (Streaming)
+  - `scripts/init-db.ts` (Env Support)
+  - `.env` (Template Koneksi Turso)
 
 ## 📌 Catatan untuk Sesi Berikutnya
 - Performa di Vercel sudah jauh lebih lancar dengan Skeleton UI.
