@@ -169,23 +169,6 @@ export async function GET(request: NextRequest) {
       }
     ];
 
-    if (!silent) {
-      finalOps.push({
-        sql: `
-          INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `,
-        args: [
-          'SCRAPE', 
-          'barang_jadi', 
-          0, 
-          `Tarik Data Barang Hasil Produksi (${startParam} s/d ${endParam})`, 
-          JSON.stringify({ total: finalRecords.length }), 
-          currentUserSession?.username || 'System'
-        ] as any[]
-      });
-    }
-
     await db.batch(finalOps, "write");
 
     return NextResponse.json({

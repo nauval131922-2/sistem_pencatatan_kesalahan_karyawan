@@ -13,14 +13,21 @@ const COL_J = 9; // Jabatan/Bagian
 
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData();
-    const file = formData.get('file') as File;
+    const filename = req.headers.get('x-filename') || 'uploaded_file.xlsx';
+    const contentLength = req.headers.get('content-length');
+    console.log(`[IMPORT-RAW] Received request for: ${filename}`);
+    console.log(`[IMPORT-RAW] Content-Length header: ${contentLength}`);
 
-    if (!file) {
-      return NextResponse.json({ error: 'Tidak ada file yang diunggah.' }, { status: 400 });
+    const arrayBuffer = await req.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    
+    console.log(`[IMPORT-RAW] Buffer size: ${buffer.length} bytes`);
+    console.log(`[IMPORT-RAW] Buffer header (hex): ${buffer.slice(0, 8).toString('hex')}`);
+    
+    if (contentLength && parseInt(contentLength) !== buffer.length) {
+      console.warn(`[IMPORT-RAW] Mismatch: Content-Length ${contentLength} vs Received ${buffer.length}`);
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
     const workbook = XLSX.read(buffer, { 
       type: 'buffer',
       cellFormula: false,
@@ -74,21 +81,7 @@ export async function POST(req: NextRequest) {
         await db.batch(batchOps.slice(i, i + chunkSize), "write");
     }
 
-    const rawData = JSON.stringify({
-      total_imported: importedCount,
-      filename: file.name,
-      file_size: file.size
-    });
-    
-    const session = await getSession();
 
-    await db.execute({
-      sql: `
-        INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-        VALUES (?, ?, 0, ?, ?, ?)
-      `,
-      args: ['IMPORT', 'employees', `Update Master Data Karyawan (${importedCount} baris)`, rawData, session?.username || 'System']
-    });
 
     return NextResponse.json({ success: true, imported: importedCount });
   } catch (err: any) {

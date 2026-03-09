@@ -90,25 +90,7 @@ export async function POST(request: NextRequest) {
 
     const session = await getSession();
 
-    // Log Activity
-    try {
-      await db.execute({
-        sql: `
-          INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `,
-        args: [
-          'UPLOAD', 
-          'hpp_kalkulasi', 
-          0, 
-          `Upload data HPP Kalkulasi (${importedCount} data)`, 
-          JSON.stringify({ fileName: file.name, total: importedCount }), 
-          session?.username || 'System'
-        ]
-      });
-    } catch (e) {
-      console.error("Failed to log activity:", e);
-    }
+
 
     return NextResponse.json({
       success: true,

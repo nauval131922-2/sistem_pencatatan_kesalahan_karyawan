@@ -48,7 +48,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     // 2. Execute batch update and log
     const rawData = JSON.stringify({ employee_no: employeeNo, employee_name: employeeName, description, faktur: bodyFaktur, date, order_name });
-    await db.batch([
+    await db.execute(
       {
         sql: `
           UPDATE infractions
@@ -69,15 +69,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
           parseFloat(jumlah) || 0, parseFloat(harga) || 0, parseFloat(total) || 0,
           id
         ]
-      },
-      {
-        sql: `
-          INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `,
-        args: ['UPDATE', 'infractions', id, `Edit data kesalahan: ${employeeNo ? `${employeeNo} - ` : ''}${employeeName}`, rawData, session?.username || recName]
       }
-    ], "write");
+    );
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
@@ -107,16 +100,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
         order_name: existing.order_name
       });
 
-      await db.batch([
-        {
-          sql: `
-            INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-            VALUES (?, ?, ?, ?, ?, ?)
-          `,
-          args: ['DELETE', 'infractions', id, `Hapus data kesalahan: ${existing.employee_no ? `${existing.employee_no} - ` : ''}${existing.employee_name}`, rawData, session?.username || 'System']
-        },
-        { sql: 'DELETE FROM infractions WHERE id = ?', args: [id] }
-      ], "write");
+      await db.execute({ sql: 'DELETE FROM infractions WHERE id = ?', args: [id] });
     } else {
       await db.execute({ sql: 'DELETE FROM infractions WHERE id = ?', args: [id] });
     }

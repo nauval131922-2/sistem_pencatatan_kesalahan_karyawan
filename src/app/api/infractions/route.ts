@@ -135,17 +135,7 @@ export async function POST(req: NextRequest) {
     const batchRes = await db.batch(batchOps, "write");
     const infractionInsertRowsAffected = batchRes[1] as any;
     
-    // 3. Log Activity (Can be separate or in batch if we knew the ID, but we use lastInsertRowid)
-    // In libsql batch, we don't easily get the lastInsertRowid for intermediate steps to use in next ones unless we use RETURNING
-    // But we can just use the faktur for the log message.
-    const rawData = JSON.stringify({ employee_no: employeeNo, employee_name: empName, description, faktur, date: fullDate, order_name: orderName });
-    await db.execute({
-      sql: `
-        INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-        VALUES (?, ?, 0, ?, ?, ?)
-      `,
-      args: ['INSERT', 'infractions', `Tambah data kesalahan: ${employeeNo ? `${employeeNo} - ` : ''}${empName}`, rawData, session.username]
-    });
+
 
     return NextResponse.json({ success: true, faktur });
   } catch (err: any) {

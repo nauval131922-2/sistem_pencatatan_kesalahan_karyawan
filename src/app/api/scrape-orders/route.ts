@@ -179,32 +179,15 @@ export async function GET(request: NextRequest) {
     // 3. Final settings and log
     const silent = searchParams.get('silent') === 'true';
     const finalOps = [
-        {
-            sql: `
-              INSERT INTO system_settings (key, value, updated_at)
-              VALUES (?, ?, CURRENT_TIMESTAMP)
-              ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
-            `,
-            args: ['last_scrape_orders', lastUpdated]
-        }
+      {
+        sql: `
+          INSERT INTO system_settings (key, value, updated_at)
+          VALUES (?, ?, CURRENT_TIMESTAMP)
+          ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+        `,
+        args: ['last_scrape_orders', lastUpdated]
+      }
     ];
-
-    if (!silent) {
-        finalOps.push({
-            sql: `
-              INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-              VALUES (?, ?, ?, ?, ?, ?)
-            `,
-            args: [
-              'SCRAPE', 
-              'orders', 
-              0, 
-              `Tarik Data Order Produksi (${startParam} s/d ${endParam})`, 
-              JSON.stringify({ total: finalRecords.length, new: newInsertedCount }), 
-              currentUserSession?.username || 'System'
-            ] as any[]
-        });
-    }
 
     await db.batch(finalOps, "write");
 

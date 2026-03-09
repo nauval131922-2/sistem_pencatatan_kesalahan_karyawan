@@ -148,16 +148,6 @@ export async function GET(request: NextRequest) {
       }
     ];
 
-    if (!silent) {
-      finalOps.push({
-        sql: `
-          INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `,
-        args: ['SCRAPE', 'sales_reports', 0, `Tarik Laporan Penjualan (${startParam} s/d ${endParam})`, JSON.stringify({ total: allRecords.length }), currentUserSession?.username || 'System'] as any[]
-      });
-    }
-
     await db.batch(finalOps, "write");
 
     return NextResponse.json({ success: true, total: allRecords.length, newly_inserted: 0, lastUpdated });
