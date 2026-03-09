@@ -47,7 +47,12 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
     }
   };
 
-  const getChannelName = (tableName: string) => {
+  const getChannelName = (log: any) => {
+    const tableName = log.table_name;
+    if (tableName === 'users' && log.message === 'Profil diperbarui') {
+      return 'Pengaturan Profil';
+    }
+
     switch (tableName) {
       case 'employees': return 'Data Karyawan';
       case 'users': return 'Kelola User';
@@ -66,7 +71,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
     const q = search.toLowerCase();
     
     return initialLogs.filter((log) => {
-      const menu = getChannelName(log.table_name).toLowerCase();
+      const menu = getChannelName(log).toLowerCase();
       const user = (log.recorded_by || '').toLowerCase();
       const keterangan = (log.message || '').toLowerCase();
       const dbDate = (log.created_at || '').toLowerCase();
@@ -152,7 +157,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                     </td>
                     <td className="px-6 py-1">
                       <span className="text-[13px] font-bold text-gray-700">
-                        {getChannelName(log.table_name)}
+                        {getChannelName(log)}
                       </span>
                     </td>
                     <td className="px-6 py-1 text-xs text-gray-400 font-medium whitespace-nowrap">
@@ -208,7 +213,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
               <div className="mb-4 grid grid-cols-2 gap-4">
                 <div>
                   <span className="text-[10px] text-slate-400 font-bold">Menu</span>
-                  <p className="text-sm font-medium text-slate-700">{getChannelName(selectedLog.table_name)}</p>
+                  <p className="text-sm font-medium text-slate-700">{getChannelName(selectedLog)}</p>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 font-bold">User</span>

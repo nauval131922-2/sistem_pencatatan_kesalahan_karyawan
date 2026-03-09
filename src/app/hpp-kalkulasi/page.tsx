@@ -35,7 +35,7 @@ export default async function HppKalkulasiPage() {
     } catch(e) {}
   }
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-700 overflow-hidden">
       <header className="flex flex-col shrink-0">
         <div className="flex items-center gap-3 border-l-4 border-green-500 pl-4">
           <h1 className="text-[22px] font-extrabold text-gray-800 tracking-tight leading-none">HPP Kalkulasi</h1>

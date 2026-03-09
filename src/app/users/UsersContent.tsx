@@ -22,6 +22,7 @@ interface User {
   username: string;
   name: string;
   role: string;
+  photo?: string | null;
   created_at?: string;
 }
 
@@ -54,6 +55,15 @@ export default function UsersContent({ currentUser }: { currentUser: string }) {
 
   useEffect(() => {
     fetchUsers();
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sikka_profile_updated') {
+        fetchUsers();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const stats = useMemo(() => {
@@ -109,7 +119,7 @@ export default function UsersContent({ currentUser }: { currentUser: string }) {
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-6 -m-8 p-8 bg-white animate-in fade-in duration-500 overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in duration-500 overflow-hidden">
       {/* Header Section */}
       <div className="flex items-start justify-between shrink-0">
         <header className="flex flex-col shrink-0">
@@ -243,8 +253,13 @@ export default function UsersContent({ currentUser }: { currentUser: string }) {
                     >
                       <td className="px-6 py-1">
                         <div className="flex items-center gap-4">
-                          <div className="w-8 h-8 rounded-lg bg-[#16a34a] flex items-center justify-center font-bold text-xs text-white shrink-0 shadow-sm">
-                            {getInitials(u.name)}
+                          <div className="w-8 h-8 rounded-lg bg-[#16a34a] flex items-center justify-center font-bold text-xs text-white shrink-0 shadow-sm overflow-hidden border border-green-200/50">
+                            {u.photo ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={u.photo} alt={u.name} className="w-full h-full object-cover" />
+                            ) : (
+                              getInitials(u.name)
+                            )}
                           </div>
                           <div className="flex flex-col min-w-0">
                             <p className="font-bold text-gray-800 truncate text-[14px] leading-tight mb-0.5">{u.name}</p>

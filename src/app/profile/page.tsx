@@ -86,6 +86,8 @@ export default function ProfilePage() {
         setMessage({ type: 'success', text: 'Profil berhasil diperbarui.' });
         setPassword('');
         setConfirmPassword('');
+        // Trigger cross-tab synchronization
+        localStorage.setItem('sikka_profile_updated', Date.now().toString());
         // Force a refresh to update the Layout header
         router.refresh();
       } else {
@@ -99,155 +101,174 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="w-full animate-in fade-in duration-500">
-      <div className="mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-1.5 h-8 bg-green-500 rounded-full shrink-0"></div>
-          <h1 className="text-xl font-semibold text-gray-800 leading-tight">Pengaturan Profil</h1>
+    <div className="flex-1 min-h-0 flex flex-col gap-8 animate-in fade-in duration-500 overflow-hidden">
+      <header className="flex flex-col shrink-0">
+        <div className="flex items-center gap-3 border-l-4 border-green-500 pl-4">
+          <h1 className="text-[22px] font-extrabold text-gray-800 tracking-tight leading-none">Pengaturan Profil</h1>
         </div>
-        <p className="text-sm text-gray-400 mt-0.5 pl-4">Kelola informasi data diri dan keamanan akun Anda.</p>
-      </div>
+        <p className="text-[13px] text-gray-400 font-medium pl-5 mt-2">
+          Kelola informasi data diri dan keamanan akun Anda.
+        </p>
+      </header>
 
-      <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-6 overflow-hidden">
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_3fr] gap-8">
-            
-            {/* Avatar Column (1/4) */}
-            <div className="flex flex-col items-center">
-              <div className="relative mx-auto">
-                <div className="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
-                  {photoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={photoUrl} alt="Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <User size={36} className="text-slate-300" />
-                  )}
-                </div>
+      <div className="flex-1 overflow-y-auto flex flex-col items-center">
+        <div className="w-full max-w-4xl bg-white border border-[#e5e7eb] rounded-[12px] shadow-sm overflow-hidden">
+          <form onSubmit={handleSubmit}>
+            <div className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-12">
                 
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-0 right-0 w-7 h-7 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-md transition-colors border-2 border-white"
-                  title="Ubah Foto"
-                >
-                  <Camera size={14} />
-                </button>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handlePhotoChange} 
-                  accept="image/jpeg, image/png, image/webp" 
-                  className="hidden" 
-                />
-              </div>
-              <p className="text-xs text-center text-gray-400 mt-3">Format JPEG/PNG, Max 2MB.</p>
-            </div>
-
-            {/* Form Column (3/4) */}
-            <div className="space-y-6">
-              {message && (
-                <div className={`p-4 rounded-lg flex items-start gap-3 text-sm border ${
-                  message.type === 'success' 
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
-                    : 'bg-red-50 text-red-700 border-red-100'
-                }`}>
-                  {message.type === 'success' ? (
-                    <CheckCircle2 size={18} className="shrink-0 mt-0.5" />
-                  ) : (
-                    <AlertCircle size={18} className="shrink-0 mt-0.5" />
-                  )}
-                  <span>{message.text}</span>
-                </div>
-              )}
-
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium text-gray-700 pb-2 border-b border-gray-100">Informasi Dasar</h3>
-                
-                <div className="grid gap-1.5">
-                  <label htmlFor="name" className="text-xs font-medium text-gray-500">Nama Lengkap</label>
-                  <input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    className="w-full h-9 px-3 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all text-gray-700"
-                  />
-                </div>
-                
-                <div className="grid gap-1.5">
-                  <label htmlFor="username" className="text-xs font-medium text-gray-500">Username</label>
-                  <input
-                    id="username"
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                    className="w-full h-9 px-3 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all text-gray-700"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="pb-2 border-b border-gray-100 flex items-center gap-2">
-                  <Lock size={14} className="text-gray-400" />
-                  <h3 className="text-sm font-medium text-gray-700">Keamanan (Opsional)</h3>
-                </div>
-                <p className="text-xs text-gray-400 -mt-2">Biarkan kosong jika tidak ingin mengubah password.</p>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="grid gap-1.5">
-                    <label htmlFor="password" className="text-xs font-medium text-gray-500">Password Baru</label>
-                    <input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      autoComplete="new-password"
-                      className="w-full h-9 px-3 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all text-gray-700"
+                {/* Avatar Column */}
+                <div className="flex flex-col items-center">
+                  <div className="relative group">
+                    <div className="w-32 h-32 rounded-2xl bg-slate-50 flex items-center justify-center overflow-hidden border-2 border-slate-100 group-hover:border-green-100 transition-colors shadow-inner">
+                      {photoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={photoUrl} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <User size={48} className="text-slate-200" />
+                      )}
+                    </div>
+                    
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute -bottom-2 -right-2 w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-xl flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95 border-4 border-white"
+                      title="Ubah Foto"
+                    >
+                      <Camera size={18} />
+                    </button>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handlePhotoChange} 
+                      accept="image/jpeg, image/png, image/webp" 
+                      className="hidden" 
                     />
                   </div>
-                  
-                  <div className="grid gap-1.5">
-                    <label htmlFor="confirmPassword" className="text-xs font-medium text-gray-500">Konfirmasi Password</label>
-                    <input
-                      id="confirmPassword"
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="••••••••"
-                      autoComplete="new-password"
-                      className="w-full h-9 px-3 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500 transition-all text-gray-700"
-                    />
+                  <div className="mt-6 text-center">
+                    <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Foto Profil</p>
+                    <p className="text-[10px] text-gray-400 mt-1">JPEG/PNG, Max 2MB</p>
+                  </div>
+                </div>
+
+                {/* Form Column */}
+                <div className="space-y-8">
+                  {message && (
+                    <div className={`p-4 rounded-xl flex items-start gap-3 text-sm border animate-in slide-in-from-top-2 duration-300 ${
+                      message.type === 'success' 
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
+                        : 'bg-red-50 text-red-700 border-red-100'
+                    }`}>
+                      {message.type === 'success' ? (
+                        <CheckCircle2 size={18} className="shrink-0 mt-0.5" />
+                      ) : (
+                        <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                      )}
+                      <span className="font-medium text-[13px]">{message.text}</span>
+                    </div>
+                  )}
+
+                  <div className="grid gap-8">
+                    {/* Basic Info */}
+                    <div className="space-y-5">
+                      <div className="flex items-center gap-2 pb-2 border-b border-gray-50">
+                        <User size={14} className="text-gray-400" />
+                        <h3 className="text-[12px] font-extrabold text-gray-700 uppercase tracking-wider">Informasi Dasar</h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div className="grid gap-2">
+                          <label htmlFor="name" className="text-[11px] font-bold text-gray-400 ml-1 uppercase tracking-tight">Nama Lengkap</label>
+                          <input
+                            id="name"
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            required
+                            placeholder="Administrator"
+                            className="w-full h-11 px-4 bg-slate-50/30 border border-gray-200 rounded-xl text-[13px] font-medium focus:outline-none focus:ring-2 focus:ring-green-500/10 focus:border-green-500 focus:bg-white transition-all text-gray-700 placeholder:text-gray-300"
+                          />
+                        </div>
+                        
+                        <div className="grid gap-2">
+                          <label htmlFor="username" className="text-[11px] font-bold text-gray-400 ml-1 uppercase tracking-tight">Username</label>
+                          <input
+                            id="username"
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            required
+                            placeholder="admin"
+                            className="w-full h-11 px-4 bg-slate-50/30 border border-gray-200 rounded-xl text-[13px] font-medium focus:outline-none focus:ring-2 focus:ring-green-500/10 focus:border-green-500 focus:bg-white transition-all text-gray-700 placeholder:text-gray-300"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Security */}
+                    <div className="space-y-5">
+                      <div className="flex items-center gap-2 pb-2 border-b border-gray-50">
+                        <Lock size={14} className="text-gray-400" />
+                        <h3 className="text-[12px] font-extrabold text-gray-700 uppercase tracking-wider">Keamanan Akun</h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div className="grid gap-2">
+                          <label htmlFor="password" className="text-[11px] font-bold text-gray-400 ml-1 uppercase tracking-tight">Password Baru (Opsional)</label>
+                          <input
+                            id="password"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="••••••••"
+                            autoComplete="new-password"
+                            className="w-full h-11 px-4 bg-slate-50/30 border border-gray-200 rounded-xl text-[13px] font-medium focus:outline-none focus:ring-2 focus:ring-green-500/10 focus:border-green-500 focus:bg-white transition-all text-gray-700 placeholder:text-gray-300"
+                          />
+                        </div>
+                        
+                        <div className="grid gap-2">
+                          <label htmlFor="confirmPassword" className="text-[11px] font-bold text-gray-400 ml-1 uppercase tracking-tight">Konfirmasi Password</label>
+                          <input
+                            id="confirmPassword"
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="••••••••"
+                            autoComplete="new-password"
+                            className="w-full h-11 px-4 bg-slate-50/30 border border-gray-200 rounded-xl text-[13px] font-medium focus:outline-none focus:ring-2 focus:ring-green-500/10 focus:border-green-500 focus:bg-white transition-all text-gray-700 placeholder:text-gray-300"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-
-              <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-50">
-                <button
-                  type="button"
-                  onClick={() => router.back()}
-                  className="text-sm text-gray-500 hover:text-gray-700 bg-white border border-gray-200 px-4 py-2 rounded-lg transition-colors font-medium"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="text-sm bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-all disabled:opacity-70 disabled:cursor-not-allowed font-medium shadow-sm"
-                >
-                  {isLoading ? (
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <Save size={16} />
-                  )}
-                  <span>Simpan Perubahan</span>
-                </button>
-              </div>
             </div>
-          </div>
-        </form>
+
+            {/* Sticky Actions Footer */}
+            <div className="bg-slate-50/50 border-t border-gray-100 p-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="h-11 px-6 text-[13px] font-bold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all active:scale-95"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="h-11 px-8 text-[13px] bg-green-500 hover:bg-green-600 text-white rounded-xl flex items-center gap-2.5 transition-all hover:shadow-lg hover:shadow-green-500/20 active:scale-[0.95] disabled:opacity-70 disabled:cursor-not-allowed font-bold"
+              >
+                {isLoading ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Save size={18} />
+                )}
+                <span>Simpan Perubahan</span>
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

@@ -1,36 +1,34 @@
-# AI Session Summary - SIKKA Redesign & Auth Fix
+# Ringkasan Sesi AI (10 Maret 2026)
 
-**Tanggal**: 09 Maret 2026
-**Fokus**: Redesign Halaman Kelola User, Dashboard, dan Perbaikan Login
+Sesi ini berfokus pada penyempurnaan fitur **Pencatatan Kesalahan (Records)**, peningkatan **ketangguhan API**, dan **optimasi performa** pada lingkungan produksi (Vercel + Turso).
 
-## Perubahan Signifikan
+## ✅ Pencapaian Utama
 
-### 1. Fix Authentication (Login Issue)
-- **Problem**: Gagal login karena mismatch hash password admin default.
-- **Solution**: Sinkronisasi hash password `admin123` di `src/lib/schema.ts` dan pembaruan database via script perbaikan.
-- **Commit**: `fix: Sinkronisasi hash password admin default di schema`
+### 1. Penyempurnaan Formulir (RecordsForm.tsx)
+- **Tampilan Tombol**: Tombol "Simpan" dan "Batal" dibuat berjajar (jejer 2) saat mode edit untuk estetika yang lebih baik.
+- **Restorasi Draft**: Memperbaiki logika pemulihan draft agar tidak menimpa data baru saat berpindah hari.
+- **Fix Timezone**: Menggunakan penanggalan lokal agar perpindahan hari (jam 00:00 - 07:00 WIB) tidak menyebabkan data tersimpan di tanggal kemarin.
+- **Manual Mode**: Menjamin harga tidak ter-reset saat berpindah ke mode input manual setelah refresh.
 
-### 2. Redesign Halaman "Kelola User" (Exact Match)
-- **Visual DNA**: Menggunakan background putih bersih (`#ffffff`), bukan abu-abu.
-- **Header**: Judul dengan garis hijau tipis (3px) dan padding kiri 12px. Subtitle selaras di bawah judul.
-- **Stat Cards**: 3 kartu compact (100px) dengan ikon di kiri, value di atas, dan label di bawah (Sentence case).
-- **Table**: Row height compact (~40px), header Uppercase Bold Muted, zebra pattern (#f9fafb).
+### 2. Penguatan API & Database
+- **API PUT (Edit)**: Sekarang sudah setangguh API POST (Tambah). Menambah deteksi otomatis pencatat (recorder) dari session jika data dari form kosong.
+- **NaN Protection**: Menambah validasi angka untuk mencegah error "NaN" saat menyimpan data ke SQLite/Turso.
+- **Multi-Format Support**: API sekarang mendukung input dalam format JSON maupun Form-Data.
 
-### 3. Redesign Dashboard & Global Sync
-- **Dashboard**: Header dan kartu statistik diselaraskan dengan gaya baru (compact & clean).
-- **Activity Table**: Redesign header dan spacing baris agar konsisten secara universal.
-- **Global Background**: Penerapan `bg-white` pada root container Dashboard, Users, dan Sales untuk keseragaman visual 100%.
-- **Commit**: `style: Redesign Dashboard dan Kelola User serta sinkronisasi visual global`
+### 3. Optimasi Performa (Production)
+- **Streaming & Suspense**: Implementasi `loading.tsx` dan `Suspense` pada Dashboard dan Records agar shell aplikasi muncul instan sambil menunggu data Turso.
+- **Server Caching**: Menggunakan React `cache()` pada `actions.ts` untuk mengurangi round-trip ke database (Turso) dalam satu siklus render.
+- **Skeleton UI**: Menambah animasi loading (skeleton) yang profesional untuk meningkatkan *perceived performance*.
 
-## Status Progres (task.md)
-- [x] Fix Login Issue (Admin Password Hash)
-- [x] Redesign Kelola User Page (Exact Match with Sales Report)
-- [x] Redesign Dashboard Page
-- [x] Global Visual Sync (White Background & Clean Accents)
+## 🛠️ Status Teknis Terakhir
+- **Branch**: `master`
+- **File Penting yang Diubah**:
+  - `src/components/RecordsForm.tsx` (Logic & UI)
+  - `src/app/api/infractions/[id]/route.ts` (Robustness)
+  - `src/lib/actions.ts` (Caching)
+  - `src/app/page.tsx` & `src/app/records/page.tsx` (Streaming)
 
-## Instruksi untuk Sesi Berikutnya
-1. **Git Push**: Lakukan `git push origin master` secara manual jika terjadi kendala kredensial otomatis (perubahan sudah di-commit secara lokal).
-2. **Verification**: Periksa konsistensi visual pada perangkat dengan resolusi layar yang berbeda.
-3. **Double-check**: Pastikan tidak ada regresi pada fitur edit/hapus user setelah redesign.
-
-**Catatan**: Git identity telah dikonfigurasi secara lokal sebagai `nauval131922`.
+## 📌 Catatan untuk Sesi Berikutnya
+- Performa di Vercel sudah jauh lebih lancar dengan Skeleton UI.
+- Fitur Edit Infraction sudah stabil terhadap data kosong (null/NaN).
+- Jika ada penambahan data baru, pastikan menggunakan `cache()` di `actions.ts` jika data tersebut sering diakses di banyak komponen.

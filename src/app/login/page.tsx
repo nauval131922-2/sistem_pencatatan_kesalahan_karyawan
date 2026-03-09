@@ -39,7 +39,7 @@ export default function LoginPage() {
       <div className="w-full max-w-[340px]">
         {/* Logo/Brand Header */}
         <div className="text-center mb-6 flex flex-col items-center">
-          <div className="inline-flex items-center justify-center mb-3">
+          <div className="inline-flex items-center justify-center mb-6">
             <Image
               src={logoPic}
               alt="SIKKA Logo"
@@ -49,7 +49,7 @@ export default function LoginPage() {
           </div>
           <div className="text-center px-4">
             <h1 className="text-xl font-extrabold text-gray-800 tracking-tight leading-none">SIKKA Login</h1>
-            <p className="text-[11px] text-gray-400 font-semibold mt-1.5 uppercase tracking-wide">
+            <p className="text-[11px] text-gray-400 font-semibold mt-3 uppercase tracking-wide">
               Sistem Pencatatan Kesalahan Karyawan
             </p>
           </div>

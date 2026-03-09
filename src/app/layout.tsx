@@ -24,12 +24,26 @@ export default async function RootLayout({
 }>) {
   const session = await getSession();
   
+  // Fetch latest user data (photo) directly from DB to avoid session size limits
+  let userPhoto = null;
+  if (session?.userId) {
+    try {
+      const result = await (await import("@/lib/db")).default.execute({
+        sql: 'SELECT photo FROM users WHERE id = ?',
+        args: [session.userId]
+      });
+      userPhoto = result.rows[0]?.photo as string | null;
+    } catch (e) {
+      console.error("Failed to fetch user photo for layout", e);
+    }
+  }
+  
   // Format user data if session exists
   const user = session ? {
     name: session.name,
     username: session.username,
     role: session.role,
-    photo: session.photo,
+    photo: userPhoto || session.photo, // Prioritize fresh photo from DB
   } : null;
 
   return (
