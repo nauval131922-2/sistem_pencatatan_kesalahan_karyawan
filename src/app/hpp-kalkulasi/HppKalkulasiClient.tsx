@@ -132,25 +132,29 @@ export default function HppKalkulasiClient() {
   };
 
   return (
-    <div className="h-full flex flex-col gap-4">
-      {/* Upload Panel */}
-      <div className="bg-white border border-gray-100 shadow-sm rounded-xl px-5 py-4 relative overflow-hidden shrink-0">
-        <div className="absolute right-0 top-0 -mt-8 -mr-8 opacity-[0.03] pointer-events-none text-gray-400">
-           <FileSpreadsheet size={160} />
-        </div>
-        
-        <div className="flex flex-col md:flex-row gap-6 items-center justify-between relative z-10">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h3 className="text-sm font-semibold text-gray-700">
+    <div className="flex-1 min-h-0 flex flex-col gap-5 overflow-hidden">
+      {/* Upload Panel - Compact 1 Row */}
+      <div className="shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] px-5 py-3.5 flex items-center justify-between gap-6 relative overflow-hidden">
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 -mr-12 opacity-[0.02] pointer-events-none text-gray-900 group-hover:opacity-[0.04] transition-opacity">
+             <FileSpreadsheet size={140} />
+          </div>
+          
+          <div className="flex items-center gap-5 flex-1 relative z-10">
+            <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center shrink-0 border border-green-100/50">
+              <Upload size={18} className="text-green-600" />
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <h3 className="text-[14px] font-extrabold text-gray-800 tracking-tight">
                 Upload Data HPP Kalkulasi
               </h3>
+              <p className="text-[11px] text-gray-400 font-medium leading-tight max-w-xl">
+                Unggah file Excel yang berisi Data HPP Kalkulasi. Data yang lama akan dihapus dan digantikan seluruhnya oleh data dari file baru.
+              </p>
             </div>
-            <p className="text-xs text-gray-400 leading-relaxed max-w-2xl">
-              Unggah file Excel yang berisi Data HPP Kalkulasi. Data yang lama akan dihapus dan digantikan seluruhnya oleh data dari file baru.
-            </p>
           </div>
-          <div className="w-full md:w-auto shrink-0 flex flex-col gap-2">
+
+          <div className="shrink-0 relative z-10">
             <input 
               type="file" 
               accept=".xlsx, .xls, .xlsm"
@@ -161,17 +165,20 @@ export default function HppKalkulasiClient() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="w-full relative px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg shadow-sm transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed group overflow-hidden text-sm"
+              className="px-5 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-lg transition-all flex items-center justify-center gap-2.5 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm active:scale-[0.98] group"
             >
-              {uploading && <Loader2 size={16} className="animate-spin" />}
-              {!uploading && <FileSpreadsheet size={16} className="group-hover:scale-110 transition-transform" />}
+              {uploading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <FileSpreadsheet size={16} className="group-hover:translate-y-[-1px] transition-transform" />
+              )}
               <span>{uploading ? 'Mengunggah...' : 'Pilih & Upload File'}</span>
             </button>
           </div>
         </div>
 
         {error && (
-          <div className="mt-4 p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm flex items-start gap-2 animate-in fade-in">
+          <div className="mt-3 p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm flex items-start gap-2 animate-in fade-in shrink-0 font-semibold">
             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
             <p>{error}</p>
           </div>
@@ -180,98 +187,118 @@ export default function HppKalkulasiClient() {
 
       <ConfirmDialog 
         isOpen={dialog.isOpen}
-        type={dialog.type}
+        type={dialog.type as any}
         title={dialog.title}
         message={dialog.message}
         onConfirm={() => setDialog(prev => ({ ...prev, isOpen: false }))}
       />
 
       {/* Results View */}
-      {data === null && loading && (
-        <div className="bg-white border border-gray-100 shadow-sm rounded-xl py-24 text-center flex flex-col items-center justify-center shrink-0">
-          <Loader2 size={48} className="mb-4 opacity-20 text-green-600 animate-spin" />
-          <p className="font-medium text-gray-600">Sedang memuat data...</p>
-        </div>
-      )}
-
-      {data !== null && data.length === 0 && !loading && (
-        <div className="bg-white border border-gray-100 shadow-sm rounded-xl py-20 text-center flex flex-col items-center justify-center shrink-0">
-          <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-            <Calculator className="text-gray-100" size={32} />
-          </div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-1">Belum ada data HPP yang diunggah</h3>
-          <p className="text-xs text-gray-400 max-w-[240px] mx-auto leading-relaxed">
-            Gunakan tombol upload di atas untuk memasukkan data dari Excel.
-          </p>
-        </div>
-      )}
-
-      {data !== null && data.length > 0 && (
-        <div className="flex-1 min-h-0 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 shrink-0">
-            <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                Data HPP Kalkulasi
-            </h3>
-            
-            <div className="relative w-full sm:w-64">
-              <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Cari berdasarkan nama order..." 
-                className="w-full pr-10 pl-4 h-9 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-sm"
-                value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setVisibleCount(PAGE_SIZE); }}
-              />
+      <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
+        {data === null && loading ? (
+          <div className="flex-1 bg-white border border-gray-100 rounded-[10px] flex flex-col items-center justify-center text-center p-10">
+            <Loader2 size={40} className="text-green-500 animate-spin mb-4" />
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-gray-800">Menghubungkan ke Server...</p>
+              <p className="text-xs text-gray-400">Mohon tunggu sebentar, kami sedang menyiapkan data.</p>
             </div>
           </div>
+        ) : data !== null && data.length === 0 && !loading ? (
+          <div className="flex-1 bg-white border border-gray-200 rounded-[10px] flex flex-col items-center justify-center text-center p-20 shadow-sm border-dashed">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-5">
+              <Calculator className="text-gray-200" size={32} />
+            </div>
+            <h3 className="text-sm font-bold text-gray-800 mb-2">Belum ada data HPP yang diunggah</h3>
+            <p className="text-[12px] text-gray-400 max-w-[260px] mx-auto leading-relaxed font-medium">
+              Gunakan tombol upload di atas untuk memasukkan data dari Excel.
+            </p>
+          </div>
+        ) : data !== null && data.length > 0 && (
+          <>
+            {/* Section Title & Search */}
+            <div className="flex flex-col gap-4 shrink-0">
+               <div className="flex items-center justify-between">
+                <h3 className="text-[15px] font-extrabold text-gray-800 flex items-center gap-2">
+                    <Calculator size={18} className="text-green-600" />
+                    <span>Data HPP Kalkulasi</span>
+                </h3>
+                {lastUpdated && (
+                  <div className="flex items-center gap-1.5 text-[12px] text-gray-400 font-medium">
+                    <Clock size={14} className="text-gray-300" />
+                    <span>Sinkronisasi: {lastUpdated}</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="relative w-full group">
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+                <input 
+                  type="text" 
+                  placeholder="Cari berdasarkan nama order..." 
+                  className="w-full pl-11 pr-4 h-10 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-medium placeholder:text-gray-300 shadow-sm"
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setVisibleCount(PAGE_SIZE); }}
+                />
+              </div>
+            </div>
 
-          <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-0 overflow-hidden flex-1 flex flex-col min-h-0">
-            <div className="flex-1 overflow-auto custom-scrollbar relative" onScroll={handleScroll}>
-              <table className="w-full text-left relative min-w-[500px]">
-                <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-sm">
-                  <tr className="text-[11px] uppercase tracking-wider text-gray-400 font-medium border-b border-gray-100">
-                    <th className="px-5 py-3 w-16 text-center">No</th>
-                    <th className="px-5 py-3">Nama Order</th>
-                    <th className="px-5 py-3 text-right">HPP Kalkulasi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {paginatedData.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} className="py-12 text-center text-gray-400 italic text-sm">
-                        Data "{searchQuery}" tidak ditemukan.
-                      </td>
+            <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] overflow-hidden flex-1 flex flex-col min-h-0 relative">
+              <div className="overflow-auto custom-scrollbar flex-1 min-h-0" onScroll={handleScroll}>
+                <table className="w-full text-left relative border-collapse">
+                  <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
+                    <tr className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
+                      <th className="px-5 py-3.5 w-16 text-center">No.</th>
+                      <th className="px-5 py-3.5">Nama Order</th>
+                      <th className="px-5 py-3.5 text-right w-[180px]">HPP Kalkulasi</th>
                     </tr>
-                  ) : (
-                    paginatedData.map((row, idx) => (
-                      <tr key={row.id} className="hover:bg-gray-50 transition-colors group">
-                        <td className="px-5 py-3 text-gray-400 text-center text-xs w-10">
-                          {idx + 1}
-                        </td>
-                        <td className="px-5 py-3 font-medium text-gray-700 text-sm">
-                           <div className="truncate max-w-md" title={row.nama_order}>{row.nama_order}</div>
-                        </td>
-                        <td className="px-5 py-3 font-medium text-gray-700 text-right whitespace-nowrap text-sm">
-                          {row.hpp_kalkulasi.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {paginatedData.length === 0 ? (
+                      <tr>
+                        <td colSpan={3} className="py-20 text-center">
+                          <div className="flex flex-col items-center justify-center gap-2">
+                             <Search className="text-gray-100 mb-2" size={40} />
+                             <p className="text-[13px] font-bold text-gray-400 italic">Data "{searchQuery}" tidak ditemukan.</p>
+                          </div>
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      paginatedData.map((row, idx) => (
+                        <tr key={row.id} className="hover:bg-green-50/30 transition-colors even:bg-[#f9fafb] group h-10">
+                          <td className="px-5 py-1 text-gray-400 text-center font-bold text-[11px] tabular-nums">
+                            {idx + 1}
+                          </td>
+                          <td className="px-5 py-1 font-bold text-gray-700 text-[13px]">
+                             <div className="truncate max-w-2xl xl:max-w-4xl" title={row.nama_order}>{row.nama_order}</div>
+                          </td>
+                          <td className="px-5 py-1 font-extrabold text-gray-800 text-right whitespace-nowrap text-[13px] tabular-nums">
+                            {row.hpp_kalkulasi.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' })}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
             
-            {/* Footer info Banner within Card Bottom */}
-            <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between text-xs text-gray-400 shrink-0">
-             <span className="font-medium">
-               {filteredData.length === 0
-                 ? 'Tidak ada data'
-                 : `Menampilkan ${paginatedData.length} dari ${filteredData.length} data kalkulasi`}
-             </span>
-           </div>
-          </div>
-        </div>
-      )}
+            {/* Footer info Banner outside the card for consistency */}
+            <div className="flex items-center justify-between shrink-0">
+              <span className="text-[12px] font-bold text-gray-400">
+                 {filteredData.length === 0
+                   ? 'Tidak ada data'
+                   : `Menampilkan ${paginatedData.length} dari ${filteredData.length} data kalkulasi`}
+              </span>
+              {loading && visibleCount < filteredData.length && (
+                <div className="flex items-center gap-2 text-green-600 font-bold text-[11px] animate-pulse">
+                  <Loader2 size={12} className="animate-spin" />
+                  <span>Memuat hal. berikutnya...</span>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

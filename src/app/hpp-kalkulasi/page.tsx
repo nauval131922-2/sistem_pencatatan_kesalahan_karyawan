@@ -35,28 +35,27 @@ export default async function HppKalkulasiPage() {
     } catch(e) {}
   }
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
-      <header className="flex justify-between items-start shrink-0">
-        <div>
-          <div className="border-l-4 border-green-500 pl-4 flex items-center gap-2">
-            <h1 className="text-xl font-semibold text-gray-800 leading-tight">HPP Kalkulasi</h1>
-            <HelpButton />
-          </div>
-          <p className="text-sm text-gray-400 mt-0.5 pl-4">Upload data HPP Kalkulasi dari file Excel.</p>
-          
-          {importFileName && (
-            <div className="flex items-center gap-3 mt-2 pl-4">
-              <div className="flex items-center gap-1.5 bg-gray-50 text-gray-600 border border-gray-200 text-xs px-2 py-1 rounded-md shadow-sm">
-                <FileSpreadsheet size={10} className="text-gray-400" />
-                <span className="max-w-[120px] truncate" title={importFileName}>{importFileName}</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-slate-400">
-                <Clock size={10} className="opacity-70" />
-                Diperbarui: {importTime}
-              </div>
-            </div>
-          )}
+    <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden">
+      <header className="flex flex-col shrink-0">
+        <div className="flex items-center gap-3 border-l-4 border-green-500 pl-4">
+          <h1 className="text-[22px] font-extrabold text-gray-800 tracking-tight leading-none">HPP Kalkulasi</h1>
+          <HelpButton />
         </div>
+        <p className="text-[13px] text-gray-400 font-medium pl-5 mt-2">Upload data HPP Kalkulasi dari file Excel.</p>
+        
+        {importFileName && (
+          <div className="flex items-center gap-2.5 mt-3 pl-5">
+            <div className="flex items-center gap-2 bg-white border border-gray-200 px-2.5 py-1.5 rounded-lg shadow-sm">
+              <FileSpreadsheet size={14} className="text-green-600" />
+              <span className="text-[12px] font-bold text-gray-600 max-w-[200px] truncate" title={importFileName}>{importFileName}</span>
+            </div>
+            <div className="w-px h-4 bg-gray-200 mx-1"></div>
+            <div className="flex items-center gap-2 text-[12px] text-gray-400 font-medium font-mono">
+              <Clock size={14} className="text-gray-300" />
+              <span>Diperbarui: {importTime}</span>
+            </div>
+          </div>
+        )}
       </header>
 
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
