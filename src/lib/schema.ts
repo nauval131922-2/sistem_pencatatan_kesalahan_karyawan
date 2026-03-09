@@ -289,7 +289,7 @@ export async function initSchema(db: any) {
   const userCount = await db.execute("SELECT COUNT(*) as count FROM users");
   if (userCount.rows[0].count === 0 || userCount.rows[0].count === BigInt(0)) {
     // Hash for 'admin123' generated with bcryptjs
-    const defaultPasswordHash = "$2a$10$wYvQ4Q0eZ7.G0LQXlDZb1eW1vJ/l78hB/hNlA1JtWvQ9MOMj/Q4J.";
+    const defaultPasswordHash = "$2b$10$HLZeYWR0DjrRN0Dlk/IxGOIbONTF/wup2YJv8TwApJeRbYQ8K7s3.";
     await db.execute({
       sql: `INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?)`,
       args: ['admin', defaultPasswordHash, 'Administrator', 'Super Admin']
