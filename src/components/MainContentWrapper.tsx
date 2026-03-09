@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { usePathname } from 'next/navigation';
 import Sidebar from "./Sidebar";
-import Header from "./Header";
 
 interface MainContentWrapperProps {
   children: React.ReactNode;
@@ -43,10 +42,9 @@ export default function MainContentWrapper({
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
-      <Sidebar userRole={user?.role} />
+      <Sidebar user={user} />
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        <Header user={user} />
-        <main className="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar bg-slate-50 px-6 md:px-8 py-6">
+        <main className="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar bg-slate-50 px-6 md:px-8 py-8">
           {children}
         </main>
       </div>

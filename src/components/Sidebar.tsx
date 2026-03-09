@@ -1,214 +1,272 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Users, AlertCircle, Package, ChevronLeft, ChevronRight, Box, Star, Calculator, ChevronDown, Database, BarChart3, ShieldCheck } from 'lucide-react';
+import { 
+  LayoutDashboard, 
+  Users, 
+  AlertCircle, 
+  Package, 
+  ChevronLeft, 
+  ChevronRight, 
+  Box, 
+  Star, 
+  Calculator, 
+  BarChart2, 
+  ShieldCheck, 
+  LogOut, 
+  Settings,
+  ShoppingCart,
+  UserCog
+} from 'lucide-react';
+import Image from 'next/image';
+import logoPic from '../../public/icon.png';
 
 interface SidebarProps {
-  userRole?: string;
+  user: {
+    name: string;
+    username: string;
+    role?: string;
+    photo?: string | null;
+  } | null;
 }
 
-export default function Sidebar({ userRole }: SidebarProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMasterOpen, setIsMasterOpen] = useState(true);
+export default function Sidebar({ user }: SidebarProps) {
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const pathname = usePathname();
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  // Effectively expanded if NOT collapsed OR being hovered
+  const isExpanded = !isCollapsed || isHovered;
 
   // Load from localStorage on mount
   useEffect(() => {
     setIsMounted(true);
-    const saved = localStorage.getItem('sidebar_collapsed');
-    if (saved !== null) {
-      setIsCollapsed(saved === 'true');
+    const savedCollapsed = localStorage.getItem('sidebar_collapsed');
+    if (savedCollapsed !== null) {
+      setIsCollapsed(savedCollapsed === 'true');
     }
   }, []);
 
-  // Sync with layout via event or shared state if needed, 
-  // and save to localStorage
-  // but for now we'll use a custom event to notify layout
+  // Save to localStorage
   useEffect(() => {
-    localStorage.setItem('sidebar_collapsed', String(isCollapsed));
-    const event = new CustomEvent('sidebar-toggle', { detail: { isCollapsed } });
-    window.dispatchEvent(event);
-  }, [isCollapsed]);
+    if (isMounted) {
+      localStorage.setItem('sidebar_collapsed', String(isCollapsed));
+      const event = new CustomEvent('sidebar-toggle', { detail: { isCollapsed } });
+      window.dispatchEvent(event);
+    }
+  }, [isCollapsed, isMounted]);
 
-  const topMenus = [
-    { name: 'Dashboard', icon: Home, href: '/' },
-  ];
+  // Click outside to close profile dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-  const masterMenus = [
-    { name: 'Karyawan', icon: Users, href: '/employees' },
-    { name: 'Order Produksi', icon: Package, href: '/orders' },
-    { name: 'Bahan Baku', icon: Box, href: '/bahan-baku' },
-    { name: 'Barang Jadi', icon: Star, href: '/barang-jadi' },
-    { name: 'Laporan Penjualan', icon: BarChart3, href: '/sales' },
-    { name: 'HPP Kalkulasi', icon: Calculator, href: '/hpp-kalkulasi' },
-  ];
+  const handleLogout = async () => {
+    const { logout } = await import('@/lib/auth');
+    await logout();
+    window.location.href = '/login';
+  };
 
-  if (userRole === 'Super Admin') {
-    masterMenus.push({ name: 'Kelola User', icon: ShieldCheck, href: '/users' });
-  }
+  const checkIsActive = (href: string) => {
+    if (!pathname) return false;
+    if (href === '/') return pathname === '/';
+    return pathname.startsWith(href);
+  };
 
-  const bottomMenus = [
-    { name: 'Catat Kesalahan', icon: AlertCircle, href: '/records' },
-  ];
+  const navItemClasses = (href: string) => {
+    const isActive = checkIsActive(href);
+    return `
+      group flex items-center gap-3 px-3 h-9 rounded-md transition-all text-[13px] font-medium
+      ${!isExpanded ? 'justify-center px-0 w-9 mx-auto' : 'w-full'}
+      ${isActive 
+        ? 'bg-[#16a34a] text-white shadow-sm' 
+        : 'text-gray-500 hover:bg-[#f0fdf4] hover:text-[#16a34a]'}
+    `;
+  };
+
+  const iconSize = 16;
 
   return (
     <aside 
-      className={`h-screen glass border-r border-slate-200 shrink-0 ${isMounted ? 'transition-all duration-300 ease-in-out' : ''} ${
-        isCollapsed ? 'w-[80px]' : 'w-[210px]'
+      onMouseEnter={() => isCollapsed && setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`h-screen bg-white border-r border-gray-100 shrink-0 flex flex-col z-30 transition-all duration-300 ease-in-out ${
+        !isExpanded ? 'w-16' : 'w-[220px]'
       }`}
     >
-      <div className={`p-4 ${isMounted ? 'transition-all duration-300' : ''} ${isCollapsed ? 'px-3 text-center' : 'px-4'}`}>
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
-          {!isCollapsed && (
-            <h1 
-              className="text-lg font-bold gradient-text whitespace-nowrap overflow-hidden cursor-help"
-              title="Sistem Informasi Pencatatan Kesalahan Karyawan"
-            >
-              SIKKA
-            </h1>
+      {/* Header Section */}
+      <div className={`p-4 relative ${!isExpanded ? 'text-center' : ''}`}>
+        <div className={`flex items-center ${!isExpanded ? 'justify-center' : 'justify-between'}`}>
+          {isExpanded ? (
+            <div className="flex items-center gap-3 overflow-hidden">
+              <div className="w-8 h-8 rounded-lg overflow-hidden shadow-sm ring-1 ring-black/5 shrink-0">
+                <Image src={logoPic} alt="SIKKA" className="w-full h-full object-contain" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-sm font-bold text-gray-800 tracking-tight leading-none truncate">SIKKA</h1>
+                <p className="text-[10px] text-gray-400 font-medium mt-0.5 whitespace-nowrap truncate">Pt. Buya Barokah</p>
+              </div>
+            </div>
+          ) : (
+            <div className="w-8 h-8 rounded-lg overflow-hidden shadow-sm ring-1 ring-black/5 mx-auto">
+               <Image src={logoPic} alt="SIKKA" className="w-full h-full object-contain" />
+            </div>
           )}
           <button 
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className={`p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-emerald-600 transition-colors ${isCollapsed ? '' : 'ml-auto'}`}
-            title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+            onClick={() => {
+              setIsCollapsed(!isCollapsed);
+              setIsHovered(false); // Reset hover state when toggling
+            }}
+            className={`absolute -right-3 top-7 w-6 h-6 bg-white border border-gray-100 rounded-full flex items-center justify-center text-gray-400 hover:text-green-600 shadow-sm z-10 transition-colors ${
+              !isExpanded && isCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100'
+            }`}
           >
-            {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            {isCollapsed ? <ChevronRight size={10} /> : <ChevronLeft size={10} />}
           </button>
         </div>
-        {!isCollapsed && (
-          <div className="mt-2 space-y-1">
-            <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold italic">PT. Buya Barokah</p>
-            <span className="inline-block text-[9px] font-semibold uppercase tracking-wide bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 rounded px-1.5 py-0.5">
+        
+        {isExpanded && (
+          <div className="mt-4 animate-in fade-in duration-300">
+            <span className="inline-block text-[9px] font-bold text-[#16a34a] uppercase tracking-wider px-1.5 py-0.5 rounded border border-[#16a34a]/30 bg-transparent">
               Div. Percetakan
             </span>
           </div>
         )}
       </div>
 
-      <nav className="mt-2 px-3 overflow-y-auto h-[calc(100vh-80px)] custom-scrollbar pb-10">
-        <ul className="space-y-1">
-          {/* Top Menus */}
-          {topMenus.map((item) => (
-            <li key={item.name}>
-              <Link
-                href={item.href}
-                className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group text-sm ${
-                  isCollapsed ? 'justify-center px-0 py-3' : ''
-                } ${
-                  pathname === item.href
-                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-500/20'
-                    : 'text-slate-500 hover:bg-emerald-50 hover:text-emerald-600'
-                }`}
-                title={isCollapsed ? item.name : undefined}
-              >
-                {!isCollapsed && pathname === item.href && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-white/50 rounded-r-full" />
-                )}
-                <item.icon
-                  size={18}
-                  className={`shrink-0 ${
-                    pathname === item.href ? 'text-white' : 'group-hover:text-emerald-600'
-                  }`}
-                />
-                {!isCollapsed && (
-                  <span className="font-medium whitespace-nowrap">{item.name}</span>
-                )}
+      {/* Navigation section */}
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden pt-2 px-3 space-y-6 custom-scrollbar">
+        {/* Main Section */}
+        <div className="space-y-1">
+          <Link href="/" className={navItemClasses('/')} title={!isExpanded ? "Dashboard" : undefined}>
+            <LayoutDashboard size={iconSize} className="shrink-0" />
+            {isExpanded && <span className="truncate">Dashboard</span>}
+          </Link>
+        </div>
+
+        {/* Data Master Section */}
+        <div className="space-y-1">
+          {!isExpanded ? (
+             <div className="h-px bg-gray-100 mx-2 my-4" />
+          ) : (
+            <h2 className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-[0.05em] mb-2 truncate">Data Master</h2>
+          )}
+          <div className="space-y-1">
+            <Link href="/employees" className={navItemClasses('/employees')} title={!isExpanded ? "Karyawan" : undefined}>
+              <Users size={iconSize} className="shrink-0" />
+              {isExpanded && <span className="truncate">Karyawan</span>}
+            </Link>
+            <Link href="/orders" className={navItemClasses('/orders')} title={!isExpanded ? "Order Produksi" : undefined}>
+              <ShoppingCart size={iconSize} className="shrink-0" />
+              {isExpanded && <span className="truncate">Order Produksi</span>}
+            </Link>
+            <Link href="/bahan-baku" className={navItemClasses('/bahan-baku')} title={!isExpanded ? "Bahan Baku" : undefined}>
+              <Package size={iconSize} className="shrink-0" />
+              {isExpanded && <span className="truncate">Bahan Baku</span>}
+            </Link>
+            <Link href="/barang-jadi" className={navItemClasses('/barang-jadi')} title={!isExpanded ? "Barang Jadi" : undefined}>
+              <Box size={iconSize} className="shrink-0" />
+              {isExpanded && <span className="truncate">Barang Jadi</span>}
+            </Link>
+            <Link href="/sales" className={navItemClasses('/sales')} title={!isExpanded ? "Laporan Penjualan" : undefined}>
+              <BarChart2 size={iconSize} className="shrink-0" />
+              {isExpanded && <span className="truncate">Laporan Penjualan</span>}
+            </Link>
+            <Link href="/hpp-kalkulasi" className={navItemClasses('/hpp-kalkulasi')} title={!isExpanded ? "HPP Kalkulasi" : undefined}>
+              <Calculator size={iconSize} className="shrink-0" />
+              {isExpanded && <span className="truncate">HPP Kalkulasi</span>}
+            </Link>
+          </div>
+        </div>
+
+        {/* System & Records Section */}
+        <div className="space-y-1">
+          <div className="h-px bg-gray-100 mx-2 my-4" />
+          
+          <Link href="/records" className={navItemClasses('/records')} title={!isExpanded ? "Catat Kesalahan" : undefined}>
+            <AlertCircle size={iconSize} className="shrink-0" />
+            {isExpanded && <span className="truncate">Catat Kesalahan</span>}
+          </Link>
+
+          {user?.role === 'Super Admin' && (
+            <>
+              {isExpanded && (
+                <h2 className="px-3 text-[10px] font-bold text-gray-400 uppercase tracking-[0.05em] mt-4 mb-2 truncate">Sistem</h2>
+              )}
+              <Link href="/users" className={navItemClasses('/users')} title={!isExpanded ? "Kelola User" : undefined}>
+                <UserCog size={iconSize} className="shrink-0" />
+                {isExpanded && <span className="truncate">Kelola User</span>}
               </Link>
-            </li>
-          ))}
-
-          {/* Master Data Group */}
-          <li className="pt-2 pb-1">
-            {!isCollapsed ? (
-              <button 
-                onClick={() => setIsMasterOpen(!isMasterOpen)}
-                className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider hover:text-slate-600 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Database size={16} className="opacity-70" />
-                  <span>Data Master</span>
-                </div>
-                <ChevronDown size={14} className={`transition-transform duration-200 ${isMasterOpen ? 'rotate-180' : ''}`} />
-              </button>
-            ) : (
-                <button 
-                  onClick={() => setIsMasterOpen(!isMasterOpen)}
-                  className="w-full flex items-center justify-center py-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" 
-                  title="Data Master"
-                >
-                    <Database size={16} className={`transition-all ${isMasterOpen ? 'opacity-100 text-emerald-600' : 'opacity-70'}`} />
-                </button>
-            )}
-            
-            <ul className={`space-y-1 mt-1 overflow-hidden transition-all duration-300 ${isMasterOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}>
-              {masterMenus.map((item) => (
-                <li key={item.name}>
-                  <Link
-                    href={item.href}
-                    className={`relative flex items-center gap-3 py-1.5 rounded-lg transition-all group text-sm ${
-                      isCollapsed ? 'justify-center px-0 py-2.5' : 'px-3 ml-2'
-                    } ${
-                      pathname === item.href
-                        ? 'bg-emerald-50 text-emerald-600 font-semibold'
-                        : 'text-slate-500 hover:bg-slate-50 hover:text-emerald-600'
-                    }`}
-                    title={isCollapsed ? item.name : undefined}
-                  >
-                    {!isCollapsed && pathname === item.href && (
-                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-emerald-500 rounded-r-full" />
-                    )}
-                    <item.icon
-                      size={17}
-                      className={`shrink-0 ${
-                        pathname === item.href ? 'text-emerald-600' : 'text-slate-400 group-hover:text-emerald-500'
-                      }`}
-                    />
-                    {!isCollapsed && (
-                      <span className="whitespace-nowrap">{item.name}</span>
-                    )}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </li>
-
-          <div className="my-1 border-t border-slate-100" />
-
-          {/* Bottom Menus */}
-          {bottomMenus.map((item) => (
-            <li key={item.name}>
-              <Link
-                href={item.href}
-                className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group text-sm ${
-                  isCollapsed ? 'justify-center px-0 py-3' : ''
-                } ${
-                  pathname === item.href
-                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-500/20'
-                    : 'text-slate-500 hover:bg-emerald-50 hover:text-emerald-600'
-                }`}
-                title={isCollapsed ? item.name : undefined}
-              >
-                {!isCollapsed && pathname === item.href && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 bg-white/50 rounded-r-full" />
-                )}
-                <item.icon
-                  size={18}
-                  className={`shrink-0 ${
-                    pathname === item.href ? 'text-white' : 'group-hover:text-emerald-600'
-                  }`}
-                />
-                {!isCollapsed && (
-                  <span className="font-medium whitespace-nowrap">{item.name}</span>
-                )}
-              </Link>
-            </li>
-          ))}
-
-        </ul>
+            </>
+          )}
+        </div>
       </nav>
+
+      {/* Footer / User Profile Section */}
+      <div className={`mt-auto border-t border-gray-100 p-3 relative bg-gray-50/50 ${!isExpanded ? 'px-2' : ''}`} ref={profileRef}>
+        {user ? (
+          <>
+            <button
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className={`w-full flex items-center gap-2.5 p-1.5 rounded-lg transition-all hover:bg-gray-100 ${
+                isProfileOpen ? 'bg-white shadow-sm ring-1 ring-black/5' : ''
+              } ${!isExpanded ? 'justify-center' : ''}`}
+            >
+              <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center overflow-hidden shrink-0 border border-green-200">
+                {user.photo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
+                ) : (
+                  <Users size={14} className="text-green-600" />
+                )}
+              </div>
+              
+              {isExpanded && (
+                <div className="flex flex-col min-w-0 text-left animate-in fade-in duration-300">
+                  <p className="text-[13px] font-bold text-gray-700 truncate leading-tight">{user.name}</p>
+                  <p className="text-[11px] text-gray-400 font-medium truncate mt-0.5">{user.role || 'User'}</p>
+                </div>
+              )}
+            </button>
+
+            {isProfileOpen && (
+              <div 
+                className={`absolute left-[calc(100%+8px)] bottom-3 min-w-[180px] bg-white rounded-xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-gray-100 p-1.5 animate-in fade-in slide-in-from-left-2 z-[100]`}
+              >
+                <Link
+                  href="/profile"
+                  onClick={() => setIsProfileOpen(false)}
+                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 rounded-lg transition-colors group/item"
+                >
+                  <Settings size={14} className="text-gray-400 group-hover/item:text-green-600" />
+                  <span>Pengaturan Profil</span>
+                </Link>
+
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-50 rounded-lg transition-colors group/logout"
+                >
+                  <LogOut size={14} className="text-red-400 group-hover/logout:text-red-500" />
+                  <span>Keluar Sistem</span>
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="h-10 bg-gray-100 rounded-lg animate-pulse" />
+        )}
+      </div>
     </aside>
   );
 }
