@@ -1,6 +1,23 @@
 import { createClient } from '@libsql/client';
 import path from 'path';
+import fs from 'fs';
 import { initSchema } from '../src/lib/schema';
+
+// Manual .env loader for standalone script
+function loadEnv() {
+  const envPath = path.join(process.cwd(), '.env');
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    envContent.split('\n').forEach(line => {
+      const parts = line.split('=');
+      if (parts.length === 2) {
+        process.env[parts[0].trim()] = parts[1].trim();
+      }
+    });
+  }
+}
+
+loadEnv();
 
 async function main() {
   const isDev = process.env.NODE_ENV === 'development';
