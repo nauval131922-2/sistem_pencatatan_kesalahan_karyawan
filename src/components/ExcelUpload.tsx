@@ -32,13 +32,14 @@ export default function ExcelUpload() {
     setStatus('loading');
     setMessage('');
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
-      const res = await fetch('/api/employees/import', {
+      const res = await fetch('/api/employees/import-raw', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'x-filename': file.name,
+          'Content-Type': file.type || 'application/octet-stream',
+        },
+        body: file, // Send file directly as raw binary
       });
 
       const data = await res.json();
@@ -53,11 +54,11 @@ export default function ExcelUpload() {
         });
       } else {
         setStatus('error');
-        setMessage(data.error || 'Gagal mengimpor data.');
+        setMessage(data.error || data.message || 'Gagal mengimpor data.');
       }
-    } catch {
+    } catch (err: any) {
       setStatus('error');
-      setMessage('Terjadi kesalahan koneksi.');
+      setMessage('Terjadi kesalahan koneksi atau sistem.');
     }
     // Reset file input
     if (fileRef.current) fileRef.current.value = '';
@@ -76,64 +77,64 @@ export default function ExcelUpload() {
   };
 
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 shrink-0">
-      <div className="bg-white border border-gray-100 shadow-sm rounded-xl px-5 py-4 relative overflow-hidden">
-        <div className="absolute right-0 top-0 -mt-8 -mr-8 opacity-[0.03] pointer-events-none">
-          <FileSpreadsheet size={120} />
-        </div>
-        
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between relative z-10">
-          <div className="flex-1 text-center md:text-left">
-            <h3 className="text-sm font-semibold text-gray-700 flex items-center justify-center md:justify-start gap-2 mb-0.5">
-              <Upload className="text-green-500" size={16}/>
-              Upload Data Karyawan
-            </h3>
-            <p className="text-xs text-gray-400 leading-relaxed max-w-2xl">
-              Unggah file Excel yang berisi Data Karyawan. Data yang lama akan dihapus dan digantikan seluruhnya oleh data dari file baru.
-            </p>
+    <div className="shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500 mb-2">
+      <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] px-4 py-3 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4 flex-1">
+          <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
+            <Upload className="text-green-600" size={20} />
           </div>
-          <div className="w-full md:w-auto shrink-0">
-            <input 
-              type="file" 
-              accept=".xls, .xlsx, .xlsm"
-              className="hidden" 
-              ref={fileRef}
-              onChange={onFileChange}
-            />
-            <button
-              onClick={() => {
-                if (fileRef.current) fileRef.current.value = '';
-                fileRef.current?.click();
-              }}
-              disabled={status === 'loading'}
-              className="w-full md:w-auto px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {status === 'loading' && <Loader2 size={16} className="animate-spin" />}
-              {status !== 'loading' && <FileSpreadsheet size={16} />}
-              <span>{status === 'loading' ? 'Mengunggah...' : 'Pilih & Upload Excel'}</span>
-            </button>
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold text-gray-800 leading-none mb-1">Upload Data Karyawan</h3>
+            <p className="text-[11px] text-gray-400 font-medium leading-tight">
+              Unggah file Excel yang berisi Data Karyawan. Data yang lama akan dihapus dan digantikan seluruhnya.
+            </p>
           </div>
         </div>
 
+        <div className="shrink-0">
+          <input 
+            type="file" 
+            accept=".xls, .xlsx, .xlsm"
+            className="hidden" 
+            ref={fileRef}
+            onChange={onFileChange}
+          />
+          <button
+            onClick={() => {
+              if (fileRef.current) fileRef.current.value = '';
+              fileRef.current?.click();
+            }}
+            disabled={status === 'loading'}
+            className="px-4 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-bold rounded-lg transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm active:scale-[0.98]"
+          >
+            {status === 'loading' ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <FileSpreadsheet size={16} />
+            )}
+            <span>{status === 'loading' ? 'Mengunggah...' : 'Pilih & Upload Excel'}</span>
+          </button>
+        </div>
+
         {status === 'error' && (
-          <div className="mt-3 p-2.5 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[11px] flex items-start gap-2 animate-in fade-in">
+          <div className="absolute top-full left-0 right-0 mt-2 p-2.5 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[11px] flex items-start gap-2 animate-in slide-in-from-top-1 z-20">
             <XCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-            <p>{message}</p>
+            <p className="font-medium">{message}</p>
           </div>
         )}
-        
-        <ConfirmDialog 
-          isOpen={dialog.isOpen}
-          type={dialog.type}
-          title={dialog.title}
-          message={dialog.message}
-          onConfirm={() => {
-            setDialog(prev => ({ ...prev, isOpen: false }));
-            localStorage.setItem('sikka_data_updated', Date.now().toString());
-            router.refresh();
-          }}
-        />
       </div>
+
+      <ConfirmDialog 
+        isOpen={dialog.isOpen}
+        type={dialog.type}
+        title={dialog.title}
+        message={dialog.message}
+        onConfirm={() => {
+          setDialog(prev => ({ ...prev, isOpen: false }));
+          localStorage.setItem('sikka_data_updated', Date.now().toString());
+          router.refresh();
+        }}
+      />
     </div>
   );
 }

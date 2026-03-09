@@ -59,53 +59,57 @@ export default function EmployeeTable({ employees }: { employees: Employee[] }) 
   };
 
   return (
-    <div className="h-full flex flex-col gap-3 overflow-hidden">
-      {/* Heading & Search */}
-      <div className="flex flex-col gap-2 mb-1 shrink-0">
-        <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-            <Users size={16} className="text-gray-400" /> Data Karyawan
+    <div className="h-full flex flex-col gap-4 overflow-hidden">
+      {/* Heading & Search Container */}
+      <div className="flex flex-col gap-3 shrink-0">
+        <h3 className="text-15px font-extrabold text-gray-800 flex items-center gap-2">
+            <Users size={18} className="text-green-600" /> 
+            <span>Data Karyawan</span>
         </h3>
-        <div className="relative w-full shrink-0">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <div className="relative w-full shrink-0 group">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
           <input
             type="text"
             value={query}
             onChange={handleSearch}
             placeholder="Cari karyawan..."
-            className="w-full pl-10 pr-4 h-9 bg-white border border-gray-200 rounded-md focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-sm"
+            className="w-full pl-11 pr-4 h-10 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-medium placeholder:text-gray-300 shadow-sm"
           />
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-0 overflow-hidden flex flex-col flex-1 min-h-0 relative">
-        <div className="flex-1 overflow-auto custom-scrollbar relative min-h-0 bg-white" onScroll={handleScroll}>
-          <table className="w-full text-left relative min-w-[600px]">
-            <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-sm">
-              <tr className="text-[11px] uppercase tracking-wider text-gray-400 font-medium border-b border-gray-100">
-                <th className="px-4 py-3 w-10 text-center">NO.</th>
-                <th className="px-4 py-3">NAMA</th>
-                <th className="px-4 py-3">JABATAN</th>
-                <th className="px-4 py-3 text-right">ID KARYAWAN</th>
+      {/* Table Container */}
+      <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] overflow-hidden flex flex-col flex-1 min-h-0 relative">
+        <div className="flex-1 overflow-auto custom-scrollbar relative min-h-0" onScroll={handleScroll}>
+          <table className="w-full text-left relative min-w-[600px] border-collapse">
+            <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
+              <tr className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
+                <th className="px-5 py-3 w-14 text-center">No.</th>
+                <th className="px-5 py-3">Nama Karyawan</th>
+                <th className="px-5 py-3">Jabatan / Posisi</th>
+                <th className="px-5 py-3 text-right">ID Karyawan</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-50">
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-10 text-center h-full align-top">
-                    <div className="flex flex-col items-center justify-center text-center">
-                      <Users className="text-slate-100 mb-2" size={40} />
-                      <p className="text-sm font-semibold text-slate-700">{query ? 'Tidak ada hasil yang cocok.' : 'Belum ada data karyawan.'}</p>
+                  <td colSpan={4} className="py-20 text-center">
+                    <div className="flex flex-col items-center justify-center">
+                      <Users className="text-gray-100 mb-3" size={48} />
+                      <p className="text-sm font-bold text-gray-700">
+                        {query ? 'Tidak ada hasil yang cocok.' : 'Belum ada data karyawan.'}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">Silakan hapus kata kunci atau upload file baru.</p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 paginated.map((emp, index) => (
-                  <tr key={emp.id} className="hover:bg-gray-50 transition-colors group">
-                    <td className="px-4 py-3 text-xs text-gray-400 w-10 text-center">{index + 1}</td>
-                    <td className="px-4 py-3 font-medium text-gray-700 text-sm">{emp.name}</td>
-                    <td className="px-4 py-3 text-gray-500 text-sm">{emp.position}</td>
-                    <td className="px-4 py-3 text-gray-400 font-mono text-xs text-right">{emp.employee_no ?? '-'}</td>
+                  <tr key={emp.id} className="hover:bg-green-50/30 transition-colors even:bg-[#f9fafb] group h-10">
+                    <td className="px-5 py-1 text-[11px] font-bold text-gray-300 w-14 text-center">{index + 1}</td>
+                    <td className="px-5 py-1 font-bold text-gray-700 text-[13px]">{emp.name}</td>
+                    <td className="px-5 py-1 text-gray-500 text-[13px] font-medium">{emp.position}</td>
+                    <td className="px-5 py-1 text-gray-400 font-bold text-[12px] text-right tracking-tight">{emp.employee_no ?? '-'}</td>
                   </tr>
                 ))
               )}
@@ -113,11 +117,11 @@ export default function EmployeeTable({ employees }: { employees: Employee[] }) 
           </table>
         </div>
         
-        {/* Footer info Banner within Card Bottom */}
-        <div className="p-3 border-t border-gray-100 bg-white flex items-center justify-between text-xs text-gray-400 shrink-0">
-          <span className="">
+        {/* Footer info Banner */}
+        <div className="px-5 py-3 border-t border-gray-100 bg-white flex items-center justify-between text-[12px] font-medium text-gray-400 shrink-0">
+          <span>
             {filtered.length === 0
-              ? 'Tidak ada data'
+              ? 'Tidak ada data ditemukan'
               : `Menampilkan ${paginated.length} dari ${filtered.length} karyawan`}
           </span>
         </div>
