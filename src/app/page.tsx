@@ -12,12 +12,10 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 
-export default async function Home() {
-  const [stats, logs] = await Promise.all([
-    getStats(),
-    getActivityLogs(500)
-  ]);
+import { Suspense } from 'react';
 
+async function DashboardStats() {
+  const stats = await getStats();
   const statCards = [
     { 
       title: 'Total Karyawan', 
@@ -36,8 +34,45 @@ export default async function Home() {
   ];
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-6 -m-8 p-8 bg-white animate-in fade-in duration-500 overflow-hidden">
-      <header className="flex flex-col shrink-0">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
+      {statCards.map((card) => (
+        <Link 
+          key={card.title} 
+          href={card.href} 
+          className="group bg-white border border-[#e5e7eb] rounded-[10px] p-5 h-[100px] flex items-center gap-4 shadow-sm hover:border-[#16a34a]/30 transition-all active:scale-[0.98]"
+        >
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${card.classes}`}>
+            <card.icon size={24} />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-2xl font-bold text-gray-800 tracking-tight leading-none mb-1.5">{card.value}</span>
+            <span className="text-[12px] text-[#9ca3af] font-bold tracking-tight">{card.title}</span>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+async function DashboardLogs() {
+  const logs = await getActivityLogs(500);
+  return <ActivityTable initialLogs={logs} />;
+}
+
+function StatSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
+       {[1, 2].map(i => (
+         <div key={i} className="bg-gray-50 border border-gray-100 rounded-[10px] p-5 h-[100px] animate-pulse"></div>
+       ))}
+    </div>
+  );
+}
+
+export default async function Home() {
+  return (
+    <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700">
+      <header className="flex flex-col shrink-0 mb-3">
         <div className="flex items-center gap-3 border-l-4 border-green-500 pl-4">
           <h1 className="text-[22px] font-extrabold text-gray-800 tracking-tight leading-none">Dashboard</h1>
           <HelpButton />
@@ -47,26 +82,14 @@ export default async function Home() {
         </p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
-        {statCards.map((card) => (
-          <Link 
-            key={card.title} 
-            href={card.href} 
-            className="group bg-white border border-[#e5e7eb] rounded-[10px] p-5 h-[100px] flex items-center gap-4 shadow-sm hover:border-[#16a34a]/30 transition-all active:scale-[0.98]"
-          >
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${card.classes}`}>
-              <card.icon size={24} />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-2xl font-bold text-gray-800 tracking-tight leading-none mb-1.5">{card.value}</span>
-              <span className="text-[12px] text-[#9ca3af] font-bold tracking-tight">{card.title}</span>
-            </div>
-          </Link>
-        ))}
-      </div>
+      <Suspense fallback={<StatSkeleton />}>
+        <DashboardStats />
+      </Suspense>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <ActivityTable initialLogs={logs} />
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <Suspense fallback={<div className="h-full bg-gray-50 rounded-xl animate-pulse border border-gray-100"></div>}>
+          <DashboardLogs />
+        </Suspense>
       </div>
     </div>
   );

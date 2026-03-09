@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, ChevronLeft, ChevronRight, Package, Calendar, User, Tag, Hash, RefreshCw, BarChart3, Download, Printer, Loader2, TrendingUp, History, Clock } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Package, Calendar, User, Tag, Hash, RefreshCw, BarChart3, Download, Printer, Loader2, TrendingUp, History, Clock, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { splitDateRangeIntoMonths } from '@/lib/date-utils';
 import ConfirmDialog from '@/components/ConfirmDialog';

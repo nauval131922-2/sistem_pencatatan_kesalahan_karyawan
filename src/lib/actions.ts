@@ -1,12 +1,22 @@
 'use server';
 
+import { cache } from 'react';
 import db from '@/lib/db';
 import { getSession } from '@/lib/session';
 
-export async function getEmployees() {
+export const getEmployees = cache(async () => {
   const result = await db.execute('SELECT * FROM employees WHERE is_active = 1 ORDER BY id ASC');
-  return result.rows.map(row => ({ ...row }));
-}
+  return result.rows.map((row: any) => ({ ...row }));
+});
+
+export const fetchProductionOrders = cache(async () => {
+  const result = await db.execute(`
+    SELECT id, faktur, nama_prd 
+    FROM orders 
+    ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC
+  `);
+  return result.rows.map((row: any) => ({ ...row }));
+});
 
 export async function addEmployee(name: string, position: string, department: string) {
   const result = await db.execute({
@@ -18,7 +28,7 @@ export async function addEmployee(name: string, position: string, department: st
   return result;
 }
 
-export async function getInfractions(startDate?: string, endDate?: string) {
+export const getInfractions = cache(async (startDate?: string, endDate?: string) => {
   let query = `
     SELECT 
       i.*,
@@ -49,8 +59,8 @@ export async function getInfractions(startDate?: string, endDate?: string) {
     sql: query,
     args: params
   });
-  return result.rows.map(row => ({ ...row }));
-}
+  return result.rows.map((row: any) => ({ ...row }));
+});
 
 export async function getActivityLogs(limit = 1000) {
   const result = await db.execute({
@@ -103,16 +113,8 @@ export async function addInfraction(employeeId: number, description: string, sev
   });
 }
 
-export async function fetchProductionOrders() {
-  const result = await db.execute(`
-    SELECT id, faktur, nama_prd 
-    FROM orders 
-    ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC
-  `);
-  return result.rows.map(row => ({ ...row }));
-}
 
-export async function getStats() {
+export const getStats = cache(async () => {
   const results = await Promise.all([
     db.execute('SELECT COUNT(*) as count FROM employees WHERE is_active = 1'),
     db.execute(`
@@ -133,7 +135,7 @@ export async function getStats() {
     highSeverity: Number(results[2].rows[0]?.count || 0),
     totalOrders: Number(results[3].rows[0]?.count || 0)
   };
-}
+});
 
 export async function getLastEmployeeImport() {
   try {
