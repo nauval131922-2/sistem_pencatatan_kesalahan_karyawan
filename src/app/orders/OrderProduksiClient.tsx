@@ -196,6 +196,11 @@ export default function OrderProduksiClient() {
       setBatchStatus('Selesai! Memperbarui tampilan...');
       
       if (successCount > 0) {
+        // Clear batch state immediately before dialog to avoid stuck UI
+        setIsBatching(false);
+        setBatchStatus('');
+        setBatchProgress(0);
+
         // Post one summary log for the full range
         const fullStart = formatDateToYYYYMMDD(startDate);
         const fullEnd = formatDateToYYYYMMDD(endDate);
@@ -210,7 +215,9 @@ export default function OrderProduksiClient() {
           })
         });
 
+        // Trigger refresh
         setRefreshKey(prev => prev + 1);
+        
         const failCount = chunks.length - successCount;
         const message = failCount > 0 
           ? `Selesai dengan catatan: ${successCount} bulan berhasil, ${failCount} bulan gagal.` 
@@ -278,203 +285,212 @@ export default function OrderProduksiClient() {
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
-      {/* Control Panel */}
-      <div className="flex justify-start w-full shrink-0">
-        <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-3 px-5 w-fit">
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">Periode</span>
-            <div className="w-[140px] relative">
-              <DatePicker 
-                name="startDate"
-                value={startDate}
-                onChange={setStartDate}
-              />
+    <div className="flex-1 min-h-0 flex flex-col gap-5 overflow-hidden">
+      {/* Control Panel - Horizontal Card */}
+      <div className="shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] px-5 py-3.5 flex items-center justify-between gap-6">
+          <div className="flex items-center gap-4 flex-1">
+            <div className="flex items-center gap-2.5">
+              <Calendar size={16} className="text-green-600" />
+              <span className="text-[13px] font-extrabold text-gray-400 uppercase tracking-wider">Periode</span>
             </div>
-            <span className="text-slate-400 font-medium whitespace-nowrap">-</span>
-            <div className="w-[140px] relative">
-              <DatePicker 
-                name="endDate"
-                value={endDate}
-                onChange={setEndDate}
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-                <button 
-                  key={isBatching ? "btn-syncing" : "btn-idle"}
-                  onClick={handleFetch}
-                  disabled={loading || isBatching || !startDate || !endDate}
-                  className="w-full sm:w-auto shrink-0 px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed whitespace-nowrap"
-                >
-                  {isBatching ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 size={16} className="animate-spin" />
-                      {batchProgress || 0}%
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-                      Tarik Data
-                    </span>
-                  )}
-                </button>
-                {isBatching && (
-                  <div className="text-[10px] text-green-600 font-medium animate-pulse text-center">
-                    {batchStatus}
-                  </div>
-                )}
+            
+            <div className="flex items-center gap-3">
+              <div className="w-[140px] relative group">
+                <DatePicker 
+                  name="startDate"
+                  value={startDate}
+                  onChange={setStartDate}
+                />
               </div>
+              <span className="text-gray-300 font-bold">—</span>
+              <div className="w-[140px] relative group">
+                <DatePicker 
+                  name="endDate"
+                  value={endDate}
+                  onChange={setEndDate}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="shrink-0 flex items-center gap-3">
+            {isBatching && (
+              <div className="flex flex-col items-end">
+                <div className="text-[10px] text-green-600 font-bold animate-pulse leading-none uppercase tracking-tighter">
+                  {batchStatus}
+                </div>
+                <div className="w-24 h-1 bg-gray-50 rounded-full mt-1.5 overflow-hidden border border-gray-100">
+                  <div 
+                    className="h-full bg-green-500 transition-all duration-300" 
+                    style={{ width: `${batchProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+            
+            <button 
+              key={isBatching ? "btn-syncing" : "btn-idle"}
+              onClick={handleFetch}
+              disabled={loading || isBatching || !startDate || !endDate}
+              className="px-5 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-lg transition-all flex items-center justify-center gap-2.5 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm active:scale-[0.98]"
+            >
+              {isBatching ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+              )}
+              <span>{isBatching ? `${batchProgress}%` : 'Tarik Data'}</span>
+            </button>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="mt-2 p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm flex items-start gap-2 max-w-2xl mx-auto shrink-0">
+        <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm flex items-start gap-2 animate-in fade-in shrink-0">
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-          <p>{error}</p>
+          <p className="font-semibold">{error}</p>
         </div>
       )}
 
       {/* Results View */}
-      {data === null && !loading && !error && (
-        <div className="card text-center py-20 text-slate-500 flex flex-col items-center bg-slate-50/50 border-dashed justify-center flex-1">
-          <Loader2 size={48} className="mb-4 opacity-20 text-emerald-600 animate-spin" />
-          <p className="font-medium text-slate-600">Sedang memuat data dari database...</p>
-        </div>
-      )}
-
-      {data !== null && (
-        <div className="flex flex-col flex-1 gap-4 overflow-hidden min-h-0 relative">
-          {/* Global Loading Overlay (Subtle) */}
-          {loading && data !== null && (
-            <div className="absolute top-2 right-2 z-30 transition-all animate-in fade-in">
-              <div className="bg-white/80 backdrop-blur-sm p-1.5 rounded-full shadow-sm border border-emerald-100">
-                <Loader2 size={14} className="text-emerald-500 animate-spin" />
-              </div>
-            </div>
-          )}
-
-          {loading && data === null && (
-            <div className="absolute inset-0 z-30 bg-white/40 backdrop-blur-[1px] flex items-center justify-center rounded-xl transition-all">
-              <div className="bg-white p-3 rounded-full shadow-lg border border-emerald-100">
-                <Loader2 size={24} className="text-emerald-500 animate-spin" />
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 shrink-0">
-            <div className="flex items-center gap-4 w-full flex-wrap">
-              <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                  Hasil Scrapping
+      <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
+        {/* Results Header & Search */}
+        <div className="flex flex-col gap-4 shrink-0">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <h3 className="text-15px font-extrabold text-gray-800 flex items-center gap-2">
+                <Clock size={18} className="text-green-600" />
+                <span>Hasil Scrapping</span>
               </h3>
               {lastUpdated && (
-                <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                  <Clock size={12} className="text-gray-300" />
-                  Diperbarui: {lastUpdated}
+                <div className="flex items-center gap-1.5 text-[12px] text-gray-400 font-medium">
+                  <span className="text-gray-200">|</span>
+                  <span>Diperbarui: {lastUpdated}</span>
                 </div>
               )}
             </div>
+            
+            {loading && data !== null && (
+              <div className="flex items-center gap-2 text-[11px] font-bold text-green-600 animate-pulse bg-green-50 px-2.5 py-1 rounded-full border border-green-100">
+                <Loader2 size={12} className="animate-spin" />
+                <span>Memproses...</span>
+              </div>
+            )}
           </div>
 
-          <div className="relative shrink-0">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <div className="relative w-full group">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
             <input 
               type="text" 
               placeholder="Cari faktur, produk, pelanggan..." 
-              className="w-full pl-10 pr-4 h-9 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-sm"
+              className="w-full pl-11 pr-4 h-10 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-medium placeholder:text-gray-300 shadow-sm"
               value={searchQuery}
               onChange={handleSearch}
             />
           </div>
+        </div>
 
-          {data.length === 0 ? (
-            <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-20 text-center flex flex-col items-center justify-center flex-1">
-              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                <Search className="text-slate-100" size={32} />
-              </div>
-              <h3 className="text-sm font-semibold text-slate-700 mb-1">Tidak ada data ditemukan</h3>
-              <p className="text-xs text-slate-400 max-w-[240px] mx-auto leading-relaxed">
-                Coba sesuaikan kata kunci pencarian atau rentang tanggal.
-              </p>
+        {data === null && !loading ? (
+          <div className="flex-1 bg-gray-50/50 border-2 border-dashed border-gray-100 rounded-[10px] flex flex-col items-center justify-center text-center p-10">
+            <Loader2 size={40} className="text-green-200 animate-spin mb-4" />
+            <p className="text-sm font-bold text-gray-400">Sedang memuat data dari database...</p>
+          </div>
+        ) : data === null && loading ? (
+           <div className="flex-1 bg-white border border-gray-100 rounded-[10px] flex flex-col items-center justify-center text-center p-10">
+            <Loader2 size={40} className="text-green-500 animate-spin mb-4" />
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-gray-800">Menghubungkan ke Server...</p>
+              <p className="text-xs text-gray-400">Mohon tunggu sebentar, kami sedang menyiapkan data.</p>
             </div>
-          ) : (
-            <>
-              <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-0 overflow-hidden flex-1 flex flex-col min-h-0">
-                <div className="overflow-auto custom-scrollbar bg-white flex-1 min-h-0" onScroll={handleScroll}>
-                  <table className="w-full text-left relative min-w-[800px]">
-                    <thead className="sticky top-0 z-10 bg-slate-50/90 backdrop-blur-sm">
-                      <tr className="text-[11px] uppercase tracking-wider text-gray-400 font-medium border-b border-gray-100">
-                        <th className="px-5 py-3 font-medium">No. Faktur</th>
-                        <th className="px-5 py-3 font-medium">Nama Produk</th>
-                        <th className="px-5 py-3 font-medium">Pelanggan</th>
-                        <th className="px-5 py-3 font-medium">Tanggal</th>
-                        <th className="px-5 py-3 font-medium text-center">Qty Ord</th>
+          </div>
+        ) : data && data.length === 0 ? (
+          <div className="flex-1 bg-white border border-gray-200 rounded-[10px] flex flex-col items-center justify-center text-center p-20 shadow-sm">
+            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-5">
+              <Search className="text-gray-200" size={32} />
+            </div>
+            <h3 className="text-sm font-bold text-gray-800 mb-2">Tidak ada data ditemukan</h3>
+            <p className="text-[12px] text-gray-400 max-w-[260px] mx-auto leading-relaxed font-medium">
+              Coba sesuaikan kata kunci pencarian atau ganti rentang tanggal periode di atas.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] overflow-hidden flex-1 flex flex-col min-h-0 relative">
+              <div className="overflow-auto custom-scrollbar flex-1 min-h-0" onScroll={handleScroll}>
+                <table className="w-full text-left relative min-w-[850px] border-collapse">
+                  <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
+                    <tr className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
+                      <th className="px-5 py-3.5 w-32">No. Faktur</th>
+                      <th className="px-5 py-3.5">Nama Produk</th>
+                      <th className="px-5 py-3.5 w-48">Pelanggan</th>
+                      <th className="px-5 py-3.5 w-32">Tanggal</th>
+                      <th className="px-5 py-3.5 w-24 text-right">Qty Order</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {paginatedData.map((order: any, idx) => (
+                      <tr key={order.id || idx} className="hover:bg-green-50/30 transition-colors even:bg-[#f9fafb] group h-10">
+                        <td className="px-5 py-1 font-bold text-gray-400 text-[12px] tracking-tight">
+                          {order.faktur}
+                        </td>
+                        <td className="px-5 py-1 font-bold text-gray-700 text-[13px]">
+                          <div className="max-w-[300px] xl:max-w-md truncate" title={order.nama_prd}>
+                            {order.nama_prd}
+                          </div>
+                        </td>
+                        <td className="px-5 py-1 text-gray-500 text-[13px] font-medium">
+                          <div className="truncate max-w-[150px]" title={order.nama_pelanggan || order.kd_pelanggan}>
+                            {order.nama_pelanggan || order.kd_pelanggan}
+                          </div>
+                        </td>
+                        <td className="px-5 py-1 text-gray-400 text-[12px] font-bold whitespace-nowrap">
+                          {formatIndoDateStr(order.tgl)}
+                        </td>
+                        <td className="px-5 py-1 text-gray-800 text-right font-extrabold text-[13px]">
+                          {order.qty}
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {paginatedData.map((order: any, idx) => (
-                        <tr key={order.id || idx} className="hover:bg-gray-50 transition-colors group">
-                          <td className="px-5 py-3 font-mono text-gray-600 whitespace-nowrap text-sm">
-                            {order.faktur}
-                          </td>
-                          <td className="px-5 py-3 text-gray-700 text-sm">
-                            <div className="max-w-xs md:max-w-xs xl:max-w-md truncate" title={order.nama_prd}>
-                              {order.nama_prd}
-                            </div>
-                          </td>
-                          <td className="px-5 py-3 text-gray-500 text-sm">
-                            <div className="truncate max-w-[150px]" title={order.nama_pelanggan || order.kd_pelanggan}>
-                              {order.nama_pelanggan || order.kd_pelanggan}
-                            </div>
-                          </td>
-                          <td className="px-5 py-3 text-gray-400 text-sm whitespace-nowrap">
-                            {formatIndoDateStr(order.tgl)}
-                          </td>
-                          <td className="px-5 py-3 text-gray-700 text-right font-medium text-sm">
-                            {order.qty}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
+            </div>
 
-              {/* Footer info banner */}
-              <div className="flex items-center justify-between text-xs text-slate-400 mt-4 pt-3 border-t border-slate-100">
-                <div className="flex items-center gap-3">
-                  <span className="">
-                    {totalCount === 0
-                      ? 'Tidak ada data tersedia'
-                      : `Menampilkan ${paginatedData.length} dari ${totalCount} data order`}
-                  </span>
-                  {loadTime !== null && (
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono flex items-center gap-1 ${
-                      loadTime < 200 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 
-                      loadTime < 800 ? 'bg-amber-50 text-amber-600 border border-amber-100' : 
-                      'bg-red-50 text-red-600 border border-red-100'
-                    }`}>
-                      <span className="opacity-70">⚡</span> {loadTime}ms
-                    </span>
-                  )}
-                </div>
-                
-                {loading && page > 1 && (
-                  <span className="text-emerald-500 font-medium flex items-center gap-2">
-                    <Loader2 size={12} className="animate-spin" />
-                    Memuat data...
+            {/* Footer info Banner */}
+            <div className="flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-4">
+                <span className="text-[12px] font-bold text-gray-400">
+                  {totalCount === 0
+                    ? 'Tidak ada data tersedia'
+                    : `Menampilkan ${paginatedData.length} dari ${totalCount} data order`}
+                </span>
+                {loadTime !== null && (
+                  <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
+                    loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                    loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+                    'bg-red-50 text-red-600 border-red-100'
+                  }`}>
+                    <span className="animate-pulse">⚡</span>
+                    <span>{loadTime}ms</span>
                   </span>
                 )}
               </div>
-            </>
-          )}
-        </div>
-      )}
+              
+              {loading && page > 1 && (
+                <div className="flex items-center gap-2 text-green-600 font-bold text-[11px] animate-pulse">
+                  <Loader2 size={12} className="animate-spin" />
+                  <span>Memuat hal. berikutnya...</span>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
 
       <ConfirmDialog 
         isOpen={dialog.isOpen}
-        type={dialog.type}
+        type={dialog.type as any}
         title={dialog.title}
         message={dialog.message}
         onConfirm={() => setDialog(prev => ({ ...prev, isOpen: false }))}
