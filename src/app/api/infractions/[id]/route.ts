@@ -38,7 +38,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       recordedById = (recLookup.rows[0] as any)?.id || 0;
     }
 
-    if (!order_name || !order_faktur || !employee_id) {
+    const employeeId = parseInt(String(employee_id));
+    const cleanJumlah = parseFloat(String(jumlah)) || 0;
+    const cleanHarga = parseFloat(String(harga)) || 0;
+    const cleanTotal = parseFloat(String(total)) || 0;
+
+    if (isNaN(cleanJumlah) || isNaN(cleanHarga) || isNaN(cleanTotal)) {
+      return NextResponse.json({ error: 'Format angka tidak valid.' }, { status: 400 });
+    }
+
+    if (!order_name || !order_faktur || !employeeId) {
       return NextResponse.json({ error: 'Data tidak lengkap. Pastikan Karyawan dan Order sudah dipilih.' }, { status: 400 });
     }
 
@@ -48,12 +57,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     // 1. Fetch snapshots
     const [empRes, recRes] = await Promise.all([
-      db.execute({ sql: 'SELECT name, position, employee_no FROM employees WHERE id = ?', args: [employee_id] }),
+      db.execute({ sql: 'SELECT name, position, employee_no FROM employees WHERE id = ?', args: [employeeId] }),
       db.execute({ sql: 'SELECT name, position, employee_no FROM employees WHERE id = ?', args: [recordedById] })
     ]);
 
     const emp = empRes.rows[0] as any;
     const rec = recRes.rows[0] as any;
+
+    if (!emp) {
+      return NextResponse.json({ error: 'Karyawan tidak ditemukan.' }, { status: 404 });
+    }
 
     const employeeNo = emp?.employee_no || null;
     const employeeName = emp?.name || 'Unknown';
@@ -77,11 +90,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
           WHERE id = ?
         `,
         args: [
-          employee_id, employeeNo, employeeName, employeePosition,
+          employeeId, employeeNo, employeeName, employeePosition,
           description || '', severity, fullDate,
           recName, recordedById, recNo, recName, recPos,
           order_name, order_faktur, item_faktur, jenis_barang, nama_barang, jenis_harga,
-          parseFloat(String(jumlah)) || 0, parseFloat(String(harga)) || 0, parseFloat(String(total)) || 0,
+          cleanJumlah, cleanHarga, cleanTotal,
           id
         ]
       }
