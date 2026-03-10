@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
+  User, 
   Users, 
   AlertCircle, 
   Package, 
@@ -115,7 +116,7 @@ export default function Sidebar({ user }: SidebarProps) {
               </div>
               <div className="min-w-0">
                 <h1 className="text-sm font-bold text-gray-800 tracking-tight leading-none truncate">SIKKA</h1>
-                <p className="text-[10px] text-gray-400 font-medium mt-0.5 whitespace-nowrap truncate">Pt. Buya Barokah</p>
+                <p className="text-[10px] text-gray-400 font-medium mt-0.5 whitespace-nowrap truncate">PT. Buya Barokah</p>
               </div>
             </div>
           ) : (
@@ -228,7 +229,7 @@ export default function Sidebar({ user }: SidebarProps) {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
                 ) : (
-                  <Users size={14} className="text-green-600" />
+                  <User size={14} className="text-green-600" />
                 )}
               </div>
               

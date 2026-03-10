@@ -50,7 +50,7 @@ export default function LoginPage() {
           <div className="text-center px-4">
             <h1 className="text-xl font-extrabold text-gray-800 tracking-tight leading-none">SIKKA Login</h1>
             <p className="text-[11px] text-gray-400 font-semibold mt-3 uppercase tracking-wide">
-              Sistem Pencatatan Kesalahan Karyawan
+              Sistem Informasi Pencatatan Kesalahan Karyawan
             </p>
           </div>
         </div>
@@ -121,7 +121,7 @@ export default function LoginPage() {
         {/* Small Muted Footer */}
         <div className="mt-6 text-center">
           <p className="text-[11px] font-medium text-gray-400 opacity-80 leading-relaxed max-w-[200px] mx-auto">
-            &copy; {new Date().getFullYear()} Pt. Buya Barokah<br/>
+            &copy; {new Date().getFullYear()} PT. Buya Barokah<br/>
             <span className="text-[10px] opacity-60">Div. Percetakan</span>
           </p>
         </div>
