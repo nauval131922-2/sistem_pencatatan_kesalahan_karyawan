@@ -108,7 +108,11 @@ export default function BarangJadiClient() {
                 hour: '2-digit', minute: '2-digit', second: '2-digit'
               });
               setLastUpdated(timestamp);
+            } else {
+              setLastUpdated(null);
             }
+          } else {
+            setLastUpdated(null);
           }
         }
       } catch (err) {
