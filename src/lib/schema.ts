@@ -109,6 +109,7 @@ export async function initSchema(db: any) {
     `CREATE TABLE IF NOT EXISTS session_context (
       id INTEGER PRIMARY KEY DEFAULT 1,
       username TEXT,
+      last_menu TEXT,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`
   ], "write");
@@ -147,6 +148,7 @@ export async function initSchema(db: any) {
     "ALTER TABLE bahan_baku ADD COLUMN faktur_prd TEXT;",
     "ALTER TABLE barang_jadi ADD COLUMN faktur_prd TEXT;",
     "ALTER TABLE sales_reports ADD COLUMN faktur TEXT;",
+    "ALTER TABLE session_context ADD COLUMN last_menu TEXT;",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_sales_unique ON sales_reports(faktur, kd_barang, tgl);",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_barang_jadi_unique ON barang_jadi(faktur, kd_barang, tgl);",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_bahan_baku_unique ON bahan_baku(faktur, kd_barang, tgl);",
@@ -209,8 +211,8 @@ export async function initSchema(db: any) {
         'users', 
         NEW.id, 
         CASE 
-          WHEN COALESCE((SELECT username FROM session_context WHERE id = 1), 'System') = OLD.username THEN 'Profil diperbarui'
-          ELSE 'Data user diubah: ' || NEW.name
+          WHEN (SELECT last_menu FROM session_context WHERE id = 1) = 'Pengaturan Profil' THEN 'Profil diperbarui'
+          ELSE 'User diupdate: ' || NEW.name
         END,
         json_object('name', NEW.name, 'username', NEW.username, 'role', NEW.role), 
         COALESCE((SELECT username FROM session_context WHERE id = 1), 'System')

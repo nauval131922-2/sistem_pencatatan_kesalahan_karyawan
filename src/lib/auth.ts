@@ -81,7 +81,7 @@ export async function updateProfile(data: { name: string, username: string, pass
       queryObj.args = [data.name, data.username, data.photo || null, userId];
     }
 
-    await db.execute(queryObj);
+    await db.execute(queryObj, 'Pengaturan Profil');
 
     // Update the session token with new data so the header updates immediately
     // DO NOT include photo here to prevent HTTP cookie size limit exceeded error (4KB)

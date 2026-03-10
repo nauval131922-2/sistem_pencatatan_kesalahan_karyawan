@@ -29,28 +29,35 @@ const client = createClient({
 // Wrapper to automatically handle session context for triggers
 const db = {
   ...client,
-  async execute(stmt: any) {
-    await this.injectContext();
+  async execute(stmt: any, menuContext?: string) {
+    await this.injectContext(menuContext);
     return client.execute(stmt);
   },
-  async batch(stmts: any[], mode?: any) {
-    await this.injectContext();
+  async batch(stmts: any[], mode?: any, menuContext?: string) {
+    await this.injectContext(menuContext);
     return client.batch(stmts, mode);
   },
-  async injectContext() {
+  async injectContext(menuContext?: string) {
     try {
-      // dynamic import to avoid issues in non-request contexts
       const { getSession } = await import('./session');
       const session = await getSession();
+      const username = session?.username || null;
       
-      // Always update the context: either with the username or NULL
-      await client.execute({
-        sql: 'INSERT OR REPLACE INTO session_context (id, username) VALUES (1, ?)',
-        args: [session?.username || null]
-      });
+      // Try to update with last_menu first
+      try {
+        await client.execute({
+          sql: 'INSERT OR REPLACE INTO session_context (id, username, last_menu) VALUES (1, ?, ?)',
+          args: [username, menuContext || null]
+        });
+      } catch (e) {
+        // Fallback to old schema if last_menu column doesn't exist yet
+        await client.execute({
+          sql: 'INSERT OR REPLACE INTO session_context (id, username) VALUES (1, ?)',
+          args: [username]
+        });
+      }
     } catch (e) {
-      // Cookies() inaccessible (e.g. scripts or background tasks)
-      // Ensure context is cleared to fallback to 'System'
+      // If everything fails, try a simple update to NULL to clear state
       try {
         await client.execute('UPDATE session_context SET username = NULL WHERE id = 1');
       } catch (e2) {}

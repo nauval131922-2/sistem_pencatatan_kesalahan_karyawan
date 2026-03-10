@@ -48,9 +48,14 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
   };
 
   const getChannelName = (log: any) => {
-    const tableName = log.table_name;
-    if (tableName === 'users' && log.message === 'Profil diperbarui') {
-      return 'Pengaturan Profil';
+    if (!log) return 'Sistem';
+    const tableName = log.table_name || '';
+    const msg = log.message || '';
+    
+    // Explicit mapping for users to differentiate between Admin menu and Self-Profile
+    if (tableName === 'users') {
+      if (msg.includes('Profil diperbarui')) return 'Pengaturan Profil';
+      return 'Kelola User';
     }
 
     switch (tableName) {
@@ -62,7 +67,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
       case 'hpp_kalkulasi': return 'HPP Kalkulasi';
       case 'sales_reports': return 'Laporan Penjualan';
       case 'infractions': return 'Catat Kesalahan';
-      default: return tableName || 'Sistem';
+      default: return tableName.replace('_', ' ').toUpperCase() || 'Sistem';
     }
   };
 
