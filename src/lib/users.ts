@@ -87,15 +87,25 @@ export async function updateUser(id: number, data: { name: string, username: str
       await db.execute({
         sql: 'UPDATE users SET name = ?, username = ?, role = ?, password = ? WHERE id = ?',
         args: [data.name, data.username, data.role, hash, id]
-      });
+      }, 'Kelola User');
     } else {
       await db.execute({
         sql: 'UPDATE users SET name = ?, username = ?, role = ? WHERE id = ?',
         args: [data.name, data.username, data.role, id]
+      }, 'Kelola User');
+    }
+
+    // If changing own data, update the session so the UI/header updates immediately
+    if (session.userId === id) {
+      const { createSession } = await import('@/lib/session');
+      await createSession({
+        userId: session.userId,
+        username: data.username,
+        name: data.name,
+        role: data.role, // role might have changed too
       });
     }
 
-    // If changing own role to non-Super Admin, they might lose access on next refresh, but that's expected
     return { success: true };
   } catch (error: any) {
     return { success: false, message: error.message || 'Terjadi kesalahan sistem' };

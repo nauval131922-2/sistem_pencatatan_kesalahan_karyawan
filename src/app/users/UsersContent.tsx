@@ -26,7 +26,7 @@ interface User {
   created_at?: string;
 }
 
-export default function UsersContent({ currentUser }: { currentUser: string }) {
+export default function UsersContent({ currentUser, currentUserId }: { currentUser: string, currentUserId: number }) {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -285,7 +285,7 @@ export default function UsersContent({ currentUser }: { currentUser: string }) {
                             Edit
                           </button>
                           
-                          {u.username !== currentUser && (
+                          {u.id !== currentUserId && (
                             <button
                               onClick={() => handleDelete(u)}
                               className="px-4 py-1.5 text-[11px] font-extrabold text-red-500 border border-red-100 hover:bg-red-500 hover:text-white rounded-md transition-all active:scale-[0.95]"
