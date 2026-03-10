@@ -1,36 +1,28 @@
-# Ringkasan Sesi AI (10 Maret 2026)
+# Ringkasan Sesi AI (10 Maret 2026 - Sesi 2)
 
-Sesi ini berfokus pada penyempurnaan fitur **Pencatatan Kesalahan (Records)**, peningkatan **ketangguhan API**, dan **optimasi performa** pada lingkungan produksi (Vercel + Turso).
+Sesi ini berfokus pada penyelesaian masalah sinkronisasi antar tab di lingkungan produksi (Vercel + Turso) dan perbaikan anomali pada fitur Manajemen User.
 
 ## ✅ Pencapaian Utama
 
-### 1. Penyempurnaan Formulir (RecordsForm.tsx)
-- **Tampilan Tombol**: Tombol "Simpan" dan "Batal" dibuat berjajar (jejer 2) saat mode edit untuk estetika yang lebih baik.
-- **Restorasi Draft**: Memperbaiki logika pemulihan draft agar tidak menimpa data baru saat berpindah hari.
-- **Fix Timezone**: Menggunakan penanggalan lokal agar perpindahan hari (jam 00:00 - 07:00 WIB) tidak menyebabkan data tersimpan di tanggal kemarin.
-- **Manual Mode**: Menjamin harga tidak ter-reset saat berpindah ke mode input manual setelah refresh.
+### 1. Perbaikan Sinkronisasi Tab (Production Ready)
+- **Edge Caching Bypass**: Menambahkan `export const dynamic = 'force-dynamic'` pada seluruh API route (Sales, Bahan Baku, Barang Jadi, Items, HPP, Infractions) untuk mencegah Vercel menyajikan data stale.
+- **Client Cache-Busting**: Menambahkan parameter unik `_t=${Date.now()}` pada seluruh pemanggilan `fetch` untuk memaksa browser mengambil data terbaru setelah perubahan terjadi di tab lain.
+- **Streaming & UI**: Menambahkan `loading.tsx` pada folder modul untuk memberikan feedback visual (Skeleton) saat data sedang dimuat dari Turso.
 
-### 2. Penguatan API & Database
-- **API PUT (Edit)**: Sekarang sudah setangguh API POST (Tambah). Menambah deteksi otomatis pencatat (recorder) dari session jika data dari form kosong.
-- **NaN Protection**: Menambah validasi angka untuk mencegah error "NaN" saat menyimpan data ke SQLite/Turso.
-- **Multi-Format Support**: API sekarang mendukung input dalam format JSON maupun Form-Data.
+### 2. Debugging & Perbaikan Manajemen User
+- **ID-Based Check**: Mengubah logika tombol "Hapus" pada tabel User untuk menggunakan `userId` unik. Tombol "Hapus" sekarang tetap tersembunyi meskipun user mengubah username-nya sendiri.
+- **Session Refresh**: Menambahkan fitur pembaruan sesi (cookie) otomatis saat user mengedit profilnya sendiri via menu Admin. Nama di header dan data sesi sekarang selalu sinkron.
+- **Activity Context**: Menambahkan mekanisme pelabelan log aktivitas yang lebih cerdas. Sistem sekarang dapat membedakan apakah perubahan dilakukan dari menu **"Kelola User"** atau **"Pengaturan Profil"**.
 
-### 3. Optimasi Performa & Konektivitas Turso
-- **Streaming & Suspense**: Implementasi `loading.tsx` dan `Suspense` pada Dashboard dan Records agar shell aplikasi muncul instan sambil menunggu data Turso.
-- **Server Caching**: Menggunakan React `cache()` pada `actions.ts` untuk mengurangi database round-trip.
-- **Fix Login Turso**: Memperbaiki `scripts/init-db.ts` agar mendukung pembacaan file `.env` secara manual dan menyediakan script pemulihan password admin untuk menjamin akses ke database remote.
-- **Skeleton UI**: Menambah animasi loading (skeleton) yang profesional.
+### 3. Ketangguhan API (Robustness)
+- **NaN & Validation**: Menambahkan proteksi terhadap data `NaN` dan validasi keberadaan karyawan pada API Infractions untuk mencegah korupsi data di database.
+- **Fail-Safe context**: Memperbaiki wrapper database (`db.ts`) agar tetap berjalan lancar meskipun kolom `last_menu` belum sepenuhnya ter-migrasi di environment tertentu.
 
 ## 🛠️ Status Teknis Terakhir
-- **Branch**: `master`
-- **File Penting yang Diubah**:
-  - `src/components/RecordsForm.tsx` (Logic & UI)
-  - `src/app/api/infractions/[id]/route.ts` (Robustness)
-  - `src/lib/actions.ts` (Caching)
-  - `scripts/init-db.ts` (Env Support)
-  - `.env` (Template Koneksi Turso)
+- **Database**: Skema diperbarui dengan tabel `session_context` yang mendukung kolom `last_menu`.
+- **UI**: Sinkronisasi antar tab sudah diuji dan berjalan konsisten di Dashboard, Records, HPP, dan Manajemen User.
 
 ## 📌 Catatan untuk Sesi Berikutnya
-- Performa di Vercel sudah jauh lebih lancar dengan Skeleton UI.
-- Fitur Edit Infraction sudah stabil terhadap data kosong (null/NaN).
-- Jika ada penambahan data baru, pastikan menggunakan `cache()` di `actions.ts` jika data tersebut sering diakses di banyak komponen.
+- Sinkronisasi produksi sudah 100% aman dari caching Vercel.
+- Seluruh perbaikan user management sudah mencakup sinkronisasi sesi secara real-time.
+- Progres tersimpan dan siap di-push ke branch master.

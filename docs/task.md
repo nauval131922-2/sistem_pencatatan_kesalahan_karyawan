@@ -16,3 +16,15 @@
     - [x] Inisialisasi Remote Database (Turso)
     - [x] Hapus dependency `better-sqlite3` (fix Vercel 500 error)
     - [x] Migrasi data produksi lokal ke Cloud (Turso)
+- [x] **Optimasi Sinkronisasi & Ketangguhan API**
+    - [x] Perbaikan Cross-Tab Sync di Produksi (Vercel Edge Caching)
+    - [x] Penambahan Cache-Buster (`_t`) pada fetch client-side
+    - [x] Force Dynamic pada seluruh API pendukung (GET)
+    - [x] Proteksi NaN dan validasi input pada API Infractions
+- [x] **Debugging Manajemen User**
+    - [x] Perbaikan logika tombol "Hapus" pada user sendiri (via User ID)
+    - [x] Sinkronisasi sesi instan setelah edit data diri sendiri
+    - [x] Perbaikan pelabelan log aktivitas (Admin vs Profile context)
+- [ ] **Next Steps**
+    - [ ] Monitoring performa sinkronisasi di produksi
+    - [ ] Penambahan fitur ekspor laporan ke Excel (Opsional)
