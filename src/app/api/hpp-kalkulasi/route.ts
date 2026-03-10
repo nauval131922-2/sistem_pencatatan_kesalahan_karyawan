@@ -92,8 +92,18 @@ export async function POST(request: NextRequest) {
 
     const session = await getSession();
 
-
-
+    await db.execute({
+      sql: `INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by) 
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [
+        'UPLOAD', 
+        'hpp_kalkulasi', 
+        0, 
+        `Upload HPP Kalkulasi dari Excel (${importedCount} data)`, 
+        JSON.stringify({ fileName: file.name, imported: importedCount }),
+        session?.username || 'System'
+      ]
+    });
     return NextResponse.json({
       success: true,
       message: `Berhasil mengimpor ${importedCount} data HPP Kalkulasi.`,

@@ -84,8 +84,19 @@ export async function POST(req: NextRequest) {
         await db.batch(batchOps.slice(i, i + chunkSize), "write");
     }
 
-
-
+    const session = await getSession();
+    await db.execute({
+        sql: `INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by) 
+              VALUES (?, ?, ?, ?, ?, ?)`,
+        args: [
+            'IMPORT', 
+            'employees', 
+            0, 
+            `Import Karyawan dari Excel (${importedCount} data)`, 
+            JSON.stringify({ filename, imported: importedCount }),
+            session?.username || 'System'
+        ]
+    });
     return NextResponse.json({ success: true, imported: importedCount });
   } catch (err: any) {
     console.error('Import error:', err);
