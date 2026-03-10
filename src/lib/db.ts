@@ -4,9 +4,9 @@ import path from 'path';
 const isDev = process.env.NODE_ENV === 'development';
 const isVercel = !!process.env.VERCEL;
 
-// Policy: Only use Turso when deployed on Vercel. 
-// Local environments always use file-based SQLite to prevent accidental data loss in cloud.
-const useRemote = isVercel && !!process.env.TURSO_DATABASE_URL;
+// Policy: Use Turso when on Vercel OR when USE_REMOTE_DB is explicitly set to true.
+// This allows local environments to sync with cloud data when needed.
+const useRemote = (isVercel || process.env.USE_REMOTE_DB === 'true') && !!process.env.TURSO_DATABASE_URL;
 
 let dbUrl = '';
 if (useRemote) {

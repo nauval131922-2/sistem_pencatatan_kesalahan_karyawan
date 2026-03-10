@@ -11,7 +11,11 @@ function loadEnv() {
     envContent.split('\n').forEach(line => {
       const parts = line.split('=');
       if (parts.length === 2) {
-        process.env[parts[0].trim()] = parts[1].trim();
+        const key = parts[0].trim();
+        const value = parts[1].trim();
+        if (!process.env[key]) {
+          process.env[key] = value;
+        }
       }
     });
   }
@@ -21,7 +25,8 @@ loadEnv();
 
 async function main() {
   const isDev = process.env.NODE_ENV === 'development';
-  const isRemote = !!process.env.TURSO_DATABASE_URL;
+  const isVercel = !!process.env.VERCEL;
+  const isRemote = isVercel && !!process.env.TURSO_DATABASE_URL;
   
   let dbUrl = '';
   if (isRemote) {

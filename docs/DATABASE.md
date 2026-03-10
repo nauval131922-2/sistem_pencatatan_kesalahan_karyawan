@@ -8,6 +8,7 @@
 |---|---|---|---|
 | `npm run dev` | Lokal (PC) | File | `database_dev.sqlite` (Sandbox / Latihan) |
 | `npm start` | Lokal (PC) | File | `database.sqlite` (Data Lokal Produksi) |
+| **Override** | **Lokal (PC)** | **Cloud** | **Turso (Mode Online di Lokal)** |
 | Production | **Vercel** | **Cloud** | **Turso (LibSQL)** |
 
 > [!IMPORTANT]
@@ -53,6 +54,12 @@ TURSO_AUTH_TOKEN=...
 SESSION_SECRET=...
 ```
 
-> [!WARNING]
-> Koneksi ini hanya akan aktif secara otomatis di **Vercel**. Untuk memaksa PC lokal menggunakan Turso, Anda harus menggunakan script inisialisasi:
-> `npx tsx scripts/check-triggers.ts` (atau sejenisnya).
+> Koneksi ke Turso (Cloud) secara default hanya aktif di **Vercel**. 
+>
+> **Cara Menghubungkan PC Lokal ke Turso (Database Online):**
+> 1. Tambahkan baris ini ke file `.env`:
+>    ```env
+>    USE_REMOTE_DB=true
+>    ```
+> 2. Restart aplikasi (npm run dev atau npm start).
+> 3. PC akan langsung membaca & menulis data ke Cloud. Hati-hati karena data ini adalah data "asli" yang diakses publik.
