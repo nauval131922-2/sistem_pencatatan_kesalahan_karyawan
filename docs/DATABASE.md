@@ -2,15 +2,16 @@
 
 ---
 
-## Dev vs Production
+## Triple-Tier Database Strategy
 
-| Mode | File Database | Keterangan |
-|---|---|---|
-| `npm run dev` | `database-dev.sqlite` | Otomatis, tidak perlu setting manual |
-| `npm start` | `database.sqlite` | Data production sebenarnya |
+| Environment | Platform | Storage | Database Filename / Provider |
+|---|---|---|---|
+| `npm run dev` | Lokal (PC) | File | `database_dev.sqlite` (Sandbox / Latihan) |
+| `npm start` | Lokal (PC) | File | `database.sqlite` (Data Lokal Produksi) |
+| Production | **Vercel** | **Cloud** | **Turso (LibSQL)** |
 
-> Kedua file **tidak di-commit** ke Git (sudah ada di `.gitignore`).
-> Setiap PC/server punya database-nya sendiri.
+> [!IMPORTANT]
+> Sistem secara otomatis mendeteksi platform. Di PC Anda sendiri, aplikasi **dipaksa** menggunakan file `.sqlite` lokal agar tidak sengaja merusak data asli di Cloud (Turso), meskipun file `.env` sudah diisi.
 
 ---
 
@@ -43,11 +44,15 @@ NODE_ENV=development npm run migrate:sales2025
 
 ---
 
-## Override Path Database (Opsional)
+## Koneksi ke Cloud (Turso)
 
-Buat file `.env` di root project (tidak di-commit ke Git):
-```
-DB_PATH=D:/lokasi/lain/sikka.sqlite
+Untuk menghubungkan aplikasi ke database online, gunakan file `.env` (tidak di-commit):
+```env
+TURSO_DATABASE_URL=libsql://...
+TURSO_AUTH_TOKEN=...
+SESSION_SECRET=...
 ```
 
-Berlaku untuk semua mode (dev & production).
+> [!WARNING]
+> Koneksi ini hanya akan aktif secara otomatis di **Vercel**. Untuk memaksa PC lokal menggunakan Turso, Anda harus menggunakan script inisialisasi:
+> `npx tsx scripts/check-triggers.ts` (atau sejenisnya).

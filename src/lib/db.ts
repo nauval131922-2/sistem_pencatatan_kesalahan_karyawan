@@ -2,24 +2,22 @@ import { createClient } from '@libsql/client';
 import path from 'path';
 
 const isDev = process.env.NODE_ENV === 'development';
-const isRemote = !!process.env.TURSO_DATABASE_URL;
+const isVercel = !!process.env.VERCEL;
+
+// Policy: Only use Turso when deployed on Vercel. 
+// Local environments always use file-based SQLite to prevent accidental data loss in cloud.
+const useRemote = isVercel && !!process.env.TURSO_DATABASE_URL;
 
 let dbUrl = '';
-if (isRemote) {
+if (useRemote) {
   dbUrl = process.env.TURSO_DATABASE_URL!;
 } else {
-  if (!isDev && !isRemote) {
-    console.error("[DB ERROR] Running in Production without TURSO_DATABASE_URL environment variable.");
-  }
   const defaultDbName = isDev ? 'database_dev.sqlite' : 'database.sqlite';
   const dbPath = path.join(process.cwd(), process.env.DB_PATH || defaultDbName);
   dbUrl = `file:${dbPath}`;
 }
 
-console.log(`[DB] Environment: ${process.env.NODE_ENV}, Mode: ${isRemote ? 'Remote (Turso)' : 'Local (File)'}`);
-if (isRemote) {
-    console.log(`[DB] Remote URL: ${dbUrl.substring(0, 20)}...`);
-}
+console.log(`[DB] Env: ${process.env.NODE_ENV}, Platform: ${isVercel ? 'Vercel' : 'Local'}, Storage: ${useRemote ? 'Cloud (Turso)' : 'File (' + dbUrl.split(':').pop() + ')'}`);
 
 const client = createClient({
   url: dbUrl,

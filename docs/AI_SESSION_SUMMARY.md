@@ -14,9 +14,10 @@ Sesi ini berfokus pada penyelesaian masalah sinkronisasi antar tab di lingkungan
 - **Session Refresh**: Menambahkan fitur pembaruan sesi (cookie) otomatis saat user mengedit profilnya sendiri via menu Admin. Nama di header dan data sesi sekarang selalu sinkron.
 - **Activity Context**: Menambahkan mekanisme pelabelan log aktivitas yang lebih cerdas. Sistem sekarang dapat membedakan apakah perubahan dilakukan dari menu **"Kelola User"** atau **"Pengaturan Profil"**.
 
-### 3. Ketangguhan API (Robustness)
+### 3. Ketangguhan API & Isolasi Database
 - **NaN & Validation**: Menambahkan proteksi terhadap data `NaN` dan validasi keberadaan karyawan pada API Infractions untuk mencegah korupsi data di database.
 - **Fail-Safe context**: Memperbaiki wrapper database (`db.ts`) agar tetap berjalan lancar meskipun kolom `last_menu` belum sepenuhnya ter-migrasi di environment tertentu.
+- **Triple-Tier Isolation**: Mengisolasi database agar PC Lokal selalu menggunakan file `.sqlite` (Sandbox), sementara Vercel menggunakan Turso. Ini mencegah data asli di cloud terhapus tidak sengaja saat development.
 
 ## 🛠️ Status Teknis Terakhir
 - **Database**: Skema diperbarui dengan tabel `session_context` yang mendukung kolom `last_menu`.
