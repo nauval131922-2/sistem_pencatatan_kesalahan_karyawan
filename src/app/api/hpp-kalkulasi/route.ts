@@ -3,6 +3,8 @@ import db from "@/lib/db";
 import * as xlsx from "xlsx";
 import { getSession } from "@/lib/session";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);

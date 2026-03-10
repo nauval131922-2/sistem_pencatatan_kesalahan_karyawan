@@ -462,7 +462,7 @@ export default function RecordsForm({
       if (!selectedOrderName || jenisBarang === 'Input Manual') { setItems([]); return; }
       setItemsLoading(true);
       try {
-        const res = await fetch(`/api/items?order_name=${encodeURIComponent(selectedOrderName)}&order_faktur=${encodeURIComponent(selectedOrderFaktur)}&jenis_barang=${encodeURIComponent(jenisBarang)}`);
+        const res = await fetch(`/api/items?order_name=${encodeURIComponent(selectedOrderName)}&order_faktur=${encodeURIComponent(selectedOrderFaktur)}&jenis_barang=${encodeURIComponent(jenisBarang)}&_t=${Date.now()}`);
         if (res.ok && active) {
           const json = await res.json();
           setItems(json.data || []);
@@ -480,7 +480,7 @@ export default function RecordsForm({
       if (!selectedOrderName) { setHppKalkulasiValue(null); return; }
       setHppLoading(true);
       try {
-        const res = await fetch(`/api/hpp-kalkulasi?order_name=${encodeURIComponent(selectedOrderName)}`);
+        const res = await fetch(`/api/hpp-kalkulasi?order_name=${encodeURIComponent(selectedOrderName)}&_t=${Date.now()}`);
         if (res.ok && active) {
           const json = await res.json();
           const val = json.data?.[0]?.hpp_kalkulasi ?? 0;
@@ -528,7 +528,7 @@ export default function RecordsForm({
       setFakturPreview('Memuat...');
       try {
         const dateStr = formatLocalYYYYMMDD(selectedDate);
-        const res = await fetch(`/api/infractions/next-faktur?date=${dateStr}`);
+        const res = await fetch(`/api/infractions/next-faktur?date=${dateStr}&_t=${Date.now()}`);
         if (res.ok && active) {
           const data = await res.json();
           setFakturPreview(data.nextFaktur);

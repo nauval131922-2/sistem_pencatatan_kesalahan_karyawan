@@ -29,7 +29,7 @@ export default function HppKalkulasiClient() {
   const fetchHppData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/hpp-kalkulasi');
+      const res = await fetch(`/api/hpp-kalkulasi?_t=${Date.now()}`);
       if (res.ok) {
         const json = await res.json();
         const fetchedData = json.data || [];
@@ -283,14 +283,14 @@ export default function HppKalkulasiClient() {
             </div>
             
             {/* Footer info Banner outside the card for consistency */}
-            <div className="flex items-center justify-between shrink-0">
+            <div className="flex items-center justify-start shrink-0">
               <span className="text-[12px] font-bold text-gray-400">
                  {filteredData.length === 0
                    ? 'Tidak ada data'
                    : `Menampilkan ${paginatedData.length} dari ${filteredData.length} data kalkulasi`}
               </span>
               {loading && visibleCount < filteredData.length && (
-                <div className="flex items-center gap-2 text-green-600 font-bold text-[11px] animate-pulse">
+                <div className="flex items-center gap-2 text-green-600 font-bold text-[11px] animate-pulse ml-4">
                   <Loader2 size={12} className="animate-spin" />
                   <span>Memuat hal. berikutnya...</span>
                 </div>

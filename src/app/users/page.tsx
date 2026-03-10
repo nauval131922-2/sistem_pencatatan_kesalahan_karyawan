@@ -3,6 +3,8 @@ import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 import UsersContent from './UsersContent';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'SIKKA | Kelola User',
   description: 'Manajemen pengguna sistem (Super Admin)',
@@ -20,5 +22,5 @@ export default async function UsersPage() {
     redirect('/');
   }
 
-  return <UsersContent currentUser={session.username} />;
+  return <UsersContent currentUser={session.username} currentUserId={session.userId} />;
 }

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getSession } from '@/lib/session';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -70,9 +72,15 @@ export async function POST(req: NextRequest) {
     const jenisBarang = (data.jenis_barang as string)?.trim();
     const namaBarang = (data.nama_barang as string)?.trim();
     const jenisHarga = (data.jenis_harga as string)?.trim();
-    const jumlah = parseFloat(data.jumlah as string) || 0;
-    const harga = parseFloat(data.harga as string) || 0;
-    const total = parseFloat(data.total as string) || 0;
+    const jumlah = parseFloat(String(data.jumlah)) || 0;
+    const harga = parseFloat(String(data.harga)) || 0;
+    const total = parseFloat(String(data.total)) || 0;
+    
+    // Quick NaN/Infinity check
+    if (isNaN(jumlah) || isNaN(harga) || isNaN(total)) {
+      return NextResponse.json({ error: 'Format angka (jumlah/harga/total) tidak valid.' }, { status: 400 });
+    }
+
     const severity = 'Low';
 
     const session = await getSession();
@@ -81,7 +89,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!employeeId || !date || !orderFaktur) {
-      return NextResponse.json({ error: 'Data tidak lengkap. Pastikan Order Produksi sudah dipilih.' }, { status: 400 });
+      return NextResponse.json({ error: 'Data tidak lengkap. Pastikan Karyawan, Tanggal, dan Order Produksi sudah dipilih.' }, { status: 400 });
     }
 
     const fullDate = date.length === 10 ? `${date} ${getTimeString()}` : date;
@@ -107,6 +115,10 @@ export async function POST(req: NextRequest) {
 
     const emp = empRes.rows[0] as any;
     const rec = recRes.rows[0] as any;
+
+    if (!emp) {
+      return NextResponse.json({ error: 'Karyawan tidak ditemukan di database.' }, { status: 404 });
+    }
 
     const empName = emp?.name || 'Unknown';
     const empPos = emp?.position || '-';
