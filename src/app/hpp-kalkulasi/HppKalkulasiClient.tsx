@@ -135,21 +135,19 @@ export default function HppKalkulasiClient() {
     <div className="flex-1 min-h-0 flex flex-col gap-5 overflow-hidden">
       {/* Upload Panel - Compact 1 Row */}
       <div className="shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] px-5 py-3.5 flex items-center justify-between gap-6 relative overflow-hidden">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] px-4 py-3 flex items-center justify-between gap-4 relative overflow-hidden">
           <div className="absolute right-0 top-1/2 -translate-y-1/2 -mr-12 opacity-[0.02] pointer-events-none text-gray-900 group-hover:opacity-[0.04] transition-opacity">
              <FileSpreadsheet size={140} />
           </div>
           
           <div className="flex items-center gap-5 flex-1 relative z-10">
-            <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center shrink-0 border border-green-100/50">
-              <Upload size={18} className="text-green-600" />
+            <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center shrink-0">
+              <Upload className="text-green-600" size={20} />
             </div>
             <div className="flex flex-col gap-0.5">
-              <h3 className="text-[14px] font-extrabold text-gray-800 tracking-tight">
-                Upload Data HPP Kalkulasi
-              </h3>
-              <p className="text-[11px] text-gray-400 font-medium leading-tight max-w-xl">
-                Unggah file Excel yang berisi Data HPP Kalkulasi. Data yang lama akan dihapus dan digantikan seluruhnya oleh data dari file baru.
+              <h3 className="text-sm font-bold text-gray-800 leading-none mb-1">Upload Data HPP Kalkulasi</h3>
+              <p className="text-[11px] text-gray-400 font-medium leading-tight">
+                Unggah file Excel yang berisi Data HPP Kalkulasi. Data yang lama akan dihapus dan digantikan seluruhnya.
               </p>
             </div>
           </div>
@@ -165,14 +163,14 @@ export default function HppKalkulasiClient() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="px-5 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-lg transition-all flex items-center justify-center gap-2.5 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm active:scale-[0.98] group"
+              className="px-4 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-bold rounded-lg transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm active:scale-[0.98]"
             >
               {uploading ? (
                 <Loader2 size={16} className="animate-spin" />
               ) : (
-                <FileSpreadsheet size={16} className="group-hover:translate-y-[-1px] transition-transform" />
+                <FileSpreadsheet size={16} />
               )}
-              <span>{uploading ? 'Mengunggah...' : 'Pilih & Upload File'}</span>
+              <span>{uploading ? 'Mengunggah...' : 'Pilih & Upload Excel'}</span>
             </button>
           </div>
         </div>
@@ -216,19 +214,11 @@ export default function HppKalkulasiClient() {
         ) : data !== null && data.length > 0 && (
           <>
             {/* Section Title & Search */}
-            <div className="flex flex-col gap-4 shrink-0">
-               <div className="flex items-center justify-between">
-                <h3 className="text-[15px] font-extrabold text-gray-800 flex items-center gap-2">
-                    <Calculator size={18} className="text-green-600" />
-                    <span>Data HPP Kalkulasi</span>
-                </h3>
-                {lastUpdated && (
-                  <div className="flex items-center gap-1.5 text-[12px] text-gray-400 font-medium">
-                    <Clock size={14} className="text-gray-300" />
-                    <span>Sinkronisasi: {lastUpdated}</span>
-                  </div>
-                )}
-              </div>
+            <div className="flex flex-col gap-3 shrink-0">
+              <h3 className="text-[15px] font-extrabold text-gray-800 flex items-center gap-2">
+                  <Calculator size={18} className="text-green-600" />
+                  <span>Data HPP Kalkulasi</span>
+              </h3>
               
               <div className="relative w-full group">
                 <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
