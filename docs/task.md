@@ -25,6 +25,7 @@
     - [x] Perbaikan logika tombol "Hapus" pada user sendiri (via User ID)
     - [x] Sinkronisasi sesi instan setelah edit data diri sendiri
     - [x] Perbaikan pelabelan log aktivitas (Admin vs Profile context)
+    - [x] Implementasi Triple-Tier Database Isolation (Sandbox vs Production)
 - [ ] **Next Steps**
     - [ ] Monitoring performa sinkronisasi di produksi
     - [ ] Penambahan fitur ekspor laporan ke Excel (Opsional)
