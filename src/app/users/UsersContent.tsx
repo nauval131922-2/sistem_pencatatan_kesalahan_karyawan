@@ -2,21 +2,12 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { 
-  Pencil, 
-  Trash2, 
-  RefreshCw, 
-  AlertCircle, 
-  Search, 
-  Users, 
-  Crown, 
-  Plus,
-  Database,
-  ShieldCheck,
-  Shield
+  Users, ShieldCheck, UserCog, Plus, Search, 
+  Edit2, Trash2, X,
+  AlertCircle, BadgeCheck, Loader2, ShieldAlert
 } from 'lucide-react';
 import { getUsers, deleteUser } from '@/lib/users';
 import UserFormModal from './UserFormModal';
-import PageHeader from '@/components/PageHeader';
 
 interface User {
   id: number;
@@ -24,95 +15,85 @@ interface User {
   name: string;
   role: string;
   photo?: string | null;
-  created_at?: string;
+  created_at?: string | null;
 }
 
 export default function UsersContent({ currentUser, currentUserId }: { currentUser: string, currentUserId: number }) {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState('All');
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [roleFilter, setRoleFilter] = useState('Semua Jabatan');
+  const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-  const fetchUsers = async () => {
+  // Load users data
+  const loadUsers = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setError(null);
-      const data = await getUsers();
-      if (data.success && data.users) {
-        setUsers(data.users as User[]);
+      const res = await getUsers();
+      if (res.success && res.users) {
+        setUsers(res.users as User[]);
       } else {
-        setError(data.message || 'Gagal memuat data user.');
+        setMessage({ type: 'error', text: res.message || 'Gagal memuat data user.' });
       }
-    } catch (err) {
-      setError('Terjadi kesalahan jaringan.');
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Gagal memuat data user.' });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
-
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_profile_updated') {
-        fetchUsers();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    loadUsers();
   }, []);
 
-  const stats = useMemo(() => {
-    return {
-      total: users.length,
-      superAdmin: users.filter(u => u.role === 'Super Admin').length,
-      admin: users.filter(u => u.role === 'Admin').length
-    };
-  }, [users]);
-
+  // Filter logic
   const filteredUsers = useMemo(() => {
-    return users.filter(u => {
-      const matchesSearch = (u.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
-                           (u.username || '').toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesRole = roleFilter === 'All' || u.role === roleFilter;
+    return users.filter(user => {
+      const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            user.username.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesRole = roleFilter === 'Semua Jabatan' || user.role === roleFilter;
       return matchesSearch && matchesRole;
     });
   }, [users, searchQuery, roleFilter]);
 
-  const handleCreate = () => {
-    setEditingUser(null);
-    setIsModalOpen(true);
-  };
+  // Statistics
+  const stats = useMemo(() => ({
+    total: users.length,
+    superAdmins: users.filter(u => u.role === 'Super Admin').length,
+    admins: users.filter(u => u.role === 'Admin').length
+  }), [users]);
 
-  const handleEdit = (user: User) => {
-    setEditingUser(user);
-    setIsModalOpen(true);
-  };
+  const handleDelete = async (id: number, username: string) => {
+    if (id === currentUserId || username === currentUser) {
+      setMessage({ type: 'error', text: 'Anda tidak dapat menghapus akun Anda sendiri.' });
+      return;
+    }
 
-  const handleDelete = async (user: User) => {
-    if (confirm(`Apakah Anda yakin ingin menghapus user "${user.name}"?`)) {
+    if (confirm('Apakah Anda yakin ingin menghapus user ini?')) {
       try {
-        const res = await deleteUser(user.id);
-        if (res.success) {
-          fetchUsers();
-          localStorage.setItem('sikka_data_updated', Date.now().toString());
+        const result = await deleteUser(id);
+        if (result.success) {
+          setMessage({ type: 'success', text: 'User berhasil dihapus.' });
+          loadUsers();
         } else {
-          alert('Gagal: ' + res.message);
+          setMessage({ type: 'error', text: result.message || 'Gagal menghapus user.' });
         }
-      } catch (err) {
-        alert('Terjadi kesalahan saat menghapus.');
+      } catch (error) {
+        setMessage({ type: 'error', text: 'Terjadi kesalahan sistem.' });
       }
     }
   };
 
-  const handleModalClose = (refresh: boolean) => {
-    setIsModalOpen(false);
-    if (refresh) fetchUsers();
+  const handleEdit = (user: User) => {
+    setEditingUser(user);
+    setShowModal(true);
+  };
+
+  const handleCreate = () => {
+    setEditingUser(null);
+    setShowModal(true);
   };
 
   const getInitials = (name: string) => {
@@ -121,206 +102,187 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in duration-500 overflow-hidden">
-      <PageHeader
-        title="Kelola User"
-        description="Manajemen akses dan akun pengguna aplikasi."
-        rightElement={
-          <button
+      <div className="shrink-0">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] px-5 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-4 flex-1">
+             <div className="relative w-full max-w-md group">
+               <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+               <input 
+                 type="text" 
+                 placeholder="Cari nama atau username..." 
+                 className="w-full pl-11 pr-4 h-10 bg-slate-50 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-medium placeholder:text-gray-400"
+                 value={searchQuery}
+                 onChange={(e) => setSearchQuery(e.target.value)}
+               />
+             </div>
+             
+             <div className="flex items-center gap-2">
+               <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-4">Filter:</span>
+               <select 
+                 value={roleFilter}
+                 onChange={(e) => setRoleFilter(e.target.value)}
+                 className="h-10 px-4 bg-slate-50 border border-gray-200 rounded-xl text-[12px] font-bold text-gray-700 focus:outline-none focus:border-green-500 cursor-pointer"
+               >
+                 <option>Semua Jabatan</option>
+                 <option>Super Admin</option>
+                 <option>Admin</option>
+               </select>
+             </div>
+          </div>
+
+          <button 
             onClick={handleCreate}
-            className="bg-[#16a34a] hover:bg-[#15803d] text-white rounded-lg px-5 h-10 text-[13px] font-extrabold transition-all active:scale-[0.98] flex items-center gap-2.5 shadow-sm"
+            className="px-5 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-lg transition-all flex items-center justify-center gap-2.5 shadow-sm active:scale-[0.98]"
           >
             <Plus size={18} />
             <span>Tambah User Baru</span>
           </button>
-        }
-      />
+        </div>
+      </div>
 
-      {/* Stat Cards Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
-        <div className="bg-white rounded-[10px] border border-[#e5e7eb] p-5 h-[100px] flex items-center gap-4 shadow-sm hover:border-[#16a34a]/30 transition-colors">
-          <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
-            <Users size={24} className="text-[#16a34a]" />
+        <div className="bg-white rounded-[10px] border border-[#e5e7eb] p-5 h-[100px] flex items-center gap-4 shadow-sm hover:border-[#16a34a]/30 transition-colors text-blue-600">
+          <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+            <Users size={24} />
           </div>
           <div className="flex flex-col">
-            <span className="text-2xl font-bold text-gray-800 tracking-tight leading-none mb-1.5">{stats.total}</span>
-            <span className="text-[12px] text-[#9ca3af] font-bold tracking-tight">Total Pengguna</span>
+            <span className="text-2xl font-black tracking-tighter text-gray-800 leading-none mb-1">{stats.total}</span>
+            <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Total Pengguna</span>
           </div>
         </div>
         
-        <div className="bg-white rounded-[10px] border border-[#e5e7eb] p-5 h-[100px] flex items-center gap-4 shadow-sm hover:border-purple-200 transition-colors">
+        <div className="bg-white rounded-[10px] border border-[#e5e7eb] p-5 h-[100px] flex items-center gap-4 shadow-sm hover:border-[#16a34a]/30 transition-colors text-purple-600">
           <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
-            <Crown size={24} className="text-purple-600" />
+            <ShieldCheck size={24} />
           </div>
           <div className="flex flex-col">
-            <span className="text-2xl font-bold text-gray-800 tracking-tight leading-none mb-1.5">{stats.superAdmin}</span>
-            <span className="text-[12px] text-[#9ca3af] font-bold tracking-tight">Super Admin</span>
+            <span className="text-2xl font-black tracking-tighter text-gray-800 leading-none mb-1">{stats.superAdmins}</span>
+            <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Super Admin</span>
           </div>
         </div>
 
-        <div className="bg-white rounded-[10px] border border-[#e5e7eb] p-5 h-[100px] flex items-center gap-4 shadow-sm hover:border-blue-200 transition-colors">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-            <ShieldCheck size={24} className="text-blue-600" />
+        <div className="bg-white rounded-[10px] border border-[#e5e7eb] p-5 h-[100px] flex items-center gap-4 shadow-sm hover:border-[#16a34a]/30 transition-colors text-indigo-600">
+          <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+            <UserCog size={24} />
           </div>
           <div className="flex flex-col">
-            <span className="text-2xl font-bold text-gray-800 tracking-tight leading-none mb-1.5">{stats.admin}</span>
-            <span className="text-[12px] text-[#9ca3af] font-bold tracking-tight">Admin</span>
+            <span className="text-2xl font-black tracking-tighter text-gray-800 leading-none mb-1">{stats.admins}</span>
+            <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Admin</span>
           </div>
         </div>
       </div>
 
-      {/* Control Panel (Unified Filter Card) */}
-      <div className="shrink-0">
-        <div className="bg-white border border-[#e5e7eb] shadow-sm rounded-[10px] px-5 py-3.5 flex items-center justify-between gap-6">
-          <div className="relative flex-1 group">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#16a34a] transition-colors" size={16} />
-            <input
-              type="text"
-              placeholder="Cari nama atau username..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 h-10 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-[#16a34a] focus:ring-4 focus:ring-[#16a34a]/10 transition-all text-[13px] font-medium placeholder:text-gray-300 shadow-sm"
-            />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="px-4 h-10 bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-[#16a34a] focus:ring-4 focus:ring-[#16a34a]/10 transition-all text-[13px] text-gray-600 font-bold cursor-pointer shadow-sm"
-            >
-              <option value="All">Semua Jabatan</option>
-              <option value="Super Admin">Super Admin</option>
-              <option value="Admin">Admin</option>
-            </select>
-            
-            <button
-              onClick={fetchUsers}
-              disabled={loading}
-              className="h-10 w-10 flex items-center justify-center bg-white border border-gray-200 text-gray-400 hover:text-[#16a34a] hover:border-[#16a34a] rounded-lg transition-all disabled:opacity-50 shadow-sm active:scale-[0.98]"
-              title="Refresh Data"
-            >
-              <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
-            </button>
-          </div>
+      {message && (
+        <div className={`p-4 rounded-xl flex items-center gap-3 text-sm animate-in slide-in-from-top-2 border ${
+          message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'
+        }`}>
+          {message.type === 'success' ? <BadgeCheck size={18} /> : <AlertCircle size={18} />}
+          <span className="font-bold">{message.text}</span>
+          <button onClick={() => setMessage(null)} className="ml-auto opacity-50 hover:opacity-100"><X size={16} /></button>
         </div>
-      </div>
+      )}
 
-      {/* Main Container for Results */}
-      <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
-        <div className="bg-white border border-[#e5e7eb] shadow-sm rounded-[10px] overflow-hidden flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-auto custom-scrollbar relative">
-            {error && (
-              <div className="m-6 p-4 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm flex items-start gap-3">
-                <AlertCircle size={18} className="mt-0.5 shrink-0" />
-                <p className="font-bold">{error}</p>
-              </div>
-            )}
-
-            {loading && filteredUsers.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 text-gray-400">
-                <RefreshCw className="animate-spin mb-4" size={40} />
-                <p className="text-sm font-bold tracking-widest uppercase">Sinkronisasi Data...</p>
-              </div>
-            ) : filteredUsers.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-5">
-                  <Search className="text-gray-200" size={32} />
-                </div>
-                <h3 className="text-sm font-extrabold text-gray-800 mb-2">Tidak ada pengguna ditemukan</h3>
-                <p className="text-[12px] text-[#9ca3af] max-w-[280px] mx-auto leading-relaxed font-medium">
-                  Silakan coba kata kunci lain atau sesuaikan filter jabatan Anda.
-                </p>
-              </div>
-            ) : (
-              <table className="w-full text-left border-collapse min-w-[700px]">
-                <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
-                  <tr className="text-[11px] text-[#6b7280] font-bold uppercase tracking-wider">
-                    <th className="px-6 py-3.5">PROFIL PENGGUNA</th>
-                    <th className="px-6 py-3.5">JABATAN / PERAN</th>
-                    <th className="px-6 py-3.5 text-right">MANAJEMEN</th>
+      <div className="flex-1 bg-white border border-[#e5e7eb] rounded-[12px] shadow-sm flex flex-col min-h-0 overflow-hidden relative">
+        <div className="overflow-auto flex-1 custom-scrollbar">
+          <table className="w-full text-left">
+            <thead className="sticky top-0 bg-gray-50/90 backdrop-blur-md z-10 border-b border-gray-100">
+              <tr className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">
+                <th className="px-6 py-4">Profil Pengguna</th>
+                <th className="px-6 py-4">Jabatan / Peran</th>
+                <th className="px-6 py-4 text-right">Manajemen</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {loading ? (
+                Array(5).fill(0).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="px-6 py-5" colSpan={3}>
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-gray-100"></div>
+                        <div className="h-4 w-32 bg-gray-100 rounded"></div>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {filteredUsers.map((u, idx) => (
-                    <tr 
-                      key={u.id} 
-                      className={`hover:bg-green-50/30 transition-colors group h-10 ${idx % 2 === 1 ? 'bg-[#f9fafb]' : 'bg-white'}`}
-                    >
-                      <td className="px-6 py-1">
-                        <div className="flex items-center gap-4">
-                          <div className="w-8 h-8 rounded-lg bg-[#16a34a] flex items-center justify-center font-bold text-xs text-white shrink-0 shadow-sm overflow-hidden border border-green-200/50">
-                            {u.photo ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={u.photo} alt={u.name} className="w-full h-full object-cover" />
-                            ) : (
-                              getInitials(u.name)
-                            )}
-                          </div>
-                          <div className="flex flex-col min-w-0">
-                            <p className="font-bold text-gray-800 truncate text-[14px] leading-tight mb-0.5">{u.name}</p>
-                            <p className="text-[12px] text-[#9ca3af] font-medium leading-tight">@{u.username}</p>
-                          </div>
+                ))
+              ) : filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="px-6 py-20 text-center">
+                    <div className="flex flex-col items-center gap-3 grayscale opacity-30">
+                      <Users size={48} />
+                      <p className="text-sm font-bold text-gray-400">Tidak ada user ditemukan.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredUsers.map((user) => (
+                  <tr key={user.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-6 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center text-white font-black text-xs shadow-sm">
+                          {user.photo ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={user.photo} alt={user.name} className="w-full h-full object-cover rounded-lg" />
+                          ) : getInitials(user.name)}
                         </div>
-                      </td>
-                      <td className="px-6 py-1">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border tracking-wider ${
-                          u.role === 'Super Admin' 
-                            ? 'bg-purple-50 text-[#7c3aed] border-purple-100' 
-                            : 'bg-blue-50 text-[#2563eb] border-blue-100'
-                        }`}>
-                          {u.role}
-                        </span>
-                      </td>
-                      <td className="px-6 py-1 text-right">
-                        <div className="flex items-center justify-end gap-2.5">
-                          <button
-                            onClick={() => handleEdit(u)}
-                            className="px-4 py-1.5 text-[11px] font-extrabold text-[#16a34a] border border-[#16a34a]/30 hover:bg-[#16a34a] hover:text-white rounded-md transition-all active:scale-[0.95]"
+                        <div className="flex flex-col">
+                          <span className="text-[13px] font-extrabold text-gray-700">{user.name}</span>
+                          <span className="text-[11px] text-gray-400 font-medium">@{user.username}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-3">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight ${
+                        user.role === 'Super Admin' 
+                          ? 'bg-purple-50 text-purple-600' 
+                          : 'bg-indigo-50 text-indigo-600'
+                      }`}>
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-3">
+                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => handleEdit(user)}
+                          className="h-8 px-3 rounded-lg border border-gray-200 text-gray-400 hover:text-green-600 hover:border-green-100 hover:bg-green-50 text-[11px] font-bold transition-all flex items-center gap-1.5"
+                        >
+                          <Edit2 size={12} />
+                          <span>Edit</span>
+                        </button>
+                        {user.id !== currentUserId && (
+                          <button 
+                            onClick={() => handleDelete(user.id, user.username)}
+                            className="h-8 px-3 rounded-lg border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-100 hover:bg-red-50 text-[11px] font-bold transition-all flex items-center gap-1.5"
                           >
-                            Edit
+                            <Trash2 size={12} />
+                            <span>Hapus</span>
                           </button>
-                          
-                          {u.id !== currentUserId && (
-                            <button
-                              onClick={() => handleDelete(u)}
-                              className="px-4 py-1.5 text-[11px] font-extrabold text-red-500 border border-red-100 hover:bg-red-500 hover:text-white rounded-md transition-all active:scale-[0.95]"
-                            >
-                              Hapus
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-          
-          {/* Footer Banner */}
-          {!loading && (
-            <div className="px-6 py-4 border-t border-gray-100 bg-white flex justify-between items-center shrink-0 shadow-inner">
-              <span className="text-[12px] font-bold text-[#9ca3af]">
-                Menampilkan {filteredUsers.length} dari {users.length} pengguna terdaftar
-              </span>
-              <div className="flex items-center gap-2 text-[#9ca3af] opacity-60 font-bold">
-                <Shield size={14} className="text-[#9ca3af]" />
-                <span className="text-[11px] tracking-widest">SIKKA System Security</span>
-              </div>
-            </div>
-          )}
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="p-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+           <p className="text-[11px] font-bold text-gray-400">Total: {filteredUsers.length} Pengguna Terdaftar</p>
+           <div className="flex items-center gap-2 opacity-30">
+              <ShieldAlert size={14} className="text-gray-400" />
+              <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">SIKKA System Security</span>
+           </div>
         </div>
       </div>
 
-      {isModalOpen && (
-        <UserFormModal
+      {showModal && (
+        <UserFormModal 
           user={editingUser}
-          onClose={(refresh: boolean) => handleModalClose(refresh)}
+          onClose={(refresh) => {
+            setShowModal(false);
+            if (refresh) loadUsers();
+          }}
         />
       )}
     </div>
   );
 }
-
-
-

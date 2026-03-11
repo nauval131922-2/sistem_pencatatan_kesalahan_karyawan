@@ -1,26 +1,37 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  LineChart, Line, Cell, PieChart, Pie
+  Cell, PieChart, Pie
 } from 'recharts';
 import { 
   Users, AlertTriangle, TrendingUp, BarChart3, 
   Calendar, UserMinus, ShieldAlert, ChevronRight,
-  TrendingDown, AlertCircle
+  TrendingDown, AlertCircle, ChevronDown, Check
 } from 'lucide-react';
-import PageHeader from '@/components/PageHeader';
 
 export default function StatsClient({ stats, detailedData, year }: { stats: any, detailedData: any, year: number }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [selectedYear, setSelectedYear] = useState(year);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newYear = parseInt(e.target.value);
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleYearSelect = (newYear: number) => {
     setSelectedYear(newYear);
+    setIsDropdownOpen(false);
     router.push(`/stats?year=${newYear}`);
   };
 
@@ -43,31 +54,69 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
     { name: 'Low', value: detailedData.severityData.Low || 0 },
   ].filter(d => d.value > 0);
 
+  const availableYears = [2024, 2025, 2026];
+
   return (
-    <div className="flex flex-col gap-6 pb-10">
-      <PageHeader
-        title={`Analitik Performa ${year}`}
-        description="Wawasan mendalam mengenai kedisiplinan dan operasional."
-        rightElement={
-          <div className="flex items-center gap-3 bg-white p-1.5 rounded-xl border border-gray-100 shadow-sm">
-            <Calendar size={16} className="text-gray-400 ml-2" />
-            <select 
-              value={selectedYear}
-              onChange={handleYearChange}
-              className="bg-transparent text-sm font-bold text-gray-700 outline-none pr-4 cursor-pointer"
-            >
-              {[2024, 2025, 2026].map(y => (
-                <option key={y} value={y}>Tahun {y}</option>
-              ))}
-            </select>
+    <div className="flex-1 flex flex-col gap-6 pb-10 overflow-y-auto custom-scrollbar">
+      {/* Year Selector - Refined Custom Dropdown */}
+      <div className="shrink-0">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] px-5 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Calendar size={16} className="text-green-600" />
+            <span className="text-[13px] font-extrabold text-gray-400 uppercase tracking-wider">Tahun Analisis</span>
           </div>
-        }
-      />
+
+          <div className="relative" ref={dropdownRef}>
+            <button 
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className={`
+                flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-200 border
+                ${isDropdownOpen 
+                  ? 'bg-white border-green-500 shadow-md ring-4 ring-green-500/10' 
+                  : 'bg-slate-50 border-gray-100 hover:bg-slate-100 hover:border-gray-200 shadow-inner'
+                }
+              `}
+            >
+              <span className="text-sm font-black text-gray-700">Tahun {selectedYear}</span>
+              <ChevronDown 
+                size={16} 
+                className={`text-gray-400 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180 text-green-600' : ''}`} 
+              />
+            </button>
+
+            {isDropdownOpen && (
+              <div className="absolute top-full right-0 mt-2 w-40 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 py-2 animate-in fade-in zoom-in-95 duration-200">
+                <div className="px-3 pb-2 mb-1 border-b border-gray-50">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pilih Tahun</span>
+                </div>
+                <div className="px-1.5 space-y-1">
+                  {availableYears.map(y => (
+                    <button
+                      key={y}
+                      onClick={() => handleYearSelect(y)}
+                      className={`
+                        w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-bold transition-all
+                        ${selectedYear === y 
+                          ? 'bg-green-50 text-green-700' 
+                          : 'text-gray-600 hover:bg-slate-50 hover:text-gray-900'
+                        }
+                      `}
+                    >
+                      <span>Tahun {y}</span>
+                      {selectedYear === y && <Check size={14} className="text-green-600" />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Primary Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((card, idx) => (
-          <div key={idx} className="bg-white border border-gray-100 p-5 rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+          <div key={idx} className="bg-white border border-gray-100 p-5 rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden relative border-b-2 border-b-transparent hover:border-b-green-500">
             <div className="flex items-center gap-4 relative z-10">
               <div className={`w-12 h-12 ${card.bg} ${card.color} rounded-xl flex items-center justify-center shrink-0`}>
                 <card.icon size={24} />
@@ -91,7 +140,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
               </div>
               <h3 className="text-sm font-bold text-gray-700">Tren Kesalahan Bulanan</h3>
             </div>
-            <div className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded uppercase">Jan - Des {year}</div>
+            <div className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded uppercase">Jan - Des {selectedYear}</div>
           </div>
 
           <div className="flex-1 w-full min-h-[300px]">
@@ -242,7 +291,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
               </div>
               <h4 className="text-2xl font-black mb-3 leading-tight tracking-tight">Rekomendasi Perbaikan</h4>
               <p className="text-indigo-100/80 text-sm leading-relaxed mb-8 max-w-[400px]">
-                Berdasarkan data {year}, tercatat {stats.highSeverity} kasus tingkat tinggi. Kami merekomendasikan peninjauan ulang SOP pada departemen dengan tingkat kesalahan tertinggi untuk menekan angka kecelakaan kerja atau kerugian material.
+                Berdasarkan data {selectedYear}, tercatat {stats.highSeverity} kasus tingkat tinggi. Kami merekomendasikan peninjauan ulang SOP pada departemen dengan tingkat kesalahan tertinggi untuk menekan angka kecelakaan kerja atau kerugian material.
               </p>
               
               <div className="flex flex-wrap gap-3">

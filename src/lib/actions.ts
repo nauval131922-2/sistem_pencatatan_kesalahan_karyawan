@@ -98,24 +98,25 @@ export async function addInfraction(employeeId: number, description: string, sev
   const emp = empRes.rows[0] as any;
   const rec = recRes.rows[0] as any;
 
-  return await db.execute({
-    sql: `
-      INSERT INTO infractions (
-        employee_id, employee_no, employee_name, employee_position,
-        description, severity, date, 
-        recorded_by, recorded_by_id, recorded_by_no, recorded_by_name, recorded_by_position,
-        order_name
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `,
+  if (!emp || !rec) throw new Error('Data karyawan tidak ditemukan.');
+
+  const result = await db.execute({
+    sql: `INSERT INTO infractions (
+            employee_id, employee_no, employee_name, employee_position,
+            description, severity, date, 
+            recorded_by_id, recorded_by_no, recorded_by_name, recorded_by_position,
+            order_name
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
-      employeeId, emp?.employee_no, emp?.name, emp?.position,
+      employeeId, emp.employee_no, emp.name, emp.position,
       description, severity, fullDate,
-      rec?.name, recordedById, rec?.employee_no, rec?.name, rec?.position,
+      recordedById, rec.employee_no, rec.name, rec.position,
       orderName || null
     ]
-  });
-}
+  }, "Catat Kesalahan");
 
+  return result;
+}
 
 export const getStats = cache(async (year?: number) => {
   const currentYear = year || new Date().getFullYear();
@@ -142,6 +143,41 @@ export const getStats = cache(async (year?: number) => {
     totalInfractions: Number(results[1].rows[0]?.count || 0),
     highSeverity: Number(results[2].rows[0]?.count || 0),
     totalOrders: Number(results[3].rows[0]?.count || 0)
+  };
+});
+
+/**
+ * Summary khusus untuk Dashboard agar tidak redundan dengan halaman Statistik.
+ * Menampilkan metrik "Snapshot Current" (Hari ini & Bulan Ini).
+ */
+export const getDashboardSummary = cache(async () => {
+  const now = new Date();
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(now);
+  const thisMonth = ("0" + (now.getMonth() + 1)).slice(-2);
+  const thisYear = now.getFullYear().toString();
+
+  const results = await db.batch([
+    'SELECT COUNT(*) as count FROM employees WHERE is_active = 1',
+    {
+      sql: `SELECT COUNT(*) as count FROM infractions 
+            WHERE (
+              (substr(date, 4, 2) = ? AND substr(date, 7, 4) = ?)
+              OR 
+              (substr(date, 6, 2) = ? AND substr(date, 1, 4) = ?)
+            )`,
+      args: [thisMonth, thisYear, thisMonth, thisYear]
+    },
+    {
+      sql: `SELECT COUNT(*) as count FROM infractions 
+            WHERE (substr(date, 1, 10) = ? OR substr(date, 1, 10) = ?)`,
+      args: [today, today] // checking both formats if needed, but today is YYYY-MM-DD
+    }
+  ], "read");
+
+  return {
+    activeEmployees: Number(results[0].rows[0]?.count || 0),
+    infractionsThisMonth: Number(results[1].rows[0]?.count || 0),
+    infractionsToday: Number(results[2].rows[0]?.count || 0)
   };
 });
 

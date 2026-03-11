@@ -14,7 +14,13 @@ Sesi ini berfokus pada penyempurnaan panduan bantuan (Manual) agar 100% akurat d
     - **HPP Kalkulasi**: Peringatan penghapusan data lama (data replacement) dan info file header.
 - **Harmonisasi Istilah**: Menyesuaikan seluruh label di panduan agar sama persis dengan yang tertulis di tombol dan input UI.
 
-### 2. Analisis Infrastruktur & Biaya
+### 2. Standarisasi UI & Desain Sistem (Refactor Besar)
+- **Komponen `PageHeader`**: Menciptakan komponen reusable untuk judul halaman agar gaya (font, garis hijau, spasi) 100% konsisten.
+- **Sinkronisasi Spasi**: Menyeragamkan seluruh halaman ke `gap-6` dan memperbaiki struktur wrapper agar tidak ada pergeseran visual (jumping UI) saat navigasi.
+- **Pola "Control Panel"**: Standarisasi area Search & Button di halaman Statistik, User, dan Data Master agar identik.
+- **Dokumentasi Desain**: Membuat `docs/DESIGN_SYSTEM.md` sebagai standar teknis UI masa depan.
+
+### 3. Analisis Infrastruktur & Biaya
 - **Evaluasi Tier**: Menganalisis penggunaan Turso (Database) dan Vercel (Hosting).
 - **Rekomendasi**: Tetap di paket **FREE** (Starter/Hobby) karena:
     - Ukuran DB masih sangat kecil (~7.4 MB).

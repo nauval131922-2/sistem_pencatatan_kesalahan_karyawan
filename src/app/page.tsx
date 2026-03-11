@@ -1,5 +1,5 @@
-import { getStats, getActivityLogs } from '@/lib/actions';
-import { Users, AlertTriangle } from 'lucide-react';
+import { getDashboardSummary, getActivityLogs } from '@/lib/actions';
+import { Users, AlertTriangle, CalendarDays } from 'lucide-react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import ActivityTable from '@/components/ActivityTable';
@@ -13,26 +13,36 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 async function DashboardStats() {
-  const stats = await getStats();
+  const summary = await getDashboardSummary();
   const statCards = [
     { 
-      title: 'Total Karyawan', 
-      value: stats.totalEmployees, 
+      title: 'Karyawan Aktif', 
+      value: summary.activeEmployees, 
       icon: Users, 
       classes: 'bg-blue-50 text-blue-500', 
-      href: '/employees' 
+      href: '/employees',
+      subtitle: 'Snapshot Sistem'
     },
     { 
-      title: 'Total Kesalahan', 
-      value: stats.totalInfractions, 
+      title: 'Kesalahan Bulan Ini', 
+      value: summary.infractionsThisMonth, 
       icon: AlertTriangle, 
-      classes: 'bg-red-50 text-red-400', 
-      href: '/records' 
+      classes: 'bg-amber-50 text-amber-500', 
+      href: '/stats',
+      subtitle: `${new Date().toLocaleString('id-ID', { month: 'long' })}`
+    },
+    { 
+      title: 'Kesalahan Hari Ini', 
+      value: summary.infractionsToday, 
+      icon: CalendarDays, 
+      classes: 'bg-red-50 text-red-500', 
+      href: '/records',
+      subtitle: 'Real-time'
     },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
       {statCards.map((card) => (
         <Link 
           key={card.title} 
@@ -43,8 +53,11 @@ async function DashboardStats() {
             <card.icon size={24} />
           </div>
           <div className="flex flex-col">
-            <span className="text-2xl font-bold text-gray-800 tracking-tight leading-none mb-1.5">{card.value}</span>
-            <span className="text-[12px] text-[#9ca3af] font-bold tracking-tight">{card.title}</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-black text-gray-800 tracking-tight leading-none">{card.value}</span>
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{card.subtitle}</span>
+            </div>
+            <span className="text-[12px] text-[#9ca3af] font-bold tracking-tight mt-1.5">{card.title}</span>
           </div>
         </Link>
       ))}
@@ -59,8 +72,8 @@ async function DashboardLogs() {
 
 function StatSkeleton() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
-       {[1, 2].map(i => (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
+       {[1, 2, 3].map(i => (
          <div key={i} className="bg-gray-50 border border-gray-100 rounded-[10px] p-5 h-[100px] animate-pulse"></div>
        ))}
     </div>
@@ -72,7 +85,7 @@ export default async function Home() {
     <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700">
       <PageHeader
         title="Dashboard"
-        description="Ringkasan aktivitas dan metrik sistem."
+        description="Ringkasan aktivitas dan metrik sistem secara real-time."
       />
 
       <Suspense fallback={<StatSkeleton />}>
