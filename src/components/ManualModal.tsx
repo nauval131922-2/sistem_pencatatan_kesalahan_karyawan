@@ -23,9 +23,11 @@ export default function ManualModal() {
       icon: Home,
       description: 'Ringkasan aktivitas dan metrik sistem untuk audit cepat performa harian.',
       steps: [
-        'Pantau angka **Total Karyawan** dan **Total Kesalahan** pada kartu statistik.',
-        'Lihat tabel **Aktivitas Terkini** untuk memantau aktivitas sistem (Scroll ke bawah untuk melihat lebih lama).',
-        'Klik menu di sidebar kiri untuk berpindah halaman.'
+        'Pantau angka **Total Karyawan** dan **Total Kesalahan** pada kartu statistik di bagian atas.',
+        'Lihat tabel **Aktivitas Terkini** untuk memantau log aktivitas sistem secara real-time.',
+        'Gunakan **Kotak Pencarian** di atas tabel untuk memfilter aktivitas berdasarkan menu, user, atau keterangan.',
+        'Klik tombol **Detail** pada baris tabel untuk melihat rincian data aktivitas (termasuk data mentah JSON).',
+        'Klik pada **Kartu Statistik** sebagai jalan pintas (**shortcut**) cepat menuju ke halamannya.'
       ]
     },
     '/employees': {
@@ -33,110 +35,111 @@ export default function ManualModal() {
       icon: Users,
       description: 'Manajemen database karyawan yang terintegrasi dengan sistem pencatatan.',
       steps: [
-        'Klik tombol **Pilih & Upload File Excel** untuk memperbarui seluruh daftar karyawan.',
-        'Sistem akan **menonaktifkan data lama** dan menggantinya dengan data baru, sehingga riwayat pencatatan kesalahan tetap aman.',
-        'Pantau status **Diperbarui** di bagian atas untuk melihat nama file terakhir.',
-        'Scroll tabel ke bawah untuk **melihat lebih banyak data** (Infinite Scroll).',
-        'Gunakan **kotak pencarian** untuk memfilter tabel secara cepat.',
-        'Data di menu **Data Karyawan** akan digunakan untuk menjadi **source di form record kesalahan karyawan** pada bagian **Nama Karyawan** dan **Nama Pencatat**.'
+        'Klik tombol **Pilih & Upload File Excel** untuk memperbarui seluruh daftar karyawan sistem.',
+        '**Keamanan Data**: Sistem akan menonaktifkan data lama secara otomatis tanpa menghapus riwayat kesalahan yang sudah tercatat sebelumnya.',
+        'Lihat **Nama File** dan **Waktu Diperbarui** di bawah judul halaman untuk mengetahui kapan data terakhir kali diimport.',
+        'Gunakan **Kotak Pencarian** untuk memfilter karyawan berdasarkan Nama, Jabatan, atau ID Karyawan.',
+        'Scroll tabel ke bawah untuk melihat lebih banyak data (Infinite Scroll).',
+        'Data di sini akan tampil otomatis pada dropdown **Nama Karyawan** saat mengisi form **Pencatatan Kesalahan**.'
       ]
     },
     '/orders': {
       title: 'Order Produksi',
       icon: Package,
-      description: 'Untuk menyinkronkan daftar Order Produksi secara langsung dari sistem Digit.',
+      description: 'Sinkronisasi daftar Order Produksi secara langsung dari sistem Digit.',
       steps: [
-        'Pilih **Tanggal Mulai** dan **Tanggal Akhir** pada kotak Periode.',
-        'Klik tombol **Tarik Data** untuk mengambil data terbaru dari sistem Digit.',
-        'Tunggu hingga proses selesai (**indikator persentase** akan berjalan).',
-        '**Scraping tidak menghapus keseluruhan data**, data lama masih tersimpan di Database.',
-        'Data di Order Produksi akan menjadi **source di form record kesalahan karyawan**, yang akan muncul di *field* **Nama Order Terkait** dalam bentuk Faktur dan Nama Order Produksi.',
-        'Terus scroll tabel ke bawah jika ingin melihat data order yang lebih lama (Infinite Scroll).'
+        'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel Periode di bagian atas.',
+        'Klik tombol **Tarik Data** untuk memulai proses sinkronisasi otomatis (Parallel Sync).',
+        'Tunggu hingga indikator **Persentase (%)** selesai memproses data bulan demi bulan.',
+        'Gunakan **Kotak Pencarian** untuk memfilter hasil berdasarkan **Nomor Faktur**, **Nama Produk**, atau **Pelanggan**.',
+        'Pantau status **Diperbarui** dan indikator **Kecepatan Load (ms)** untuk memastikan data terbaru sudah tampil.',
+        '**Keamanan Data**: Proses tarik data tidak menghapus data lama, melainkan melengkapi database dengan data yang baru atau diperbarui.',
+        'Data dari sini akan tampil sebagai pilihan di field **Referensi Order** pada form **Pencatatan Kesalahan**.'
       ],
-      tips: 'Jika data order terbaru belum muncul, pastikan Anda sudah mengeklik tombol "Tarik Data" untuk periode tanggal yang sesuai.'
+      tips: 'Lakukan penarikan data secara berkala untuk memastikan nomor faktur terbaru dari Digit tersedia di sistem.'
     },
     '/bahan-baku': {
       title: 'Daftar Bahan Baku Keluar',
       icon: Box,
-      description: 'Untuk menyinkronkan daftar pengeluaran Bahan Baku secara langsung dari sistem Digit.',
+      description: 'Sinkronisasi daftar pengeluaran Bahan Baku secara langsung dari sistem Digit.',
       steps: [
-        'Pilih **Tanggal Mulai** dan **Tanggal Akhir** pada kotak Periode.',
-        'Klik tombol **Tarik Data** untuk mengambil data terbaru dari sistem Digit.',
-        'Tunggu hingga proses selesai (**indikator persentase** akan muncul berjalan).',
-        '**Scraping tidak menghapus keseluruhan data**, data lama masih tersimpan di Database.',
-        'Data di Daftar Bahan Baku Keluar akan menjadi **source di form record kesalahan karyawan**, yang akan muncul di *field* Nama Barang dalam bentuk **Faktur** dan **Nama Barang** saat memilih Jenis Barang **Bahan Baku (Digit)**, dan mengambil **Harga** dari kolom **HPP** saat memilih Jenis Harga **HPP Digit**.',
-        'Scroll tabel ke bawah untuk melihat data sebelumnya (Infinite Scroll).'
-      ],
-      tips: 'Jika data bahan baku terbaru belum muncul, pastikan Anda sudah mengeklik tombol "Tarik Data" untuk periode tanggal yang memuat faktur tersebut.'
+        'Atur **Rentang Tanggal** pada panel Periode dan klik **Tarik Data** untuk sinkronisasi (Parallel Sync).',
+        'Tabel menampilkan kolom **Faktur**, **Faktur PRD**, **Nama Barang**, **Qty**, dan **HPP Digit**.',
+        'Gunakan **Kotak Pencarian** untuk memfilter berdasarkan **Nomor Faktur**, **Nama Barang**, atau **Supplier**.',
+        'Pantau indikator **Load Time (ms)** untuk melihat kecepatan akses data.',
+        'Data di sini menjadi **source** pada form **Pencatatan Kesalahan** saat memilih kategori **Bahan Baku** (mengambil harga dari kolom **HPP Digit**).',
+        'Geser tabel atau scroll ke bawah untuk memuat data lama (Infinite Scroll).'
+      ]
     },
     '/barang-jadi': {
       title: 'Barang Jadi',
       icon: Star,
-      description: 'Untuk menyinkronkan Daftar Barang Hasil Produksi secara langsung dari sistem Digit.',
+      description: 'Sinkronisasi Daftar Barang Hasil Produksi secara langsung dari sistem Digit.',
       steps: [
-        'Pilih Tanggal Mulai dan Tanggal Akhir pada kotak "Periode".',
-        'Klik tombol "Tarik Data" untuk mengambil data terbaru dari sistem Digit.',
-        'Tunggu hingga proses selesai (**indikator persentase** akan muncul berjalan).',
-        '**Scraping tidak menghapus keseluruhan data**, data lama masih tersimpan di Database.',
-        'Data di Barang Jadi akan menjadi **source di form record kesalahan karyawan**, yang akan muncul di *field* Nama Barang dalam bentuk **Faktur** dan **Nama Barang** saat memilih Jenis Barang **Barang Jadi (Digit)**, dan mengambil **Harga** dari kolom **HPP** saat memilih Jenis Harga **Barang Jadi (Digit)**.',
-        'Scroll tabel ke bawah untuk melihat lebih banyak data (Infinite Scroll).'
-      ],
-      tips: 'Jika data barang jadi terbaru belum muncul, pastikan Anda sudah mengeklik tombol "Tarik Data" untuk periode tanggal yang memuat faktur tersebut.'
+        'Atur **Rentang Tanggal** dan klik **Tarik Data** untuk menarik data produksi terbaru.',
+        'Pantau **Indikator Persentase (%)** untuk melihat kemajuan sinkronisasi data.',
+        'Gunakan **Kotak Pencarian** untuk memfilter berdasarkan **Nama Barang**, **Tanggal**, atau **Order Produksi**.',
+        'Data di sini menjadi **source** pada form **Pencatatan Kesalahan** saat memilih kategori **Barang Jadi** (mengambil harga dari kolom **HPP Digit**).',
+        'Scroll tabel ke bawah untuk melihat lebih banyak data tanpa perlu berpindah halaman (Infinite Scroll).'
+      ]
     },
     '/sales': {
       title: 'Laporan Penjualan',
       icon: BarChart3,
-      description: 'Untuk menyinkronkan data Laporan Penjualan secara langsung dari sistem Digit.',
+      description: 'Sinkronisasi data Laporan Penjualan secara langsung dari sistem Digit.',
       steps: [
-        'Pilih **Tanggal Mulai** dan **Tanggal Akhir** pada kotak "Periode".',
-        'Klik tombol **Tarik Data** untuk mengambil data terbaru dari sistem Digit.',
-        'Tunggu hingga proses selesai (**indikator persentase** akan muncul berjalan).',
-        '**Scraping tidak menghapus keseluruhan data**, data lama masih tersimpan di Database.',
-        'Data di Laporan Penjualan akan menjadi **source di form record kesalahan karyawan**, yang akan muncul di *field* Nama Barang dalam bentuk **Faktur** dan **Nama Barang** saat memilih Jenis Barang **Penjualan Barang (Digit)**, dan mengambil **Harga** dari kolom **Harga** saat memilih Jenis Harga **Penjualan Barang (Digit)**.',
-        'Scroll tabel ke bawah untuk memuat data lama (Infinite Scroll).'
-      ],
-      tips: 'Jika data penjualan terbaru belum muncul, pastikan Anda sudah mengeklik tombol "Tarik Data" untuk periode tanggal yang memuat faktur tersebut.'
+        'Klik **Tarik Data** setelah mengatur periode untuk mengambil data transaksi penjualan terbaru.',
+        'Gunakan **Kotak Pencarian** untuk memfilter berdasarkan **Nomor Faktur**, **Pelanggan**, atau **Nama Produk**.',
+        'Data di sini menjadi **source** pada form **Pencatatan Kesalahan** dengan format khusus **[Faktur] Nama Order**.',
+        'Harga akan ditarik dari kolom **Harga** saat memilih Jenis Dasar Harga **Harga Jual Digit** di form pencatatan.',
+        'Lihat status **Diperbarui** di bagian atas untuk mengetahui waktu sinkronisasi terakhir.'
+      ]
     },
     '/hpp-kalkulasi': {
       title: 'HPP Kalkulasi',
       icon: Calculator,
-      description: 'Menarik data HPP Kalkulasi dari file excel.',
+      description: 'Manajemen database Harga Pokok Penjualan (HPP) hasil kalkulasi tim terkait dari file Excel.',
       steps: [
-        'Klik tombol **Pilih & Upload File Excel** untuk memperbarui database HPP.',
-        'Sistem akan **menonaktifkan data lama** dan menggantinya dengan data baru.',
-        'Gunakan kotak pencarian untuk menemukan nilai HPP berdasarkan **Nama Order**.',
-        'Scroll tabel ke bawah untuk melihat lebih banyak data HPP (Infinite Scroll).',
-        'Data di HPP Kalkulasi akan menjadi **source di form record kesalahan karyawan**, yang akan muncul di *field* Nama Barang dalam bentuk **Nama Order** saat memilih Jenis Barang **HPP Kalkulasi (Excel)**, dan mengambil **Harga** dari kolom **HPP Kalkulasi** saat memilih Jenis Harga **HPP Kalkulasi**.'
+        'Klik tombol **Pilih & Upload File Excel** untuk memperbarui seluruh database HPP Kalkulasi.',
+        '**Data Terhapus**: Sistem akan menghapus seluruh data lama dan menggantikannya dengan data terbaru dari file yang diupload.',
+        'Lihat **Nama File** dan **Waktu Diperbarui** pada header halaman untuk memantau status import terakhir.',
+        'Gunakan **Kotak Pencarian** untuk memfilter tabel berdasarkan **Nama Order**.',
+        'Data di sini akan menjadi **source** otomatis pada form **Pencatatan Kesalahan** saat memilih kategori **HPP Kalkulasi**.',
+        'Harga Satuan pada form pencatatan akan otomatis terisi berdasarkan nilai **HPP Kalkulasi** di menu ini.'
       ]
     },
     '/records': {
-      title: 'Catat Kesalahan',
+      title: 'Pencatatan Kesalahan',
       icon: AlertCircle,
-      description: 'Kelola data kesalahan karyawan.',
+      description: 'Kelola data kesalahan karyawan dan rincian bebannya.',
       steps: [
-        'Tab Daftar Kesalahan:',
-        'Atur **Tgl Mulai & Akhir** untuk memfilter data riwayat kesalahan.',
+        'Tab **Daftar Kesalahan**:',
+        'Atur **Rentang Tanggal** (Mulai & Akhir) untuk memfilter data riwayat kesalahan.',
         '**Data Otomatis Memuat**: Tabel akan terupdate otomatis setiap kali tanggal diubah.',
         'Scroll tabel ke bawah untuk memuat data sebelumnya (Infinite Scroll).',
-        'Klik tombol **Cetak PDF** untuk membuat laporan rekap atau formulir detail per baris.',
-        'Tab Tambah/Edit Data:',
-        '**Faktur**: Otomatis di-generate dengan format **ERR-DDMMYY-XXX** (di mana XXX adalah nomor urut yang mereset setiap harinya).',
-        '**Pilih Tanggal**: Pilih tanggal pencatatan kesalahan karyawan.',
-        '**Nama Karyawan**: Pilih karyawan yang melakukan kesalahan (data ditarik dari menu **Data Karyawan**).',
-        '**Nama Order**: Pilih order terkait (data ditarik dari menu **Order Produksi**).',
-        '**Jenis Barang**: Pilih kategori barang sesuai sumber harganya:',
-        '  • **Bahan Baku (Digit)**: Barang mentah, harga ditarik dari menu **Bahan Baku**.',
-        '  • **Barang Jadi (Digit)**: Hasil produksi, harga ditarik dari menu **Barang Jadi**.',
-        '  • **HPP Kalkulasi (Excel)**: Perhitungan HPP per-Order, harga ditarik dari database di menu **HPP Kalkulasi**.',
-        '  • **Penjualan Barang (Digit)**: Barang keluar/jual, harga ditarik dari menu **Laporan Penjualan**.',
-        '**Nama Barang**: Pilih barang spesifik. Anda bisa mengetik **Nomor Faktur** barang untuk pencarian cepat antar-Order.',
-        '**Deskripsi**: Jelaskan detail kesalahan karyawan (opsional).',
-        '**Jenis Harga**: Dipilihkan otomatis sesuai **Jenis Barang**. Nilai harga akan otomatis terisi.',
-        '**Jumlah (Qty)**: Isi jumlah barang yang rusak/salah untuk menghitung **Total Beban** otomatis.',
-        '**Dicatat Oleh**: Pilih petugas yang melakukan pencatatan data ini (data diambil dari menu **Data Karyawan**).'
+        'Klik tombol **Cetak Rekap PDF** untuk membuat laporan rekap dalam bentuk PDF.',
+        'Klik tombol **PDF (di kolom Action)** untuk mencetak **Formulir Detail** per baris.',
+        'Klik tombol **Ekspor Excel** untuk membuat laporan rekap dalam bentuk file **Excel**.',
+        'Tab **Tambah Data** / **Edit Data**:',
+        '**Nomor Faktur**: Otomatis di-generate dengan format **ERR-DDMMYY-XXX** (reset setiap hari).',
+        '**Tanggal**: Pilih tanggal kejadian kesalahan.',
+        '**Nama Karyawan**: Pilih karyawan yang melakukan kesalahan.',
+        '**Deskripsi Detail**: Jelaskan secara rinci kesalahan yang terjadi (opsional).',
+        '**Referensi Order**: Pilih nomor order/faktur produksi terkait.',
+        '**Kategori Barang**: Pilih kategori sesuai sumber datanya:',
+        '  • **Bahan Baku**: Harga ditarik dari menu **Bahan Baku**.',
+        '  • **Barang Jadi**: Harga ditarik dari menu **Barang Jadi**.',
+        '  • **HPP Kalkulasi**: Harga ditarik dari menu **HPP Kalkulasi**.',
+        '  • **Penjualan**: Harga ditarik dari menu **Laporan Penjualan**.',
+        '  • **Manual**: Masukkan nama barang dan harga secara mandiri.',
+        '**Nama Barang**: Pilih item spesifik. Anda bisa mengetik **Nomor Faktur** untuk pencarian cepat.',
+        '**Jenis Dasar Harga**: Pilihan jenis harga (misal: HPP Digit atau Harga Jual) yang akan ditarik harganya.',
+        '**Kuantitas (Qty)**: Isi jumlah barang yang mengalami kesalahan.',
+        '**Harga Satuan**: Terisi otomatis dari database. Hanya bisa diisi manual jika memilih kategori/jenis harga **Manual**.',
+        '**Total Estimasi Beban**: Hasil perhitungan otomatis (**Qty** x **Harga Satuan**).'
       ]
     }
-  }), []);
+  }), [pathname]);
 
   // Listen for custom open-manual event
   useEffect(() => {
@@ -212,7 +215,7 @@ export default function ManualModal() {
                     {/* Steps / Cara Penggunaan */}
                     <div className="space-y-3.5 pl-1">
                       {currentGuide.steps.map((step, index) => {
-                        const isHeader = step.endsWith(':') && (step.startsWith('Tab ') || step.startsWith('A. ') || step.startsWith('B. ') || step.startsWith('C. ')) && !step.includes('**');
+                        const isHeader = step.endsWith(':') && (step.startsWith('Tab ') || step.startsWith('A. ') || step.startsWith('B. ') || step.startsWith('C. '));
                         const isSubStep = step.trimStart().startsWith('•') || step.startsWith('  ');
                         const cleanText = isSubStep ? step.trimStart().replace(/^[•\s]+/, '') : step;
                         
