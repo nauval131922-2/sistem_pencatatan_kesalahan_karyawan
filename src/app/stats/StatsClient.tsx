@@ -9,7 +9,6 @@ import {
 import { 
   Users, AlertTriangle, TrendingUp, BarChart3, 
   Calendar, UserMinus, ShieldAlert, ChevronRight,
-  ChevronRight,
   TrendingDown, AlertCircle
 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
