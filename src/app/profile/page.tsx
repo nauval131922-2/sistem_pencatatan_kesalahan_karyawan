@@ -102,7 +102,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-8 animate-in fade-in duration-500 overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in duration-500 overflow-hidden">
       <PageHeader
         title="Pengaturan Profil"
         description="Kelola informasi data diri dan keamanan akun Anda."

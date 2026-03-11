@@ -41,7 +41,7 @@ export default async function RecordsPage() {
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700">
+    <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700">
       <PageHeader
         title="Pencatatan Kesalahan"
         description="Kelola data kesalahan karyawan dan rincian bebannya."

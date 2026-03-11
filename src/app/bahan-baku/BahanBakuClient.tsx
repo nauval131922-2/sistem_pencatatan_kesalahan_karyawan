@@ -296,7 +296,7 @@ export default function BahanBakuClient() {
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in slide-in-from-bottom-2 duration-700 overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-700 overflow-hidden">
       {/* Control Panel - Horizontal Card */}
       <div className="shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
         <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] px-5 py-3.5 flex items-center justify-between gap-6">

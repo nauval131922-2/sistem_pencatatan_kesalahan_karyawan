@@ -19,7 +19,7 @@ export default function PageHeader({
   children 
 }: PageHeaderProps) {
   return (
-    <header className="flex flex-col shrink-0 mb-4 animate-in fade-in slide-in-from-top-1 duration-500">
+    <header className="flex flex-col shrink-0 animate-in fade-in slide-in-from-top-1 duration-500">
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-3 border-l-4 border-green-500 pl-4">
           <h1 className="text-[22px] font-extrabold text-gray-800 tracking-tight leading-none">
