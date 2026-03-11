@@ -72,16 +72,24 @@ export async function POST(req: NextRequest) {
     const jenisBarang = (data.jenis_barang as string)?.trim();
     const namaBarang = (data.nama_barang as string)?.trim();
     const jenisHarga = (data.jenis_harga as string)?.trim();
-    const jumlah = parseFloat(String(data.jumlah)) || 0;
-    const harga = parseFloat(String(data.harga)) || 0;
-    const total = parseFloat(String(data.total)) || 0;
+    const parseIndoNum = (v: any) => {
+      if (typeof v === 'number') return v;
+      if (typeof v !== 'string') return 0;
+      // Remove all dots (thousands separator) and replace comma with dot (decimal separator)
+      const clean = v.replace(/\./g, '').replace(/,/g, '.');
+      return parseFloat(clean) || 0;
+    };
+
+    const jumlah = parseIndoNum(data.jumlah);
+    const harga = parseIndoNum(data.harga);
+    const total = parseIndoNum(data.total);
     
     // Quick NaN/Infinity check
     if (isNaN(jumlah) || isNaN(harga) || isNaN(total)) {
       return NextResponse.json({ error: 'Format angka (jumlah/harga/total) tidak valid.' }, { status: 400 });
     }
 
-    const severity = 'Low';
+    const severity = (data.severity as string) || 'Low';
 
     const session = await getSession();
     if (!session) {

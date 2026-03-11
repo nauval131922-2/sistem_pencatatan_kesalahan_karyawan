@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo, useCallback, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, ChevronDown, AlertTriangle, Loader2, Users, Box, Star, CheckCircle2, ClipboardList, Pencil, PlusCircle } from 'lucide-react';
+import { Search, ChevronDown, AlertTriangle, Loader2, Users, Box, Star, CheckCircle2, ClipboardList, Pencil, PlusCircle, ShieldAlert } from 'lucide-react';
 import ConfirmDialog, { DialogType } from '@/components/ConfirmDialog';
 import DatePicker from '@/components/DatePicker';
 
@@ -240,6 +240,7 @@ export default function RecordsForm({
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [fakturPreview, setFakturPreview] = useState<string>('Memuat...');
   const [description, setDescription] = useState('');
+  const [severity, setSeverity] = useState<string>('Low');
   const [resetKey, setResetKey] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -330,6 +331,7 @@ export default function RecordsForm({
       setSelectedOrderName(editingInfraction.order_name || '');
       setJenisBarang(editingInfraction.jenis_barang || 'Bahan Baku');
       setJenisHarga(editingInfraction.jenis_harga || 'HPP Digit');
+      setSeverity(editingInfraction.severity || 'Low');
       
       if (editingInfraction.jenis_barang === 'Input Manual') {
         setManualNamaBarang(editingInfraction.nama_barang || '');
@@ -370,6 +372,7 @@ export default function RecordsForm({
           setManualNamaBarang(draft.manualNamaBarang || '');
           setJumlah(draft.jumlah || '');
           setHarga(draft.harga || '');
+          setSeverity(draft.severity || 'Low');
           setDraftEmployeeId(draft.employeeId || null);
           setDraftOrderFaktur(draft.selectedOrderFaktur || '');
           setDraftItemFaktur(draft.selectedItemFaktur || '');
@@ -395,10 +398,11 @@ export default function RecordsForm({
       manualNamaBarang,
       jumlah,
       harga,
+      severity,
       employeeId: draftEmployeeId,
     };
     localStorage.setItem('infraction_form_draft', JSON.stringify(draft));
-  }, [description, selectedDate, selectedOrderFaktur, selectedOrderName, jenisBarang, jenisHarga, selectedNamaBarang, selectedItemFaktur, manualNamaBarang, jumlah, harga, draftEmployeeId, editingInfraction, isDraftRestored]);
+  }, [description, selectedDate, selectedOrderFaktur, selectedOrderName, jenisBarang, jenisHarga, selectedNamaBarang, selectedItemFaktur, manualNamaBarang, jumlah, harga, severity, draftEmployeeId, editingInfraction, isDraftRestored]);
  
   // Handle price type transitions (Manual Mode Activation)
   useEffect(() => {
@@ -427,6 +431,7 @@ export default function RecordsForm({
     setManualNamaBarang('');
     setJumlah('');
     setHarga('');
+    setSeverity('Low');
     setDraftEmployeeId(null);
     setDraftOrderFaktur('');
     setDraftItemFaktur('');
@@ -564,6 +569,7 @@ export default function RecordsForm({
       harga,
       total: String(totalValue),
       description,
+      severity,
       faktur: editingInfraction?.faktur || null
     };
 
@@ -655,20 +661,47 @@ export default function RecordsForm({
             <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
               <div className={sectionHeaderCls}>
                 <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
-                  <AlertTriangle size={18} className="text-amber-600" />
+                  <ShieldAlert size={18} className="text-amber-600" />
                 </div>
-                <h3 className="text-base font-bold text-gray-800 tracking-tight">Keterangan Kesalahan</h3>
+                <h3 className="text-base font-bold text-gray-800 tracking-tight">Tingkat Severitas & Detail</h3>
               </div>
-              
-              <div className="space-y-1.5">
-                <label className={labelCls}>Deskripsi Detail (Optional)</label>
-                <textarea
-                  name="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className={`${inputCls} min-h-[120px] py-3 leading-relaxed`}
-                  placeholder="Jelaskan secara rinci kesalahan yang terjadi..."
-                />
+
+              <div className="space-y-4">
+                <div className="space-y-1.5 focus-within:z-10">
+                  <label className={labelCls}>Severitas (Tingkat Dampak)</label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { label: 'Low', value: 'Low', activeCls: 'bg-emerald-600 text-white border-emerald-600 ring-emerald-600/10' },
+                      { label: 'Medium', value: 'Medium', activeCls: 'bg-amber-500 text-white border-amber-500 ring-amber-500/10' },
+                      { label: 'High', value: 'High', activeCls: 'bg-rose-600 text-white border-rose-600 ring-rose-600/10' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setSeverity(opt.value)}
+                        className={`px-4 h-10 text-[11px] font-bold rounded-lg border transition-all flex items-center justify-center gap-2 ${
+                          severity === opt.value 
+                            ? `${opt.activeCls} shadow-md ring-4` 
+                            : 'bg-white text-gray-500 border-gray-100 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className={`w-1.5 h-1.5 rounded-full ${severity === opt.value ? 'bg-white' : 'bg-gray-300'}`} />
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <label className={labelCls}>Deskripsi Detail (Optional)</label>
+                  <textarea
+                    name="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className={`${inputCls} min-h-[120px] py-3 leading-relaxed`}
+                    placeholder="Jelaskan secara rinci kesalahan yang terjadi..."
+                  />
+                </div>
               </div>
             </div>
           </div>

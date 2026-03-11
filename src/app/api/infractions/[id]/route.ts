@@ -38,10 +38,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       recordedById = (recLookup.rows[0] as any)?.id || 0;
     }
 
+    const parseIndoNum = (v: any) => {
+      if (typeof v === 'number') return v;
+      if (typeof v !== 'string') return 0;
+      const clean = v.replace(/\./g, '').replace(/,/g, '.');
+      return parseFloat(clean) || 0;
+    };
+
     const employeeId = parseInt(String(employee_id));
-    const cleanJumlah = parseFloat(String(jumlah)) || 0;
-    const cleanHarga = parseFloat(String(harga)) || 0;
-    const cleanTotal = parseFloat(String(total)) || 0;
+    const cleanJumlah = parseIndoNum(jumlah);
+    const cleanHarga = parseIndoNum(harga);
+    const cleanTotal = parseIndoNum(total);
 
     if (isNaN(cleanJumlah) || isNaN(cleanHarga) || isNaN(cleanTotal)) {
       return NextResponse.json({ error: 'Format angka tidak valid.' }, { status: 400 });
