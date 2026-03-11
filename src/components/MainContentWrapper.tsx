@@ -28,7 +28,7 @@ export default function MainContentWrapper({
     };
 
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_profile_updated') {
+      if (e.key === 'sikka_profile_updated' || e.key === 'sikka_data_updated') {
         router.refresh();
       }
     };
