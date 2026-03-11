@@ -1,47 +1,38 @@
-# Ringkasan Sesi AI (11 Maret 2026 - Sesi 3)
+# Ringkasan Sesi AI - 11 Maret 2026
 
-Sesi ini berfokus pada penyempurnaan panduan bantuan (Manual) agar 100% akurat dengan UI, sinkronisasi istilah, serta analisis biaya infrastruktur (Turso & Vercel).
+## Deskripsi Singkat
+Sesi ini berfokus pada peningkatan UI fitur Statistik, perbaikan kritis pada input data (Severitas & Format Angka), optimalisasi performa database, dan standarisasi visual menggunakan Skeleton Loading.
 
-## ✅ Pencapaian Utama
+## Perubahan Utama
 
-### 1. Penyempurnaan Panduan Manual (`ManualModal.tsx`)
-- **Akurasi 100%**: Memperbarui konten panduan untuk seluruh menu:
-    - **Dashboard**: Detail log aktivitas, shortcut statistik, dan fitur detail JSON.
-    - **Data Karyawan**: Info status import terakhir, pencarian ID, dan integrasi form.
-    - **Order Produksi**: Penjelasan fitur *Parallel Sync*, indikator persentase, dan *Load Time (ms)*.
-    - **Bahan Baku & Barang Jadi**: Penjelasan kolom *Faktur PRD*, *HPP Digit*, dan *Infinite Scroll*.
-    - **Laporan Penjualan**: Detail sumber harga (Harga Jual Digit) dan sinkronisasi faktur.
-    - **HPP Kalkulasi**: Peringatan penghapusan data lama (data replacement) dan info file header.
-- **Harmonisasi Istilah**: Menyesuaikan seluruh label di panduan agar sama persis dengan yang tertulis di tombol dan input UI.
+### 📈 Statistik & Dashboard
+- **Reposisi Elemen**: Tahun analisis dikembalikan ke posisi atas (header) sesuai preferensi user.
+- **Wawasan Dinamis**: Kartu "Actionable Insights" sekarang berubah tema (hijau/biru/merah) secara otomatis berdasarkan data (Zero Case/Monitoring/Critical).
+- **Skeleton Loading**: Mengganti spinner pemuatan dengan desain "Ghost/Skeleton" di halaman Stats dan Dashboard untuk tampilan lebih premium.
 
-### 2. Standarisasi UI & Desain Sistem (Refactor Besar)
-- **Komponen `PageHeader`**: Menciptakan komponen reusable untuk judul halaman agar gaya (font, garis hijau, spasi) 100% konsisten.
-- **Sinkronisasi Spasi**: Menyeragamkan seluruh halaman ke `gap-6` dan memperbaiki struktur wrapper agar tidak ada pergeseran visual (jumping UI) saat navigasi.
-- **Pola "Control Panel"**: Standarisasi area Search & Button di halaman Statistik, User, dan Data Master agar identik.
-- **Dokumentasi Desain**: Membuat `docs/DESIGN_SYSTEM.md` sebagai standar teknis UI masa depan.
+### 🛠️ Perbaikan Bug & Form
+- **Input Severitas**: Memperbaiki bug di mana tingkat keparahan selalu tersimpan "Low". Sekarang form memiliki pilihan (Low, Medium, High) yang bekerja 100%.
+- **Parsing Angka Indo**: Menambahkan logika parsing untuk format angka Indonesia (misal: "166.000" menjadi 166000) agar perhitungan total biaya akurat.
+- **Navigasi**: Memperbaiki tombol "Lihat Semua Laporan" di Stats agar berfungsi sebagai link ke halaman Records.
 
-### 3. Analisis Infrastruktur & Biaya
-- **Evaluasi Tier**: Menganalisis penggunaan Turso (Database) dan Vercel (Hosting).
-- **Rekomendasi**: Tetap di paket **FREE** (Starter/Hobby) karena:
-    - Ukuran DB masih sangat kecil (~7.4 MB).
-    - Fitur **Parallel Sync** membagi beban kerja API sehingga tidak terkena limit timeout Vercel (10 detik).
-    - Penggunaan baris baca/tulis masih jauh di bawah limit bulanan.
+### 👥 Manajemen User
+- **Filter Modern**: Mengganti dropdown jabatan dengan tombol pill interaktif yang dilengkapi ikon.
+- **Reposisi Bar**: Kartu statistik user dipindah ke paling atas untuk visibilitas cepat.
 
-### 3. Dokumentasi Pengembang
-- **MANUAL_SYNC_PROMPT.md**: Membuat panduan dan prompt khusus bagi AI masa depan untuk menjaga sinkronisasi antara kode UI dan file manual.
+### 🚀 Performa & Sistem
+- **Database Indexing**: Menambahkan sistem indexing pada kolom `date`, `employee_id`, `faktur`, dll. untuk menjamin kecepatan query meskipun data bertambah banyak.
+- **Centralized Sync**: Sinkronisasi data antar tab (Cross-tab Sync) sekarang dipusatkan di `MainContentWrapper` sehingga otomatis aktif di seluruh halaman baru.
 
-## 🛠️ Status Teknis Terakhir
-- **Files Modified**: 
-  - `src/components/ManualModal.tsx` (Major: Panduan Manual)
-  - `src/app/orders/OrderProduksiClient.tsx` (Minor: UI Consistency)
-  - `src/app/bahan-baku/BahanBakuClient.tsx` (Minor: UI Consistency)
-  - `src/app/barang-jadi/BarangJadiClient.tsx` (Minor: UI Consistency)
-  - `src/app/sales/SalesReportClient.tsx` (Minor: UI Consistency)
-  - `src/app/employees/page.tsx` (Minor: UI Consistency)
-  - `docs/task.md` & `docs/AI_SESSION_SUMMARY.md` (Session Sync)
-- **New Files**:
-  - `docs/MANUAL_SYNC_PROMPT.md` (AI instructions)
+## Status Task
+- [x] Perbaikan posisi tahun analisis di Stats
+- [x] Perbaikan bug simpan severitas (High/Medium/Low)
+- [x] Perbaikan parsing angka dengan titik (ribuan)
+- [x] Visual tag dengan ikon di kartu rekomendasi
+- [x] Modernisasi filter halaman Users
+- [x] Implementasi Database Indexing
+- [x] Implementasi Skeleton Loading
 
-## 📌 Instruksi Selanjutnya
-- Jika ada perubahan UI, gunakan prompt di `docs/MANUAL_SYNC_PROMPT.md` untuk mengupdate `ManualModal.tsx`.
-- Pantau penggunaan Turso jika data transaksi membengkak secara drastis dalam waktu singkat.
+## Catatan untuk Sesi Berikutnya
+- Performa sistem saat ini sudah sangat optimal dengan indexing.
+- Struktur Skeleton sudah tersedia di `src/components/StatsSkeleton.tsx` untuk digunakan di halaman lain jika diperlukan.
+- Database aman dari git push karena sudah ada di `.gitignore`.
