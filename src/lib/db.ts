@@ -28,11 +28,25 @@ const client = createClient({
 const db = {
   ...client,
   async execute(stmt: any, menuContext?: string) {
-    await this.injectContext(menuContext);
+    // Only inject context for mutations to save round-trips on reads
+    const sql = typeof stmt === 'string' ? stmt : stmt.sql;
+    const isRead = sql.trim().toUpperCase().startsWith('SELECT');
+    
+    if (!isRead) {
+      await this.injectContext(menuContext);
+    }
     return client.execute(stmt);
   },
   async batch(stmts: any[], mode?: any, menuContext?: string) {
-    await this.injectContext(menuContext);
+    // Only inject if any statement is a mutation
+    const hasMutation = stmts.some(s => {
+      const sql = typeof s === 'string' ? s : s.sql;
+      return !sql.trim().toUpperCase().startsWith('SELECT');
+    });
+
+    if (hasMutation) {
+      await this.injectContext(menuContext);
+    }
     return client.batch(stmts, mode);
   },
   async injectContext(menuContext?: string) {

@@ -13,81 +13,66 @@ export async function GET(request: Request) {
     const fromDate = searchParams.get('from') || '';
     const toDate = searchParams.get('to') || '';
 
-    let records;
-    let total;
-
     const dateFilterSQL = (fromDate && toDate) 
       ? ` AND (substr(tgl, 7, 4) || '-' || substr(tgl, 4, 2) || '-' || substr(tgl, 1, 2) BETWEEN ? AND ?)`
       : ``;
 
+    let sqlRecords = "";
+    let sqlTotal = "";
+    let argsRecords: any[] = [];
+    let argsTotal: any[] = [];
+
     if (search) {
       const query = `%${search}%`;
-      const sqlParams: any[] = [query, query, query, query];
-      if (fromDate && toDate) { sqlParams.push(fromDate, toDate); }
-      sqlParams.push(limit, offset);
+      const baseArgs = [query, query, query, query];
+      if (fromDate && toDate) { baseArgs.push(fromDate, toDate); }
+      
+      sqlRecords = `
+        SELECT id, tgl, nama_barang, kd_barang, qty, satuan, hp, nama_prd, faktur, faktur_prd, created_at 
+        FROM barang_jadi 
+        WHERE (nama_barang LIKE ? OR nama_prd LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
+        ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
+        LIMIT ? OFFSET ?
+      `;
+      argsRecords = [...baseArgs, limit, offset];
 
-      const result = await db.execute({
-        sql: `
-          SELECT id, tgl, nama_barang, kd_barang, qty, satuan, hp, nama_prd, faktur, faktur_prd, created_at 
-          FROM barang_jadi 
-          WHERE (nama_barang LIKE ? OR nama_prd LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
-          ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
-          LIMIT ? OFFSET ?
-        `,
-        args: sqlParams
-      });
-      records = result.rows;
-
-      const totalSqlParams = [query, query, query, query];
-      if (fromDate && toDate) { totalSqlParams.push(fromDate, toDate); }
-
-      const totalResult = await db.execute({
-        sql: `
-          SELECT COUNT(*) as count FROM barang_jadi 
-          WHERE (nama_barang LIKE ? OR nama_prd LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
-        `,
-        args: totalSqlParams
-      });
-      total = Number((totalResult.rows[0] as any).count);
+      sqlTotal = `
+        SELECT COUNT(*) as count FROM barang_jadi 
+        WHERE (nama_barang LIKE ? OR nama_prd LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
+      `;
+      argsTotal = baseArgs;
     } else {
-      const sqlParams: any[] = [];
-      if (fromDate && toDate) { sqlParams.push(fromDate, toDate); }
-      sqlParams.push(limit, offset);
+      const baseArgs = [];
+      if (fromDate && toDate) { baseArgs.push(fromDate, toDate); }
 
-      const result = await db.execute({
-        sql: `
-          SELECT id, tgl, nama_barang, kd_barang, qty, satuan, hp, nama_prd, faktur, faktur_prd, created_at 
-          FROM barang_jadi 
-          ${(fromDate && toDate) ? `WHERE 1=1 ${dateFilterSQL}` : ''}
-          ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
-          LIMIT ? OFFSET ?
-        `,
-        args: sqlParams
-      });
-      records = result.rows;
+      sqlRecords = `
+        SELECT id, tgl, nama_barang, kd_barang, qty, satuan, hp, nama_prd, faktur, faktur_prd, created_at 
+        FROM barang_jadi 
+        ${(fromDate && toDate) ? `WHERE 1=1 ${dateFilterSQL}` : ''}
+        ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
+        LIMIT ? OFFSET ?
+      `;
+      argsRecords = [...baseArgs, limit, offset];
 
-      const totalSqlParams = [];
-      if (fromDate && toDate) { totalSqlParams.push(fromDate, toDate); }
-
-      const totalResult = await db.execute({
-        sql: `
-          SELECT COUNT(*) as count FROM barang_jadi
-          ${(fromDate && toDate) ? `WHERE 1=1 ${dateFilterSQL}` : ''}
-        `,
-        args: totalSqlParams
-      });
-      total = Number((totalResult.rows[0] as any).count);
+      sqlTotal = `
+        SELECT COUNT(*) as count FROM barang_jadi
+        ${(fromDate && toDate) ? `WHERE 1=1 ${dateFilterSQL}` : ''}
+      `;
+      argsTotal = baseArgs;
     }
 
-    const lastScrapeRes = await db.execute({
-      sql: `SELECT value FROM system_settings WHERE key = ?`,
-      args: ['last_scrape_barang_jadi']
-    });
-    const lastScrape = lastScrapeRes.rows[0] as any;
+    // Execute everything in ONE round-trip
+    const batchResults = await db.batch([
+      { sql: sqlRecords, args: argsRecords },
+      { sql: sqlTotal, args: argsTotal },
+      { sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_barang_jadi'`, args: [] },
+      { sql: `SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM barang_jadi`, args: [] }
+    ], "read");
 
-    const lastUpdatedRawRes = await db.execute(`SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM barang_jadi`);
-    const lastUpdatedRaw = (lastUpdatedRawRes.rows[0] as any).lastUpdated;
-    
+    const records = batchResults[0].rows;
+    const total = Number((batchResults[1].rows[0] as any).count);
+    const lastScrape = batchResults[2].rows[0] as any;
+    const lastUpdatedRaw = (batchResults[3].rows[0] as any).lastUpdated;
     const lastUpdated = lastScrape ? lastScrape.value : lastUpdatedRaw;
 
     return NextResponse.json({

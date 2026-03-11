@@ -63,15 +63,18 @@ export const getInfractions = cache(async (startDate?: string, endDate?: string)
 });
 
 export async function getActivityLogs(limit = 1000) {
-  const result = await db.execute({
-    sql: `
-      SELECT * FROM activity_logs
-      ORDER BY created_at DESC
-      LIMIT ?
-    `,
-    args: [limit]
-  });
-  return result.rows.map(row => ({ ...row }));
+  const [recordsResult] = await db.batch([
+    {
+      sql: `
+        SELECT * FROM activity_logs
+        ORDER BY created_at DESC
+        LIMIT ?
+      `,
+      args: [limit]
+    }
+  ], "read");
+
+  return recordsResult.rows.map(row => ({ ...row }));
 }
 
 export async function addInfraction(employeeId: number, description: string, severity: string, date: string, recordedById: number|string, orderName?: string) {
@@ -114,26 +117,96 @@ export async function addInfraction(employeeId: number, description: string, sev
 }
 
 
-export const getStats = cache(async () => {
-  const results = await Promise.all([
-    db.execute('SELECT COUNT(*) as count FROM employees WHERE is_active = 1'),
-    db.execute(`
-      SELECT COUNT(*) as count FROM infractions i
-      LEFT JOIN employees e ON (i.employee_id = e.id OR (i.employee_no IS NOT NULL AND i.employee_no = e.employee_no))
-    `),
-    db.execute(`
-      SELECT COUNT(*) as count FROM infractions i
-      LEFT JOIN employees e ON (i.employee_id = e.id OR (i.employee_no IS NOT NULL AND i.employee_no = e.employee_no))
-      WHERE i.severity = 'High'
-    `),
-    db.execute('SELECT COUNT(*) as count FROM orders')
-  ]);
+export const getStats = cache(async (year?: number) => {
+  const currentYear = year || new Date().getFullYear();
+  const yearFilter = `%-${currentYear} %`; // matches DD-MM-YYYY ...
+  const yearFilterAlt = `${currentYear}-%`; // matches YYYY-MM-DD ...
+
+  const results = await db.batch([
+    'SELECT COUNT(*) as count FROM employees WHERE is_active = 1',
+    {
+      sql: `SELECT COUNT(*) as count FROM infractions 
+            WHERE (date LIKE ? OR date LIKE ?)`,
+      args: [`%-${currentYear}%`, `${currentYear}-%`]
+    },
+    {
+      sql: `SELECT COUNT(*) as count FROM infractions 
+            WHERE severity = 'High' AND (date LIKE ? OR date LIKE ?)`,
+      args: [`%-${currentYear}%`, `${currentYear}-%`]
+    },
+    'SELECT COUNT(*) as count FROM orders'
+  ], "read");
   
   return {
     totalEmployees: Number(results[0].rows[0]?.count || 0),
     totalInfractions: Number(results[1].rows[0]?.count || 0),
     highSeverity: Number(results[2].rows[0]?.count || 0),
     totalOrders: Number(results[3].rows[0]?.count || 0)
+  };
+});
+
+export const getDetailedStats = cache(async (year: number) => {
+  const yr = year.toString();
+  
+  const [monthlyRes, repeatersRes, severityRes] = await db.batch([
+    // 1. Monthly Trends
+    {
+      sql: `
+        WITH RECURSIVE months(m) AS (SELECT 1 UNION ALL SELECT m+1 FROM months WHERE m < 12)
+        SELECT 
+          m as month,
+          (SELECT COUNT(*) FROM infractions 
+           WHERE (
+             (substr(date, 4, 2) = printf('%02d', m) AND substr(date, 7, 4) = ?)
+             OR 
+             (substr(date, 6, 2) = printf('%02d', m) AND substr(date, 1, 4) = ?)
+           )
+          ) as count
+        FROM months
+      `,
+      args: [yr, yr]
+    },
+    // 2. Top Repeaters
+    {
+      sql: `
+        SELECT 
+          COALESCE(i.employee_name, e.name) as name,
+          e.position,
+          COUNT(*) as total
+        FROM infractions i
+        LEFT JOIN employees e ON i.employee_id = e.id
+        WHERE (substr(i.date, 7, 4) = ? OR substr(i.date, 1, 4) = ?)
+        GROUP BY i.employee_id, COALESCE(i.employee_name, e.name)
+        ORDER BY total DESC
+        LIMIT 5
+      `,
+      args: [yr, yr]
+    },
+    // 3. Severity Distribution for the year
+    {
+      sql: `
+        SELECT severity, COUNT(*) as count 
+        FROM infractions 
+        WHERE (substr(date, 7, 4) = ? OR substr(date, 1, 4) = ?)
+        GROUP BY severity
+      `,
+      args: [yr, yr]
+    }
+  ], "read");
+
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  const monthlyData = monthlyRes.rows.map((r: any) => ({
+    name: monthNames[r.month - 1],
+    total: Number(r.count)
+  }));
+
+  return {
+    monthlyData,
+    topRepeaters: repeatersRes.rows,
+    severityData: severityRes.rows.reduce((acc: any, curr: any) => {
+      acc[curr.severity] = Number(curr.count);
+      return acc;
+    }, { Low: 0, Medium: 0, High: 0 })
   };
 });
 
