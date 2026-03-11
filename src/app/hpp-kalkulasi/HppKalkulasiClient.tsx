@@ -215,10 +215,12 @@ export default function HppKalkulasiClient() {
           <>
             {/* Section Title & Search */}
             <div className="flex flex-col gap-3 shrink-0">
-              <h3 className="text-[15px] font-extrabold text-gray-800 flex items-center gap-2">
-                  <Calculator size={18} className="text-green-600" />
-                  <span>Data HPP Kalkulasi</span>
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-[15px] font-extrabold text-gray-800 flex items-center gap-2">
+                    <Calculator size={18} className="text-green-600" />
+                    <span>Data HPP Kalkulasi</span>
+                </h3>
+              </div>
               
               <div className="relative w-full group">
                 <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />

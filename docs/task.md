@@ -26,6 +26,15 @@
     - [x] Sinkronisasi sesi instan setelah edit data diri sendiri
     - [x] Perbaikan pelabelan log aktivitas (Admin vs Profile context)
     - [x] Implementasi Triple-Tier Database Isolation (Sandbox vs Production)
+- [x] **Penyempurnaan Panduan Manual (ManualModal.tsx)**
+    - [x] Sinkronisasi Panduan Dashboard, Karyawan, & Order
+    - [x] Sinkronisasi Panduan Bahan Baku, Barang Jadi, & Sales
+    - [x] Sinkronisasi Panduan HPP Kalkulasi (Data Replacement Alert)
+    - [x] Harmonisasi Istilah (Match UI Labels)
+- [x] **Analisis & Dokumentasi Infrastruktur**
+    - [x] Evaluasi Penggunaan Turso & Vercel Free Tiers
+    - [x] Pembuatan Prompt Sinkronisasi Otomatis (`docs/MANUAL_SYNC_PROMPT.md`)
+
 - [ ] **Next Steps**
-    - [ ] Monitoring performa sinkronisasi di produksi
-    - [ ] Penambahan fitur ekspor laporan ke Excel (Opsional)
+    - [ ] Implementasi fitur audit log untuk perubahan data kritkal
+    - [ ] Penajaman laporan statistik tahunan

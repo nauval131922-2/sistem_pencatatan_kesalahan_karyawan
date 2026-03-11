@@ -419,6 +419,8 @@ export default function SalesReportClient() {
                       <th className="px-5 py-3.5 w-[220px]">Nama Order</th>
                       <th className="px-5 py-3.5">Pelanggan</th>
                       <th className="px-5 py-3.5">Nama Barang</th>
+                      <th className="px-5 py-3.5 text-right">Harga</th>
+                      <th className="px-5 py-3.5 text-right">Total</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -444,6 +446,12 @@ export default function SalesReportClient() {
                           <div className="max-w-[220px] truncate" title={row.kd_barang}>
                             {row.kd_barang}
                           </div>
+                        </td>
+                        <td className="px-5 py-1 text-gray-700 font-bold text-[12px] text-right">
+                          {row.harga ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(row.harga) : '-'}
+                        </td>
+                        <td className="px-5 py-1 text-emerald-600 font-bold text-[12px] text-right">
+                          {row.jumlah ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(row.jumlah) : '-'}
                         </td>
                       </tr>
                     ))}

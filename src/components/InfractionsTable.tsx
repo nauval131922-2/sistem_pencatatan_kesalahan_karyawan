@@ -2,7 +2,9 @@
 
 import { useState, useMemo, useEffect, useCallback, useTransition, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, ChevronLeft, ChevronRight, Pencil, Trash2, Calendar, FileText, Printer, Download, RefreshCw } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Pencil, Trash2, Calendar, FileText, Printer, Download, RefreshCw, FileSpreadsheet } from 'lucide-react';
+import { utils, writeFile } from 'xlsx';
+
 import ConfirmDialog, { DialogType } from '@/components/ConfirmDialog';
 import DatePicker from '@/components/DatePicker';
 import { getInfractions } from '@/lib/actions';
@@ -250,6 +252,56 @@ export default function InfractionsTable({
 
     const pdfOutput = doc.output('bloburl');
     window.open(pdfOutput, '_blank');
+  };
+
+  const generateExcel = () => {
+    const startStr = formatDateToYYYYMMDD(startDate);
+    const endStr = formatDateToYYYYMMDD(endDate);
+    
+    // Prepare data for Excel
+    const data = infractions.map((inf, idx) => ({
+      'No': idx + 1,
+      'Tanggal': inf.date,
+      'Karyawan': inf.employee_name || '-',
+      'Posisi': inf.employee_position || '-',
+      'No. Faktur': inf.faktur || '-',
+      'Order Produksi': inf.order_name_display || inf.order_name || '-',
+      'Nama Barang': inf.nama_barang_display || inf.nama_barang || '-',
+      'Jenis Barang': inf.jenis_barang || '-',
+      'Deskripsi Kesalahan': inf.description || '-',
+      'Qty': inf.jumlah || 0,
+      'Harga Satuan': inf.harga || 0,
+      'Total Beban': inf.total || 0,
+      'Pencatat': inf.recorded_by_name || inf.recorded_by || '-'
+    }));
+
+    // Create Worksheet
+    const ws = utils.json_to_sheet(data);
+    
+    // Set column widths
+    const wscols = [
+      { wch: 5 },  // No
+      { wch: 12 }, // Tanggal
+      { wch: 25 }, // Karyawan
+      { wch: 20 }, // Posisi
+      { wch: 15 }, // No. Faktur
+      { wch: 25 }, // Order Produksi
+      { wch: 30 }, // Nama Barang
+      { wch: 15 }, // Jenis Barang
+      { wch: 40 }, // Deskripsi
+      { wch: 8 },  // Qty
+      { wch: 15 }, // Harga Satuan
+      { wch: 15 }, // Total Beban
+      { wch: 20 }, // Pencatat
+    ];
+    ws['!cols'] = wscols;
+
+    // Create Workbook
+    const wb = utils.book_new();
+    utils.book_append_sheet(wb, ws, 'Laporan Kesalahan');
+
+    // Save File
+    writeFile(wb, `Laporan_Kesalahan_${startStr}_sd_${endStr}.xlsx`);
   };
 
   const generateSinglePDF = (inf: Infraction) => {
@@ -533,13 +585,22 @@ export default function InfractionsTable({
             </div>
           </div>
 
-          <button 
-            onClick={generatePDF}
-            className="flex items-center gap-2 px-6 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-xl text-[13px] font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all shadow-sm active:scale-95 group"
-          >
-            <Printer size={18} className="group-hover:scale-110 transition-transform" />
-            Cetak Rekap PDF
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={generateExcel}
+              className="flex items-center gap-2 px-6 py-2.5 bg-green-50 text-green-600 border border-green-100 rounded-xl text-[13px] font-bold hover:bg-green-500 hover:text-white hover:border-green-500 transition-all shadow-sm active:scale-95 group"
+            >
+              <FileSpreadsheet size={18} className="group-hover:scale-110 transition-transform" />
+              Ekspor Excel
+            </button>
+            <button 
+              onClick={generatePDF}
+              className="flex items-center gap-2 px-6 py-2.5 bg-red-50 text-red-600 border border-red-100 rounded-xl text-[13px] font-bold hover:bg-red-500 hover:text-white hover:border-red-500 transition-all shadow-sm active:scale-95 group"
+            >
+              <Printer size={18} className="group-hover:scale-110 transition-transform" />
+              Cetak Rekap PDF
+            </button>
+          </div>
         </div>
 
         {/* Panel Bawah: Search */}

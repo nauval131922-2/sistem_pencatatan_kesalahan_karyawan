@@ -13,7 +13,9 @@ export const dynamic = 'force-dynamic';
 
 
 export default async function EmployeesPage() {
+  console.log("Rendering EmployeesPage...");
   const employees = await getEmployees();
+  console.log("Fetched employees:", employees.length);
   const lastImport = await getLastEmployeeImport();
 
   let importFileName = '';

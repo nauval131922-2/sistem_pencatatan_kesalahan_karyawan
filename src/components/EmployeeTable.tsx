@@ -62,10 +62,12 @@ export default function EmployeeTable({ employees }: { employees: Employee[] }) 
     <div className="h-full flex flex-col gap-4 overflow-hidden">
       {/* Heading & Search Container */}
       <div className="flex flex-col gap-3 shrink-0">
-        <h3 className="text-[15px] font-extrabold text-gray-800 flex items-center gap-2">
-            <Users size={18} className="text-green-600" /> 
-            <span>Data Karyawan</span>
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-[15px] font-extrabold text-gray-800 flex items-center gap-2">
+              <Users size={18} className="text-green-600" /> 
+              <span>Data Karyawan</span>
+          </h3>
+        </div>
         <div className="relative w-full shrink-0 group">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
           <input
