@@ -24,7 +24,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Promis
     <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden">
       <PageHeader
         title={`Analitik Performa ${currentYear}`}
-        description="Wawasan mendalam mengenai kedisiplinan dan operasional."
+        description="Statistik akumulasi kesalahan dan evaluasi performa karyawan."
         showHelp={false}
       />
       <StatsClient stats={stats} detailedData={detailedData} year={currentYear} />

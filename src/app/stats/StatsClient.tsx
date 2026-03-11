@@ -11,7 +11,7 @@ import {
   Calendar, UserMinus, ShieldAlert, ChevronRight,
   TrendingDown, AlertCircle, ChevronDown, Check
 } from 'lucide-react';
-
+import Link from 'next/link';
 export default function StatsClient({ stats, detailedData, year }: { stats: any, detailedData: any, year: number }) {
   const router = useRouter();
   const [selectedYear, setSelectedYear] = useState(year);
@@ -58,7 +58,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
 
   return (
     <div className="flex-1 flex flex-col gap-6 pb-10 overflow-y-auto custom-scrollbar">
-      {/* Year Selector - Refined Custom Dropdown */}
+      {/* Year Selector - Back at the top */}
       <div className="shrink-0">
         <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] px-5 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -274,32 +274,65 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
             )}
           </div>
           <div className="p-4 bg-gray-50 text-center">
-             <button className="text-[11px] font-bold text-gray-400 hover:text-green-600 transition-colors uppercase flex items-center gap-1 mx-auto">
+             <Link href="/records" className="text-[11px] font-bold text-gray-400 hover:text-green-600 transition-colors uppercase flex items-center gap-1 mx-auto w-fit">
                Lihat Semua Laporan <ChevronRight size={14} />
-             </button>
+             </Link>
           </div>
         </div>
 
-        {/* Actionable Insights placeholder */}
-        <div className="bg-indigo-600 rounded-2xl p-8 flex flex-col justify-center relative overflow-hidden text-white shadow-lg shadow-indigo-200">
+        {/* Dynamic Actionable Insights */}
+        <div className={`rounded-2xl p-8 flex flex-col justify-center relative overflow-hidden text-white shadow-lg transition-all duration-500 ${
+          stats.totalInfractions === 0 
+            ? 'bg-emerald-600 shadow-emerald-100' 
+            : stats.highSeverity > 0 
+              ? 'bg-rose-600 shadow-rose-100' 
+              : 'bg-indigo-600 shadow-indigo-100'
+        }`}>
            <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-white/10 blur-3xl rounded-full"></div>
            <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-48 h-48 bg-white/5 blur-3xl rounded-full"></div>
            
            <div className="relative z-10">
               <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 shadow-inner">
-                 <AlertCircle size={28} />
+                 {stats.totalInfractions === 0 
+                   ? <TrendingDown size={28} /> 
+                   : stats.highSeverity > 0 
+                     ? <ShieldAlert size={28} /> 
+                     : <AlertCircle size={28} />
+                 }
               </div>
-              <h4 className="text-2xl font-black mb-3 leading-tight tracking-tight">Rekomendasi Perbaikan</h4>
-              <p className="text-indigo-100/80 text-sm leading-relaxed mb-8 max-w-[400px]">
-                Berdasarkan data {selectedYear}, tercatat {stats.highSeverity} kasus tingkat tinggi. Kami merekomendasikan peninjauan ulang SOP pada departemen dengan tingkat kesalahan tertinggi untuk menekan angka kecelakaan kerja atau kerugian material.
+              <h4 className="text-2xl font-black mb-3 leading-tight tracking-tight">
+                {stats.totalInfractions === 0 
+                  ? 'Kinerja Sempurna!' 
+                  : stats.highSeverity > 0 
+                    ? 'Peringatan Kritikal!' 
+                    : 'Rekomendasi Analitik'
+                }
+              </h4>
+              <p className="text-white/80 text-sm leading-relaxed mb-8 max-w-[400px]">
+                {stats.totalInfractions === 0 
+                  ? `Selamat! Tidak ada catatan kesalahan untuk tahun ${selectedYear}. Pertahankan standar operasional dan kedisiplinan yang sudah berjalan sangat baik.`
+                  : stats.highSeverity > 0 
+                    ? `Berdasarkan data ${selectedYear}, tercatat ${stats.highSeverity} kasus tingkat tinggi. Ini memerlukan perhatian segera untuk mencegah kerugian yang lebih besar.`
+                    : `Tercatat ${stats.totalInfractions} kesalahan di tahun ${selectedYear}. Lakukan monitoring berkala untuk memastikan tren kesalahan tidak meningkat.`
+                }
               </p>
               
-              <div className="flex flex-wrap gap-3">
-                 <div className="px-4 py-2 bg-white text-indigo-600 text-xs font-black rounded-xl cursor-default shadow-sm active:scale-95 transition-transform">
-                   Edukasi SOP Baru
+              <div className="flex flex-wrap gap-2">
+                 <div className="px-3 py-1.5 bg-white/20 backdrop-blur-sm border border-white/20 text-white text-[10px] font-black rounded-lg uppercase tracking-wider">
+                   {stats.totalInfractions === 0 
+                     ? '⭐ Sertifikasi Kualitas' 
+                     : stats.highSeverity > 0 
+                       ? '🔐 Tindakan Darurat' 
+                       : '📚 Edukasi SOP'
+                   }
                  </div>
-                 <div className="px-4 py-2 bg-indigo-500/50 backdrop-blur-sm border border-white/20 text-white text-xs font-black rounded-xl cursor-default">
-                   Audit Bulanan
+                 <div className="px-3 py-1.5 bg-white/20 backdrop-blur-sm border border-white/20 text-white text-[10px] font-black rounded-lg uppercase tracking-wider">
+                   {stats.totalInfractions === 0 
+                     ? '🏆 Pertahankan Standar' 
+                     : stats.highSeverity > 0 
+                       ? '👥 Evaluasi Personel' 
+                       : '📊 Audit Bulanan'
+                   }
                  </div>
               </div>
            </div>
