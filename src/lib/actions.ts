@@ -202,7 +202,7 @@ export const getDetailedStats = cache(async (year: number) => {
 
   return {
     monthlyData,
-    topRepeaters: repeatersRes.rows,
+    topRepeaters: repeatersRes.rows.map((r: any) => ({ ...r, total: Number(r.total) })),
     severityData: severityRes.rows.reduce((acc: any, curr: any) => {
       acc[curr.severity] = Number(curr.count);
       return acc;
