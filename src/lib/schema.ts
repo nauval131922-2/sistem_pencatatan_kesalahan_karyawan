@@ -1,4 +1,5 @@
 import path from 'path';
+import { initIndexing } from './db-indexing';
 
 export async function initSchema(db: any) {
   // 1. Initialize core schema using batch for efficiency
@@ -341,4 +342,7 @@ export async function initSchema(db: any) {
     });
     console.log("[DB] Default admin user created (admin / admin123)");
   }
+
+  // 4. Performance Optimization
+  await initIndexing(db);
 }
