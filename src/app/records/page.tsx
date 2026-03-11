@@ -3,7 +3,7 @@ import { getSession } from '@/lib/session';
 import type { Metadata } from 'next';
 import RecordsTabs from '@/components/RecordsTabs';
 import { Suspense } from 'react';
-import HelpButton from '@/components/HelpButton';
+import PageHeader from '@/components/PageHeader';
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
@@ -42,15 +42,10 @@ export default async function RecordsPage() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700">
-      <header className="flex flex-col shrink-0 mb-3">
-        <div className="flex items-center gap-3 border-l-4 border-green-500 pl-4">
-          <h1 className="text-[22px] font-extrabold text-gray-800 tracking-tight leading-none">Pencatatan Kesalahan</h1>
-          <HelpButton />
-        </div>
-        <p className="text-[13px] text-gray-400 font-medium pl-5 mt-2">
-          Kelola data kesalahan karyawan dan rincian bebannya.
-        </p>
-      </header>
+      <PageHeader
+        title="Pencatatan Kesalahan"
+        description="Kelola data kesalahan karyawan dan rincian bebannya."
+      />
 
       <div className="flex-1 overflow-hidden flex flex-col">
         <Suspense fallback={<RecordsSkeleton />}>

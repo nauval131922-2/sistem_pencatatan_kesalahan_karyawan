@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import ExcelUpload from '@/components/ExcelUpload';
 import EmployeeTable from '@/components/EmployeeTable';
 import { FileSpreadsheet, Clock } from 'lucide-react';
-import HelpButton from '@/components/HelpButton';
+import PageHeader from '@/components/PageHeader';
 
 export const metadata: Metadata = {
   title: 'SIKKA | Daftar Karyawan',
@@ -42,32 +42,24 @@ export default async function EmployeesPage() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-5 overflow-hidden">
-      <header className="flex flex-col shrink-0">
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-3 border-l-4 border-green-500 pl-4">
-            <h1 className="text-[22px] font-extrabold text-gray-800 tracking-tight leading-none">Daftar Karyawan</h1>
-            <HelpButton />
-          </div>
-        </div>
-        
-        <div className="pl-5 mt-2 flex flex-col gap-2">
-          <p className="text-[13px] text-gray-400 font-medium">Upload data Karyawan dari file Excel.</p>
-          
-          {importFileName && (
-            <div className="flex items-center gap-2 text-[12px]">
-              <div className="flex items-center gap-1.5 bg-white text-gray-500 border border-gray-100 px-2 py-1 rounded-md shadow-sm">
-                <FileSpreadsheet size={14} className="text-green-500" />
-                <span className="font-semibold" title={importFileName}>{importFileName}</span>
-              </div>
-              <span className="text-gray-200">|</span>
-              <div className="flex items-center gap-1.5 text-gray-400">
-                <Clock size={13} className="text-gray-300" />
-                <span className="font-medium">Diperbarui: {importTime}</span>
-              </div>
+      <PageHeader
+        title="Daftar Karyawan"
+        description="Upload data Karyawan dari file Excel."
+      >
+        {importFileName && (
+          <div className="flex items-center gap-2 text-[12px] animate-in fade-in duration-700">
+            <div className="flex items-center gap-1.5 bg-white text-gray-500 border border-gray-100 px-2 py-1 rounded-md shadow-sm">
+              <FileSpreadsheet size={14} className="text-green-500" />
+              <span className="font-semibold" title={importFileName}>{importFileName}</span>
             </div>
-          )}
-        </div>
-      </header>
+            <span className="text-gray-200">|</span>
+            <div className="flex items-center gap-1.5 text-gray-400">
+              <Clock size={13} className="text-gray-300" />
+              <span className="font-medium">Diperbarui: {importTime}</span>
+            </div>
+          </div>
+        )}
+      </PageHeader>
 
       <ExcelUpload />
 

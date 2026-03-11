@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save, User, Camera, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { updateProfile } from '@/lib/auth';
+import PageHeader from '@/components/PageHeader';
 
 interface UserData {
   name: string;
@@ -102,14 +103,11 @@ export default function ProfilePage() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-8 animate-in fade-in duration-500 overflow-hidden">
-      <header className="flex flex-col shrink-0">
-        <div className="flex items-center gap-3 border-l-4 border-green-500 pl-4">
-          <h1 className="text-[22px] font-extrabold text-gray-800 tracking-tight leading-none">Pengaturan Profil</h1>
-        </div>
-        <p className="text-[13px] text-gray-400 font-medium pl-5 mt-2">
-          Kelola informasi data diri dan keamanan akun Anda.
-        </p>
-      </header>
+      <PageHeader
+        title="Pengaturan Profil"
+        description="Kelola informasi data diri dan keamanan akun Anda."
+        showHelp={false}
+      />
 
       <div className="flex-1 overflow-y-auto flex flex-col items-center">
         <div className="w-full max-w-4xl bg-white border border-[#e5e7eb] rounded-[12px] shadow-sm overflow-hidden">

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { getUsers, deleteUser } from '@/lib/users';
 import UserFormModal from './UserFormModal';
+import PageHeader from '@/components/PageHeader';
 
 interface User {
   id: number;
@@ -120,25 +121,19 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in duration-500 overflow-hidden">
-      {/* Header Section */}
-      <div className="flex items-start justify-between shrink-0">
-        <header className="flex flex-col shrink-0">
-          <div className="flex items-center gap-3 border-l-4 border-green-500 pl-4">
-            <h1 className="text-[22px] font-extrabold text-gray-800 tracking-tight leading-none">Kelola User</h1>
-          </div>
-          <p className="text-[13px] text-gray-400 font-medium pl-5 mt-2">
-            Manajemen akses dan akun pengguna aplikasi.
-          </p>
-        </header>
-        
-        <button
-          onClick={handleCreate}
-          className="bg-[#16a34a] hover:bg-[#15803d] text-white rounded-lg px-5 h-10 text-[13px] font-extrabold transition-all active:scale-[0.98] flex items-center gap-2.5 shadow-sm"
-        >
-          <Plus size={18} />
-          <span>Tambah User Baru</span>
-        </button>
-      </div>
+      <PageHeader
+        title="Kelola User"
+        description="Manajemen akses dan akun pengguna aplikasi."
+        rightElement={
+          <button
+            onClick={handleCreate}
+            className="bg-[#16a34a] hover:bg-[#15803d] text-white rounded-lg px-5 h-10 text-[13px] font-extrabold transition-all active:scale-[0.98] flex items-center gap-2.5 shadow-sm"
+          >
+            <Plus size={18} />
+            <span>Tambah User Baru</span>
+          </button>
+        }
+      />
 
       {/* Stat Cards Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">

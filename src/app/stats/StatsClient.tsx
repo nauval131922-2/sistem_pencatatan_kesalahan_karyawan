@@ -9,8 +9,10 @@ import {
 import { 
   Users, AlertTriangle, TrendingUp, BarChart3, 
   Calendar, UserMinus, ShieldAlert, ChevronRight,
+  ChevronRight,
   TrendingDown, AlertCircle
 } from 'lucide-react';
+import PageHeader from '@/components/PageHeader';
 
 export default function StatsClient({ stats, detailedData, year }: { stats: any, detailedData: any, year: number }) {
   const router = useRouter();
@@ -44,29 +46,24 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
 
   return (
     <div className="flex flex-col gap-6 pb-10">
-      {/* Header with Year Selector */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-           <div className="flex items-center gap-3">
-             <div className="w-1.5 h-8 bg-green-600 rounded-full shrink-0"></div>
-             <h1 className="text-2xl font-extrabold text-gray-800 tracking-tight">Analitik Performa {year}</h1>
-           </div>
-           <p className="text-sm text-gray-400 mt-1 font-medium pl-4">Wawasan mendalam mengenai kedisiplinan dan operasional.</p>
-        </div>
-
-        <div className="flex items-center gap-3 bg-white p-1.5 rounded-xl border border-gray-100 shadow-sm">
-          <Calendar size={16} className="text-gray-400 ml-2" />
-          <select 
-            value={selectedYear}
-            onChange={handleYearChange}
-            className="bg-transparent text-sm font-bold text-gray-700 outline-none pr-4 cursor-pointer"
-          >
-            {[2024, 2025, 2026].map(y => (
-              <option key={y} value={y}>Tahun {y}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <PageHeader
+        title={`Analitik Performa ${year}`}
+        description="Wawasan mendalam mengenai kedisiplinan dan operasional."
+        rightElement={
+          <div className="flex items-center gap-3 bg-white p-1.5 rounded-xl border border-gray-100 shadow-sm">
+            <Calendar size={16} className="text-gray-400 ml-2" />
+            <select 
+              value={selectedYear}
+              onChange={handleYearChange}
+              className="bg-transparent text-sm font-bold text-gray-700 outline-none pr-4 cursor-pointer"
+            >
+              {[2024, 2025, 2026].map(y => (
+                <option key={y} value={y}>Tahun {y}</option>
+              ))}
+            </select>
+          </div>
+        }
+      />
 
       {/* Primary Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
