@@ -102,44 +102,7 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in duration-500 overflow-hidden">
-      <div className="shrink-0">
-        <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] px-5 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-4 flex-1">
-             <div className="relative w-full max-w-md group">
-               <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-               <input 
-                 type="text" 
-                 placeholder="Cari nama atau username..." 
-                 className="w-full pl-11 pr-4 h-10 bg-slate-50 border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-medium placeholder:text-gray-400"
-                 value={searchQuery}
-                 onChange={(e) => setSearchQuery(e.target.value)}
-               />
-             </div>
-             
-             <div className="flex items-center gap-2">
-               <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest ml-4">Filter:</span>
-               <select 
-                 value={roleFilter}
-                 onChange={(e) => setRoleFilter(e.target.value)}
-                 className="h-10 px-4 bg-slate-50 border border-gray-200 rounded-xl text-[12px] font-bold text-gray-700 focus:outline-none focus:border-green-500 cursor-pointer"
-               >
-                 <option>Semua Jabatan</option>
-                 <option>Super Admin</option>
-                 <option>Admin</option>
-               </select>
-             </div>
-          </div>
-
-          <button 
-            onClick={handleCreate}
-            className="px-5 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-lg transition-all flex items-center justify-center gap-2.5 shadow-sm active:scale-[0.98]"
-          >
-            <Plus size={18} />
-            <span>Tambah User Baru</span>
-          </button>
-        </div>
-      </div>
-
+      {/* Stats Cards at the Top */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
         <div className="bg-white rounded-[10px] border border-[#e5e7eb] p-5 h-[100px] flex items-center gap-4 shadow-sm hover:border-[#16a34a]/30 transition-colors text-blue-600">
           <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
@@ -169,6 +132,63 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
             <span className="text-2xl font-black tracking-tighter text-gray-800 leading-none mb-1">{stats.admins}</span>
             <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Admin</span>
           </div>
+        </div>
+      </div>
+
+      {/* Filter Section Below Cards */}
+      <div className="shrink-0">
+        <div className="bg-white border border-gray-200 shadow-sm rounded-2xl px-6 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="flex items-center gap-4 flex-1">
+             <div className="relative w-full max-w-md group">
+               <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+               <input 
+                 type="text" 
+                 placeholder="Cari user (nama atau username)..." 
+                 className="w-full pl-12 pr-4 h-11 bg-slate-50/50 border border-gray-100 rounded-xl focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all text-sm font-medium placeholder:text-gray-400"
+                 value={searchQuery}
+                 onChange={(e) => setSearchQuery(e.target.value)}
+               />
+               {searchQuery && (
+                 <button 
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full text-gray-400"
+                 >
+                   <X size={14} />
+                 </button>
+               )}
+             </div>
+             
+             <div className="flex items-center gap-1.5 p-1 bg-gray-100/50 rounded-xl border border-gray-100 shrink-0 w-fit">
+               {[
+                 { label: 'Semua', value: 'Semua Jabatan', icon: Users },
+                 { label: 'Super Admin', value: 'Super Admin', icon: ShieldCheck },
+                 { label: 'Admin', value: 'Admin', icon: UserCog }
+               ].map((role) => (
+                 <button
+                   key={role.value}
+                   onClick={() => setRoleFilter(role.value)}
+                   className={`
+                    flex items-center gap-2 px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all duration-200
+                    ${roleFilter === role.value 
+                      ? 'bg-white text-green-600 shadow-sm ring-1 ring-black/5' 
+                      : 'text-gray-400 hover:text-gray-600 hover:bg-gray-200/50'
+                    }
+                   `}
+                 >
+                   <role.icon size={14} className={roleFilter === role.value ? 'text-green-500' : 'opacity-50'} />
+                   <span>{role.label}</span>
+                 </button>
+               ))}
+             </div>
+          </div>
+
+          <button 
+            onClick={handleCreate}
+            className="px-6 h-11 bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-xl transition-all flex items-center justify-center gap-2.5 shadow-md shadow-green-600/10 active:scale-95"
+          >
+            <Plus size={18} />
+            <span>Tambah User</span>
+          </button>
         </div>
       </div>
 
