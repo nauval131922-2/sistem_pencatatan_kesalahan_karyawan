@@ -154,6 +154,10 @@ export default function Sidebar({ user }: SidebarProps) {
             <LayoutDashboard size={iconSize} className="shrink-0" />
             {isExpanded && <span className="truncate">Dashboard</span>}
           </Link>
+          <Link href="/stats" className={navItemClasses('/stats')} title={!isExpanded ? "Statistik Performa" : undefined}>
+            <BarChart2 size={iconSize} className="shrink-0" />
+            {isExpanded && <span className="truncate">Statistik Performa</span>}
+          </Link>
         </div>
 
         {/* Data Master Section */}
