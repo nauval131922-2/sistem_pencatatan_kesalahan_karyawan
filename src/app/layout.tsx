@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import MainContentWrapper from "@/components/MainContentWrapper";
 import ManualModal from "@/components/ManualModal";
+import { Analytics } from "@vercel/analytics/next";
 
 import { getSession } from "@/lib/session";
 
@@ -53,6 +54,7 @@ export default async function RootLayout({
           {children}
         </MainContentWrapper>
         <ManualModal />
+        <Analytics />
       </body>
     </html>
   );
