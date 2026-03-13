@@ -1,10 +1,17 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { Package, Hash, Calendar, Loader2, Download, Search, AlertCircle, ChevronLeft, ChevronRight, Clock, Box, RefreshCw, BarChart3, Printer, User, Tag } from 'lucide-react';
-
-
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { Package, Hash, Calendar, Loader2, Download, Search, AlertCircle, ChevronLeft, ChevronRight, Clock, Box, RefreshCw, BarChart3, Printer, User, Tag, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+
+function SortIcon({ config, sortKey }: { config: any, sortKey: string }) {
+  if (config.key !== sortKey || !config.direction) {
+    return <ArrowUpDown size={12} className="text-gray-300 transition-opacity" />;
+  }
+  return config.direction === 'asc' 
+    ? <ArrowUp size={12} className="text-green-600" /> 
+    : <ArrowDown size={12} className="text-green-600" />;
+}
 
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -50,6 +57,14 @@ export default function BahanBakuClient() {
   const [loadTime, setLoadTime] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const mountedRef = useRef(true);
+
+  // Table state
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [lastSelectedId, setLastSelectedId] = useState<number | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: 'asc' | 'desc' | null }>({
+    key: null,
+    direction: null
+  });
 
   // Batch states
   const [isBatching, setIsBatching] = useState(false);
@@ -196,8 +211,8 @@ export default function BahanBakuClient() {
     };
     
     try {
-      // Parallel execution with concurrency limit 5 (Safe & Stable)
-      const concurrency = 5;
+      // Parallel execution with concurrency limit 15 (Pol Mentok)
+      const concurrency = 15;
       const queue = [...chunks];
       const workers = Array(Math.min(concurrency, queue.length)).fill(null).map(async () => {
         while (queue.length > 0) {
@@ -279,8 +294,6 @@ export default function BahanBakuClient() {
     }
   };
 
-  const paginatedData = data || [];
-
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setPage(1); // Reset page on search
@@ -295,12 +308,67 @@ export default function BahanBakuClient() {
     }
   };
 
+  const toggleSort = (key: string) => {
+    setSortConfig((prev) => {
+      if (prev.key === key) {
+        if (prev.direction === 'asc') return { key, direction: 'desc' };
+        if (prev.direction === 'desc') return { key, direction: null };
+        return { key, direction: 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
+
+  const toggleSelectRow = (id: number, e: React.MouseEvent) => {
+    let next = new Set(selectedIds);
+    if (e.shiftKey && lastSelectedId !== null && data) {
+      const currentIndex = data.findIndex((o: any) => o.id === id);
+      const lastIndex = data.findIndex((o: any) => o.id === lastSelectedId);
+      if (currentIndex !== -1 && lastIndex !== -1) {
+        const start = Math.min(currentIndex, lastIndex);
+        const end = Math.max(currentIndex, lastIndex);
+        for (let i = start; i <= end; i++) {
+          next.add(data[i].id);
+        }
+      }
+    } else if (e.ctrlKey || e.metaKey) {
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+    } else {
+      next.clear();
+      next.add(id);
+    }
+    setLastSelectedId(id);
+    setSelectedIds(next);
+  };
+
+  const paginatedData = useMemo(() => {
+    let result = [...(data || [])];
+    if (sortConfig.key && sortConfig.direction) {
+      result.sort((a, b) => {
+        let aValue = a[sortConfig.key!];
+        let bValue = b[sortConfig.key!];
+        if (sortConfig.key === 'tgl') {
+          const pa = aValue ? String(aValue).split('-') : [];
+          const pb = bValue ? String(bValue).split('-') : [];
+          aValue = pa.length === 3 ? `${pa[2]}${pa[1]}${pa[0]}` : aValue;
+          bValue = pb.length === 3 ? `${pb[2]}${pb[1]}${pb[0]}` : bValue;
+        }
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return result;
+  }, [data, sortConfig]);
+
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden">
-      {/* Control Panel - Horizontal Card */}
-      <div className="shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] px-5 py-3.5 flex items-center justify-between gap-6">
-          <div className="flex items-center gap-4 flex-1">
+    <div className="flex-1 min-h-0 flex flex-col gap-4 animate-in fade-in duration-500 overflow-hidden">
+      {/* Top Filter Bar */}
+      <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
+        <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
+          <div className="flex flex-wrap items-center gap-6">
             <div className="flex items-center gap-2.5">
               <Calendar size={16} className="text-green-600" />
               <span className="text-[13px] font-extrabold text-gray-400 uppercase tracking-wider">Periode</span>
