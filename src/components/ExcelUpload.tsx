@@ -77,7 +77,7 @@ export default function ExcelUpload() {
   };
 
   return (
-    <div className="shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500 mb-2">
+    <div className="shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] px-4 py-3 flex items-center justify-between gap-4">
         <div className="flex items-center gap-4 flex-1">
           <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center shrink-0">

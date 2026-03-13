@@ -285,34 +285,36 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
     <div className="flex flex-col gap-6 overflow-hidden">
       {/* Heading & Search Container */}
       <div className="flex flex-col gap-3 shrink-0">
-        <div className="flex items-center justify-between px-1">
+        <div className="flex items-center px-1">
           <div className="flex items-center gap-3">
             <h3 className="text-[15px] font-extrabold text-gray-800 flex items-center gap-2">
                 <History size={18} className="text-green-600" /> 
                 <span>Aktivitas Terkini</span>
             </h3>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] bg-green-50 text-green-700 px-2.5 py-1 rounded-full font-black uppercase tracking-wider border border-green-100/50">
-                {initialLogs.length} LOGS
-              </span>
-              {sortedAndFiltered.length !== initialLogs.length && (
+            {sortedAndFiltered.length !== initialLogs.length && (
+              <div className="flex items-center gap-3">
+                <span className="text-gray-200 text-xs mx-1">|</span>
                 <span className="text-[10px] bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full font-black uppercase tracking-wider border border-amber-100/50 animate-in fade-in zoom-in-95">
                   {sortedAndFiltered.length} HASIL
                 </span>
-              )}
-            </div>
+              </div>
+            )}
+
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
+                <span className="text-gray-200 text-xs mx-1">|</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
+                  <button 
+                    onClick={() => setSelectedIds(new Set())}
+                    className="text-[11px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
+                  >
+                    Batal
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-          {selectedIds.size > 0 && (
-            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-              <span className="text-[11px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
-              <button 
-                onClick={() => setSelectedIds(new Set())}
-                className="text-[11px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
-              >
-                Batal
-              </button>
-            </div>
-          )}
         </div>
         <div className="relative w-full shrink-0 group">
           <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
@@ -445,7 +447,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                     `}
                   >
                     <div 
-                      className={`px-6 py-1 text-xs font-mono whitespace-nowrap flex-shrink-0 overflow-hidden transition-colors ${isSelected ? 'text-green-600 font-bold' : 'text-gray-400 group-hover:text-gray-500'}`}
+                      className={`px-6 py-1 text-xs whitespace-nowrap flex-shrink-0 overflow-hidden transition-colors ${isSelected ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-500'}`}
                       style={{ width: columnWidths.datetime }}
                     >
                       {fmtDateTime(log.created_at)}
@@ -490,6 +492,15 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
             </div>
           </div>
         </div>
+      </div>
+        
+      {/* Footer info Banner outside the card for consistency */}
+      <div className="flex items-center justify-start shrink-0 px-1 mt-3">
+        <span className="text-[12px] font-bold text-gray-400">
+           {initialLogs.length === 0
+             ? 'Belum ada aktivitas'
+             : `Menampilkan ${sortedAndFiltered.length} dari ${initialLogs.length} total aktivitas`}
+        </span>
       </div>
 
       {selectedLog && (

@@ -45,26 +45,15 @@ export default async function EmployeesPage() {
       <PageHeader
         title="Daftar Karyawan"
         description="Upload data Karyawan dari file Excel."
-      >
-        {importFileName && (
-          <div className="flex items-center gap-2 text-[12px] animate-in fade-in duration-700">
-            <div className="flex items-center gap-1.5 bg-white text-gray-500 border border-gray-100 px-2 py-1 rounded-md shadow-sm">
-              <FileSpreadsheet size={14} className="text-green-500" />
-              <span className="font-semibold" title={importFileName}>{importFileName}</span>
-            </div>
-            <span className="text-gray-200">|</span>
-            <div className="flex items-center gap-1.5 text-gray-400">
-              <Clock size={13} className="text-gray-300" />
-              <span className="font-medium">Diperbarui: {importTime}</span>
-            </div>
-          </div>
-        )}
-      </PageHeader>
+      />
 
       <ExcelUpload />
 
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-        <EmployeeTable employees={employees as any} />
+        <EmployeeTable 
+          employees={employees as any} 
+          importInfo={importFileName ? { fileName: importFileName, time: importTime } : undefined} 
+        />
       </div>
     </div>
   );
