@@ -66,6 +66,50 @@ export default function BahanBakuClient() {
     direction: null
   });
 
+  // Resizable Columns State
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({
+    tgl: 110,
+    faktur: 120,
+    faktur_prd: 120,
+    nama_barang: 300,
+    qty: 80,
+    satuan: 80,
+    hp: 120,
+    nama_prd: 140
+  });
+
+  const resizerRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
+
+  const startResizing = useCallback((key: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    resizerRef.current = {
+      key,
+      startX: e.pageX,
+      startWidth: columnWidths[key] || 0
+    };
+    document.addEventListener('mousemove', onResizing);
+    document.addEventListener('mouseup', stopResizing);
+    document.body.style.cursor = 'col-resize';
+  }, [columnWidths]);
+
+  const onResizing = useCallback((e: MouseEvent) => {
+    if (!resizerRef.current) return;
+    const { key, startX, startWidth } = resizerRef.current;
+    const delta = e.pageX - startX;
+    setColumnWidths(prev => ({
+      ...prev,
+      [key]: Math.max(50, startWidth + delta)
+    }));
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    resizerRef.current = null;
+    document.removeEventListener('mousemove', onResizing);
+    document.removeEventListener('mouseup', stopResizing);
+    document.body.style.cursor = 'default';
+  }, [onResizing]);
+
   // Batch states
   const [isBatching, setIsBatching] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
@@ -521,29 +565,69 @@ export default function BahanBakuClient() {
                 <table className="w-full text-left relative min-w-[1000px] border-collapse">
                   <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
                     <tr className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
-                      <th className="px-5 py-3.5 w-[110px] cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('tgl')}>
+                      <th 
+                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        style={{ width: columnWidths.tgl }}
+                        onClick={() => toggleSort('tgl')}
+                      >
                         <div className="flex items-center gap-2">TANGGAL <SortIcon config={sortConfig} sortKey="tgl" /></div>
+                        <div className="resizer" onMouseDown={(e) => startResizing('tgl', e)} />
                       </th>
-                      <th className="px-5 py-3.5 w-[120px] cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('faktur')}>
+                      <th 
+                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        style={{ width: columnWidths.faktur }}
+                        onClick={() => toggleSort('faktur')}
+                      >
                         <div className="flex items-center gap-2">FAKTUR <SortIcon config={sortConfig} sortKey="faktur" /></div>
+                        <div className="resizer" onMouseDown={(e) => startResizing('faktur', e)} />
                       </th>
-                      <th className="px-5 py-3.5 w-[120px] cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('faktur_prd')}>
+                      <th 
+                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        style={{ width: columnWidths.faktur_prd }}
+                        onClick={() => toggleSort('faktur_prd')}
+                      >
                         <div className="flex items-center gap-2">FAKTUR PRD <SortIcon config={sortConfig} sortKey="faktur_prd" /></div>
+                        <div className="resizer" onMouseDown={(e) => startResizing('faktur_prd', e)} />
                       </th>
-                      <th className="px-5 py-3.5 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('nama_barang')}>
+                      <th 
+                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        style={{ width: columnWidths.nama_barang }}
+                        onClick={() => toggleSort('nama_barang')}
+                      >
                         <div className="flex items-center gap-2">NAMA BARANG <SortIcon config={sortConfig} sortKey="nama_barang" /></div>
+                        <div className="resizer" onMouseDown={(e) => startResizing('nama_barang', e)} />
                       </th>
-                      <th className="px-5 py-3.5 w-[80px] text-right cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('qty')}>
+                      <th 
+                        className="px-5 py-3.5 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors" 
+                        style={{ width: columnWidths.qty }}
+                        onClick={() => toggleSort('qty')}
+                      >
                         <div className="flex items-center justify-end gap-2">QTY <SortIcon config={sortConfig} sortKey="qty" /></div>
+                        <div className="resizer" onMouseDown={(e) => startResizing('qty', e)} />
                       </th>
-                      <th className="px-5 py-3.5 w-[80px] cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('satuan')}>
+                      <th 
+                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        style={{ width: columnWidths.satuan }}
+                        onClick={() => toggleSort('satuan')}
+                      >
                         <div className="flex items-center gap-2">SATUAN <SortIcon config={sortConfig} sortKey="satuan" /></div>
+                        <div className="resizer" onMouseDown={(e) => startResizing('satuan', e)} />
                       </th>
-                      <th className="px-5 py-3.5 w-[120px] text-right cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('hp')}>
+                      <th 
+                        className="px-5 py-3.5 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors" 
+                        style={{ width: columnWidths.hp }}
+                        onClick={() => toggleSort('hp')}
+                      >
                         <div className="flex items-center justify-end gap-2">HPP <SortIcon config={sortConfig} sortKey="hp" /></div>
+                        <div className="resizer" onMouseDown={(e) => startResizing('hp', e)} />
                       </th>
-                      <th className="px-5 py-3.5 w-[140px] cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('nama_prd')}>
+                      <th 
+                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        style={{ width: columnWidths.nama_prd }}
+                        onClick={() => toggleSort('nama_prd')}
+                      >
                         <div className="flex items-center gap-2">PRD <SortIcon config={sortConfig} sortKey="nama_prd" /></div>
+                        <div className="resizer" onMouseDown={(e) => startResizing('nama_prd', e)} />
                       </th>
                     </tr>
                   </thead>
@@ -568,9 +652,7 @@ export default function BahanBakuClient() {
                           {item.faktur_prd || '-'}
                         </td>
                         <td className={`px-5 py-1 font-bold text-[13px] transition-colors ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
-                          <div className="max-w-[200px] xl:max-w-xs truncate" title={item.nama_barang}>
-                            {item.nama_barang}
-                          </div>
+                          {item.nama_barang}
                         </td>
                         <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
                           {item.qty}
@@ -582,9 +664,7 @@ export default function BahanBakuClient() {
                           {item.hp ? item.hp.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                         </td>
                         <td className={`px-5 py-1 text-[11px] font-bold transition-colors ${isSelected ? 'text-green-500' : 'text-gray-400 group-hover:text-gray-500'}`}>
-                          <div className="truncate max-w-[120px]" title={item.nama_prd}>
-                              {item.nama_prd}
-                          </div>
+                          {item.nama_prd}
                         </td>
                       </tr>
                     )})}

@@ -114,5 +114,26 @@ body {
   .btn-primary:hover {
     filter: brightness(1.05);
   }
+
+  /* Resizable Table Column Utility */
+  .resizer {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 5px;
+    background: transparent;
+    cursor: col-resize;
+    user-select: none;
+    touch-action: none;
+    transition: background-color 0.15s;
+    z-index: 10;
+  }
+
+  .resizer:hover, .resizer.resizing {
+    background-color: var(--accent-primary);
+    opacity: 0.5;
+  }
 }
+
 

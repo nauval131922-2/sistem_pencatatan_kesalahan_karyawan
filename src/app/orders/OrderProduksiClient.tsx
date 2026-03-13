@@ -65,6 +65,47 @@ export default function OrderProduksiClient() {
     direction: null
   });
 
+  // Resizable Columns State
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({
+    faktur: 128,
+    nama_prd: 300,
+    nama_pelanggan: 200,
+    tgl: 128,
+    qty: 96
+  });
+
+  const resizerRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
+
+  const startResizing = useCallback((key: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    resizerRef.current = {
+      key,
+      startX: e.pageX,
+      startWidth: columnWidths[key] || 0
+    };
+    document.addEventListener('mousemove', onResizing);
+    document.addEventListener('mouseup', stopResizing);
+    document.body.style.cursor = 'col-resize';
+  }, [columnWidths]);
+
+  const onResizing = useCallback((e: MouseEvent) => {
+    if (!resizerRef.current) return;
+    const { key, startX, startWidth } = resizerRef.current;
+    const delta = e.pageX - startX;
+    setColumnWidths(prev => ({
+      ...prev,
+      [key]: Math.max(50, startWidth + delta)
+    }));
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    resizerRef.current = null;
+    document.removeEventListener('mousemove', onResizing);
+    document.removeEventListener('mouseup', stopResizing);
+    document.body.style.cursor = 'default';
+  }, [onResizing]);
+
   // Batch states
   const [isBatching, setIsBatching] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
@@ -518,20 +559,45 @@ export default function OrderProduksiClient() {
                 <table className="w-full text-left relative min-w-[850px] border-collapse">
                   <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
                     <tr className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
-                      <th className="px-5 py-3.5 w-32 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('faktur')}>
+                      <th 
+                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        style={{ width: columnWidths.faktur }}
+                        onClick={() => toggleSort('faktur')}
+                      >
                         <div className="flex items-center gap-2">NO. FAKTUR <SortIcon config={sortConfig} sortKey="faktur" /></div>
+                        <div className="resizer" onMouseDown={(e) => startResizing('faktur', e)} />
                       </th>
-                      <th className="px-5 py-3.5 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('nama_prd')}>
+                      <th 
+                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        style={{ width: columnWidths.nama_prd }}
+                        onClick={() => toggleSort('nama_prd')}
+                      >
                         <div className="flex items-center gap-2">NAMA PRODUK <SortIcon config={sortConfig} sortKey="nama_prd" /></div>
+                        <div className="resizer" onMouseDown={(e) => startResizing('nama_prd', e)} />
                       </th>
-                      <th className="px-5 py-3.5 w-48 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('nama_pelanggan')}>
+                      <th 
+                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        style={{ width: columnWidths.nama_pelanggan }}
+                        onClick={() => toggleSort('nama_pelanggan')}
+                      >
                         <div className="flex items-center gap-2">PELANGGAN <SortIcon config={sortConfig} sortKey="nama_pelanggan" /></div>
+                        <div className="resizer" onMouseDown={(e) => startResizing('nama_pelanggan', e)} />
                       </th>
-                      <th className="px-5 py-3.5 w-32 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('tgl')}>
+                      <th 
+                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        style={{ width: columnWidths.tgl }}
+                        onClick={() => toggleSort('tgl')}
+                      >
                         <div className="flex items-center gap-2">TANGGAL <SortIcon config={sortConfig} sortKey="tgl" /></div>
+                        <div className="resizer" onMouseDown={(e) => startResizing('tgl', e)} />
                       </th>
-                      <th className="px-5 py-3.5 w-24 text-right cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('qty')}>
+                      <th 
+                        className="px-5 py-3.5 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors" 
+                        style={{ width: columnWidths.qty }}
+                        onClick={() => toggleSort('qty')}
+                      >
                         <div className="flex items-center justify-end gap-2">QTY ORDER <SortIcon config={sortConfig} sortKey="qty" /></div>
+                        <div className="resizer" onMouseDown={(e) => startResizing('qty', e)} />
                       </th>
                     </tr>
                   </thead>
@@ -550,12 +616,10 @@ export default function OrderProduksiClient() {
                           {order.faktur}
                         </td>
                         <td className={`px-5 py-1 font-bold text-[13px] transition-colors ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
-                          <div className="max-w-[300px] xl:max-w-md truncate" title={order.nama_prd}>
-                            {order.nama_prd}
-                          </div>
+                          {order.nama_prd}
                         </td>
                         <td className={`px-5 py-1 text-[13px] font-medium transition-colors ${isSelected ? 'text-green-700' : 'text-gray-500'}`}>
-                          <div className={`truncate max-w-[150px] inline-block px-2.5 py-1 rounded-md transition-colors ${isSelected ? 'bg-green-100 text-green-700' : 'bg-slate-100/60 text-gray-500 border border-gray-100/50 group-hover:bg-white'}`} title={order.nama_pelanggan || order.kd_pelanggan}>
+                          <div className={`inline-block px-2.5 py-1 rounded-md transition-colors ${isSelected ? 'bg-green-100 text-green-700' : 'bg-slate-100/60 text-gray-500 border border-gray-100/50 group-hover:bg-white'}`}>
                             {order.nama_pelanggan || order.kd_pelanggan}
                           </div>
                         </td>
