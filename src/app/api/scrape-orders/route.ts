@@ -109,12 +109,20 @@ export async function GET(request: NextRequest) {
         String(r.kd_barang || "").toLowerCase().trim() !== "total"
     );
 
+    const parseDigitQty = (val: any) => {
+      if (!val) return 0;
+      const str = String(val).replace(/,/g, ''); // Remove commas
+      const match = str.match(/^-?\d+(\.\d+)?/); // Extract numeric part from start
+      return match ? parseFloat(match[0]) : 0;
+    };
+
     const finalRecords = filteredRecords.map((r: any) => {
-      const parsedQty = parseFloat(r.qty_order || r.qty_so || r.qty || "0") || 0;
+      const parsedQty = parseDigitQty(r.qty_so || r.qty_order || r.qty);
       const parsedHarga = parseFloat(r.hp || r.bbb || r.harga || "0") || 0;
       return {
         ...r,
         qty: parsedQty,
+        satuan: r.kd_satuan || r.satuan || r.sat || '',
         harga: parsedHarga,
         jumlah: parsedQty * parsedHarga
       };
@@ -144,13 +152,14 @@ export async function GET(request: NextRequest) {
         
         batchOps.push({
             sql: `
-              INSERT INTO orders (faktur, nama_prd, nama_pelanggan, tgl, qty, harga, jumlah, raw_data)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+              INSERT INTO orders (faktur, nama_prd, nama_pelanggan, tgl, qty, satuan, harga, jumlah, raw_data)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
               ON CONFLICT(faktur) DO UPDATE SET
                 nama_prd = excluded.nama_prd,
                 nama_pelanggan = excluded.nama_pelanggan,
                 tgl = excluded.tgl,
                 qty = excluded.qty,
+                satuan = excluded.satuan,
                 harga = excluded.harga,
                 jumlah = excluded.jumlah,
                 raw_data = excluded.raw_data
@@ -161,6 +170,7 @@ export async function GET(request: NextRequest) {
               record.nama_pelanggan || record.kd_pelanggan || '',
               record.tgl || '',
               record.qty || 0,
+              record.satuan || '',
               record.harga || 0,
               record.jumlah || 0,
               JSON.stringify(record)

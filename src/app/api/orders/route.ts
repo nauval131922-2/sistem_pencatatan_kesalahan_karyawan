@@ -28,7 +28,7 @@ export async function GET(request: Request) {
       if (fromDate && toDate) { baseArgs.push(fromDate, toDate); }
       
       sqlRecords = `
-        SELECT id, faktur, nama_prd, nama_pelanggan, tgl, qty, created_at 
+        SELECT id, faktur, nama_prd, nama_pelanggan, tgl, qty, satuan, created_at 
         FROM orders 
         WHERE (nama_prd LIKE ? OR nama_pelanggan LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
         ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
       if (fromDate && toDate) { baseArgs.push(fromDate, toDate); }
 
       sqlRecords = `
-        SELECT id, faktur, nama_prd, nama_pelanggan, tgl, qty, created_at 
+        SELECT id, faktur, nama_prd, nama_pelanggan, tgl, qty, satuan, created_at 
         FROM orders 
         ${(fromDate && toDate) ? `WHERE 1=1 ${dateFilterSQL}` : ''}
         ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
