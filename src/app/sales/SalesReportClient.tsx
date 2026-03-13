@@ -645,10 +645,10 @@ export default function SalesReportClient() {
                           {row.kd_barang || '–'}
                         </td>
                         <td className={`px-5 py-1 text-right font-bold text-[12px] transition-colors ${isSelected ? 'text-green-700' : 'text-gray-700 group-hover:text-gray-900'}`}>
-                          {row.harga ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(row.harga) : '-'}
+                          {row.harga ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 2 }).format(row.harga) : '-'}
                         </td>
                         <td className={`px-5 py-1 text-right font-extrabold text-[12px] transition-colors ${isSelected ? 'text-green-700' : 'text-emerald-600 group-hover:text-emerald-700'}`}>
-                          {row.jumlah ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(row.jumlah) : '-'}
+                          {row.jumlah ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 2 }).format(row.jumlah) : '-'}
                         </td>
                       </tr>
                     )})}

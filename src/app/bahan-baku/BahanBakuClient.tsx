@@ -667,7 +667,7 @@ export default function BahanBakuClient() {
                           {item.nama_barang}
                         </td>
                         <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
-                          {item.qty}
+                          {Number(item.qty).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className={`px-5 py-1 text-[11px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400'}`}>
                           {item.satuan}

@@ -639,7 +639,7 @@ export default function OrderProduksiClient() {
                           {formatIndoDateStr(order.tgl)}
                         </td>
                         <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
-                          {order.qty}
+                          {Number(order.qty).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                       </tr>
                     )})}

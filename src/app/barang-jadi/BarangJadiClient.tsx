@@ -670,13 +670,13 @@ export default function BarangJadiClient() {
                           {item.nama_barang}
                         </td>
                         <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
-                          {item.qty}
+                          {Number(item.qty).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className={`px-5 py-1 text-[11px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400'}`}>
                           {item.satuan}
                         </td>
                         <td className={`px-5 py-1 text-right font-bold text-[13px] tabular-nums transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-700 group-hover:text-gray-900'}`}>
-                          {item.hp ? item.hp.toLocaleString('id-ID') : '–'}
+                          {item.hp ? item.hp.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '–'}
                         </td>
                         <td className={`px-5 py-1 text-[11px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400 group-hover:text-gray-500'}`}>
                           {item.nama_prd}
