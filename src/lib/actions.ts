@@ -49,8 +49,9 @@ export const getInfractions = cache(async (startDate?: string, endDate?: string)
 
   const params: any[] = [];
   if (startDate && endDate) {
-    query += ` WHERE substr(i.date, 1, 10) BETWEEN ? AND ? `;
-    params.push(startDate, endDate);
+    // Ensure we cover the full end day by appending time or just use string comparison if data is YYYY-MM-DD
+    query += ` WHERE i.date >= ? AND i.date <= ? `;
+    params.push(`${startDate} 00:00:00`, `${endDate} 23:59:59`);
   }
 
   query += ` ORDER BY i.date DESC, i.id DESC `;
@@ -81,7 +82,7 @@ export async function addInfraction(employeeId: number, description: string, sev
   // If date only (YYYY-MM-DD), append current time
   let fullDate = date;
   if (date.length === 10) {
-    const time = new Date().toLocaleTimeString('id-ID', { hour12: false });
+    const time = new Date().toLocaleTimeString('en-GB', { hour12: false }); // Using en-GB for HH:mm:ss format
     fullDate = `${date} ${time}`;
   }
 
@@ -120,29 +121,27 @@ export async function addInfraction(employeeId: number, description: string, sev
 
 export const getStats = cache(async (year?: number) => {
   const currentYear = year || new Date().getFullYear();
-  const yearFilter = `%-${currentYear} %`; // matches DD-MM-YYYY ...
-  const yearFilterAlt = `${currentYear}-%`; // matches YYYY-MM-DD ...
+  const startOfYear = `${currentYear}-01-01 00:00:00`;
+  const endOfYear = `${currentYear}-12-31 23:59:59`;
 
   const results = await db.batch([
     'SELECT COUNT(*) as count FROM employees WHERE is_active = 1',
     {
-      sql: `SELECT COUNT(*) as count FROM infractions 
-            WHERE (date LIKE ? OR date LIKE ?)`,
-      args: [`%-${currentYear}%`, `${currentYear}-%`]
-    },
-    {
-      sql: `SELECT COUNT(*) as count FROM infractions 
-            WHERE severity = 'High' AND (date LIKE ? OR date LIKE ?)`,
-      args: [`%-${currentYear}%`, `${currentYear}-%`]
+      sql: `SELECT 
+              COUNT(*) as total,
+              SUM(CASE WHEN severity = 'High' THEN 1 ELSE 0 END) as high
+            FROM infractions 
+            WHERE (date >= ? AND date <= ?)`,
+      args: [startOfYear, endOfYear]
     },
     'SELECT COUNT(*) as count FROM orders'
   ], "read");
   
   return {
     totalEmployees: Number(results[0].rows[0]?.count || 0),
-    totalInfractions: Number(results[1].rows[0]?.count || 0),
-    highSeverity: Number(results[2].rows[0]?.count || 0),
-    totalOrders: Number(results[3].rows[0]?.count || 0)
+    totalInfractions: Number(results[1].rows[0]?.total || 0),
+    highSeverity: Number(results[1].rows[0]?.high || 0),
+    totalOrders: Number(results[2].rows[0]?.count || 0)
   };
 });
 
@@ -156,21 +155,23 @@ export const getDashboardSummary = cache(async () => {
   const thisMonth = ("0" + (now.getMonth() + 1)).slice(-2);
   const thisYear = now.getFullYear().toString();
 
+  const startOfMonth = `${thisYear}-${thisMonth}-01 00:00:00`;
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const endOfMonth = `${thisYear}-${thisMonth}-${lastDay} 23:59:59`;
+  const startOfToday = `${today} 00:00:00`;
+  const endOfToday = `${today} 23:59:59`;
+
   const results = await db.batch([
     'SELECT COUNT(*) as count FROM employees WHERE is_active = 1',
     {
       sql: `SELECT COUNT(*) as count FROM infractions 
-            WHERE (
-              (substr(date, 4, 2) = ? AND substr(date, 7, 4) = ?)
-              OR 
-              (substr(date, 6, 2) = ? AND substr(date, 1, 4) = ?)
-            )`,
-      args: [thisMonth, thisYear, thisMonth, thisYear]
+            WHERE (date >= ? AND date <= ?)`,
+      args: [startOfMonth, endOfMonth]
     },
     {
       sql: `SELECT COUNT(*) as count FROM infractions 
-            WHERE (substr(date, 1, 10) = ? OR substr(date, 1, 10) = ?)`,
-      args: [today, today] // checking both formats if needed, but today is YYYY-MM-DD
+            WHERE (date >= ? AND date <= ?)`,
+      args: [startOfToday, endOfToday]
     }
   ], "read");
 
@@ -184,23 +185,25 @@ export const getDashboardSummary = cache(async () => {
 export const getDetailedStats = cache(async (year: number) => {
   const yr = year.toString();
   
+  const startOfYear = `${yr}-01-01 00:00:00`;
+  const endOfYear = `${yr}-12-31 23:59:59`;
+  
   const [monthlyRes, repeatersRes, severityRes] = await db.batch([
-    // 1. Monthly Trends
+    // 1. Monthly Trends - Better Grouped Query
     {
       sql: `
-        WITH RECURSIVE months(m) AS (SELECT 1 UNION ALL SELECT m+1 FROM months WHERE m < 12)
         SELECT 
-          m as month,
-          (SELECT COUNT(*) FROM infractions 
-           WHERE (
-             (substr(date, 4, 2) = printf('%02d', m) AND substr(date, 7, 4) = ?)
-             OR 
-             (substr(date, 6, 2) = printf('%02d', m) AND substr(date, 1, 4) = ?)
-           )
-          ) as count
-        FROM months
+          CAST(strftime('%m', date) AS INTEGER) as month_idx,
+          COUNT(*) as total,
+          SUM(CASE WHEN severity = 'Low' THEN 1 ELSE 0 END) as low_count,
+          SUM(CASE WHEN severity = 'Medium' THEN 1 ELSE 0 END) as med_count,
+          SUM(CASE WHEN severity = 'High' THEN 1 ELSE 0 END) as high_count,
+          SUM(IFNULL(total, 0)) as amount
+        FROM infractions
+        WHERE date >= ? AND date <= ?
+        GROUP BY month_idx
       `,
-      args: [yr, yr]
+      args: [startOfYear, endOfYear]
     },
     // 2. Top Repeaters
     {
@@ -208,33 +211,47 @@ export const getDetailedStats = cache(async (year: number) => {
         SELECT 
           COALESCE(i.employee_name, e.name) as name,
           e.position,
-          COUNT(*) as total
+          COUNT(*) as total,
+          SUM(CASE WHEN severity = 'Low' THEN 1 ELSE 0 END) as low_count,
+          SUM(CASE WHEN severity = 'Medium' THEN 1 ELSE 0 END) as med_count,
+          SUM(CASE WHEN severity = 'High' THEN 1 ELSE 0 END) as high_count,
+          SUM(IFNULL(i.total, 0)) as total_amount
         FROM infractions i
         LEFT JOIN employees e ON i.employee_id = e.id
-        WHERE (substr(i.date, 7, 4) = ? OR substr(i.date, 1, 4) = ?)
+        WHERE i.date >= ? AND i.date <= ?
         GROUP BY i.employee_id, COALESCE(i.employee_name, e.name)
-        ORDER BY total DESC
+        ORDER BY total_amount DESC
         LIMIT 5
       `,
-      args: [yr, yr]
+      args: [startOfYear, endOfYear]
     },
     // 3. Severity Distribution for the year
     {
       sql: `
         SELECT severity, COUNT(*) as count 
         FROM infractions 
-        WHERE (substr(date, 7, 4) = ? OR substr(date, 1, 4) = ?)
+        WHERE date >= ? AND date <= ?
         GROUP BY severity
       `,
-      args: [yr, yr]
+      args: [startOfYear, endOfYear]
     }
   ], "read");
 
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-  const monthlyData = monthlyRes.rows.map((r: any) => ({
-    name: monthNames[r.month - 1],
-    total: Number(r.count)
-  }));
+  
+  // Fill all 12 months, even if they have 0 infractions
+  const monthlyData = monthNames.map((name, idx) => {
+    const monthIdx = idx + 1;
+    const dbRow = monthlyRes.rows.find((r: any) => r.month_idx === monthIdx);
+    return {
+      name,
+      total: dbRow ? Number(dbRow.total) : 0,
+      low: dbRow ? Number(dbRow.low_count) : 0,
+      medium: dbRow ? Number(dbRow.med_count) : 0,
+      high: dbRow ? Number(dbRow.high_count) : 0,
+      amount: dbRow ? Number(dbRow.amount) : 0
+    };
+  });
 
   return {
     monthlyData,
@@ -262,6 +279,23 @@ export async function getLastHppImport() {
     return result.rows.length > 0 ? { ...result.rows[0] } : null;
   } catch (err) {
     console.error('Failed to get last hpp kalkulasi import log', err);
+    return null;
+  }
+}
+
+export async function getLiveRecord(tableName: string, recordId: number | string) {
+  try {
+    const allowedTables = ['users', 'employees', 'infractions', 'orders', 'bahan_baku', 'barang_jadi', 'hpp_kalkulasi', 'sales_reports'];
+    if (!allowedTables.includes(tableName)) return null;
+    
+    const result = await db.execute({
+      sql: `SELECT * FROM ${tableName} WHERE id = ?`,
+      args: [recordId]
+    });
+    
+    return result.rows.length > 0 ? { ...result.rows[0] } : null;
+  } catch (err) {
+    console.error(`Failed to get live record from ${tableName}`, err);
     return null;
   }
 }

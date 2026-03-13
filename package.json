@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@libsql/client": "^0.17.0",
+    "@tanstack/react-virtual": "^3.13.22",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.0",
     "jspdf": "^4.2.0",

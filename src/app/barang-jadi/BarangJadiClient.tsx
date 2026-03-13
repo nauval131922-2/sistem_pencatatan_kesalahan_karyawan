@@ -1,10 +1,17 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { Package, Hash, Calendar, Loader2, Download, Search, AlertCircle, ChevronLeft, ChevronRight, Clock, Star, RefreshCw, User, Tag, BarChart3, Printer } from 'lucide-react';
-
-
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { Package, Hash, Calendar, Loader2, Download, Search, AlertCircle, ChevronLeft, ChevronRight, Clock, Star, RefreshCw, User, Tag, BarChart3, Printer, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+
+function SortIcon({ config, sortKey }: { config: any, sortKey: string }) {
+  if (config.key !== sortKey || !config.direction) {
+    return <ArrowUpDown size={12} className="text-gray-300 transition-opacity" />;
+  }
+  return config.direction === 'asc' 
+    ? <ArrowUp size={12} className="text-green-600" /> 
+    : <ArrowDown size={12} className="text-green-600" />;
+}
 
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -50,6 +57,14 @@ export default function BarangJadiClient() {
   const [loadTime, setLoadTime] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const mountedRef = useRef(true);
+
+  // Table state
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [lastSelectedId, setLastSelectedId] = useState<number | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: 'asc' | 'desc' | null }>({
+    key: null,
+    direction: null
+  });
 
   // Batch states
   const [isBatching, setIsBatching] = useState(false);
@@ -199,8 +214,8 @@ export default function BarangJadiClient() {
     };
     
     try {
-      // Parallel execution with concurrency limit 5 (Safe & Stable)
-      const concurrency = 5;
+      // Parallel execution with concurrency limit 15 (Pol Mentok)
+      const concurrency = 15;
       const queue = [...chunks];
       const workers = Array(Math.min(concurrency, queue.length)).fill(null).map(async () => {
         while (queue.length > 0) {
@@ -282,8 +297,6 @@ export default function BarangJadiClient() {
     }
   };
 
-  const paginatedData = data || [];
-
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setPage(1); // Reset page on search
@@ -298,12 +311,67 @@ export default function BarangJadiClient() {
     }
   };
 
+  const toggleSort = (key: string) => {
+    setSortConfig((prev) => {
+      if (prev.key === key) {
+        if (prev.direction === 'asc') return { key, direction: 'desc' };
+        if (prev.direction === 'desc') return { key, direction: null };
+        return { key, direction: 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
+
+  const toggleSelectRow = (id: number, e: React.MouseEvent) => {
+    let next = new Set(selectedIds);
+    if (e.shiftKey && lastSelectedId !== null && data) {
+      const currentIndex = data.findIndex((o: any) => o.id === id);
+      const lastIndex = data.findIndex((o: any) => o.id === lastSelectedId);
+      if (currentIndex !== -1 && lastIndex !== -1) {
+        const start = Math.min(currentIndex, lastIndex);
+        const end = Math.max(currentIndex, lastIndex);
+        for (let i = start; i <= end; i++) {
+          next.add(data[i].id);
+        }
+      }
+    } else if (e.ctrlKey || e.metaKey) {
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+    } else {
+      next.clear();
+      next.add(id);
+    }
+    setLastSelectedId(id);
+    setSelectedIds(next);
+  };
+
+  const paginatedData = useMemo(() => {
+    let result = [...(data || [])];
+    if (sortConfig.key && sortConfig.direction) {
+      result.sort((a, b) => {
+        let aValue = a[sortConfig.key!];
+        let bValue = b[sortConfig.key!];
+        if (sortConfig.key === 'tgl') {
+          const pa = aValue ? String(aValue).split('-') : [];
+          const pb = bValue ? String(bValue).split('-') : [];
+          aValue = pa.length === 3 ? `${pa[2]}${pa[1]}${pa[0]}` : aValue;
+          bValue = pb.length === 3 ? `${pb[2]}${pb[1]}${pb[0]}` : bValue;
+        }
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return result;
+  }, [data, sortConfig]);
+
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden">
-      {/* Control Panel - Horizontal Card */}
-      <div className="shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] px-5 py-3.5 flex items-center justify-between gap-6">
-          <div className="flex items-center gap-4 flex-1">
+    <div className="flex-1 min-h-0 flex flex-col gap-4 animate-in fade-in duration-500 overflow-hidden">
+      {/* Top Filter Bar */}
+      <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
+        <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
+          <div className="flex flex-wrap items-center gap-6">
             <div className="flex items-center gap-2.5">
               <Calendar size={16} className="text-green-600" />
               <span className="text-[13px] font-extrabold text-gray-400 uppercase tracking-wider">Periode</span>
@@ -383,6 +451,18 @@ export default function BarangJadiClient() {
                   <span>Diperbarui: {lastUpdated}</span>
                 </div>
               )}
+              {selectedIds.size > 0 && (
+                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
+                  <span className="text-gray-200">|</span>
+                  <span className="text-[11px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
+                  <button 
+                    onClick={() => setSelectedIds(new Set())}
+                    className="text-[11px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
+                  >
+                    Batal
+                  </button>
+                </div>
+              )}
             </div>
             
             {loading && data !== null && (
@@ -394,11 +474,11 @@ export default function BarangJadiClient() {
           </div>
 
           <div className="relative w-full group">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
             <input 
               type="text" 
               placeholder="Cari barang, tanggal, order produksi..." 
-              className="w-full pl-11 pr-4 h-10 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-medium placeholder:text-gray-300 shadow-sm"
+              className="w-full pl-12 pr-4 h-12 bg-white border border-gray-200 rounded-[14px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
               value={searchQuery}
               onChange={handleSearch}
             />
@@ -411,11 +491,20 @@ export default function BarangJadiClient() {
             <p className="text-sm font-bold text-gray-400">Sedang memuat data dari database...</p>
           </div>
         ) : data === null && loading ? (
-           <div className="flex-1 bg-white border border-gray-100 rounded-[10px] flex flex-col items-center justify-center text-center p-10">
-            <Loader2 size={40} className="text-green-500 animate-spin mb-4" />
-            <div className="space-y-1">
-              <p className="text-sm font-bold text-gray-800">Menghubungkan ke Server...</p>
-              <p className="text-xs text-gray-400">Mohon tunggu sebentar, kami sedang menyiapkan data.</p>
+          <div className="flex-1 bg-white border border-gray-100 rounded-[10px] shadow-sm overflow-hidden flex flex-col min-h-0">
+            <div className="border-b border-gray-100 bg-gray-50/50 px-5 py-3.5 flex items-center justify-between">
+              <div className="h-4 w-32 bg-gray-200 rounded-md animate-pulse"></div>
+              <div className="h-4 w-24 bg-gray-200 rounded-md animate-pulse"></div>
+            </div>
+            <div className="flex-1 p-5 space-y-4">
+               {Array(7).fill(0).map((_, i) => (
+                 <div key={i} className="flex items-center gap-4 w-full">
+                   <div className="h-4 w-32 bg-gray-100 rounded animate-pulse"></div>
+                   <div className="h-4 flex-1 bg-gray-50 rounded animate-pulse"></div>
+                   <div className="h-4 w-40 bg-gray-100 rounded animate-pulse"></div>
+                   <div className="h-4 w-24 bg-gray-100 rounded animate-pulse"></div>
+                 </div>
+               ))}
             </div>
           </div>
         ) : data && data.length === 0 ? (
@@ -435,49 +524,73 @@ export default function BarangJadiClient() {
                 <table className="w-full text-left relative min-w-[1000px] border-collapse">
                   <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
                     <tr className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
-                      <th className="px-5 py-3.5 w-[110px]">Tanggal</th>
-                      <th className="px-5 py-3.5 w-[120px]">Faktur</th>
-                      <th className="px-5 py-3.5 w-[120px]">Faktur PRD</th>
-                      <th className="px-5 py-3.5">Nama Barang</th>
-                      <th className="px-5 py-3.5 w-[80px] text-right">Qty</th>
-                      <th className="px-5 py-3.5 w-[80px]">Satuan</th>
-                      <th className="px-5 py-3.5 w-[120px] text-right">HPP</th>
-                      <th className="px-5 py-3.5 w-[140px]">Prd</th>
+                      <th className="px-5 py-3.5 w-[110px] cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('tgl')}>
+                        <div className="flex items-center gap-2">TANGGAL <SortIcon config={sortConfig} sortKey="tgl" /></div>
+                      </th>
+                      <th className="px-5 py-3.5 w-[120px] cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('faktur')}>
+                        <div className="flex items-center gap-2">FAKTUR <SortIcon config={sortConfig} sortKey="faktur" /></div>
+                      </th>
+                      <th className="px-5 py-3.5 w-[120px] cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('faktur_prd')}>
+                        <div className="flex items-center gap-2">FAKTUR PRD <SortIcon config={sortConfig} sortKey="faktur_prd" /></div>
+                      </th>
+                      <th className="px-5 py-3.5 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('nama_barang')}>
+                        <div className="flex items-center gap-2">NAMA BARANG <SortIcon config={sortConfig} sortKey="nama_barang" /></div>
+                      </th>
+                      <th className="px-5 py-3.5 w-[80px] text-right cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('qty')}>
+                        <div className="flex items-center justify-end gap-2">QTY <SortIcon config={sortConfig} sortKey="qty" /></div>
+                      </th>
+                      <th className="px-5 py-3.5 w-[80px] cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('satuan')}>
+                        <div className="flex items-center gap-2">SATUAN <SortIcon config={sortConfig} sortKey="satuan" /></div>
+                      </th>
+                      <th className="px-5 py-3.5 w-[120px] text-right cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('hp')}>
+                        <div className="flex items-center justify-end gap-2">HPP <SortIcon config={sortConfig} sortKey="hp" /></div>
+                      </th>
+                      <th className="px-5 py-3.5 w-[140px] cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('nama_prd')}>
+                        <div className="flex items-center gap-2">PRD <SortIcon config={sortConfig} sortKey="nama_prd" /></div>
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {paginatedData.map((item: any, idx) => (
-                      <tr key={item.id || idx} className="hover:bg-green-50/30 transition-colors even:bg-[#f9fafb] group h-10">
-                        <td className="px-5 py-1 text-gray-400 text-[12px] font-bold whitespace-nowrap">
+                    {paginatedData.map((item: any, idx) => {
+                      const isSelected = selectedIds.has(item.id);
+                      return (
+                      <tr 
+                        key={item.id || idx} 
+                        onClick={(e) => toggleSelectRow(item.id, e)}
+                        className={`transition-all duration-150 group h-10 cursor-pointer select-none ${
+                          isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : idx % 2 === 1 ? 'bg-slate-50/20' : 'bg-white'
+                        } hover:bg-green-50/40`}
+                      >
+                        <td className={`px-5 py-1 text-[12px] font-bold whitespace-nowrap transition-colors ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
                           {formatIndoDateStr(item.tgl)}
                         </td>
-                        <td className="px-5 py-1 font-mono text-[11px] text-gray-700 font-bold tracking-tight">
+                        <td className={`px-5 py-1 font-mono text-[11px] font-bold tracking-tight transition-colors ${isSelected ? 'text-green-600' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {item.faktur || '-'}
                         </td>
-                        <td className="px-5 py-1 font-mono text-[11px] text-gray-500 font-bold tracking-tight">
+                        <td className={`px-5 py-1 font-mono text-[11px] font-bold tracking-tight transition-colors ${isSelected ? 'text-green-500' : 'text-gray-500 group-hover:text-gray-700'}`}>
                           {item.faktur_prd || '-'}
                         </td>
-                        <td className="px-5 py-1 font-bold text-gray-700 text-[13px]">
+                        <td className={`px-5 py-1 font-bold text-[13px] transition-colors ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           <div className="max-w-[200px] xl:max-w-xs truncate" title={item.nama_barang}>
                             {item.nama_barang}
                           </div>
                         </td>
-                        <td className="px-5 py-1 text-gray-800 text-right font-extrabold text-[13px]">
+                        <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
                           {item.qty}
                         </td>
-                        <td className="px-5 py-1 text-gray-400 text-[11px] font-bold">
+                        <td className={`px-5 py-1 text-[11px] font-bold transition-colors ${isSelected ? 'text-green-500' : 'text-gray-400'}`}>
                           {item.satuan}
                         </td>
-                        <td className="px-5 py-1 text-gray-700 text-right font-bold text-[13px] tabular-nums">
+                        <td className={`px-5 py-1 text-right font-bold text-[13px] tabular-nums transition-colors ${isSelected ? 'text-green-700' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {item.hp ? item.hp.toLocaleString('id-ID') : '–'}
                         </td>
-                        <td className="px-5 py-1 text-gray-400 text-[11px] font-bold">
+                        <td className={`px-5 py-1 text-[11px] font-bold transition-colors ${isSelected ? 'text-green-500' : 'text-gray-400 group-hover:text-gray-500'}`}>
                           <div className="truncate max-w-[120px]" title={item.nama_prd}>
                               {item.nama_prd}
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
               </div>

@@ -1,10 +1,17 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, ChevronLeft, ChevronRight, Package, Calendar, User, Tag, Hash, RefreshCw, BarChart3, Download, Printer, Loader2, AlertCircle, Clock } from 'lucide-react';
-
-
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { Search, ChevronLeft, ChevronRight, Package, Calendar, User, Tag, Hash, RefreshCw, BarChart3, Download, Printer, Loader2, AlertCircle, Clock, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+
+function SortIcon({ config, sortKey }: { config: any, sortKey: string }) {
+  if (config.key !== sortKey || !config.direction) {
+    return <ArrowUpDown size={12} className="text-gray-300 transition-opacity" />;
+  }
+  return config.direction === 'asc' 
+    ? <ArrowUp size={12} className="text-green-600" /> 
+    : <ArrowDown size={12} className="text-green-600" />;
+}
 
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -49,6 +56,14 @@ export default function OrderProduksiClient() {
   const [totalCount, setTotalCount] = useState(0);
   const [loadTime, setLoadTime] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0); // Add this to force refresh
+
+  // Table state
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [lastSelectedId, setLastSelectedId] = useState<number | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: 'asc' | 'desc' | null }>({
+    key: null,
+    direction: null
+  });
 
   // Batch states
   const [isBatching, setIsBatching] = useState(false);
@@ -187,8 +202,8 @@ export default function OrderProduksiClient() {
     };
     
     try {
-      // Parallel execution with concurrency limit 5 (Safe & Stable)
-      const concurrency = 5;
+      // Parallel execution with concurrency limit 15 (Pol Mentok)
+      const concurrency = 15;
       const queue = [...chunks];
       const workers = Array(Math.min(concurrency, queue.length)).fill(null).map(async () => {
         while (queue.length > 0) {
@@ -275,8 +290,6 @@ export default function OrderProduksiClient() {
     }
   };
 
-  const paginatedData = data || [];
-
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setPage(1); // Reset page on search
@@ -291,12 +304,68 @@ export default function OrderProduksiClient() {
     }
   };
 
+  const toggleSort = (key: string) => {
+    setSortConfig((prev) => {
+      if (prev.key === key) {
+        if (prev.direction === 'asc') return { key, direction: 'desc' };
+        if (prev.direction === 'desc') return { key, direction: null };
+        return { key, direction: 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
+
+  const toggleSelectRow = (id: number, e: React.MouseEvent) => {
+    let next = new Set(selectedIds);
+    if (e.shiftKey && lastSelectedId !== null && data) {
+      const currentIndex = data.findIndex((o: any) => o.id === id);
+      const lastIndex = data.findIndex((o: any) => o.id === lastSelectedId);
+      if (currentIndex !== -1 && lastIndex !== -1) {
+        const start = Math.min(currentIndex, lastIndex);
+        const end = Math.max(currentIndex, lastIndex);
+        for (let i = start; i <= end; i++) {
+          next.add(data[i].id);
+        }
+      }
+    } else if (e.ctrlKey || e.metaKey) {
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+    } else {
+      next.clear();
+      next.add(id);
+    }
+    setLastSelectedId(id);
+    setSelectedIds(next);
+  };
+
+  const paginatedData = useMemo(() => {
+    let result = [...(data || [])];
+    if (sortConfig.key && sortConfig.direction) {
+      result.sort((a, b) => {
+        let aValue = a[sortConfig.key!];
+        let bValue = b[sortConfig.key!];
+        if (sortConfig.key === 'tgl') {
+          const pa = aValue ? String(aValue).split('-') : [];
+          const pb = bValue ? String(bValue).split('-') : [];
+          aValue = pa.length === 3 ? `${pa[2]}${pa[1]}${pa[0]}` : aValue;
+          bValue = pb.length === 3 ? `${pb[2]}${pb[1]}${pb[0]}` : bValue;
+        }
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return result;
+  }, [data, sortConfig]);
+
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden">
-      {/* Control Panel - Horizontal Card */}
-      <div className="shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] px-5 py-3.5 flex items-center justify-between gap-6">
-          <div className="flex items-center gap-4 flex-1">
+    <div className="flex-1 min-h-0 flex flex-col gap-4 animate-in fade-in duration-500 overflow-hidden">
+      {/* Top Filter Bar */}
+      <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
+        
+        <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
+          <div className="flex flex-wrap items-center gap-6">
             <div className="flex items-center gap-2.5">
               <Calendar size={16} className="text-green-600" />
               <span className="text-[13px] font-extrabold text-gray-400 uppercase tracking-wider">Periode</span>
@@ -376,6 +445,18 @@ export default function OrderProduksiClient() {
                   <span>Diperbarui: {lastUpdated}</span>
                 </div>
               )}
+              {selectedIds.size > 0 && (
+                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
+                  <span className="text-gray-200">|</span>
+                  <span className="text-[11px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
+                  <button 
+                    onClick={() => setSelectedIds(new Set())}
+                    className="text-[11px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
+                  >
+                    Batal
+                  </button>
+                </div>
+              )}
             </div>
             
             {loading && data !== null && (
@@ -387,11 +468,11 @@ export default function OrderProduksiClient() {
           </div>
 
           <div className="relative w-full group">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
             <input 
               type="text" 
               placeholder="Cari faktur, produk, pelanggan..." 
-              className="w-full pl-11 pr-4 h-10 bg-white border border-gray-200 rounded-[10px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-medium placeholder:text-gray-300 shadow-sm"
+              className="w-full pl-12 pr-4 h-12 bg-white border border-gray-200 rounded-[14px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
               value={searchQuery}
               onChange={handleSearch}
             />
@@ -404,11 +485,20 @@ export default function OrderProduksiClient() {
             <p className="text-sm font-bold text-gray-400">Sedang memuat data dari database...</p>
           </div>
         ) : data === null && loading ? (
-           <div className="flex-1 bg-white border border-gray-100 rounded-[10px] flex flex-col items-center justify-center text-center p-10">
-            <Loader2 size={40} className="text-green-500 animate-spin mb-4" />
-            <div className="space-y-1">
-              <p className="text-sm font-bold text-gray-800">Menghubungkan ke Server...</p>
-              <p className="text-xs text-gray-400">Mohon tunggu sebentar, kami sedang menyiapkan data.</p>
+          <div className="flex-1 bg-white border border-gray-100 rounded-[10px] shadow-sm overflow-hidden flex flex-col min-h-0">
+            <div className="border-b border-gray-100 bg-gray-50/50 px-5 py-3.5 flex items-center justify-between">
+              <div className="h-4 w-32 bg-gray-200 rounded-md animate-pulse"></div>
+              <div className="h-4 w-24 bg-gray-200 rounded-md animate-pulse"></div>
+            </div>
+            <div className="flex-1 p-5 space-y-4">
+               {Array(7).fill(0).map((_, i) => (
+                 <div key={i} className="flex items-center gap-4 w-full">
+                   <div className="h-4 w-32 bg-gray-100 rounded animate-pulse"></div>
+                   <div className="h-4 flex-1 bg-gray-50 rounded animate-pulse"></div>
+                   <div className="h-4 w-40 bg-gray-100 rounded animate-pulse"></div>
+                   <div className="h-4 w-24 bg-gray-100 rounded animate-pulse"></div>
+                 </div>
+               ))}
             </div>
           </div>
         ) : data && data.length === 0 ? (
@@ -428,37 +518,55 @@ export default function OrderProduksiClient() {
                 <table className="w-full text-left relative min-w-[850px] border-collapse">
                   <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
                     <tr className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
-                      <th className="px-5 py-3.5 w-32">No. Faktur</th>
-                      <th className="px-5 py-3.5">Nama Produk</th>
-                      <th className="px-5 py-3.5 w-48">Pelanggan</th>
-                      <th className="px-5 py-3.5 w-32">Tanggal</th>
-                      <th className="px-5 py-3.5 w-24 text-right">Qty Order</th>
+                      <th className="px-5 py-3.5 w-32 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('faktur')}>
+                        <div className="flex items-center gap-2">NO. FAKTUR <SortIcon config={sortConfig} sortKey="faktur" /></div>
+                      </th>
+                      <th className="px-5 py-3.5 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('nama_prd')}>
+                        <div className="flex items-center gap-2">NAMA PRODUK <SortIcon config={sortConfig} sortKey="nama_prd" /></div>
+                      </th>
+                      <th className="px-5 py-3.5 w-48 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('nama_pelanggan')}>
+                        <div className="flex items-center gap-2">PELANGGAN <SortIcon config={sortConfig} sortKey="nama_pelanggan" /></div>
+                      </th>
+                      <th className="px-5 py-3.5 w-32 cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('tgl')}>
+                        <div className="flex items-center gap-2">TANGGAL <SortIcon config={sortConfig} sortKey="tgl" /></div>
+                      </th>
+                      <th className="px-5 py-3.5 w-24 text-right cursor-pointer hover:bg-gray-100 transition-colors" onClick={() => toggleSort('qty')}>
+                        <div className="flex items-center justify-end gap-2">QTY ORDER <SortIcon config={sortConfig} sortKey="qty" /></div>
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {paginatedData.map((order: any, idx) => (
-                      <tr key={order.id || idx} className="hover:bg-green-50/30 transition-colors even:bg-[#f9fafb] group h-10">
-                        <td className="px-5 py-1 font-bold text-gray-400 text-[12px] tracking-tight">
+                    {paginatedData.map((order: any, idx) => {
+                      const isSelected = selectedIds.has(order.id);
+                      return (
+                      <tr 
+                        key={order.id || idx} 
+                        onClick={(e) => toggleSelectRow(order.id, e)}
+                        className={`transition-all duration-150 group h-10 cursor-pointer select-none ${
+                          isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : idx % 2 === 1 ? 'bg-slate-50/20' : 'bg-white'
+                        } hover:bg-green-50/40`}
+                      >
+                        <td className={`px-5 py-1 font-bold text-[12px] tracking-tight transition-colors ${isSelected ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-500'}`}>
                           {order.faktur}
                         </td>
-                        <td className="px-5 py-1 font-bold text-gray-700 text-[13px]">
+                        <td className={`px-5 py-1 font-bold text-[13px] transition-colors ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           <div className="max-w-[300px] xl:max-w-md truncate" title={order.nama_prd}>
                             {order.nama_prd}
                           </div>
                         </td>
-                        <td className="px-5 py-1 text-gray-500 text-[13px] font-medium">
-                          <div className="truncate max-w-[150px]" title={order.nama_pelanggan || order.kd_pelanggan}>
+                        <td className={`px-5 py-1 text-[13px] font-medium transition-colors ${isSelected ? 'text-green-700' : 'text-gray-500'}`}>
+                          <div className={`truncate max-w-[150px] inline-block px-2.5 py-1 rounded-md transition-colors ${isSelected ? 'bg-green-100 text-green-700' : 'bg-slate-100/60 text-gray-500 border border-gray-100/50 group-hover:bg-white'}`} title={order.nama_pelanggan || order.kd_pelanggan}>
                             {order.nama_pelanggan || order.kd_pelanggan}
                           </div>
                         </td>
-                        <td className="px-5 py-1 text-gray-400 text-[12px] font-bold whitespace-nowrap">
+                        <td className={`px-5 py-1 text-[12px] font-bold whitespace-nowrap transition-colors ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
                           {formatIndoDateStr(order.tgl)}
                         </td>
-                        <td className="px-5 py-1 text-gray-800 text-right font-extrabold text-[13px]">
+                        <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
                           {order.qty}
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
               </div>

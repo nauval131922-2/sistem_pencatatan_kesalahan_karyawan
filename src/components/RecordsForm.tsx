@@ -591,6 +591,7 @@ export default function RecordsForm({
     try {
       const res = await fetch(endpoint, { method, headers, body });
       if (res.ok) {
+        localStorage.setItem('sikka_data_updated', Date.now().toString());
         closeDialog();
         showDialog('success', 'Berhasil', isEdit ? 'Data diperbarui.' : 'Data dicatat.', () => {
           if (onSuccessEdit) onSuccessEdit();

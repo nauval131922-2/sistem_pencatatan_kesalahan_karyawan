@@ -491,6 +491,7 @@ export default function InfractionsTable({
     try {
       const res = await fetch(`/api/infractions/${id}`, { method: 'DELETE' });
       if (res.ok) {
+        localStorage.setItem('sikka_data_updated', Date.now().toString());
         setInfractions(prev => prev.filter(inf => inf.id !== id));
         router.refresh();
         setConfirmDeleteId(null);
@@ -604,14 +605,14 @@ export default function InfractionsTable({
         </div>
 
         {/* Panel Bawah: Search */}
-        <div className="relative w-full group">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within:text-green-500 transition-colors" />
+        <div className="relative w-full shrink-0 group">
+          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
           <input
             type="text"
             value={query}
             onChange={handleSearch}
             placeholder="Cari nama karyawan, deskripsi kesalahan, nomor faktur, atau referensi order..."
-            className="w-full pl-12 pr-4 h-11 bg-gray-50/50 border border-gray-100 rounded-xl focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all text-sm font-medium"
+            className="w-full pl-12 pr-4 h-12 bg-white border border-gray-200 rounded-[14px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
           />
         </div>
       </div>

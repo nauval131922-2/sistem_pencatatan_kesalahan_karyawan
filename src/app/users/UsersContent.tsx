@@ -139,12 +139,12 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
       <div className="shrink-0">
         <div className="bg-white border border-gray-200 shadow-sm rounded-2xl px-6 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-4 flex-1">
-             <div className="relative w-full max-w-md group">
+             <div className="relative w-full max-w-md shrink-0 group">
                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
                <input 
                  type="text" 
                  placeholder="Cari user (nama atau username)..." 
-                 className="w-full pl-12 pr-4 h-11 bg-slate-50/50 border border-gray-100 rounded-xl focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all text-sm font-medium placeholder:text-gray-400"
+                 className="w-full pl-12 pr-10 h-12 bg-white border border-gray-200 rounded-[14px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
                  value={searchQuery}
                  onChange={(e) => setSearchQuery(e.target.value)}
                />

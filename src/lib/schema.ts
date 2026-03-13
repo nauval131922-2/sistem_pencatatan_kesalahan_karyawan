@@ -203,7 +203,7 @@ export async function initSchema(db: any) {
     // 1. users
     `CREATE TRIGGER IF NOT EXISTS trg_users_insert AFTER INSERT ON users BEGIN
       INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('CREATE', 'users', NEW.id, 'User baru ditambahkan: ' || NEW.name, json_object('name', NEW.name, 'username', NEW.username, 'role', NEW.role), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
+      VALUES ('CREATE', 'users', NEW.id, 'User baru ditambahkan: ' || NEW.name, json_object('id', NEW.id, 'name', NEW.name, 'username', NEW.username, 'role', NEW.role, 'created_at', NEW.created_at), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
     END;`,
     `CREATE TRIGGER IF NOT EXISTS trg_users_update AFTER UPDATE ON users BEGIN
       INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
@@ -215,7 +215,7 @@ export async function initSchema(db: any) {
           WHEN (SELECT last_menu FROM session_context WHERE id = 1) = 'Pengaturan Profil' THEN 'Profil diperbarui'
           ELSE 'User diupdate: ' || NEW.name
         END,
-        json_object('name', NEW.name, 'username', NEW.username, 'role', NEW.role), 
+        json_object('id', NEW.id, 'name', NEW.name, 'username', NEW.username, 'role', NEW.role, 'photo', NEW.photo), 
         COALESCE((SELECT username FROM session_context WHERE id = 1), 'System')
       );
     END;`,
@@ -227,7 +227,7 @@ export async function initSchema(db: any) {
     // 2. employees
     `CREATE TRIGGER IF NOT EXISTS trg_employees_insert AFTER INSERT ON employees BEGIN
       INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('CREATE', 'employees', NEW.id, 'Karyawan baru: ' || NEW.name || ' (' || NEW.position || ')', json_object('name', NEW.name, 'position', NEW.position, 'department', NEW.department, 'employee_no', NEW.employee_no), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
+      VALUES ('CREATE', 'employees', NEW.id, 'Karyawan baru: ' || NEW.name || ' (' || NEW.position || ')', json_object('id', NEW.id, 'name', NEW.name, 'position', NEW.position, 'department', NEW.department, 'employee_no', NEW.employee_no, 'is_active', NEW.is_active), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
     END;`,
     `CREATE TRIGGER IF NOT EXISTS trg_employees_update AFTER UPDATE ON employees BEGIN
       INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
@@ -241,21 +241,21 @@ export async function initSchema(db: any) {
     // 3. infractions
     `CREATE TRIGGER IF NOT EXISTS trg_infractions_insert AFTER INSERT ON infractions BEGIN
       INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('CREATE', 'infractions', NEW.id, 'Pencatatan Kesalahan baru ditambahkan (' || NEW.severity || ')', json_object('date', NEW.date, 'description', NEW.description, 'severity', NEW.severity), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
+      VALUES ('CREATE', 'infractions', NEW.id, 'Pencatatan Kesalahan baru ditambahkan (' || NEW.severity || ')', json_object('id', NEW.id, 'faktur', NEW.faktur, 'date', NEW.date, 'description', NEW.description, 'severity', NEW.severity, 'jumlah', NEW.jumlah, 'harga', NEW.harga, 'total', NEW.total, 'order_faktur', NEW.order_faktur, 'order_name', NEW.order_name, 'nama_barang', NEW.nama_barang, 'item_faktur', NEW.item_faktur, 'employee_id', NEW.employee_id), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
     END;`,
     `CREATE TRIGGER IF NOT EXISTS trg_infractions_update AFTER UPDATE ON infractions BEGIN
       INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('UPDATE', 'infractions', NEW.id, 'Catatan Kesalahan diupdate', json_object('date', NEW.date, 'description', NEW.description, 'severity', NEW.severity), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
+      VALUES ('UPDATE', 'infractions', NEW.id, 'Catatan Kesalahan diupdate', json_object('id', NEW.id, 'faktur', NEW.faktur, 'date', NEW.date, 'description', NEW.description, 'severity', NEW.severity, 'jumlah', NEW.jumlah, 'harga', NEW.harga, 'total', NEW.total, 'order_faktur', NEW.order_faktur, 'order_name', NEW.order_name, 'nama_barang', NEW.nama_barang, 'item_faktur', NEW.item_faktur, 'employee_id', NEW.employee_id), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
     END;`,
     `CREATE TRIGGER IF NOT EXISTS trg_infractions_delete AFTER DELETE ON infractions BEGIN
       INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('DELETE', 'infractions', OLD.id, 'Catatan Kesalahan dihapus', json_object('date', OLD.date, 'description', OLD.description), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
+      VALUES ('DELETE', 'infractions', OLD.id, 'Catatan Kesalahan dihapus', json_object('id', OLD.id, 'faktur', OLD.faktur, 'date', OLD.date, 'description', OLD.description, 'severity', OLD.severity, 'jumlah', OLD.jumlah, 'harga', OLD.harga, 'total', OLD.total), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
     END;`,
 
     // 4. orders
     `CREATE TRIGGER IF NOT EXISTS trg_orders_insert AFTER INSERT ON orders BEGIN
       INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('CREATE', 'orders', NEW.id, 'Data Order Baru: ' || IFNULL(NEW.faktur, NEW.nama_prd), json_object('faktur', NEW.faktur, 'nama_prd', NEW.nama_prd), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
+      VALUES ('CREATE', 'orders', NEW.id, 'Data Order Baru: ' || IFNULL(NEW.faktur, NEW.nama_prd), json_object('id', NEW.id, 'faktur', NEW.faktur, 'nama_prd', NEW.nama_prd, 'nama_pelanggan', NEW.nama_pelanggan, 'tgl', NEW.tgl, 'qty', NEW.qty, 'harga', NEW.harga, 'jumlah', NEW.jumlah), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
     END;`,
     `CREATE TRIGGER IF NOT EXISTS trg_orders_update AFTER UPDATE ON orders BEGIN
       INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)

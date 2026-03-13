@@ -52,6 +52,9 @@ export async function POST(req: NextRequest) {
     ];
     let importedCount = 0;
 
+    const session = await getSession();
+    const currentUser = session?.username || 'System';
+
     for (const row of dataRows) {
         const colA = String(row[COL_A] ?? '').trim();
         const colB = String(row[COL_B] ?? '').trim();
@@ -61,8 +64,6 @@ export async function POST(req: NextRequest) {
         const position = String(row[COL_J] ?? '').trim();
 
         if (!name || /^\d+$/.test(name)) continue;
-
-        const session = await getSession();
 
         batchOps.push({
             sql: `
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
                 is_active = 1,
                 recorded_by = excluded.recorded_by
             `,
-            args: [name, position || '-', '-', colA, session?.username || 'System']
+            args: [name, position || '-', '-', colA, currentUser]
         });
         importedCount++;
     }
@@ -84,7 +85,6 @@ export async function POST(req: NextRequest) {
         await db.batch(batchOps.slice(i, i + chunkSize), "write");
     }
 
-    const session = await getSession();
     await db.execute({
         sql: `INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by) 
               VALUES (?, ?, ?, ?, ?, ?)`,
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
             0, 
             `Import Karyawan dari Excel (${importedCount} data)`, 
             JSON.stringify({ filename, imported: importedCount }),
-            session?.username || 'System'
+            currentUser
         ]
     });
     return NextResponse.json({ success: true, imported: importedCount });

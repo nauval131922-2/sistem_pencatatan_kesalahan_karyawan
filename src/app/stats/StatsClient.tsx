@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  Cell, PieChart, Pie
+  Cell, PieChart, Pie, Line, ComposedChart, Legend
 } from 'recharts';
 import { 
   Users, AlertTriangle, TrendingUp, BarChart3, 
@@ -35,12 +35,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
     router.push(`/stats?year=${newYear}`);
   };
 
-  const statCards = [
-    { label: 'Total Karyawan', value: stats.totalEmployees, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Total Kesalahan', value: stats.totalInfractions, icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Kasus Kritis (High)', value: stats.highSeverity, icon: ShieldAlert, color: 'text-rose-600', bg: 'bg-rose-50' },
-    { label: 'Total Order', value: stats.totalOrders, icon: BarChart3, color: 'text-green-600', bg: 'bg-green-50' },
-  ];
+
 
   const severityColors: any = {
     High: '#f43f5e',
@@ -48,13 +43,20 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
     Low: '#10b981'
   };
 
-  const pieData = [
+  const pieData = useMemo(() => [
     { name: 'High', value: detailedData.severityData.High || 0 },
     { name: 'Medium', value: detailedData.severityData.Medium || 0 },
     { name: 'Low', value: detailedData.severityData.Low || 0 },
-  ].filter(d => d.value > 0);
+  ].filter(d => d.value > 0), [detailedData.severityData]);
 
   const availableYears = [2024, 2025, 2026];
+
+  const chartData = useMemo(() => {
+    return detailedData.monthlyData.map((d: any) => ({
+      ...d,
+      fullName: `${d.name} ${selectedYear}`
+    }));
+  }, [detailedData.monthlyData, selectedYear]);
 
   return (
     <div className="flex-1 flex flex-col gap-6 pb-10 overflow-y-auto custom-scrollbar">
@@ -68,21 +70,21 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
 
           <div className="relative" ref={dropdownRef}>
             <button 
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className={`
-                flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-200 border
-                ${isDropdownOpen 
-                  ? 'bg-white border-green-500 shadow-md ring-4 ring-green-500/10' 
-                  : 'bg-slate-50 border-gray-100 hover:bg-slate-100 hover:border-gray-200 shadow-inner'
-                }
-              `}
-            >
-              <span className="text-sm font-black text-gray-700">Tahun {selectedYear}</span>
-              <ChevronDown 
-                size={16} 
-                className={`text-gray-400 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180 text-green-600' : ''}`} 
-              />
-            </button>
+               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+               className={`
+                 flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 border
+                 ${isDropdownOpen 
+                   ? 'bg-white border-green-500 text-green-700' 
+                   : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-700'
+                 }
+               `}
+             >
+               <span className="text-sm font-bold">Tahun {selectedYear}</span>
+               <ChevronDown 
+                 size={16} 
+                 className={`text-gray-400 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180 text-green-600' : ''}`} 
+               />
+             </button>
 
             {isDropdownOpen && (
               <div className="absolute top-full right-0 mt-2 w-40 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 py-2 animate-in fade-in zoom-in-95 duration-200">
@@ -113,26 +115,11 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
         </div>
       </div>
 
-      {/* Primary Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((card, idx) => (
-          <div key={idx} className="bg-white border border-gray-100 p-5 rounded-2xl shadow-sm hover:shadow-md transition-all group overflow-hidden relative border-b-2 border-b-transparent hover:border-b-green-500">
-            <div className="flex items-center gap-4 relative z-10">
-              <div className={`w-12 h-12 ${card.bg} ${card.color} rounded-xl flex items-center justify-center shrink-0`}>
-                <card.icon size={24} />
-              </div>
-              <div>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">{card.label}</p>
-                <p className="text-2xl font-black text-gray-800 tracking-tighter">{card.value}</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         {/* Monthly Trend Chart */}
-        <div className="lg:col-span-2 bg-white border border-gray-100 p-6 rounded-2xl shadow-sm flex flex-col min-h-[400px]">
+        <div className="lg:col-span-3 bg-white border border-gray-100 p-6 rounded-2xl shadow-sm flex flex-col min-h-[500px]">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
@@ -143,37 +130,148 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
             <div className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded uppercase">Jan - Des {selectedYear}</div>
           </div>
 
-          <div className="flex-1 w-full min-h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={detailedData.monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <div className="flex-1 w-full min-h-[450px]">
+            <ResponsiveContainer width="100%" height={450}>
+              <ComposedChart 
+                data={chartData} 
+                margin={{ top: 20, right: 45, left: 10, bottom: 45 }}
+                barGap={2}
+              >
+                <defs>
+                  <linearGradient id="totalGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#94a3b8" stopOpacity={0.15}/>
+                    <stop offset="100%" stopColor="#94a3b8" stopOpacity={0.02}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                {/* Background Axis for the Wrapper */}
                 <XAxis 
-                  dataKey="name" 
+                  xAxisId="background" 
+                  dataKey="fullName" 
+                  hide 
+                />
+                {/* Foreground Axis for the Detailed Bars */}
+                <XAxis 
+                  xAxisId="foreground"
+                  dataKey="fullName" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 11, fontWeight: 600, fill: '#94a3b8' }} 
+                  tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }} 
                   dy={10}
                 />
                 <YAxis 
+                  yAxisId="left"
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fontSize: 11, fontWeight: 600, fill: '#94a3b8' }} 
+                  label={{ value: 'Kasus', angle: -90, position: 'insideLeft', fontSize: 10, fill: '#94a3b8', fontWeight: 'bold', offset: 0 }}
+                />
+                <YAxis 
+                  yAxisId="right"
+                  orientation="right"
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fontWeight: 600, fill: '#94a3b8' }}
+                  tickFormatter={(val) => {
+                    if (val >= 1000000) return `Rp${(val/1000000).toFixed(1)}jt`;
+                    if (val >= 1000) return `Rp${(val/1000).toFixed(0)}rb`;
+                    return `Rp${val}`;
+                  }}
+                  label={{ 
+                    value: 'Nominal Beban', 
+                    angle: 90, 
+                    position: 'insideRight', 
+                    fontSize: 10, 
+                    fill: '#94a3b8', 
+                    fontWeight: 'bold',
+                    offset: -30 
+                  }}
                 />
                 <Tooltip 
                   cursor={{ fill: '#f8fafc' }}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '12px', fontWeight: 'bold' }}
+                  contentStyle={{ 
+                    borderRadius: '16px', 
+                    border: 'none', 
+                    boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', 
+                    fontSize: '12px',
+                    padding: '12px'
+                  }}
+                  labelStyle={{ 
+                    fontWeight: '900', 
+                    color: '#4f46e5', 
+                    marginBottom: '8px', 
+                    borderBottom: '1px solid #f1f5f9',
+                    paddingBottom: '4px',
+                    fontSize: '13px'
+                  }}
+                  labelFormatter={(value, payload) => {
+                    if (payload && payload.length > 0) {
+                      return payload[0].payload.fullName;
+                    }
+                    return value;
+                  }}
+                  formatter={(value: any, name: any) => {
+                    if (name === 'amount') return [`Rp ${value.toLocaleString('id-ID')}`, 'Nominal Beban'];
+                    if (name === 'Total Kasus') return [value, 'Total Kesalahan'];
+                    return [value, `${name} Severity`];
+                  }}
+                />
+                <Legend 
+                  verticalAlign="top" 
+                  align="right" 
+                  wrapperStyle={{ paddingBottom: '20px', fontSize: '11px', fontWeight: 'bold' }}
                 />
                 <Bar 
+                  yAxisId="left"
+                  xAxisId="background"
+                  name="Total Kasus"
                   dataKey="total" 
-                  fill="#16a34a" 
-                  radius={[6, 6, 0, 0]} 
-                  barSize={30}
-                >
-                  {detailedData.monthlyData.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={entry.total > 5 ? '#ef4444' : entry.total > 2 ? '#f59e0b' : '#16a34a'} />
-                  ))}
-                </Bar>
-              </BarChart>
+                  fill="url(#totalGradient)" 
+                  stroke="#cbd5e1"
+                  strokeWidth={1}
+                  strokeDasharray="4 4"
+                  radius={[16, 16, 0, 0]} 
+                  barSize={72}
+                />
+                <Bar 
+                  yAxisId="left"
+                  xAxisId="foreground"
+                  name="Low"
+                  dataKey="low" 
+                  fill="#10b981" 
+                  radius={[4, 4, 0, 0]} 
+                  barSize={12}
+                />
+                <Bar 
+                  yAxisId="left"
+                  xAxisId="foreground"
+                  name="Medium"
+                  dataKey="medium" 
+                  fill="#fbbf24" 
+                  radius={[4, 4, 0, 0]} 
+                  barSize={12}
+                />
+                <Bar 
+                  yAxisId="left"
+                  xAxisId="foreground"
+                  name="High"
+                  dataKey="high" 
+                  fill="#f43f5e" 
+                  radius={[4, 4, 0, 0]} 
+                  barSize={12}
+                />
+                <Line 
+                  yAxisId="right"
+                  xAxisId="foreground"
+                  type="monotone" 
+                  dataKey="amount" 
+                  name="amount"
+                  stroke="#6366f1" 
+                  strokeWidth={3}
+                  dot={{ r: 3, fill: '#6366f1', strokeWidth: 2, stroke: '#fff' }}
+                  activeDot={{ r: 5, strokeWidth: 0 }}
+                />
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -188,42 +286,48 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
           </div>
 
           <div className="flex-1 w-full flex flex-col items-center justify-center relative">
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={8}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={severityColors[entry.name]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-[-20px]">
-              <span className="text-2xl font-black text-gray-800">{stats.totalInfractions}</span>
-              <span className="text-[10px] text-gray-400 font-bold uppercase">Total</span>
+            <div className="relative w-full h-[220px] flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={75}
+                    paddingAngle={8}
+                    dataKey="value"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={severityColors[entry.name]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="flex flex-col items-center justify-center w-[80px] h-[80px]">
+                  <span className="text-3xl font-black text-gray-800 tracking-tighter leading-none">{stats.totalInfractions}</span>
+                  <span className="text-[8px] text-gray-400 font-black uppercase tracking-tighter mt-1 opacity-80 text-center">Total Kasus</span>
+                </div>
+              </div>
             </div>
 
-            <div className="w-full space-y-3 mt-6">
+            <div className="w-full space-y-1.5 mt-6 px-1">
               {pieData.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: severityColors[item.name] }}></div>
-                    <span className="text-xs font-bold text-gray-600">{item.name} Severity</span>
+                <div key={idx} className="group flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full shadow-sm ring-2 ring-white" style={{ backgroundColor: severityColors[item.name] }}></div>
+                    <p className="text-[11px] font-bold text-gray-500 group-hover:text-gray-900 transition-colors uppercase tracking-tight">{item.name} Severity</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-black text-gray-800">{item.value}</span>
-                    <span className="text-[10px] text-gray-400 font-bold">({Math.round(item.value / (stats.totalInfractions || 1) * 100)}%)</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[14px] font-black text-gray-800">{item.value}</span>
+                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100/50 px-2 py-1 rounded-lg min-w-[42px] text-center group-hover:bg-slate-200/50 group-hover:text-slate-600 transition-colors font-mono">
+                      {Math.round(item.value / (stats.totalInfractions || 1) * 100)}%
+                    </span>
                   </div>
                 </div>
               ))}
@@ -259,14 +363,32 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
                         {idx + 1}
                       </div>
                       <div>
-                        <p className="text-sm font-extrabold text-gray-700">{emp.name}</p>
-                        <p className="text-[11px] text-gray-400 font-semibold">{emp.position}</p>
+                        <p className="text-sm font-extrabold text-gray-700 leading-tight mb-0.5">{emp.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-[11px] text-gray-400 font-semibold">{emp.position}</p>
+                          <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                          <p className="text-[11px] text-green-600 font-black tracking-tight">
+                            Rp {new Intl.NumberFormat('id-ID').format(emp.total_amount || 0)}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end">
-                      <div className="px-3 py-1 bg-rose-50 text-rose-600 text-xs font-black rounded-lg border border-rose-100">
-                        {emp.total} Kasus
-                      </div>
+                    <div className="flex items-center gap-1.5">
+                      {emp.low_count > 0 && (
+                        <div className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-black rounded-md border border-blue-100/50">
+                          {emp.low_count} Low
+                        </div>
+                      )}
+                      {emp.med_count > 0 && (
+                        <div className="px-2 py-1 bg-amber-50 text-amber-600 text-[10px] font-black rounded-md border border-amber-100/50">
+                          {emp.med_count} Mid
+                        </div>
+                      )}
+                      {emp.high_count > 0 && (
+                        <div className="px-2 py-1 bg-rose-50 text-rose-600 text-[10px] font-black rounded-md border border-rose-100/50">
+                          {emp.high_count} High
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
