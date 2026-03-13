@@ -121,19 +121,27 @@ body {
     right: 0;
     top: 0;
     height: 100%;
-    width: 5px;
+    width: 8px;
     background: transparent;
     cursor: col-resize;
     user-select: none;
     touch-action: none;
     transition: background-color 0.15s;
-    z-index: 10;
+    z-index: 20;
   }
 
   .resizer:hover, .resizer.resizing {
     background-color: var(--accent-primary);
-    opacity: 0.5;
+    opacity: 0.8;
+    width: 4px;
+    right: 0;
+  }
+
+  /* Prevent text wrapping in resizable tables */
+  .nowrap {
+    white-space: nowrap;
   }
 }
+
 
 

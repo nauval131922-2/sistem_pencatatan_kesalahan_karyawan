@@ -562,7 +562,7 @@ export default function BahanBakuClient() {
           <>
             <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] overflow-hidden flex-1 flex flex-col min-h-0 relative">
               <div className="overflow-auto custom-scrollbar flex-1 min-h-0" onScroll={handleScroll}>
-                <table className="w-full text-left relative min-w-[1000px] border-collapse">
+                <table className="w-full text-left relative min-w-[1000px] border-collapse table-fixed">
                   <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
                     <tr className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
                       <th 
@@ -651,19 +651,19 @@ export default function BahanBakuClient() {
                         <td className={`px-5 py-1 font-mono text-[11px] font-bold tracking-tight transition-colors ${isSelected ? 'text-green-500' : 'text-gray-500 group-hover:text-gray-700'}`}>
                           {item.faktur_prd || '-'}
                         </td>
-                        <td className={`px-5 py-1 font-bold text-[13px] transition-colors ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 font-bold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {item.nama_barang}
                         </td>
-                        <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
+                        <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
                           {item.qty}
                         </td>
-                        <td className={`px-5 py-1 text-[11px] font-bold transition-colors ${isSelected ? 'text-green-500' : 'text-gray-400'}`}>
+                        <td className={`px-5 py-1 text-[11px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400'}`}>
                           {item.satuan}
                         </td>
-                        <td className={`px-5 py-1 text-right font-bold text-[13px] tabular-nums transition-colors ${isSelected ? 'text-green-700' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 text-right font-bold text-[13px] tabular-nums transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {item.hp ? item.hp.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                         </td>
-                        <td className={`px-5 py-1 text-[11px] font-bold transition-colors ${isSelected ? 'text-green-500' : 'text-gray-400 group-hover:text-gray-500'}`}>
+                        <td className={`px-5 py-1 text-[11px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400 group-hover:text-gray-500'}`}>
                           {item.nama_prd}
                         </td>
                       </tr>
