@@ -79,6 +79,11 @@ export default function OrderProduksiClient() {
   }, [columnWidths]);
 
   const resizerRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
+  const widthsRef = useRef(columnWidths);
+  
+  useEffect(() => {
+    widthsRef.current = columnWidths;
+  }, [columnWidths]);
 
   const startResizing = useCallback((key: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -86,7 +91,7 @@ export default function OrderProduksiClient() {
     resizerRef.current = {
       key,
       startX: e.pageX,
-      startWidth: columnWidths[key] || 0
+      startWidth: widthsRef.current[key] || 0
     };
     document.addEventListener('mousemove', onResizing);
     document.addEventListener('mouseup', stopResizing);
