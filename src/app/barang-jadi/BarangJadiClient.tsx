@@ -579,7 +579,7 @@ export default function BarangJadiClient() {
                   style={{ width: totalTableWidth, minWidth: '100%' }}
                 >
                   <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
-                    <tr className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
+                    <tr className="text-xs text-gray-400 font-bold uppercase tracking-wider">
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.tgl }}
@@ -653,32 +653,32 @@ export default function BarangJadiClient() {
                       <tr 
                         key={item.id || idx} 
                         onClick={(e) => toggleSelectRow(item.id, e)}
-                        className={`transition-all duration-150 group h-10 cursor-pointer select-none ${
+                        className={`transition-all duration-150 group h-11 cursor-pointer select-none ${
                           isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : idx % 2 === 1 ? 'bg-slate-50/20' : 'bg-white'
                         } hover:bg-green-50/40`}
                       >
-                        <td className={`px-5 py-1 text-[12px] font-bold whitespace-nowrap transition-colors ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
+                        <td className={`px-5 py-1 text-[13px] font-bold whitespace-nowrap transition-colors ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
                           {formatIndoDateStr(item.tgl)}
                         </td>
-                        <td className={`px-5 py-1 font-mono text-[11px] font-bold tracking-tight transition-colors ${isSelected ? 'text-green-600' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 font-mono text-xs font-bold tracking-tight transition-colors ${isSelected ? 'text-green-600' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {item.faktur || '-'}
                         </td>
-                        <td className={`px-5 py-1 font-mono text-[11px] font-bold tracking-tight transition-colors ${isSelected ? 'text-green-500' : 'text-gray-500 group-hover:text-gray-700'}`}>
+                        <td className={`px-5 py-1 font-mono text-xs font-bold tracking-tight transition-colors ${isSelected ? 'text-green-500' : 'text-gray-500 group-hover:text-gray-700'}`}>
                           {item.faktur_prd || '-'}
                         </td>
-                        <td className={`px-5 py-1 font-bold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 font-bold text-sm transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {item.nama_barang}
                         </td>
-                        <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
+                        <td className={`px-5 py-1 text-right font-extrabold text-sm transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
                           {Number(item.qty).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
-                        <td className={`px-5 py-1 text-[11px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400'}`}>
+                        <td className={`px-5 py-1 text-xs font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400'}`}>
                           {item.satuan}
                         </td>
-                        <td className={`px-5 py-1 text-right font-bold text-[13px] tabular-nums transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 text-right font-bold text-sm tabular-nums transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {item.hp ? item.hp.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '–'}
                         </td>
-                        <td className={`px-5 py-1 text-[11px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400 group-hover:text-gray-500'}`}>
+                        <td className={`px-5 py-1 text-xs font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400 group-hover:text-gray-500'}`}>
                           {item.nama_prd}
                         </td>
                       </tr>

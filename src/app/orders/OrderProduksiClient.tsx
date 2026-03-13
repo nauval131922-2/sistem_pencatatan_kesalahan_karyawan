@@ -570,7 +570,7 @@ export default function OrderProduksiClient() {
                   style={{ width: totalTableWidth, minWidth: '100%' }}
                 >
                   <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
-                    <tr className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
+                    <tr className="text-xs text-gray-400 font-bold uppercase tracking-wider">
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.faktur }}
@@ -620,25 +620,25 @@ export default function OrderProduksiClient() {
                       <tr 
                         key={order.id || idx} 
                         onClick={(e) => toggleSelectRow(order.id, e)}
-                        className={`transition-all duration-150 group h-10 cursor-pointer select-none ${
+                        className={`transition-all duration-150 group h-11 cursor-pointer select-none ${
                           isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : idx % 2 === 1 ? 'bg-slate-50/20' : 'bg-white'
                         } hover:bg-green-50/40`}
                       >
-                        <td className={`px-5 py-1 font-bold text-[12px] tracking-tight transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-500'}`}>
+                        <td className={`px-5 py-1 font-bold text-[13px] tracking-tight transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-500'}`}>
                           {order.faktur}
                         </td>
-                        <td className={`px-5 py-1 font-bold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 font-bold text-sm transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {order.nama_prd}
                         </td>
-                        <td className={`px-5 py-1 text-[13px] font-medium transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-500'}`}>
+                        <td className={`px-5 py-1 text-sm font-medium transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-500'}`}>
                           <div className={`inline-block px-2.5 py-1 rounded-md transition-colors nowrap ${isSelected ? 'bg-green-100 text-green-700' : 'bg-slate-100/60 text-gray-500 border border-gray-100/50 group-hover:bg-white'}`}>
                             {order.nama_pelanggan || order.kd_pelanggan}
                           </div>
                         </td>
-                        <td className={`px-5 py-1 text-[12px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
+                        <td className={`px-5 py-1 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
                           {formatIndoDateStr(order.tgl)}
                         </td>
-                        <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
+                        <td className={`px-5 py-1 text-right font-extrabold text-sm transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
                           {Number(order.qty).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                       </tr>

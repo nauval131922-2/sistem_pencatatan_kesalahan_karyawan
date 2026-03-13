@@ -559,7 +559,7 @@ export default function SalesReportClient() {
                   style={{ width: totalTableWidth, minWidth: '100%' }}
                 >
                   <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
-                    <tr className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
+                    <tr className="text-xs text-gray-400 font-bold uppercase tracking-wider">
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.tgl }}
@@ -625,29 +625,29 @@ export default function SalesReportClient() {
                       <tr 
                         key={row.id || idx} 
                         onClick={(e) => toggleSelectRow(row.id, e)}
-                        className={`transition-all duration-150 group h-10 cursor-pointer select-none ${
+                        className={`transition-all duration-150 group h-11 cursor-pointer select-none ${
                           isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : idx % 2 === 1 ? 'bg-slate-50/20' : 'bg-white'
                         } hover:bg-green-50/40`}
                       >
-                        <td className={`px-5 py-1 text-[12px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
+                        <td className={`px-5 py-1 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
                           {formatIndoDateStr(row.tgl)}
                         </td>
-                        <td className={`px-5 py-1 font-mono text-[11px] font-bold tracking-tight transition-colors ${isSelected ? 'text-green-600' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 font-mono text-xs font-bold tracking-tight transition-colors ${isSelected ? 'text-green-600' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {row.faktur}
                         </td>
-                        <td className={`px-5 py-1 font-bold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 font-bold text-sm transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {row.nama_prd || '–'}
                         </td>
-                        <td className={`px-5 py-1 text-[12px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-600' : 'text-gray-500 group-hover:text-gray-700'}`}>
+                        <td className={`px-5 py-1 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-600' : 'text-gray-500 group-hover:text-gray-700'}`}>
                           {row.nama_pelanggan || '–'}
                         </td>
-                        <td className={`px-5 py-1 text-[12px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-600' : 'text-gray-500 group-hover:text-gray-700'}`}>
+                        <td className={`px-5 py-1 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-600' : 'text-gray-500 group-hover:text-gray-700'}`}>
                           {row.kd_barang || '–'}
                         </td>
-                        <td className={`px-5 py-1 text-right font-bold text-[12px] transition-colors ${isSelected ? 'text-green-700' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 text-right font-bold text-[13px] transition-colors ${isSelected ? 'text-green-700' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {row.harga ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 2 }).format(row.harga) : '-'}
                         </td>
-                        <td className={`px-5 py-1 text-right font-extrabold text-[12px] transition-colors ${isSelected ? 'text-green-700' : 'text-emerald-600 group-hover:text-emerald-700'}`}>
+                        <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors ${isSelected ? 'text-green-700' : 'text-emerald-600 group-hover:text-emerald-700'}`}>
                           {row.jumlah ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 2 }).format(row.jumlah) : '-'}
                         </td>
                       </tr>
