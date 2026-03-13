@@ -78,6 +78,10 @@ export default function BahanBakuClient() {
     nama_prd: 140
   });
 
+  const totalTableWidth = useMemo(() => {
+    return Object.values(columnWidths).reduce((a, b) => a + b, 0);
+  }, [columnWidths]);
+
   const resizerRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
 
   const startResizing = useCallback((key: string, e: React.MouseEvent) => {
@@ -562,7 +566,10 @@ export default function BahanBakuClient() {
           <>
             <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] overflow-hidden flex-1 flex flex-col min-h-0 relative">
               <div className="overflow-auto custom-scrollbar flex-1 min-h-0" onScroll={handleScroll}>
-                <table className="w-full text-left relative min-w-[1000px] border-collapse table-fixed">
+                <table 
+                  className="text-left relative border-collapse table-fixed" 
+                  style={{ width: totalTableWidth, minWidth: '100%' }}
+                >
                   <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
                     <tr className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
                       <th 
@@ -571,7 +578,7 @@ export default function BahanBakuClient() {
                         onClick={() => toggleSort('tgl')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">TANGGAL <SortIcon config={sortConfig} sortKey="tgl" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('tgl', e)} />
+                        <div className="resizer" onMouseDown={(e) => startResizing('tgl', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -579,7 +586,7 @@ export default function BahanBakuClient() {
                         onClick={() => toggleSort('faktur')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">FAKTUR <SortIcon config={sortConfig} sortKey="faktur" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('faktur', e)} />
+                        <div className="resizer" onMouseDown={(e) => startResizing('faktur', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -587,7 +594,7 @@ export default function BahanBakuClient() {
                         onClick={() => toggleSort('faktur_prd')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">FAKTUR PRD <SortIcon config={sortConfig} sortKey="faktur_prd" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('faktur_prd', e)} />
+                        <div className="resizer" onMouseDown={(e) => startResizing('faktur_prd', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -595,7 +602,7 @@ export default function BahanBakuClient() {
                         onClick={() => toggleSort('nama_barang')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">NAMA BARANG <SortIcon config={sortConfig} sortKey="nama_barang" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('nama_barang', e)} />
+                        <div className="resizer" onMouseDown={(e) => startResizing('nama_barang', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -603,7 +610,7 @@ export default function BahanBakuClient() {
                         onClick={() => toggleSort('qty')}
                       >
                         <div className="flex items-center justify-end gap-2 nowrap overflow-hidden">QTY <SortIcon config={sortConfig} sortKey="qty" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('qty', e)} />
+                        <div className="resizer" onMouseDown={(e) => startResizing('qty', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -611,7 +618,7 @@ export default function BahanBakuClient() {
                         onClick={() => toggleSort('satuan')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">SATUAN <SortIcon config={sortConfig} sortKey="satuan" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('satuan', e)} />
+                        <div className="resizer" onMouseDown={(e) => startResizing('satuan', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -619,7 +626,7 @@ export default function BahanBakuClient() {
                         onClick={() => toggleSort('hp')}
                       >
                         <div className="flex items-center justify-end gap-2 nowrap overflow-hidden">HPP <SortIcon config={sortConfig} sortKey="hp" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('hp', e)} />
+                        <div className="resizer" onMouseDown={(e) => startResizing('hp', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -627,7 +634,7 @@ export default function BahanBakuClient() {
                         onClick={() => toggleSort('nama_prd')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">PRD <SortIcon config={sortConfig} sortKey="nama_prd" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('nama_prd', e)} />
+                        <div className="resizer" onMouseDown={(e) => startResizing('nama_prd', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                     </tr>
                   </thead>

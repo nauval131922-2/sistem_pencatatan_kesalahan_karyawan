@@ -73,6 +73,10 @@ export default function SalesReportClient() {
     jumlah: 120
   });
 
+  const totalTableWidth = useMemo(() => {
+    return Object.values(columnWidths).reduce((a, b) => a + b, 0);
+  }, [columnWidths]);
+
   const resizerRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
 
   const startResizing = useCallback((key: string, e: React.MouseEvent) => {
@@ -545,7 +549,10 @@ export default function SalesReportClient() {
           <>
             <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] overflow-hidden flex-1 flex flex-col min-h-0 relative">
               <div className="overflow-auto custom-scrollbar flex-1 min-h-0" onScroll={handleScroll}>
-                <table className="w-full text-left relative min-w-[1000px] border-collapse table-fixed">
+                <table 
+                  className="text-left relative border-collapse table-fixed" 
+                  style={{ width: totalTableWidth, minWidth: '100%' }}
+                >
                   <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
                     <tr className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">
                       <th 
@@ -554,7 +561,7 @@ export default function SalesReportClient() {
                         onClick={() => toggleSort('tgl')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">TANGGAL <SortIcon config={sortConfig} sortKey="tgl" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('tgl', e)} />
+                        <div className="resizer" onMouseDown={(e) => startResizing('tgl', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -562,7 +569,7 @@ export default function SalesReportClient() {
                         onClick={() => toggleSort('faktur')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">FAKTUR <SortIcon config={sortConfig} sortKey="faktur" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('faktur', e)} />
+                        <div className="resizer" onMouseDown={(e) => startResizing('faktur', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -570,7 +577,7 @@ export default function SalesReportClient() {
                         onClick={() => toggleSort('nama_prd')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">NAMA ORDER <SortIcon config={sortConfig} sortKey="nama_prd" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('nama_prd', e)} />
+                        <div className="resizer" onMouseDown={(e) => startResizing('nama_prd', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -578,7 +585,7 @@ export default function SalesReportClient() {
                         onClick={() => toggleSort('nama_pelanggan')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">PELANGGAN <SortIcon config={sortConfig} sortKey="nama_pelanggan" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('nama_pelanggan', e)} />
+                        <div className="resizer" onMouseDown={(e) => startResizing('nama_pelanggan', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -586,7 +593,7 @@ export default function SalesReportClient() {
                         onClick={() => toggleSort('kd_barang')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">NAMA BARANG <SortIcon config={sortConfig} sortKey="kd_barang" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('kd_barang', e)} />
+                        <div className="resizer" onMouseDown={(e) => startResizing('kd_barang', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -594,7 +601,7 @@ export default function SalesReportClient() {
                         onClick={() => toggleSort('harga')}
                       >
                         <div className="flex items-center justify-end gap-2 nowrap overflow-hidden">HARGA <SortIcon config={sortConfig} sortKey="harga" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('harga', e)} />
+                        <div className="resizer" onMouseDown={(e) => startResizing('harga', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -602,7 +609,7 @@ export default function SalesReportClient() {
                         onClick={() => toggleSort('jumlah')}
                       >
                         <div className="flex items-center justify-end gap-2 nowrap overflow-hidden">TOTAL <SortIcon config={sortConfig} sortKey="jumlah" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('jumlah', e)} />
+                        <div className="resizer" onMouseDown={(e) => startResizing('jumlah', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                     </tr>
                   </thead>
