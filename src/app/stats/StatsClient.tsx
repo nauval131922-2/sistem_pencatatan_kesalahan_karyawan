@@ -325,7 +325,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-[14px] font-black text-gray-800">{item.value}</span>
-                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100/50 px-2 py-1 rounded-lg min-w-[42px] text-center group-hover:bg-slate-200/50 group-hover:text-slate-600 transition-colors font-mono">
+                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100/50 px-2 py-1 rounded-lg min-w-[42px] text-center group-hover:bg-slate-200/50 group-hover:text-slate-600 transition-colors">
                       {Math.round(item.value / (stats.totalInfractions || 1) * 100)}%
                     </span>
                   </div>

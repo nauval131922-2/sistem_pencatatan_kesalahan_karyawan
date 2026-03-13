@@ -684,7 +684,7 @@ export default function InfractionsTable({
                         </button>
                       </div>
                     </td>
-                    <td className="px-6 py-3 w-28 font-mono text-[11px] text-gray-400 whitespace-nowrap group-hover:text-gray-600 transition-colors">
+                    <td className="px-6 py-3 w-28 text-[11px] text-gray-400 whitespace-nowrap group-hover:text-gray-600 transition-colors">
                       {inf.faktur || '-'}
                     </td>
                     <td className="px-6 py-3 w-36 text-gray-500 text-[13px] font-medium whitespace-nowrap">

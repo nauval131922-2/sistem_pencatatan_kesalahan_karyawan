@@ -51,6 +51,7 @@ export async function initSchema(db: any) {
       nama_pelanggan TEXT,
       tgl TEXT,
       qty REAL,
+      satuan TEXT,
       harga REAL,
       jumlah REAL,
       raw_data TEXT,
@@ -149,6 +150,7 @@ export async function initSchema(db: any) {
     "ALTER TABLE bahan_baku ADD COLUMN faktur_prd TEXT;",
     "ALTER TABLE barang_jadi ADD COLUMN faktur_prd TEXT;",
     "ALTER TABLE sales_reports ADD COLUMN faktur TEXT;",
+    "ALTER TABLE orders ADD COLUMN satuan TEXT;",
     "ALTER TABLE session_context ADD COLUMN last_menu TEXT;",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_sales_unique ON sales_reports(faktur, kd_barang, tgl);",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_barang_jadi_unique ON barang_jadi(faktur, kd_barang, tgl);",
@@ -255,7 +257,7 @@ export async function initSchema(db: any) {
     // 4. orders
     `CREATE TRIGGER IF NOT EXISTS trg_orders_insert AFTER INSERT ON orders BEGIN
       INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('CREATE', 'orders', NEW.id, 'Data Order Baru: ' || IFNULL(NEW.faktur, NEW.nama_prd), json_object('id', NEW.id, 'faktur', NEW.faktur, 'nama_prd', NEW.nama_prd, 'nama_pelanggan', NEW.nama_pelanggan, 'tgl', NEW.tgl, 'qty', NEW.qty, 'harga', NEW.harga, 'jumlah', NEW.jumlah), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
+      VALUES ('CREATE', 'orders', NEW.id, 'Data Order Baru: ' || IFNULL(NEW.faktur, NEW.nama_prd), json_object('id', NEW.id, 'faktur', NEW.faktur, 'nama_prd', NEW.nama_prd, 'nama_pelanggan', NEW.nama_pelanggan, 'tgl', NEW.tgl, 'qty', NEW.qty, 'satuan', NEW.satuan, 'harga', NEW.harga, 'jumlah', NEW.jumlah), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
     END;`,
     `CREATE TRIGGER IF NOT EXISTS trg_orders_update AFTER UPDATE ON orders BEGIN
       INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)

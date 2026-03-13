@@ -628,7 +628,7 @@ export default function RecordsForm({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1.5">
                   <label className={labelCls}>Nomor Faktur</label>
-                  <div className="h-11 px-4 bg-gray-50 border border-gray-100 rounded-xl flex items-center text-sm font-mono font-bold text-gray-500 ring-1 ring-inset ring-gray-200/50">
+                  <div className="h-11 px-4 bg-gray-50 border border-gray-100 rounded-xl flex items-center text-sm font-bold text-gray-500 ring-1 ring-inset ring-gray-200/50">
                     {fakturPreview}
                   </div>
                 </div>
