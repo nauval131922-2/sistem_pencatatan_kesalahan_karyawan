@@ -564,7 +564,7 @@ export default function OrderProduksiClient() {
                         style={{ width: columnWidths.faktur }}
                         onClick={() => toggleSort('faktur')}
                       >
-                        <div className="flex items-center gap-2">NO. FAKTUR <SortIcon config={sortConfig} sortKey="faktur" /></div>
+                        <div className="flex items-center gap-2 nowrap overflow-hidden">NO. FAKTUR <SortIcon config={sortConfig} sortKey="faktur" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('faktur', e)} />
                       </th>
                       <th 
@@ -572,7 +572,7 @@ export default function OrderProduksiClient() {
                         style={{ width: columnWidths.nama_prd }}
                         onClick={() => toggleSort('nama_prd')}
                       >
-                        <div className="flex items-center gap-2">NAMA PRODUK <SortIcon config={sortConfig} sortKey="nama_prd" /></div>
+                        <div className="flex items-center gap-2 nowrap overflow-hidden">NAMA PRODUK <SortIcon config={sortConfig} sortKey="nama_prd" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('nama_prd', e)} />
                       </th>
                       <th 
@@ -580,7 +580,7 @@ export default function OrderProduksiClient() {
                         style={{ width: columnWidths.nama_pelanggan }}
                         onClick={() => toggleSort('nama_pelanggan')}
                       >
-                        <div className="flex items-center gap-2">PELANGGAN <SortIcon config={sortConfig} sortKey="nama_pelanggan" /></div>
+                        <div className="flex items-center gap-2 nowrap overflow-hidden">PELANGGAN <SortIcon config={sortConfig} sortKey="nama_pelanggan" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('nama_pelanggan', e)} />
                       </th>
                       <th 
@@ -588,7 +588,7 @@ export default function OrderProduksiClient() {
                         style={{ width: columnWidths.tgl }}
                         onClick={() => toggleSort('tgl')}
                       >
-                        <div className="flex items-center gap-2">TANGGAL <SortIcon config={sortConfig} sortKey="tgl" /></div>
+                        <div className="flex items-center gap-2 nowrap overflow-hidden">TANGGAL <SortIcon config={sortConfig} sortKey="tgl" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('tgl', e)} />
                       </th>
                       <th 
@@ -596,7 +596,7 @@ export default function OrderProduksiClient() {
                         style={{ width: columnWidths.qty }}
                         onClick={() => toggleSort('qty')}
                       >
-                        <div className="flex items-center justify-end gap-2">QTY ORDER <SortIcon config={sortConfig} sortKey="qty" /></div>
+                        <div className="flex items-center justify-end gap-2 nowrap overflow-hidden">QTY ORDER <SortIcon config={sortConfig} sortKey="qty" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('qty', e)} />
                       </th>
                     </tr>
@@ -623,10 +623,10 @@ export default function OrderProduksiClient() {
                             {order.nama_pelanggan || order.kd_pelanggan}
                           </div>
                         </td>
-                        <td className={`px-5 py-1 text-[12px] font-bold whitespace-nowrap transition-colors ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
+                        <td className={`px-5 py-1 text-[12px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
                           {formatIndoDateStr(order.tgl)}
                         </td>
-                        <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
+                        <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
                           {order.qty}
                         </td>
                       </tr>

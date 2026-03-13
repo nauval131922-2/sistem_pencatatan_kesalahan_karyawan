@@ -553,7 +553,7 @@ export default function SalesReportClient() {
                         style={{ width: columnWidths.tgl }}
                         onClick={() => toggleSort('tgl')}
                       >
-                        <div className="flex items-center gap-2">TANGGAL <SortIcon config={sortConfig} sortKey="tgl" /></div>
+                        <div className="flex items-center gap-2 nowrap overflow-hidden">TANGGAL <SortIcon config={sortConfig} sortKey="tgl" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('tgl', e)} />
                       </th>
                       <th 
@@ -561,7 +561,7 @@ export default function SalesReportClient() {
                         style={{ width: columnWidths.faktur }}
                         onClick={() => toggleSort('faktur')}
                       >
-                        <div className="flex items-center gap-2">FAKTUR <SortIcon config={sortConfig} sortKey="faktur" /></div>
+                        <div className="flex items-center gap-2 nowrap overflow-hidden">FAKTUR <SortIcon config={sortConfig} sortKey="faktur" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('faktur', e)} />
                       </th>
                       <th 
@@ -569,7 +569,7 @@ export default function SalesReportClient() {
                         style={{ width: columnWidths.nama_prd }}
                         onClick={() => toggleSort('nama_prd')}
                       >
-                        <div className="flex items-center gap-2">NAMA ORDER <SortIcon config={sortConfig} sortKey="nama_prd" /></div>
+                        <div className="flex items-center gap-2 nowrap overflow-hidden">NAMA ORDER <SortIcon config={sortConfig} sortKey="nama_prd" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('nama_prd', e)} />
                       </th>
                       <th 
@@ -577,7 +577,7 @@ export default function SalesReportClient() {
                         style={{ width: columnWidths.nama_pelanggan }}
                         onClick={() => toggleSort('nama_pelanggan')}
                       >
-                        <div className="flex items-center gap-2">PELANGGAN <SortIcon config={sortConfig} sortKey="nama_pelanggan" /></div>
+                        <div className="flex items-center gap-2 nowrap overflow-hidden">PELANGGAN <SortIcon config={sortConfig} sortKey="nama_pelanggan" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('nama_pelanggan', e)} />
                       </th>
                       <th 
@@ -585,7 +585,7 @@ export default function SalesReportClient() {
                         style={{ width: columnWidths.kd_barang }}
                         onClick={() => toggleSort('kd_barang')}
                       >
-                        <div className="flex items-center gap-2">NAMA BARANG <SortIcon config={sortConfig} sortKey="kd_barang" /></div>
+                        <div className="flex items-center gap-2 nowrap overflow-hidden">NAMA BARANG <SortIcon config={sortConfig} sortKey="kd_barang" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('kd_barang', e)} />
                       </th>
                       <th 
@@ -593,7 +593,7 @@ export default function SalesReportClient() {
                         style={{ width: columnWidths.harga }}
                         onClick={() => toggleSort('harga')}
                       >
-                        <div className="flex items-center justify-end gap-2">HARGA <SortIcon config={sortConfig} sortKey="harga" /></div>
+                        <div className="flex items-center justify-end gap-2 nowrap overflow-hidden">HARGA <SortIcon config={sortConfig} sortKey="harga" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('harga', e)} />
                       </th>
                       <th 
@@ -601,7 +601,7 @@ export default function SalesReportClient() {
                         style={{ width: columnWidths.jumlah }}
                         onClick={() => toggleSort('jumlah')}
                       >
-                        <div className="flex items-center justify-end gap-2">TOTAL <SortIcon config={sortConfig} sortKey="jumlah" /></div>
+                        <div className="flex items-center justify-end gap-2 nowrap overflow-hidden">TOTAL <SortIcon config={sortConfig} sortKey="jumlah" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('jumlah', e)} />
                       </th>
                     </tr>
@@ -617,7 +617,7 @@ export default function SalesReportClient() {
                           isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : idx % 2 === 1 ? 'bg-slate-50/20' : 'bg-white'
                         } hover:bg-green-50/40`}
                       >
-                        <td className={`px-5 py-1 text-[12px] font-bold whitespace-nowrap transition-colors ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
+                        <td className={`px-5 py-1 text-[12px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
                           {formatIndoDateStr(row.tgl)}
                         </td>
                         <td className={`px-5 py-1 font-mono text-[11px] font-bold tracking-tight transition-colors ${isSelected ? 'text-green-600' : 'text-gray-700 group-hover:text-gray-900'}`}>

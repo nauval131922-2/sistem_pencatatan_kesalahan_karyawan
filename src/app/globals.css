@@ -139,9 +139,12 @@ body {
 
   /* Prevent text wrapping in resizable tables */
   .nowrap {
-    white-space: nowrap;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: clip !important;
   }
 }
+
 
 
 

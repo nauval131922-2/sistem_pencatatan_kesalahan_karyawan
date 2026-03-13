@@ -570,7 +570,7 @@ export default function BahanBakuClient() {
                         style={{ width: columnWidths.tgl }}
                         onClick={() => toggleSort('tgl')}
                       >
-                        <div className="flex items-center gap-2">TANGGAL <SortIcon config={sortConfig} sortKey="tgl" /></div>
+                        <div className="flex items-center gap-2 nowrap overflow-hidden">TANGGAL <SortIcon config={sortConfig} sortKey="tgl" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('tgl', e)} />
                       </th>
                       <th 
@@ -578,7 +578,7 @@ export default function BahanBakuClient() {
                         style={{ width: columnWidths.faktur }}
                         onClick={() => toggleSort('faktur')}
                       >
-                        <div className="flex items-center gap-2">FAKTUR <SortIcon config={sortConfig} sortKey="faktur" /></div>
+                        <div className="flex items-center gap-2 nowrap overflow-hidden">FAKTUR <SortIcon config={sortConfig} sortKey="faktur" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('faktur', e)} />
                       </th>
                       <th 
@@ -586,7 +586,7 @@ export default function BahanBakuClient() {
                         style={{ width: columnWidths.faktur_prd }}
                         onClick={() => toggleSort('faktur_prd')}
                       >
-                        <div className="flex items-center gap-2">FAKTUR PRD <SortIcon config={sortConfig} sortKey="faktur_prd" /></div>
+                        <div className="flex items-center gap-2 nowrap overflow-hidden">FAKTUR PRD <SortIcon config={sortConfig} sortKey="faktur_prd" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('faktur_prd', e)} />
                       </th>
                       <th 
@@ -594,7 +594,7 @@ export default function BahanBakuClient() {
                         style={{ width: columnWidths.nama_barang }}
                         onClick={() => toggleSort('nama_barang')}
                       >
-                        <div className="flex items-center gap-2">NAMA BARANG <SortIcon config={sortConfig} sortKey="nama_barang" /></div>
+                        <div className="flex items-center gap-2 nowrap overflow-hidden">NAMA BARANG <SortIcon config={sortConfig} sortKey="nama_barang" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('nama_barang', e)} />
                       </th>
                       <th 
@@ -602,7 +602,7 @@ export default function BahanBakuClient() {
                         style={{ width: columnWidths.qty }}
                         onClick={() => toggleSort('qty')}
                       >
-                        <div className="flex items-center justify-end gap-2">QTY <SortIcon config={sortConfig} sortKey="qty" /></div>
+                        <div className="flex items-center justify-end gap-2 nowrap overflow-hidden">QTY <SortIcon config={sortConfig} sortKey="qty" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('qty', e)} />
                       </th>
                       <th 
@@ -610,7 +610,7 @@ export default function BahanBakuClient() {
                         style={{ width: columnWidths.satuan }}
                         onClick={() => toggleSort('satuan')}
                       >
-                        <div className="flex items-center gap-2">SATUAN <SortIcon config={sortConfig} sortKey="satuan" /></div>
+                        <div className="flex items-center gap-2 nowrap overflow-hidden">SATUAN <SortIcon config={sortConfig} sortKey="satuan" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('satuan', e)} />
                       </th>
                       <th 
@@ -618,7 +618,7 @@ export default function BahanBakuClient() {
                         style={{ width: columnWidths.hp }}
                         onClick={() => toggleSort('hp')}
                       >
-                        <div className="flex items-center justify-end gap-2">HPP <SortIcon config={sortConfig} sortKey="hp" /></div>
+                        <div className="flex items-center justify-end gap-2 nowrap overflow-hidden">HPP <SortIcon config={sortConfig} sortKey="hp" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('hp', e)} />
                       </th>
                       <th 
@@ -626,7 +626,7 @@ export default function BahanBakuClient() {
                         style={{ width: columnWidths.nama_prd }}
                         onClick={() => toggleSort('nama_prd')}
                       >
-                        <div className="flex items-center gap-2">PRD <SortIcon config={sortConfig} sortKey="nama_prd" /></div>
+                        <div className="flex items-center gap-2 nowrap overflow-hidden">PRD <SortIcon config={sortConfig} sortKey="nama_prd" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('nama_prd', e)} />
                       </th>
                     </tr>
