@@ -198,24 +198,31 @@ export default function BarangJadiClient() {
 
   // Restore state on mount
   useEffect(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const saved = localStorage.getItem('barangJadiState');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.startDate) setStartDate(new Date(parsed.startDate));
-        if (parsed.endDate) setEndDate(new Date(parsed.endDate));
+        const sessionDate = parsed.sessionDate ? new Date(parsed.sessionDate) : null;
+        if (sessionDate) sessionDate.setHours(0, 0, 0, 0);
+
+        // Jika ganti hari, paksa ke hari ini. Jika hari yang sama, gunakan yang tersimpan.
+        if (!sessionDate || sessionDate.getTime() !== today.getTime()) {
+          setStartDate(today);
+          setEndDate(today);
+        } else {
+          if (parsed.startDate) setStartDate(new Date(parsed.startDate));
+          if (parsed.endDate) setEndDate(new Date(parsed.endDate));
+        }
+
         if (parsed.lastUpdated) setLastUpdated(parsed.lastUpdated);
       } catch(e) {}
+    } else {
+      setStartDate(today);
+      setEndDate(today);
     }
-    
-    try {
-      const sess = sessionStorage.getItem('barangJadiState');
-      if (sess) {
-        const parsed = JSON.parse(sess);
-        if (parsed.startDate) setStartDate(new Date(parsed.startDate));
-        if (parsed.endDate) setEndDate(new Date(parsed.endDate));
-      }
-    } catch (e) {}
   }, []);
 
   const handleFetch = async () => {
@@ -329,7 +336,8 @@ export default function BarangJadiClient() {
             localStorage.setItem('barangJadiState', JSON.stringify({
               startDate: startDate.toISOString(),
               endDate: endDate.toISOString(),
-              lastUpdated: timestamp
+              lastUpdated: timestamp,
+              sessionDate: new Date().toISOString()
             }));
           }
         }
@@ -421,8 +429,7 @@ export default function BarangJadiClient() {
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-4 animate-in fade-in duration-500 overflow-hidden">
       {/* Top Filter Bar */}
-      <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
+      <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative z-20">
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex flex-wrap items-center gap-6">
             <div className="flex items-center gap-2.5">
@@ -579,7 +586,7 @@ export default function BarangJadiClient() {
                   style={{ width: totalTableWidth, minWidth: '100%' }}
                 >
                   <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
-                    <tr className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+                    <tr className="text-[13px] text-gray-400 font-bold uppercase tracking-wider">
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.tgl }}
@@ -660,25 +667,25 @@ export default function BarangJadiClient() {
                         <td className={`px-5 py-1 text-[13px] font-bold whitespace-nowrap transition-colors ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
                           {formatIndoDateStr(item.tgl)}
                         </td>
-                        <td className={`px-5 py-1 font-mono text-xs font-bold tracking-tight transition-colors ${isSelected ? 'text-green-600' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 text-[13px] font-bold tracking-tight transition-colors ${isSelected ? 'text-green-600' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {item.faktur || '-'}
                         </td>
-                        <td className={`px-5 py-1 font-mono text-xs font-bold tracking-tight transition-colors ${isSelected ? 'text-green-500' : 'text-gray-500 group-hover:text-gray-700'}`}>
+                        <td className={`px-5 py-1 text-[13px] font-bold tracking-tight transition-colors ${isSelected ? 'text-green-500' : 'text-gray-500 group-hover:text-gray-700'}`}>
                           {item.faktur_prd || '-'}
                         </td>
-                        <td className={`px-5 py-1 font-bold text-sm transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 font-bold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {item.nama_barang}
                         </td>
-                        <td className={`px-5 py-1 text-right font-extrabold text-sm transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
+                        <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
                           {Number(item.qty).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
-                        <td className={`px-5 py-1 text-xs font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400'}`}>
+                        <td className={`px-5 py-1 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400'}`}>
                           {item.satuan}
                         </td>
-                        <td className={`px-5 py-1 text-right font-bold text-sm tabular-nums transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 text-right font-bold text-[13px] tabular-nums transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {item.hp ? item.hp.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '–'}
                         </td>
-                        <td className={`px-5 py-1 text-xs font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400 group-hover:text-gray-500'}`}>
+                        <td className={`px-5 py-1 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400 group-hover:text-gray-500'}`}>
                           {item.nama_prd}
                         </td>
                       </tr>

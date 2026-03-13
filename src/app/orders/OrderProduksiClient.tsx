@@ -71,7 +71,8 @@ export default function OrderProduksiClient() {
     nama_prd: 300,
     nama_pelanggan: 200,
     tgl: 128,
-    qty: 96
+    qty: 96,
+    satuan: 80
   });
 
   const totalTableWidth = useMemo(() => {
@@ -160,30 +161,45 @@ export default function OrderProduksiClient() {
       const startTime = performance.now();
       try {
         const res = await fetch(`/api/orders?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}&from=${formatDateToYYYYMMDD(startDate)}&to=${formatDateToYYYYMMDD(endDate)}&_t=${Date.now()}`);
-        if (res.ok && active) {
+        if (!active) return;
+        
+        if (res.ok) {
           const json = await res.json();
+          if (!json.success) {
+            throw new Error(json.error || 'Terjadi kesalahan saat memuat data');
+          }
           const endTime = performance.now();
-          setLoadTime(Math.round(endTime - startTime));
-          setData(prev => page === 1 ? (json.data || []) : [...(prev || []), ...(json.data || [])]);
-          setTotalCount(json.total || 0);
+          if (active) {
+            setLoadTime(Math.round(endTime - startTime));
+            setData(prev => page === 1 ? (json.data || []) : [...(prev || []), ...(json.data || [])]);
+            setTotalCount(json.total || 0);
+            setError('');
 
-          if (json.lastUpdated) {
-            const latestDate = new Date(json.lastUpdated);
-            if (!isNaN(latestDate.getTime())) {
-              const timestamp = latestDate.toLocaleString('id-ID', {
-                day: '2-digit', month: 'short', year: 'numeric',
-                hour: '2-digit', minute: '2-digit', second: '2-digit'
-              });
-              setLastUpdated(timestamp);
+            if (json.lastUpdated) {
+              const latestDate = new Date(json.lastUpdated);
+              if (!isNaN(latestDate.getTime())) {
+                const timestamp = latestDate.toLocaleString('id-ID', {
+                  day: '2-digit', month: 'short', year: 'numeric',
+                  hour: '2-digit', minute: '2-digit', second: '2-digit'
+                });
+                setLastUpdated(timestamp);
+              } else {
+                setLastUpdated(null);
+              }
             } else {
               setLastUpdated(null);
             }
-          } else {
-            setLastUpdated(null);
           }
+        } else {
+          const errJson = await res.json().catch(() => ({}));
+          throw new Error(errJson.error || `Server error: ${res.status}`);
         }
-      } catch (err) {
-        console.error('Failed to fetch:', err);
+      } catch (err: any) {
+        if (active) {
+          console.error('Failed to fetch:', err);
+          setError(err.message || 'Gagal memuat data dari server');
+          setData([]); // Prevent infinite loading
+        }
       } finally {
         if (active) setLoading(false);
       }
@@ -194,14 +210,30 @@ export default function OrderProduksiClient() {
 
   // Restore state on mount
   useEffect(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const saved = localStorage.getItem('orderProduksiState');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.startDate) setStartDate(new Date(parsed.startDate));
-        if (parsed.endDate) setEndDate(new Date(parsed.endDate));
+        const sessionDate = parsed.sessionDate ? new Date(parsed.sessionDate) : null;
+        if (sessionDate) sessionDate.setHours(0, 0, 0, 0);
+
+        // Jika ganti hari, paksa ke hari ini. Jika hari yang sama, gunakan yang tersimpan.
+        if (!sessionDate || sessionDate.getTime() !== today.getTime()) {
+          setStartDate(today);
+          setEndDate(today);
+        } else {
+          if (parsed.startDate) setStartDate(new Date(parsed.startDate));
+          if (parsed.endDate) setEndDate(new Date(parsed.endDate));
+        }
+        
         if (parsed.lastUpdated) setLastUpdated(parsed.lastUpdated);
       } catch(e) {}
+    } else {
+      setStartDate(today);
+      setEndDate(today);
     }
   }, []);
 
@@ -317,7 +349,8 @@ export default function OrderProduksiClient() {
             localStorage.setItem('orderProduksiState', JSON.stringify({
               startDate: startDate.toISOString(),
               endDate: endDate.toISOString(),
-              lastUpdated: timestamp
+              lastUpdated: timestamp,
+              sessionDate: new Date().toISOString()
             }));
           }
         }
@@ -411,9 +444,7 @@ export default function OrderProduksiClient() {
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-4 animate-in fade-in duration-500 overflow-hidden">
       {/* Top Filter Bar */}
-      <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
-        
+      <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative z-20">
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex flex-wrap items-center gap-6">
             <div className="flex items-center gap-2.5">
@@ -484,8 +515,7 @@ export default function OrderProduksiClient() {
         {/* Results Header & Search */}
         <div className="flex flex-col gap-4 shrink-0">
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <h3 className="text-15px font-extrabold text-gray-800 flex items-center gap-2">
+            <div className="flex items-center gap-4">              <h3 className="text-15px font-extrabold text-gray-800 flex items-center gap-2">
                 <Clock size={18} className="text-green-600" />
                 <span>Hasil Scrapping</span>
               </h3>
@@ -495,6 +525,7 @@ export default function OrderProduksiClient() {
                   <span>Diperbarui: {lastUpdated}</span>
                 </div>
               )}
+
               {selectedIds.size > 0 && (
                 <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
                   <span className="text-gray-200">|</span>
@@ -529,19 +560,26 @@ export default function OrderProduksiClient() {
           </div>
         </div>
 
-        {data === null && !loading ? (
-          <div className="flex-1 bg-gray-50/50 border-2 border-dashed border-gray-100 rounded-[10px] flex flex-col items-center justify-center text-center p-10">
-            <Loader2 size={40} className="text-green-200 animate-spin mb-4" />
-            <p className="text-sm font-bold text-gray-400">Sedang memuat data dari database...</p>
+        {error ? (
+          <div className="flex-1 bg-rose-50 border-2 border-dashed border-rose-100 rounded-[10px] flex flex-col items-center justify-center text-center p-10">
+            <AlertCircle size={40} className="text-rose-200 mb-4" />
+            <h3 className="text-sm font-bold text-rose-800 mb-1">Gagal Memuat Data</h3>
+            <p className="text-xs text-rose-500 max-w-md font-medium">{error}</p>
+            <button 
+              onClick={() => setRefreshKey(prev => prev + 1)}
+              className="mt-4 px-4 py-2 bg-rose-500 text-white rounded-lg text-xs font-bold hover:bg-rose-600 transition-colors"
+            >
+              Coba Lagi
+            </button>
           </div>
-        ) : data === null && loading ? (
+        ) : data === null ? (
           <div className="flex-1 bg-white border border-gray-100 rounded-[10px] shadow-sm overflow-hidden flex flex-col min-h-0">
             <div className="border-b border-gray-100 bg-gray-50/50 px-5 py-3.5 flex items-center justify-between">
               <div className="h-4 w-32 bg-gray-200 rounded-md animate-pulse"></div>
               <div className="h-4 w-24 bg-gray-200 rounded-md animate-pulse"></div>
             </div>
             <div className="flex-1 p-5 space-y-4">
-               {Array(7).fill(0).map((_, i) => (
+               {Array(10).fill(0).map((_, i) => (
                  <div key={i} className="flex items-center gap-4 w-full">
                    <div className="h-4 w-32 bg-gray-100 rounded animate-pulse"></div>
                    <div className="h-4 flex-1 bg-gray-50 rounded animate-pulse"></div>
@@ -570,7 +608,7 @@ export default function OrderProduksiClient() {
                   style={{ width: totalTableWidth, minWidth: '100%' }}
                 >
                   <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
-                    <tr className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+                    <tr className="text-[13px] text-gray-400 font-bold uppercase tracking-wider">
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.faktur }}
@@ -611,6 +649,14 @@ export default function OrderProduksiClient() {
                         <div className="flex items-center justify-end gap-2 nowrap overflow-hidden">QTY ORDER <SortIcon config={sortConfig} sortKey="qty" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('qty', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
+                      <th 
+                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        style={{ width: columnWidths.satuan }}
+                        onClick={() => toggleSort('satuan')}
+                      >
+                        <div className="flex items-center gap-2 nowrap overflow-hidden">SATUAN <SortIcon config={sortConfig} sortKey="satuan" /></div>
+                        <div className="resizer" onMouseDown={(e) => startResizing('satuan', e)} onClick={(e) => e.stopPropagation()} />
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -627,10 +673,10 @@ export default function OrderProduksiClient() {
                         <td className={`px-5 py-1 font-bold text-[13px] tracking-tight transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-500'}`}>
                           {order.faktur}
                         </td>
-                        <td className={`px-5 py-1 font-bold text-sm transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 font-bold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {order.nama_prd}
                         </td>
-                        <td className={`px-5 py-1 text-sm font-medium transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-500'}`}>
+                        <td className={`px-5 py-1 text-[13px] font-medium transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-500'}`}>
                           <div className={`inline-block px-2.5 py-1 rounded-md transition-colors nowrap ${isSelected ? 'bg-green-100 text-green-700' : 'bg-slate-100/60 text-gray-500 border border-gray-100/50 group-hover:bg-white'}`}>
                             {order.nama_pelanggan || order.kd_pelanggan}
                           </div>
@@ -638,8 +684,11 @@ export default function OrderProduksiClient() {
                         <td className={`px-5 py-1 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
                           {formatIndoDateStr(order.tgl)}
                         </td>
-                        <td className={`px-5 py-1 text-right font-extrabold text-sm transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
+                        <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
                           {Number(order.qty).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td className={`px-5 py-1 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400'}`}>
+                          {order.satuan || '-'}
                         </td>
                       </tr>
                     )})}
