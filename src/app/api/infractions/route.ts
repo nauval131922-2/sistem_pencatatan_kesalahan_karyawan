@@ -29,8 +29,8 @@ export async function GET(req: NextRequest) {
     `;
     const params: any[] = [];
     if (start && end) {
-      query += ` WHERE substr(i.date, 1, 10) BETWEEN ? AND ?`;
-      params.push(start, end);
+      query += ` WHERE i.date >= ? AND i.date <= ?`;
+      params.push(`${start} 00:00:00`, `${end} 23:59:59`);
     }
     query += ` ORDER BY i.date DESC, i.id DESC`;
 

@@ -13,7 +13,8 @@ export const fetchProductionOrders = cache(async () => {
   const result = await db.execute(`
     SELECT id, faktur, nama_prd 
     FROM orders 
-    ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC
+    ORDER BY id DESC
+    LIMIT 2000
   `);
   return result.rows.map((row: any) => ({ ...row }));
 });
