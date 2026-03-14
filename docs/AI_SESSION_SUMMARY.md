@@ -19,6 +19,7 @@ Sesi ini berfokus pada **Harmonisasi UI/UX** dan **Optimalisasi Performa** untuk
 ### 3. Standardisasi UI/UX (Global)
 - **Gap Standardization**: Menyeragamkan jarak antar elemen (Search Bar ke Tabel) menggunakan standar `gap-5` di seluruh aplikasi agar serasi.
 - **Resizing Guard**: Menerapkan visual guide (garis hijau) saat melakukan resize kolom di berbagai tabel (`Infractions`, `Employees`, `Orders`, dll).
+- **Text Styling**: Mengubah kolom "Jabatan" pada halaman Employees agar tidak kapital semua (mengikuti input asli).
 
 ### 4. Performa & Backend
 - **Query Optimization**: Mempercepat pemuatan data Production Orders dengan pembatasan `LIMIT 2000` dan penyederhanaan logika sorting di SQLite.

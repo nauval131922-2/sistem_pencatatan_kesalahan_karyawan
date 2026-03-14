@@ -341,7 +341,7 @@ export default function EmployeeTable({ employees, importInfo }: EmployeeTablePr
                       className="px-6 py-1 flex-shrink-0"
                       style={{ width: columnWidths.position }}
                     >
-                      <span className="text-gray-500 text-[11px] font-bold bg-slate-100/60 px-2.5 py-1 rounded-md inline-block max-w-full truncate border border-gray-100/50 group-hover:bg-white transition-colors uppercase tracking-tight">
+                      <span className="text-gray-500 text-[11px] font-bold bg-slate-100/60 px-2.5 py-1 rounded-md inline-block max-w-full truncate border border-gray-100/50 group-hover:bg-white transition-colors">
                         {emp.position}
                       </span>
                     </div>
