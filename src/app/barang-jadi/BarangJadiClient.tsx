@@ -83,6 +83,7 @@ export default function BarangJadiClient() {
   }, [columnWidths]);
 
   const resizerRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
+  const isResizingDone = useRef(false);
   const widthsRef = useRef(columnWidths);
   
   useEffect(() => {
@@ -114,6 +115,8 @@ export default function BarangJadiClient() {
 
   const stopResizing = useCallback(() => {
     resizerRef.current = null;
+    isResizingDone.current = true;
+    setTimeout(() => { isResizingDone.current = false; }, 100);
     document.removeEventListener('mousemove', onResizing);
     document.removeEventListener('mouseup', stopResizing);
     document.body.style.cursor = 'default';
@@ -373,6 +376,7 @@ export default function BarangJadiClient() {
   };
 
   const toggleSort = (key: string) => {
+    if (isResizingDone.current) return;
     setSortConfig((prev) => {
       if (prev.key === key) {
         if (prev.direction === 'asc') return { key, direction: 'desc' };
@@ -427,31 +431,29 @@ export default function BarangJadiClient() {
   }, [data, sortConfig]);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-4 animate-in fade-in duration-500 overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
       {/* Top Filter Bar */}
       <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative z-20">
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex flex-wrap items-center gap-6">
-            <div className="flex items-center gap-2.5">
-              <Calendar size={16} className="text-green-600" />
-              <span className="text-[13px] font-extrabold text-gray-400 uppercase tracking-wider">Periode</span>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="w-[140px] relative group">
-                <DatePicker 
-                  name="startDate"
-                  value={startDate}
-                  onChange={setStartDate}
-                />
-              </div>
-              <span className="text-gray-300 font-bold">—</span>
-              <div className="w-[140px] relative group">
-                <DatePicker 
-                  name="endDate"
-                  value={endDate}
-                  onChange={setEndDate}
-                />
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Rentang Tanggal</span>
+              <div className="flex items-center gap-2">
+                <div className="w-[140px] relative group">
+                  <DatePicker 
+                    name="startDate"
+                    value={startDate}
+                    onChange={setStartDate}
+                  />
+                </div>
+                <div className="w-4 h-[1px] bg-gray-200 mx-1"></div>
+                <div className="w-[140px] relative group">
+                  <DatePicker 
+                    name="endDate"
+                    value={endDate}
+                    onChange={setEndDate}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -496,7 +498,7 @@ export default function BarangJadiClient() {
       )}
 
       {/* Results View */}
-      <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
+      <div className="flex-1 flex flex-col gap-5 overflow-hidden min-h-0 relative">
         {/* Results Header & Search */}
         <div className="flex flex-col gap-4 shrink-0">
           <div className="flex items-center justify-between gap-4">
@@ -593,7 +595,13 @@ export default function BarangJadiClient() {
                         onClick={() => toggleSort('tgl')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">TANGGAL <SortIcon config={sortConfig} sortKey="tgl" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('tgl', e)} onClick={(e) => e.stopPropagation()} />
+                        <div 
+                          className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
+                          onMouseDown={(e) => startResizing('tgl', e)} 
+                          onClick={(e) => e.stopPropagation()} 
+                        >
+                          <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                        </div>
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -601,7 +609,13 @@ export default function BarangJadiClient() {
                         onClick={() => toggleSort('faktur')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">FAKTUR <SortIcon config={sortConfig} sortKey="faktur" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('faktur', e)} onClick={(e) => e.stopPropagation()} />
+                        <div 
+                          className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
+                          onMouseDown={(e) => startResizing('faktur', e)} 
+                          onClick={(e) => e.stopPropagation()} 
+                        >
+                          <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                        </div>
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -609,7 +623,13 @@ export default function BarangJadiClient() {
                         onClick={() => toggleSort('faktur_prd')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">FAKTUR PRD <SortIcon config={sortConfig} sortKey="faktur_prd" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('faktur_prd', e)} onClick={(e) => e.stopPropagation()} />
+                        <div 
+                          className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
+                          onMouseDown={(e) => startResizing('faktur_prd', e)} 
+                          onClick={(e) => e.stopPropagation()} 
+                        >
+                          <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                        </div>
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -617,7 +637,13 @@ export default function BarangJadiClient() {
                         onClick={() => toggleSort('nama_barang')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">NAMA BARANG <SortIcon config={sortConfig} sortKey="nama_barang" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('nama_barang', e)} onClick={(e) => e.stopPropagation()} />
+                        <div 
+                          className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
+                          onMouseDown={(e) => startResizing('nama_barang', e)} 
+                          onClick={(e) => e.stopPropagation()} 
+                        >
+                          <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                        </div>
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -625,7 +651,13 @@ export default function BarangJadiClient() {
                         onClick={() => toggleSort('qty')}
                       >
                         <div className="flex items-center justify-end gap-2 nowrap overflow-hidden">QTY <SortIcon config={sortConfig} sortKey="qty" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('qty', e)} onClick={(e) => e.stopPropagation()} />
+                        <div 
+                          className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
+                          onMouseDown={(e) => startResizing('qty', e)} 
+                          onClick={(e) => e.stopPropagation()} 
+                        >
+                          <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                        </div>
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -633,7 +665,13 @@ export default function BarangJadiClient() {
                         onClick={() => toggleSort('satuan')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">SATUAN <SortIcon config={sortConfig} sortKey="satuan" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('satuan', e)} onClick={(e) => e.stopPropagation()} />
+                        <div 
+                          className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
+                          onMouseDown={(e) => startResizing('satuan', e)} 
+                          onClick={(e) => e.stopPropagation()} 
+                        >
+                          <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                        </div>
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -641,7 +679,13 @@ export default function BarangJadiClient() {
                         onClick={() => toggleSort('hp')}
                       >
                         <div className="flex items-center justify-end gap-2 nowrap overflow-hidden">HPP <SortIcon config={sortConfig} sortKey="hp" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('hp', e)} onClick={(e) => e.stopPropagation()} />
+                        <div 
+                          className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
+                          onMouseDown={(e) => startResizing('hp', e)} 
+                          onClick={(e) => e.stopPropagation()} 
+                        >
+                          <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                        </div>
                       </th>
                       <th 
                         className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
@@ -649,7 +693,13 @@ export default function BarangJadiClient() {
                         onClick={() => toggleSort('nama_prd')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">PRD <SortIcon config={sortConfig} sortKey="nama_prd" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('nama_prd', e)} onClick={(e) => e.stopPropagation()} />
+                        <div 
+                          className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
+                          onMouseDown={(e) => startResizing('nama_prd', e)} 
+                          onClick={(e) => e.stopPropagation()} 
+                        >
+                          <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                        </div>
                       </th>
                     </tr>
                   </thead>

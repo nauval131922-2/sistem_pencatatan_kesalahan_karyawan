@@ -172,7 +172,7 @@ export default function EmployeeTable({ employees, importInfo }: EmployeeTablePr
   }, [sortedAndFiltered, lastSelectedId]);
 
   return (
-    <div className="h-full flex flex-col gap-4 overflow-hidden">
+    <div className="h-full flex flex-col gap-5 overflow-hidden">
       {/* Heading & Search Container */}
       <div className="flex flex-col gap-3 shrink-0">
         <div className="flex items-center justify-between px-1">
@@ -315,7 +315,7 @@ export default function EmployeeTable({ employees, importInfo }: EmployeeTablePr
                   <div 
                     key={virtualRow.key}
                     onClick={(e) => handleRowClick(emp.id, e)}
-                    className={`flex items-center absolute top-0 left-0 w-full group select-none transition-colors border-l-4 ${isSelected ? 'bg-green-50 border-green-500' : `border-transparent hover:bg-green-50/30 ${isOdd ? 'bg-gray-50/40' : 'bg-white'}`}`}
+                    className={`flex items-center absolute top-0 left-0 w-full group select-none transition-colors ${isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : `hover:bg-green-50/30 ${isOdd ? 'bg-gray-50/40' : 'bg-white'}`}`}
                     style={{ 
                       height: `${virtualRow.size}px`,
                       transform: `translateY(${virtualRow.start}px)`

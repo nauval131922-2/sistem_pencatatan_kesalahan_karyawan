@@ -442,31 +442,29 @@ export default function OrderProduksiClient() {
   }, [data, sortConfig]);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-4 animate-in fade-in duration-500 overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
       {/* Top Filter Bar */}
       <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative z-20">
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex flex-wrap items-center gap-6">
-            <div className="flex items-center gap-2.5">
-              <Calendar size={16} className="text-green-600" />
-              <span className="text-[13px] font-extrabold text-gray-400 uppercase tracking-wider">Periode</span>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="w-[140px] relative group">
-                <DatePicker 
-                  name="startDate"
-                  value={startDate}
-                  onChange={setStartDate}
-                />
-              </div>
-              <span className="text-gray-300 font-bold">—</span>
-              <div className="w-[140px] relative group">
-                <DatePicker 
-                  name="endDate"
-                  value={endDate}
-                  onChange={setEndDate}
-                />
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Rentang Tanggal</span>
+              <div className="flex items-center gap-2">
+                <div className="w-[140px] relative group">
+                  <DatePicker 
+                    name="startDate"
+                    value={startDate}
+                    onChange={setStartDate}
+                  />
+                </div>
+                <div className="w-4 h-[1px] bg-gray-200 mx-1"></div>
+                <div className="w-[140px] relative group">
+                  <DatePicker 
+                    name="endDate"
+                    value={endDate}
+                    onChange={setEndDate}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -511,7 +509,7 @@ export default function OrderProduksiClient() {
       )}
 
       {/* Results View */}
-      <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
+      <div className="flex-1 flex flex-col gap-5 overflow-hidden min-h-0 relative">
         {/* Results Header & Search */}
         <div className="flex flex-col gap-4 shrink-0">
           <div className="flex items-center justify-between gap-4">

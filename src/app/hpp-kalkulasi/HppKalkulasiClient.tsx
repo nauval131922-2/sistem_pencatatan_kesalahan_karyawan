@@ -59,6 +59,7 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
   });
 
   const resizingRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
+  const isResizingDone = useRef(false);
 
   const startResizing = (key: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -79,6 +80,8 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
 
     const handleMouseUp = () => {
       resizingRef.current = null;
+      isResizingDone.current = true;
+      setTimeout(() => { isResizingDone.current = false; }, 100);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
       document.body.style.cursor = 'default';
@@ -129,6 +132,7 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
   }, [searchImmediate]);
 
   const toggleSort = (key: string) => {
+    if (isResizingDone.current) return;
     setSortConfig((prev) => {
       if (prev.key === key) {
         if (prev.direction === 'asc') return { key, direction: 'desc' };
@@ -294,7 +298,7 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
       </div>
 
       {/* Results View */}
-      <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
+      <div className="flex-1 flex flex-col gap-5 overflow-hidden min-h-0 relative">
         {data === null && loading ? (
           <div className="flex-1 bg-white border border-gray-100 rounded-[16px] flex flex-col items-center justify-center text-center p-10">
             <Loader2 size={48} className="text-green-500 animate-spin mb-4" />
@@ -395,10 +399,12 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
                     NAMA ORDER <SortIcon config={sortConfig} sortKey="nama_order" />
                   </div>
                   <div 
-                    className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-500/30 active:bg-green-500 z-30"
+                    className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
                     onMouseDown={(e) => startResizing('nama_order', e)}
                     onClick={(e) => e.stopPropagation()}
-                  />
+                  >
+                    <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                  </div>
                 </div>
 
                 <div 
@@ -440,7 +446,7 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
                         <div 
                           key={virtualRow.key}
                           onClick={(e) => handleRowClick(row.id, e)}
-                          className={`flex items-center absolute top-0 left-0 w-full group select-none transition-colors border-l-4 ${isSelected ? 'bg-green-50 border-green-500' : `border-transparent hover:bg-green-50/30 ${isOdd ? 'bg-gray-50/40' : 'bg-white'}`}`}
+                          className={`flex items-center absolute top-0 left-0 w-full group select-none transition-colors ${isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : `hover:bg-green-50/30 ${isOdd ? 'bg-gray-50/40' : 'bg-white'}`}`}
                           style={{ 
                             height: `${virtualRow.size}px`,
                             transform: `translateY(${virtualRow.start}px)`

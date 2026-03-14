@@ -54,6 +54,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
   });
 
   const resizingRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
+  const isResizingDone = useRef(false);
 
   const startResizing = (key: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -74,6 +75,8 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
 
     const handleMouseUp = () => {
       resizingRef.current = null;
+      isResizingDone.current = true;
+      setTimeout(() => { isResizingDone.current = false; }, 100);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
       document.body.style.cursor = 'default';
@@ -158,6 +161,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
   }, []);
 
   const handleSort = (key: string) => {
+    if (isResizingDone.current) return;
     setSortConfig((prev) => {
       if (prev.key === key) {
         if (prev.direction === 'asc') return { key, direction: 'desc' };
@@ -351,10 +355,12 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                   DATETIME <SortIcon config={sortConfig} sortKey="created_at" />
                 </div>
                 <div 
-                  className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-500/30 active:bg-green-500 z-30"
+                  className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
                   onMouseDown={(e) => startResizing('datetime', e)}
                   onClick={(e) => e.stopPropagation()}
-                />
+                >
+                  <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                </div>
               </div>
               <div 
                 className="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors group flex-shrink-0 relative"
@@ -365,10 +371,12 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                   MENU <SortIcon config={sortConfig} sortKey="menu" />
                 </div>
                 <div 
-                  className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-500/30 active:bg-green-500 z-30"
+                  className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
                   onMouseDown={(e) => startResizing('menu', e)}
                   onClick={(e) => e.stopPropagation()}
-                />
+                >
+                  <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                </div>
               </div>
               <div 
                 className="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors group flex-shrink-0 relative"
@@ -379,10 +387,12 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                   USER <SortIcon config={sortConfig} sortKey="user" />
                 </div>
                 <div 
-                  className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-500/30 active:bg-green-500 z-30"
+                  className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
                   onMouseDown={(e) => startResizing('user', e)}
                   onClick={(e) => e.stopPropagation()}
-                />
+                >
+                  <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                </div>
               </div>
               <div 
                 className="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors group relative flex-shrink-0"
@@ -393,10 +403,12 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                   KETERANGAN <SortIcon config={sortConfig} sortKey="message" />
                 </div>
                 <div 
-                  className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-500/30 active:bg-green-500 z-30"
+                  className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
                   onMouseDown={(e) => startResizing('keterangan', e)}
                   onClick={(e) => e.stopPropagation()}
-                />
+                >
+                  <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                </div>
               </div>
               <div className="px-6 py-4 whitespace-nowrap w-[100px] text-right flex-shrink-0 text-[11px] text-[#6b7280] font-bold uppercase tracking-wider">
                 AKSI
