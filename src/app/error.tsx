@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { Button } from '@/components/ui/Button';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+
 
 interface ErrorProps {
   error: Error & { digest?: string };
