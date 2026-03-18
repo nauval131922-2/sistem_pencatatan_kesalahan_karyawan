@@ -38,3 +38,29 @@ export function formatIndoDateStr(tglStr: string): string {
 
   return tglStr;
 }
+
+/**
+ * Parse YYYY-MM-DD or DD-MM-YYYY string to local Date safely (at 00:00 local)
+ * to avoid timezone shift glitches common with new Date("YYYY-MM-DD")
+ */
+export function parseLocalDate(str: string): Date {
+  if (!str) return new Date();
+  
+  // Try YYYY-MM-DD
+  let match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    const [, y, m, d] = match.map(Number);
+    return new Date(y, m - 1, d);
+  }
+  
+  // Try DD-MM-YYYY
+  match = str.match(/^(\d{2})-(\d{2})-(\d{4})/);
+  if (match) {
+    const [, d, m, y] = match.map(Number);
+    return new Date(y, m - 1, d);
+  }
+  
+  // Fallback to native but likely shifted
+  return new Date(str);
+}
+

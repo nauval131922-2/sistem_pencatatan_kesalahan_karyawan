@@ -1,40 +1,37 @@
-# SIKKA AI Session Summary - 15 Maret 2026
+# AI Session Summary - Pengembangan SIKKA (18 Maret 2026)
 
-## Ringkasan Progres
-Sesi ini berfokus pada **Harmonisasi UI/UX** dan **Optimalisasi Performa** untuk memastikan seluruh modul sistem memiliki standar visual yang seragam ("Premium") dan responsivitas yang tinggi.
+Sesi ini berfokus pada penyempurnaan fitur sinkronisasi data antar-tab, akurasi log aktivitas, dan peningkatan fungsionalitas HPP Kalkulasi.
 
-## Perubahan Utama
+## ✅ Perubahan Utama
 
-### 1. Modul User Management (Premium Sync)
-- **Tampilan Premium**: Menyelaraskan search bar, tombol aksi, dan tabel sesuai standar halaman Records.
-- **Interaksi Tabel**: Menambahkan fitur *Column Resizing* (dengan visual guide), *Row Selection* (highlight shadow), dan *Sorting*.
-- **Footer Cleanup**: Memindahkan statistik data ke luar kartu tabel agar tampilan lebih bersih dan modern.
+### 1. Sinkronisasi Antar-Tab & Log Aktivitas (Refinement)
+- **Sinkronisasi Otomatis**: Menambahkan pendengar `localStorage ('sikka_data_updated')` di berbagai komponen utama (`InfractionsTable`, `ActivityTable`, `EmployeeTable`, `RecordsTabs`, dll). Sekarang, perubahan data di satu tab akan otomatis memicu `router.refresh()` di tab lain.
+- **Efisiensi Log**: Menghapus `logActivity('VIEW', ...)` dari sisi server (Server Actions & API Routes). Hal ini mencegah penumpukan log "Melihat..." yang tidak perlu akibat refresh otomatis di background.
+- **MainContentWrapper**: Menambahkan deteksi perubahan rute (`pathname`) untuk memastikan sinkronisasi data terjadi saat navigasi manual atau refresh halaman.
 
-### 2. Optimalisasi Halaman Profil
-- **Skeleton Loading**: Implementasi *skeleton loading* saat data awal dimuat untuk menghilangkan flicker.
-- **Smooth Transitions**: Menggunakan React `useTransition` pada proses penyimpanan profil untuk menjaga UI tetap responsif.
-- **Input Validation**: Menambahkan umpan balik visual instan (hijau/merah) untuk konfirmasi password yang cocok.
-- **Auto-Clear Message**: Notifikasi sukses/error kini menghilang otomatis dalam 5 detik.
+### 2. Peningkatan Fitur HPP Kalkulasi
+- **Kolom Keterangan**: Menambahkan kolom `keterangan` pada tabel `hpp_kalkulasi` (Schema & UI).
+- **Impor Fleksibel**: Memperbarui parser Excel untuk mendukung kolom `keterangan` dan mengizinkan impor data meskipun nilai HPP-nya `0` atau kosong.
+- **Badge Keterangan**: Menampilkan badge 📌 keterangan pada form pencatatan kesalahan ketika kategori `HPP Kalkulasi` dipilih.
+- **Init-DB Script**: Menambahkan script `init-db:dev` untuk memudahkan sinkronisasi schema database development (`database_dev.sqlite`).
 
-### 3. Standardisasi UI/UX (Global)
-- **Gap Standardization**: Menyeragamkan jarak antar elemen (Search Bar ke Tabel) menggunakan standar `gap-5` di seluruh aplikasi agar serasi.
-- **Resizing Guard**: Menerapkan visual guide (garis hijau) saat melakukan resize kolom di berbagai tabel (`Infractions`, `Employees`, `Orders`, dll).
-- **Text Styling**: Mengubah kolom "Jabatan" pada halaman Employees agar tidak kapital semua (mengikuti input asli).
+### 3. Monitoring & Analytics (Vercel)
+- **Integrasi Vercel Speed Insights**: Untuk memantau performa Real User Monitoring (Web Vitals).
+- **Integrasi Vercel Analytics**: Untuk memantau statistik pengunjung dan interaksi halaman di production.
 
-### 4. Performa & Backend
-- **Query Optimization**: Mempercepat pemuatan data Production Orders dengan pembatasan `LIMIT 2000` dan penyederhanaan logika sorting di SQLite.
-- **API Fix**: Memperbaiki logika filter tanggal pada API Infractions agar lebih akurat menggunakan perbandingan operator `>=` dan `<=` dengan timestamp lengkap.
+### 4. Perbaikan Bug & Optimasi
+- **Seleksi Data**: Memperbaiki bug pada `useInfractionsSelection` dan `InfractionsTable` yang menyebabkan seleksi data kacau saat tabel di-refresh atau data diperbarui (menggunakan `ref` untuk `selectedIds`).
+- **Format Tanggal**: Optimasi `date-formatters.ts` untuk konsistensi tampilan.
 
-## Status File Terpengaruh
-- `src/app/users/UsersContent.tsx` (UI/UX User Management)
-- `src/app/profile/page.tsx` (Performance & UX Profil)
-- `src/lib/actions.ts` & `src/app/api/infractions/route.ts` (Performance & Fixes)
-- Seluruh Client Components (`BahanBaku`, `BarangJadi`, `Orders`, `Sales`, `HppKalkulasi`) - Spacing & UI Standardization.
+## 🚀 Status Saat Ini
+- **Branch**: `master`
+- **Terakhir Dikerjakan**: Form Pencatatan Kesalahan (Integrasi HPP Kalkulasi Note).
+- **Kondisi Database**: Schema terbaru sudah diaplikasikan di `database_dev.sqlite`.
 
-## Instruksi untuk Sesi Berikutnya
-- Semua file penting (`.md`, `.json`) sudah dipastikan aman dari `.gitignore`.
-- Database SQLite lokal (`*.sqlite`) tetap diabaikan demi keamanan data.
-- Progres siap dilanjutkan dengan fokus pada modul laporan atau sinkronisasi excel lainnya.
+## 📝 Catatan Untuk Sesi Berikutnya (Rumah/Kantor)
+1. **Verifikasi Deploy**: Pastikan Vercel Speed Insights & Analytics muncul di dashboard Vercel setelah push.
+2. **Testing Cross-Tab**: Uji coba refresh otomatis Dashboard setelah melakukan perubahan di tab lain.
+3. **Impor Data**: Gunakan format Excel terbaru yang menyertakan kolom "Keterangan" untuk HPP Kalkulasi.
 
 ---
-**Status Sesi: SELESAI & TER-SYNC**
+*Dibuat oleh AI Antigravity pada 18 Maret 2026, 21:59 WIB*

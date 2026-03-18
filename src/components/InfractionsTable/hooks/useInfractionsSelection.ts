@@ -36,9 +36,15 @@ export function useInfractionsSelection(filteredData: Infraction[]) {
           }
         } else {
           // Single select (replace selection)
-          next.clear();
-          next.add(id);
+          if (next.has(id)) {
+            // If already selected, deselect (toggle off)
+            next.clear();
+          } else {
+            next.clear();
+            next.add(id);
+          }
         }
+
 
         setLastSelectedId(id);
         return next;
