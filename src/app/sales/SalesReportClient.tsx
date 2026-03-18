@@ -213,7 +213,8 @@ export default function SalesReportClient() {
   useEffect(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const defaultStartDate = new Date(2026, 0, 1); // 1/1/2026
+
 
     const saved = localStorage.getItem('salesReportState');
     if (saved) {
@@ -222,11 +223,12 @@ export default function SalesReportClient() {
         const sessionDate = parsed.sessionDate ? new Date(parsed.sessionDate) : null;
         if (sessionDate) sessionDate.setHours(0, 0, 0, 0);
 
-        // Jika ganti hari, paksa ke awal bulan ini. Jika hari yang sama, gunakan yang tersimpan.
+        // Jika ganti hari, paksa ke awal periode. Jika hari yang sama, gunakan yang tersimpan.
         if (!sessionDate || sessionDate.getTime() !== today.getTime()) {
-          setStartDate(startOfMonth);
+          setStartDate(defaultStartDate);
           setEndDate(today);
         } else {
+
           if (parsed.startDate) setStartDate(new Date(parsed.startDate));
           if (parsed.endDate) setEndDate(new Date(parsed.endDate));
         }
@@ -234,9 +236,10 @@ export default function SalesReportClient() {
         if (parsed.lastUpdated) setLastUpdated(parsed.lastUpdated);
       } catch(e) {}
     } else {
-      setStartDate(startOfMonth);
+      setStartDate(defaultStartDate);
       setEndDate(today);
     }
+
 
   }, []);
 
