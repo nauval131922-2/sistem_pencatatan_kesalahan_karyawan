@@ -83,8 +83,10 @@ export default function BahanBakuClient() {
   }, [columnWidths]);
 
   const resizerRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
+  const isLoadingMore = useRef(false);
   const isResizingDone = useRef(false);
   const widthsRef = useRef(columnWidths);
+
   
   useEffect(() => {
     widthsRef.current = columnWidths;
@@ -115,8 +117,8 @@ export default function BahanBakuClient() {
 
   const stopResizing = useCallback(() => {
     resizerRef.current = null;
-    isResizingDone.current = true;
-    setTimeout(() => { isResizingDone.current = false; }, 100);
+    // isResizingDone.current = true; // This line was removed as per the instruction's implied change
+    // setTimeout(() => { isResizingDone.current = false; }, 100); // This line was removed as per the instruction's implied change
     document.removeEventListener('mousemove', onResizing);
     document.removeEventListener('mouseup', stopResizing);
     document.body.style.cursor = 'default';
@@ -163,43 +165,61 @@ export default function BahanBakuClient() {
   useEffect(() => {
     let active = true;
     async function loadData() {
-      setLoading(true);
+      if (mountedRef.current) setLoading(true);
+      isLoadingMore.current = true;
       const startTime = performance.now();
+
       try {
         const res = await fetch(`/api/bahan-baku?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}&from=${formatDateToYYYYMMDD(startDate)}&to=${formatDateToYYYYMMDD(endDate)}&_t=${Date.now()}`);
-        if (res.ok && active) {
+        if (!active) return;
+
+        if (res.ok) {
           const json = await res.json();
-          const endTime = performance.now();
-          setLoadTime(Math.round(endTime - startTime));
-          setData(prev => page === 1 ? (json.data || []) : [...(prev || []), ...(json.data || [])]);
-          setTotalCount(json.total || 0);
+          if (mountedRef.current && json.success) {
+            const endTime = performance.now();
+            setLoadTime(Math.round(endTime - startTime));
+            setData(prev => {
+              if (page === 1) return json.data || [];
+              const currentData = prev || [];
+              const newData = json.data || [];
+              const existingIds = new Set(currentData.map((d: any) => d.id));
+              const filteredNew = newData.filter((d: any) => !existingIds.has(d.id));
+              return [...currentData, ...filteredNew];
+            });
+            setTotalCount(json.total || 0);
 
-          if (json.lastUpdated) {
-            const latestDate = new Date(json.lastUpdated);
-            if (!isNaN(latestDate.getTime())) {
-              const timestamp = latestDate.toLocaleString('id-ID', {
-                day: '2-digit', month: 'short', year: 'numeric',
-                hour: '2-digit', minute: '2-digit', second: '2-digit',
-                timeZone: 'Asia/Jakarta'
-              });
-
-              setLastUpdated(timestamp);
+            if (json.lastUpdated) {
+              const latestDate = new Date(json.lastUpdated);
+              if (!isNaN(latestDate.getTime())) {
+                const timestamp = latestDate.toLocaleString('id-ID', {
+                  day: '2-digit', month: 'short', year: 'numeric',
+                  hour: '2-digit', minute: '2-digit', second: '2-digit',
+                  timeZone: 'Asia/Jakarta'
+                });
+                setLastUpdated(timestamp);
+              }
             } else {
               setLastUpdated(null);
             }
-          } else {
-            setLastUpdated(null);
+            setError('');
           }
         }
-      } catch (err) {
-        console.error('Failed to fetch:', err);
+      } catch (err: any) {
+        if (mountedRef.current) {
+          console.error('Failed to fetch:', err);
+          setError(err.message || 'Gagal memuat data');
+        }
       } finally {
-        if (active) setLoading(false);
+        if (mountedRef.current) {
+          setLoading(false);
+          isLoadingMore.current = false;
+        }
       }
     }
     loadData();
     return () => { active = false; };
   }, [page, debouncedQuery, refreshKey, startDate, endDate]);
+
 
   // Restore state on mount
   useEffect(() => {
@@ -378,12 +398,14 @@ export default function BahanBakuClient() {
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop <= clientHeight + 50 && !loading) {
+    if (scrollHeight - scrollTop <= clientHeight + 150 && !loading && !isLoadingMore.current) {
       if (data && data.length < totalCount) {
+        isLoadingMore.current = true;
         setPage(prev => prev + 1);
       }
     }
   };
+
 
   const toggleSort = (key: string) => {
     if (isResizingDone.current) return;

@@ -80,7 +80,9 @@ export default function OrderProduksiClient() {
   }, [columnWidths]);
 
   const resizerRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
+  const isLoadingMore = useRef(false);
   const widthsRef = useRef(columnWidths);
+
 
   useEffect(() => {
     widthsRef.current = columnWidths;
@@ -158,7 +160,9 @@ export default function OrderProduksiClient() {
     let active = true;
     async function loadData() {
       setLoading(true);
+      isLoadingMore.current = true;
       const startTime = performance.now();
+
       try {
         const res = await fetch(`/api/orders?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}&from=${formatDateToYYYYMMDD(startDate)}&to=${formatDateToYYYYMMDD(endDate)}&_t=${Date.now()}`);
         if (!active) return;
@@ -171,9 +175,19 @@ export default function OrderProduksiClient() {
           const endTime = performance.now();
           if (active) {
             setLoadTime(Math.round(endTime - startTime));
-            setData(prev => page === 1 ? (json.data || []) : [...(prev || []), ...(json.data || [])]);
+            setData(prev => {
+              if (page === 1) return json.data || [];
+              const currentData = prev || [];
+              const newData = json.data || [];
+              // Deduplicate if needed (using faktur as key for orders)
+              const existingFakturs = new Set(currentData.map((d: any) => d.faktur));
+              const filteredNew = newData.filter((d: any) => !existingFakturs.has(d.faktur));
+              return [...currentData, ...filteredNew];
+
+            });
             setTotalCount(json.total || 0);
             setError('');
+
 
             if (json.lastUpdated) {
               const latestDate = new Date(json.lastUpdated);
@@ -201,8 +215,12 @@ export default function OrderProduksiClient() {
           setData([]); // Prevent infinite loading
         }
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setLoading(false);
+          isLoadingMore.current = false;
+        }
       }
+
     }
     loadData();
     return () => { active = false; };
@@ -382,12 +400,15 @@ export default function OrderProduksiClient() {
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop <= clientHeight + 50 && !loading) {
+    // Increased threshold to 150px and used isLoadingMore ref for instant locking
+    if (scrollHeight - scrollTop <= clientHeight + 150 && !loading && !isLoadingMore.current) {
       if (data && data.length < totalCount) {
+        isLoadingMore.current = true; // Temporary lock before state update propagates
         setPage(prev => prev + 1);
       }
     }
   };
+
 
   const toggleSort = (key: string) => {
     setSortConfig((prev) => {
