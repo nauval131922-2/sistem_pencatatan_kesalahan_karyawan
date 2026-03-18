@@ -82,9 +82,11 @@ export async function initSchema(db: any) {
     `CREATE TABLE IF NOT EXISTS hpp_kalkulasi (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nama_order TEXT UNIQUE NOT NULL,
-      hpp_kalkulasi REAL NOT NULL,
+      hpp_kalkulasi REAL NOT NULL DEFAULT 0,
+      keterangan TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`,
+
     `CREATE TABLE IF NOT EXISTS sales_reports (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       tgl TEXT,
@@ -152,6 +154,8 @@ export async function initSchema(db: any) {
     "ALTER TABLE sales_reports ADD COLUMN faktur TEXT;",
     "ALTER TABLE orders ADD COLUMN satuan TEXT;",
     "ALTER TABLE session_context ADD COLUMN last_menu TEXT;",
+    "ALTER TABLE hpp_kalkulasi ADD COLUMN keterangan TEXT;",
+
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_sales_unique ON sales_reports(faktur, kd_barang, tgl);",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_barang_jadi_unique ON barang_jadi(faktur, kd_barang, tgl);",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_bahan_baku_unique ON bahan_baku(faktur, kd_barang, tgl);",

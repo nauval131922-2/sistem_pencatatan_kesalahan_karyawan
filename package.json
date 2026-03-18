@@ -8,12 +8,15 @@
     "start": "next start",
     "lint": "eslint",
     "init-db": "npx tsx scripts/init-db.ts",
+    "init-db:dev": "npx tsx -e \"process.env.DB_PATH='database_dev.sqlite'\" scripts/init-db.ts",
     "prebuild": "npm run init-db",
     "migrate:sales2025": "node scripts/migrate-sales-2025.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.17.0",
     "@tanstack/react-virtual": "^3.13.22",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.0",
     "jspdf": "^4.2.0",

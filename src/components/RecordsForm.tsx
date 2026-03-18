@@ -277,7 +277,9 @@ export default function RecordsForm({
   const [items, setItems] = useState<ItemData[]>([]);
   const [itemsLoading, setItemsLoading] = useState(false);
   const [hppKalkulasiValue, setHppKalkulasiValue] = useState<number | null>(null);
+  const [hppKeterangan, setHppKeterangan] = useState<string>('');
   const [hppLoading, setHppLoading] = useState(false);
+
   const [selectedNamaBarang, setSelectedNamaBarang] = useState<string>('');
   const [selectedItemFaktur, setSelectedItemFaktur] = useState<string>('');
   const [manualNamaBarang, setManualNamaBarang] = useState<string>('');
@@ -489,7 +491,10 @@ export default function RecordsForm({
         if (res.ok && active) {
           const json = await res.json();
           const val = json.data?.[0]?.hpp_kalkulasi ?? 0;
+          const ket = json.data?.[0]?.keterangan ?? '';
           setHppKalkulasiValue(val);
+          setHppKeterangan(ket);
+
           if (jenisBarang === 'HPP Kalkulasi' && jenisHarga !== 'Input Manual') {
             setSelectedNamaBarang(selectedOrderName);
             setHarga(formatNumberIndo(val));
@@ -901,6 +906,15 @@ export default function RecordsForm({
                         className={`${inputCls} ${jenisHarga !== 'Input Manual' ? 'bg-gray-100/80 cursor-not-allowed text-gray-400' : ''}`}
                         placeholder="0"
                       />
+                      {jenisBarang === 'HPP Kalkulasi' && jenisHarga === 'HPP Kalkulasi' && hppKeterangan && (
+                        <div className="mt-1.5 flex items-center gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-bold">
+                            <span>📌</span>
+                            {hppKeterangan}
+                          </span>
+                        </div>
+                      )}
+
                     </div>
                   </div>
 

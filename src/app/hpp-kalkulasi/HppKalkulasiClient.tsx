@@ -27,6 +27,8 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [loadTime, setLoadTime] = useState<number | null>(null);
+
   
   const [dialog, setDialog] = useState<{isOpen: boolean, type: 'success' | 'error', title: string, message: string}>({
     isOpen: false,
@@ -54,9 +56,11 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
   // Column Resizing State
   const [columnWidths, setColumnWidths] = useState({
     no: 64,
-    nama_order: 700,
+    nama_order: 500,
     hpp_kalkulasi: 200,
+    keterangan: 280,
   });
+
 
   const resizingRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
   const isResizingDone = useRef(false);
@@ -94,8 +98,11 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
 
   const fetchHppData = async () => {
     setLoading(true);
+    const startTime = performance.now();
     try {
       const res = await fetch(`/api/hpp-kalkulasi?_t=${Date.now()}`);
+      const endTime = performance.now();
+      setLoadTime(Math.round(endTime - startTime));
       if (res.ok) {
         const json = await res.json();
         setData(json.data || []);
@@ -109,6 +116,7 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchHppData();
@@ -244,13 +252,19 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
           next.add(id);
         }
       } else {
-        next.clear();
-        next.add(id);
+        // Toggle single (deselect if already selected exclusively)
+        if (next.has(id) && next.size === 1) {
+          next.clear();
+        } else {
+          next.clear();
+          next.add(id);
+        }
       }
       
       setLastSelectedId(id);
       return next;
     });
+
   }, [sortedAndFiltered, lastSelectedId]);
 
   return (
@@ -349,20 +363,7 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
                     </div>
                   )}
 
-                  {selectedIds.size > 0 && (
-                    <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                      <span className="text-gray-200 text-xs mx-1">|</span>
-                      <div className="flex items-center gap-3">
-                        <span className="text-[11px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
-                        <button 
-                          onClick={() => setSelectedIds(new Set())}
-                          className="text-[11px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
-                        >
-                          Batal
-                        </button>
-                      </div>
-                    </div>
-                  )}
+
                 </div>
               </div>
               
@@ -386,12 +387,13 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
             <div className="bg-white border border-gray-200 shadow-sm rounded-[16px] overflow-hidden flex flex-col flex-1 min-h-0 relative">
               {/* Header Row */}
               <div className="flex items-center bg-gray-50/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-20 shrink-0">
-                <div className="px-6 py-4 flex-shrink-0 text-center text-[11px] text-gray-400 font-bold uppercase tracking-wider" style={{ width: columnWidths.no }}>
+                <div className="px-6 py-4 flex-shrink-0 text-center text-[11px] text-gray-400 font-bold uppercase tracking-wider border-r border-gray-100" style={{ width: columnWidths.no }}>
                   NO.
                 </div>
+
                 
                 <div 
-                  className="px-6 py-4 flex-shrink-0 cursor-pointer hover:bg-gray-100/50 transition-colors group relative border-l border-transparent hover:border-gray-200"
+                  className="px-6 py-4 flex-shrink-0 cursor-pointer hover:bg-gray-100/50 transition-colors group relative border-r border-gray-100"
                   style={{ width: columnWidths.nama_order }}
                   onClick={() => toggleSort('nama_order')}
                 >
@@ -407,17 +409,37 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
                   </div>
                 </div>
 
+
                 <div 
-                  className="px-6 py-4 flex-shrink-0 cursor-pointer hover:bg-gray-100/50 transition-colors group relative border-l border-gray-100 flex-1 text-right"
+                  className="px-6 py-4 flex-shrink-0 cursor-pointer hover:bg-gray-100/50 transition-colors group relative border-r border-gray-100 text-right"
+                  style={{ width: columnWidths.hpp_kalkulasi }}
                   onClick={() => toggleSort('hpp_kalkulasi')}
                 >
                   <div className="flex items-center justify-end gap-2 text-[11px] text-gray-500 font-bold uppercase tracking-wider">
                     HPP KALKULASI <SortIcon config={sortConfig} sortKey="hpp_kalkulasi" />
                   </div>
                 </div>
+
+                <div 
+                  className="px-6 py-4 flex-shrink-0 cursor-pointer hover:bg-gray-100/50 transition-colors group relative"
+                  style={{ width: columnWidths.keterangan }}
+                  onClick={() => toggleSort('keterangan')}
+                >
+                  <div className="flex items-center gap-2 text-[11px] text-gray-500 font-bold uppercase tracking-wider">
+                    KETERANGAN <SortIcon config={sortConfig} sortKey="keterangan" />
+                  </div>
+                  <div 
+                    className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
+                    onMouseDown={(e) => startResizing('keterangan', e)}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                  </div>
+                </div>
               </div>
 
               {/* Scrollable Virtual Area */}
+
               <div ref={parentRef} className="flex-1 overflow-auto custom-scrollbar relative min-h-0 select-none">
                 {sortedAndFiltered.length === 0 ? (
                   <div className="py-24 text-center">
@@ -446,33 +468,51 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
                         <div 
                           key={virtualRow.key}
                           onClick={(e) => handleRowClick(row.id, e)}
-                          className={`flex items-center absolute top-0 left-0 w-full group select-none transition-colors ${isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : `hover:bg-green-50/30 ${isOdd ? 'bg-gray-50/40' : 'bg-white'}`}`}
+                          className={`flex items-center absolute top-0 left-0 w-full group select-none transition-colors border-b border-gray-100 ${isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : `hover:bg-green-50/30 ${isOdd ? 'bg-gray-50/40' : 'bg-white'}`}`}
+
                           style={{ 
                             height: `${virtualRow.size}px`,
                             transform: `translateY(${virtualRow.start}px)`
                           }}
                         >
                           <div 
-                            className="px-6 py-1 whitespace-nowrap text-center text-[12px] font-bold text-gray-300 group-hover:text-green-500 tabular-nums flex-shrink-0"
+                            className="px-6 py-1 whitespace-nowrap text-center text-[12px] font-bold text-gray-300 group-hover:text-green-500 tabular-nums flex-shrink-0 border-r border-gray-100"
                             style={{ width: columnWidths.no }}
                           >
                             {virtualRow.index + 1}
                           </div>
+
                           
                           <div 
-                            className="px-6 py-1 whitespace-nowrap flex-shrink-0 overflow-hidden"
+                            className="px-6 py-1 whitespace-nowrap flex-shrink-0 overflow-hidden border-r border-gray-100"
                             style={{ width: columnWidths.nama_order }}
                           >
+
                             <span className={`text-[13px] font-extrabold truncate block ${isSelected ? 'text-green-900' : 'text-gray-800'}`}>
                               {row.nama_order}
                             </span>
                           </div>
 
-                          <div className="px-6 py-1 flex-1 text-right overflow-hidden">
-                            <span className={`font-black text-[12px] tracking-tight tabular-nums transition-colors ${isSelected ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-600'}`}>
-                              {row.hpp_kalkulasi.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 })}
+                          <div className="px-6 py-1 flex-shrink-0 text-right overflow-hidden" style={{ width: columnWidths.hpp_kalkulasi }}>
+                            <span className={`font-black text-[12px] tracking-tight tabular-nums transition-colors ${
+                              row.hpp_kalkulasi > 0
+                                ? (isSelected ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-600')
+                                : 'text-gray-200'
+                            }`}>
+                              {row.hpp_kalkulasi > 0
+                                ? row.hpp_kalkulasi.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 })
+                                : '—'}
                             </span>
                           </div>
+
+                          <div className="px-6 py-1 flex-shrink-0 overflow-hidden" style={{ width: columnWidths.keterangan }}>
+                            <span className={`text-[12px] font-medium truncate block ${
+                              isSelected ? 'text-green-700' : 'text-gray-400'
+                            }`}>
+                              {row.keterangan || <span className="text-gray-200 italic text-[11px]">—</span>}
+                            </span>
+                          </div>
+
                         </div>
                       );
                     })}
@@ -481,19 +521,43 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
               </div>
             </div>
             
-            <div className="flex items-center justify-start shrink-0 px-1 mt-3">
+            <div className="flex items-center justify-between shrink-0 px-1 mt-3">
               <span className="text-[12px] font-bold text-gray-400">
                  {data.length === 0
                    ? 'Tidak ada data'
                    : `Menampilkan ${sortedAndFiltered.length} dari ${data.length} total data kalkulasi`}
               </span>
-              {isPending && (
-                <div className="flex items-center gap-2 text-green-600 font-bold text-[11px] animate-pulse ml-4">
-                  <Loader2 size={12} className="animate-spin" />
-                  <span>Memperbarui hasil...</span>
-                </div>
-              )}
+              <div className="flex items-center gap-4">
+                {selectedIds.size > 0 && (
+                  <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
+                    <span className="text-[12px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
+                    <button 
+                      onClick={() => setSelectedIds(new Set())}
+                      className="text-[12px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                )}
+                {loadTime !== null && (
+                  <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
+                    loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                    loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+                    'bg-red-50 text-red-600 border-red-100'
+                  }`}>
+                    <span className="animate-pulse">⚡</span>
+                    <span>{(loadTime / 1000).toFixed(2)}s</span>
+                  </span>
+                )}
+                {isPending && (
+                  <div className="flex items-center gap-2 text-green-600 font-bold text-[11px] animate-pulse">
+                    <Loader2 size={12} className="animate-spin" />
+                    <span>Memperbarui hasil...</span>
+                  </div>
+                )}
+              </div>
             </div>
+
           </>
         )}
       </div>
