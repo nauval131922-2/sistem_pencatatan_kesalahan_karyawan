@@ -20,8 +20,10 @@ export async function initSchema(db: any) {
       department TEXT NOT NULL,
       employee_no TEXT UNIQUE,
       is_active INTEGER DEFAULT 1,
+      recorded_by TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`,
+
     `CREATE TABLE IF NOT EXISTS infractions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       employee_id INTEGER NOT NULL,
@@ -155,6 +157,8 @@ export async function initSchema(db: any) {
     "ALTER TABLE orders ADD COLUMN satuan TEXT;",
     "ALTER TABLE session_context ADD COLUMN last_menu TEXT;",
     "ALTER TABLE hpp_kalkulasi ADD COLUMN keterangan TEXT;",
+    "ALTER TABLE employees ADD COLUMN recorded_by TEXT;",
+
 
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_sales_unique ON sales_reports(faktur, kd_barang, tgl);",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_barang_jadi_unique ON barang_jadi(faktur, kd_barang, tgl);",
