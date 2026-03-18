@@ -403,8 +403,14 @@ export default function BarangJadiClient() {
       if (next.has(id)) next.delete(id);
       else next.add(id);
     } else {
-      next.clear();
-      next.add(id);
+      // Single click (no modifier)
+      if (next.has(id)) {
+        // If already selected, deselect (toggle off)
+        next.clear();
+      } else {
+        next.clear();
+        next.add(id);
+      }
     }
     setLastSelectedId(id);
     setSelectedIds(next);
@@ -590,7 +596,7 @@ export default function BarangJadiClient() {
                   <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
                     <tr className="text-[13px] text-gray-400 font-bold uppercase tracking-wider">
                       <th 
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        className="px-5 py-3.5 border-r border-gray-100 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.tgl }}
                         onClick={() => toggleSort('tgl')}
                       >
@@ -604,7 +610,7 @@ export default function BarangJadiClient() {
                         </div>
                       </th>
                       <th 
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        className="px-5 py-3.5 border-r border-gray-100 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.faktur }}
                         onClick={() => toggleSort('faktur')}
                       >
@@ -618,7 +624,7 @@ export default function BarangJadiClient() {
                         </div>
                       </th>
                       <th 
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        className="px-5 py-3.5 border-r border-gray-100 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.faktur_prd }}
                         onClick={() => toggleSort('faktur_prd')}
                       >
@@ -632,7 +638,7 @@ export default function BarangJadiClient() {
                         </div>
                       </th>
                       <th 
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        className="px-5 py-3.5 border-r border-gray-100 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.nama_barang }}
                         onClick={() => toggleSort('nama_barang')}
                       >
@@ -646,7 +652,7 @@ export default function BarangJadiClient() {
                         </div>
                       </th>
                       <th 
-                        className="px-5 py-3.5 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors" 
+                        className="px-5 py-3.5 border-r border-gray-100 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.qty }}
                         onClick={() => toggleSort('qty')}
                       >
@@ -660,7 +666,7 @@ export default function BarangJadiClient() {
                         </div>
                       </th>
                       <th 
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        className="px-5 py-3.5 border-r border-gray-100 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.satuan }}
                         onClick={() => toggleSort('satuan')}
                       >
@@ -674,7 +680,7 @@ export default function BarangJadiClient() {
                         </div>
                       </th>
                       <th 
-                        className="px-5 py-3.5 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors" 
+                        className="px-5 py-3.5 border-r border-gray-100 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.hp }}
                         onClick={() => toggleSort('hp')}
                       >
@@ -688,7 +694,7 @@ export default function BarangJadiClient() {
                         </div>
                       </th>
                       <th 
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        className="px-5 py-3.5 border-r border-gray-100 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.nama_prd }}
                         onClick={() => toggleSort('nama_prd')}
                       >
@@ -714,28 +720,28 @@ export default function BarangJadiClient() {
                           isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : idx % 2 === 1 ? 'bg-slate-50/20' : 'bg-white'
                         } hover:bg-green-50/40`}
                       >
-                        <td className={`px-5 py-1 text-[13px] font-bold whitespace-nowrap transition-colors ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
+                        <td className={`px-5 py-1 border-r border-gray-100 text-[13px] font-bold whitespace-nowrap transition-colors ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
                           {formatIndoDateStr(item.tgl)}
                         </td>
-                        <td className={`px-5 py-1 text-[13px] font-bold tracking-tight transition-colors ${isSelected ? 'text-green-600' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 border-r border-gray-100 text-[13px] font-bold tracking-tight transition-colors ${isSelected ? 'text-green-600' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {item.faktur || '-'}
                         </td>
-                        <td className={`px-5 py-1 text-[13px] font-bold tracking-tight transition-colors ${isSelected ? 'text-green-500' : 'text-gray-500 group-hover:text-gray-700'}`}>
+                        <td className={`px-5 py-1 border-r border-gray-100 text-[13px] font-bold tracking-tight transition-colors ${isSelected ? 'text-green-500' : 'text-gray-500 group-hover:text-gray-700'}`}>
                           {item.faktur_prd || '-'}
                         </td>
-                        <td className={`px-5 py-1 font-bold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 border-r border-gray-100 font-bold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {item.nama_barang}
                         </td>
-                        <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
+                        <td className={`px-5 py-1 border-r border-gray-100 text-right font-extrabold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
                           {Number(item.qty).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
-                        <td className={`px-5 py-1 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400'}`}>
+                        <td className={`px-5 py-1 border-r border-gray-100 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400'}`}>
                           {item.satuan}
                         </td>
-                        <td className={`px-5 py-1 text-right font-bold text-[13px] tabular-nums transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 border-r border-gray-100 text-right font-bold text-[13px] tabular-nums transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {item.hp ? item.hp.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '–'}
                         </td>
-                        <td className={`px-5 py-1 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400 group-hover:text-gray-500'}`}>
+                        <td className={`px-5 py-1 border-r border-gray-100 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400 group-hover:text-gray-500'}`}>
                           {item.nama_prd}
                         </td>
                       </tr>
