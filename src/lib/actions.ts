@@ -24,8 +24,6 @@ export async function addEmployee(name: string, position: string, department: st
     sql: 'INSERT INTO employees (name, position, department) VALUES (?, ?, ?)',
     args: [name, position, department]
   });
-
-
   return result;
 }
 
@@ -50,7 +48,6 @@ export const getInfractions = cache(async (startDate?: string, endDate?: string)
 
   const params: any[] = [];
   if (startDate && endDate) {
-    // Ensure we cover the full end day by appending time or just use string comparison if data is YYYY-MM-DD
     query += ` WHERE i.date >= ? AND i.date <= ? `;
     params.push(`${startDate} 00:00:00`, `${endDate} 23:59:59`);
   }
@@ -80,14 +77,12 @@ export async function getActivityLogs(limit = 1000) {
 }
 
 export async function addInfraction(employeeId: number, description: string, severity: string, date: string, recordedById: number|string, orderName?: string) {
-  // If date only (YYYY-MM-DD), append current time
   let fullDate = date;
   if (date.length === 10) {
-    const time = new Date().toLocaleTimeString('en-GB', { hour12: false }); // Using en-GB for HH:mm:ss format
+    const time = new Date().toLocaleTimeString('en-GB', { hour12: false });
     fullDate = `${date} ${time}`;
   }
 
-  // Fetch snapshots
   const empRes = await db.execute({
     sql: 'SELECT name, position, employee_no FROM employees WHERE id = ?',
     args: [employeeId]
@@ -137,7 +132,7 @@ export const getStats = cache(async (year?: number) => {
     },
     'SELECT COUNT(*) as count FROM orders'
   ], "read");
-  
+
   return {
     totalEmployees: Number(results[0].rows[0]?.count || 0),
     totalInfractions: Number(results[1].rows[0]?.total || 0),
@@ -146,10 +141,6 @@ export const getStats = cache(async (year?: number) => {
   };
 });
 
-/**
- * Summary khusus untuk Dashboard agar tidak redundan dengan halaman Statistik.
- * Menampilkan metrik "Snapshot Current" (Hari ini & Bulan Ini).
- */
 export const getDashboardSummary = cache(async () => {
   const now = new Date();
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(now);
@@ -185,12 +176,10 @@ export const getDashboardSummary = cache(async () => {
 
 export const getDetailedStats = cache(async (year: number) => {
   const yr = year.toString();
-  
   const startOfYear = `${yr}-01-01 00:00:00`;
   const endOfYear = `${yr}-12-31 23:59:59`;
   
   const [monthlyRes, repeatersRes, severityRes] = await db.batch([
-    // 1. Monthly Trends - Better Grouped Query
     {
       sql: `
         SELECT 
@@ -206,7 +195,6 @@ export const getDetailedStats = cache(async (year: number) => {
       `,
       args: [startOfYear, endOfYear]
     },
-    // 2. Top Repeaters
     {
       sql: `
         SELECT 
@@ -226,7 +214,6 @@ export const getDetailedStats = cache(async (year: number) => {
       `,
       args: [startOfYear, endOfYear]
     },
-    // 3. Severity Distribution for the year
     {
       sql: `
         SELECT severity, COUNT(*) as count 
@@ -239,8 +226,6 @@ export const getDetailedStats = cache(async (year: number) => {
   ], "read");
 
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-  
-  // Fill all 12 months, even if they have 0 infractions
   const monthlyData = monthNames.map((name, idx) => {
     const monthIdx = idx + 1;
     const dbRow = monthlyRes.rows.find((r: any) => r.month_idx === monthIdx);
@@ -287,16 +272,14 @@ export async function getLastHppImport() {
 export async function getLiveRecord(tableName: string, recordId: number | string) {
   try {
     const allowedTables = ['users', 'employees', 'infractions', 'orders', 'bahan_baku', 'barang_jadi', 'hpp_kalkulasi', 'sales_reports'];
-    if (!allowedTables.includes(tableName)) return null;
-    
+    if (!allowedTables.includes(tableName)) throw new Error('Table not allowed');
     const result = await db.execute({
       sql: `SELECT * FROM ${tableName} WHERE id = ?`,
       args: [recordId]
     });
-    
     return result.rows.length > 0 ? { ...result.rows[0] } : null;
   } catch (err) {
-    console.error(`Failed to get live record from ${tableName}`, err);
+    console.error('Failed to get live record', err);
     return null;
   }
 }

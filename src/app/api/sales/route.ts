@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
+import { logActivity } from "@/lib/activity";
+
 
 export const dynamic = 'force-dynamic';
 
@@ -80,8 +82,11 @@ export async function GET(request: NextRequest) {
     const lastScrape = batchResults[2].rows[0] as any;
     const lastUpdatedRaw = (batchResults[3].rows[0] as any).lastUpdated;
     const lastUpdated = lastScrape ? lastScrape.value : lastUpdatedRaw;
-    
+
     return NextResponse.json({ success: true, data, total, lastUpdated, page, limit });
+
+
+
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

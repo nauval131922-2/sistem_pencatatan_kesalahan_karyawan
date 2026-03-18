@@ -22,14 +22,22 @@ export function useInfractionsData({
   const [infractions, setInfractions] = useState<Infraction[]>(initial);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [loadTime, setLoadTime] = useState<number | null>(null);
 
-  // Date range state (with optional initial values)
-  const [startDate, setStartDate] = useState<Date>(
-    () => initialStartDate || new Date()
-  );
-  const [endDate, setEndDate] = useState<Date>(
-    () => initialEndDate || new Date()
-  );
+
+  const [startDate, setStartDate] = useState<Date>(() => {
+
+    if (initialStartDate) return initialStartDate;
+    // Default to today in local time
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  });
+
+  const [endDate, setEndDate] = useState<Date>(() => {
+    if (initialEndDate) return initialEndDate;
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  });
 
   const initialMount = useRef(true);
 
@@ -37,6 +45,7 @@ export function useInfractionsData({
   useEffect(() => {
     setInfractions(initial);
   }, [initial]);
+
 
   // Fetch filtered data based on date range
   const fetchFilteredData = useCallback(async () => {
@@ -52,21 +61,27 @@ export function useInfractionsData({
       const start = formatDate(startDate);
       const end = formatDate(endDate);
 
+      // Optimistically reset visible count for new data
+      setVisibleCount(PAGE_SIZE);
+
+      const startTime = performance.now();
       const res = await fetch(`/api/infractions?start=${start}&end=${end}`);
       if (res.ok) {
         const json = await res.json();
+        const endTime = performance.now();
+        setLoadTime(Math.round(endTime - startTime));
         setInfractions(json.data || []);
         if (onPeriodChange) onPeriodChange(start, end);
       }
-      setVisibleCount(PAGE_SIZE);
     } catch (e) {
       console.error('Fetch error:', e);
     } finally {
       setIsRefreshing(false);
     }
+
   }, [startDate, endDate, onPeriodChange]);
 
-  // Auto-fetch when dates change (skip initial mount)
+  // Auto-fetch when dates change (skip initial mount to avoid double-loading if parent matches)
   useEffect(() => {
     if (initialMount.current) {
       initialMount.current = false;
@@ -99,5 +114,8 @@ export function useInfractionsData({
     setStartDate,
     endDate,
     setEndDate,
+    loadTime,
   };
 }
+
+

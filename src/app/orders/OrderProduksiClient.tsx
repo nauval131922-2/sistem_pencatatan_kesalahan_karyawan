@@ -212,6 +212,7 @@ export default function OrderProduksiClient() {
   useEffect(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
     const saved = localStorage.getItem('orderProduksiState');
     if (saved) {
@@ -220,9 +221,9 @@ export default function OrderProduksiClient() {
         const sessionDate = parsed.sessionDate ? new Date(parsed.sessionDate) : null;
         if (sessionDate) sessionDate.setHours(0, 0, 0, 0);
 
-        // Jika ganti hari, paksa ke hari ini. Jika hari yang sama, gunakan yang tersimpan.
+        // Jika ganti hari, paksa ke awal bulan ini. Jika hari yang sama, gunakan yang tersimpan.
         if (!sessionDate || sessionDate.getTime() !== today.getTime()) {
-          setStartDate(today);
+          setStartDate(startOfMonth);
           setEndDate(today);
         } else {
           if (parsed.startDate) setStartDate(new Date(parsed.startDate));
@@ -232,9 +233,10 @@ export default function OrderProduksiClient() {
         if (parsed.lastUpdated) setLastUpdated(parsed.lastUpdated);
       } catch(e) {}
     } else {
-      setStartDate(today);
+      setStartDate(startOfMonth);
       setEndDate(today);
     }
+
   }, []);
 
   const handleFetch = async () => {
@@ -650,7 +652,7 @@ export default function OrderProduksiClient() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-gray-100">
                     {paginatedData.map((order: any, idx) => {
                       const isSelected = selectedIds.has(order.id);
                       return (
@@ -714,7 +716,7 @@ export default function OrderProduksiClient() {
                     'bg-red-50 text-red-600 border-red-100'
                   }`}>
                     <span className="animate-pulse">⚡</span>
-                    <span>{loadTime}ms</span>
+                    <span>{(loadTime / 1000).toFixed(2)}s</span>
                   </span>
                 )}
                 {loading && page > 1 && (

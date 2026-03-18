@@ -31,7 +31,10 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [lastSelectedId, setLastSelectedId] = useState<number | null>(null);
+  const [loadTime, setLoadTime] = useState<number | null>(null);
+
 
   // Column Resizing State
   const [columnWidths, setColumnWidths] = useState({
@@ -60,8 +63,11 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
+    const startTime = performance.now();
     try {
       const res = await getUsers();
+      const endTime = performance.now();
+      setLoadTime(Math.round(endTime - startTime));
       if (res.success && res.users) {
         setUsers(res.users as User[]);
       } else {
@@ -74,9 +80,21 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
     }
   }, []);
 
+
   useEffect(() => {
     loadUsers();
   }, [loadUsers]);
+
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sikka_data_updated') {
+        loadUsers();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [loadUsers]);
+
 
   useEffect(() => {
     setIsSearching(true);
@@ -155,6 +173,45 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
     });
   };
 
+  const toggleSelectRow = (id: number, e: React.MouseEvent) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+
+      if (e.shiftKey && lastSelectedId !== null) {
+        // Range selection with Shift+Click
+        const currentIndex = filteredUsers.findIndex((u) => u.id === id);
+        const lastIndex = filteredUsers.findIndex((u) => u.id === lastSelectedId);
+
+        if (currentIndex !== -1 && lastIndex !== -1) {
+          const start = Math.min(currentIndex, lastIndex);
+          const end = Math.max(currentIndex, lastIndex);
+          for (let i = start; i <= end; i++) {
+            next.add(filteredUsers[i].id);
+          }
+        }
+      } else if (e.ctrlKey || e.metaKey) {
+        // Toggle single with Ctrl/Cmd+Click
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+      } else {
+        // Single select (toggle off if already selected exclusively)
+        if (next.has(id) && next.size === 1) {
+          next.clear();
+        } else {
+          next.clear();
+          next.add(id);
+        }
+      }
+
+      setLastSelectedId(id);
+      return next;
+    });
+  };
+
+
   const SortIcon = ({ sortKey }: { sortKey: string }) => {
     if (sortConfig?.key !== sortKey) return <div className="w-3" />;
     return sortConfig.direction === 'asc' ? <ChevronUp size={14} className="text-green-600" /> : <ChevronDown size={14} className="text-green-600" />;
@@ -191,9 +248,11 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
         try {
           const result = await deleteUser(id);
           if (result.success) {
+            localStorage.setItem('sikka_data_updated', Date.now().toString());
             setMessage({ type: 'success', text: 'User berhasil dihapus.' });
             loadUsers();
           } else {
+
             setMessage({ type: 'error', text: result.message || 'Gagal menghapus user.' });
           }
         } catch (error) {
@@ -332,7 +391,7 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
             <thead className="sticky top-0 bg-gray-50/95 backdrop-blur-md z-10 border-b border-gray-100">
               <tr className="text-[10px] text-gray-400 font-extrabold uppercase tracking-widest">
                 <th 
-                  className="px-6 py-4 relative group cursor-pointer hover:bg-gray-100/50 transition-colors"
+                  className="px-6 py-4 relative group cursor-pointer hover:bg-gray-100/50 transition-colors border-r border-gray-100"
                   style={{ width: columnWidths.profile }}
                   onClick={() => toggleSort('name')}
                 >
@@ -344,8 +403,9 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
                     <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
                   </div>
                 </th>
+
                 <th 
-                  className="px-6 py-4 relative group cursor-pointer hover:bg-gray-100/50 transition-colors"
+                  className="px-6 py-4 relative group cursor-pointer hover:bg-gray-100/50 transition-colors border-r border-gray-100"
                   style={{ width: columnWidths.role }}
                   onClick={() => toggleSort('role')}
                 >
@@ -357,6 +417,7 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
                     <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
                   </div>
                 </th>
+
                 <th className="px-6 py-4 relative group" style={{ width: columnWidths.action }}>
                   <div className="text-right pr-4">Manajemen</div>
                   <div 
@@ -368,7 +429,7 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-100">
               {loading ? (
                 Array(5).fill(0).map((_, i) => (
                   <tr key={i} className="animate-pulse">
@@ -403,14 +464,15 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
                 </tr>
               ) : (
                 filteredUsers.map((user, idx) => {
-                  const isSelected = lastSelectedId === user.id;
+                  const isSelected = selectedIds.has(user.id);
                   return (
                     <tr 
                       key={user.id} 
-                      onClick={() => setLastSelectedId(user.id)}
-                      className={`transition-all duration-150 group h-14 cursor-pointer select-none ${isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : `${idx % 2 === 1 ? 'bg-slate-50/20' : 'bg-white'} hover:bg-green-50/40`}`}
+                      onClick={(e) => toggleSelectRow(user.id, e)}
+                      className={`transition-all duration-150 group h-14 cursor-pointer select-none border-b border-gray-100 ${isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : `${idx % 2 === 1 ? 'bg-slate-50/20' : 'bg-white'} hover:bg-green-50/40`}`}
                     >
-                      <td className="px-6 py-2 truncate relative">
+
+                      <td className="px-6 py-2 truncate relative border-r border-gray-100">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center text-white font-black text-[10px] shadow-sm shrink-0 overflow-hidden ring-1 ring-black/5">
                           {user.photo ? (
@@ -424,7 +486,7 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-2">
+                    <td className="px-6 py-2 border-r border-gray-100">
                       <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-tight inline-flex items-center gap-1.5 ${
                         user.role === 'Super Admin' 
                           ? 'bg-purple-50 text-purple-600 border border-purple-100/50' 
@@ -434,8 +496,10 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
                         {user.role}
                       </span>
                     </td>
+
                     <td className="px-6 py-2">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                      <div className={`flex items-center justify-end gap-2 transition-all duration-200 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+
                         <button 
                           onClick={() => handleEdit(user)}
                           className="h-8 px-3 rounded-lg border border-gray-200 text-gray-400 hover:text-green-600 hover:border-green-100 hover:bg-green-50 text-[11px] font-bold transition-all flex items-center gap-1.5"
@@ -463,11 +527,35 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
         </div>
       </div>
 
-      <div className="flex items-center justify-between px-1 shrink-0">
+      <div className="flex items-center justify-between px-1 shrink-0 mt-auto">
         <span className="text-[12px] font-bold text-gray-400">
           Menampilkan {filteredUsers.length} dari {users.length} total pengguna sistem
         </span>
+        <div className="flex items-center gap-4">
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
+              <span className="text-[12px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
+              <button 
+                onClick={() => setSelectedIds(new Set())}
+                className="text-[12px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
+              >
+                Batal
+              </button>
+            </div>
+          )}
+          {loadTime !== null && (
+            <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
+              loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+              loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+              'bg-red-50 text-red-600 border-red-100'
+            }`}>
+              <span className="animate-pulse">⚡</span>
+              <span>{(loadTime / 1000).toFixed(2)}s</span>
+            </span>
+          )}
+        </div>
       </div>
+
 
       {showModal && (
         <UserFormModal 

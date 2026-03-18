@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getSession } from '@/lib/session';
 import { apiError, validateRequest } from '@/lib/api-utils';
+import { logActivity } from '@/lib/activity';
+
 
 export const dynamic = 'force-dynamic';
 
@@ -66,7 +68,10 @@ export async function GET(req: NextRequest) {
     query += ` ORDER BY i.date DESC, i.id DESC`;
 
     const result = await db.execute({ sql: query, args: params });
+
     return NextResponse.json({ data: result.rows });
+
+
   } catch (err: any) {
     console.error('Infractions GET error:', err);
     return apiError('Failed to fetch infractions', 500, { stack: err.stack });
@@ -88,9 +93,10 @@ export async function POST(req: NextRequest) {
       data = await req.formData();
       // Convert FormData to plain object
       const plain: any = {};
-      data.forEach((value, key) => {
+      data.forEach((value: FormDataEntryValue, key: string) => {
         plain[key] = value;
       });
+
       data = plain;
     }
 

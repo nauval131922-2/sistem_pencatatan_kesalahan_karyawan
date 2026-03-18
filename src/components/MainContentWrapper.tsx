@@ -42,6 +42,14 @@ export default function MainContentWrapper({
     };
   }, [router]);
 
+  useEffect(() => {
+    // Signal other tabs on navigation or refresh to update activity logs/stats
+    if (pathname && !pathname.startsWith('/login')) {
+      localStorage.setItem('sikka_data_updated', Date.now().toString());
+    }
+  }, [pathname]);
+
+
   const isLoginPage = pathname?.startsWith('/login');
 
   if (isLoginPage) {

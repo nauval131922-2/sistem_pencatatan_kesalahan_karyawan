@@ -194,6 +194,7 @@ export default function SalesReportClient() {
   useEffect(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
     const saved = localStorage.getItem('salesReportState');
     if (saved) {
@@ -202,9 +203,9 @@ export default function SalesReportClient() {
         const sessionDate = parsed.sessionDate ? new Date(parsed.sessionDate) : null;
         if (sessionDate) sessionDate.setHours(0, 0, 0, 0);
 
-        // Jika ganti hari, paksa ke hari ini. Jika hari yang sama, gunakan yang tersimpan.
+        // Jika ganti hari, paksa ke awal bulan ini. Jika hari yang sama, gunakan yang tersimpan.
         if (!sessionDate || sessionDate.getTime() !== today.getTime()) {
-          setStartDate(today);
+          setStartDate(startOfMonth);
           setEndDate(today);
         } else {
           if (parsed.startDate) setStartDate(new Date(parsed.startDate));
@@ -214,9 +215,10 @@ export default function SalesReportClient() {
         if (parsed.lastUpdated) setLastUpdated(parsed.lastUpdated);
       } catch(e) {}
     } else {
-      setStartDate(today);
+      setStartDate(startOfMonth);
       setEndDate(today);
     }
+
   }, []);
 
   const handleFetch = async () => {
@@ -389,9 +391,16 @@ export default function SalesReportClient() {
       if (next.has(id)) next.delete(id);
       else next.add(id);
     } else {
-      next.clear();
-      next.add(id);
+      // Single click (no modifier)
+      if (next.has(id)) {
+        // If already selected, deselect (toggle off)
+        next.clear();
+      } else {
+        next.clear();
+        next.add(id);
+      }
     }
+
     setLastSelectedId(id);
     setSelectedIds(next);
   };
@@ -499,18 +508,7 @@ export default function SalesReportClient() {
                   <span>Diperbarui: {lastUpdated}</span>
                 </div>
               )}
-              {selectedIds.size > 0 && (
-                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                  <span className="text-gray-200">|</span>
-                  <span className="text-[11px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
-                  <button 
-                    onClick={() => setSelectedIds(new Set())}
-                    className="text-[11px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
-                  >
-                    Batal
-                  </button>
-                </div>
-              )}
+
             </div>
             
             {loading && data !== null && (
@@ -576,7 +574,7 @@ export default function SalesReportClient() {
                   <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
                     <tr className="text-[13px] text-gray-400 font-bold uppercase tracking-wider">
                       <th 
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        className="px-5 py-3.5 border-r border-gray-100 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.tgl }}
                         onClick={() => toggleSort('tgl')}
                       >
@@ -584,7 +582,7 @@ export default function SalesReportClient() {
                         <div className="resizer" onMouseDown={(e) => startResizing('tgl', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        className="px-5 py-3.5 border-r border-gray-100 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.faktur }}
                         onClick={() => toggleSort('faktur')}
                       >
@@ -592,7 +590,7 @@ export default function SalesReportClient() {
                         <div className="resizer" onMouseDown={(e) => startResizing('faktur', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        className="px-5 py-3.5 border-r border-gray-100 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.nama_prd }}
                         onClick={() => toggleSort('nama_prd')}
                       >
@@ -600,7 +598,7 @@ export default function SalesReportClient() {
                         <div className="resizer" onMouseDown={(e) => startResizing('nama_prd', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        className="px-5 py-3.5 border-r border-gray-100 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.nama_pelanggan }}
                         onClick={() => toggleSort('nama_pelanggan')}
                       >
@@ -608,7 +606,7 @@ export default function SalesReportClient() {
                         <div className="resizer" onMouseDown={(e) => startResizing('nama_pelanggan', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                        className="px-5 py-3.5 border-r border-gray-100 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.kd_barang }}
                         onClick={() => toggleSort('kd_barang')}
                       >
@@ -616,7 +614,7 @@ export default function SalesReportClient() {
                         <div className="resizer" onMouseDown={(e) => startResizing('kd_barang', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
-                        className="px-5 py-3.5 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors" 
+                        className="px-5 py-3.5 border-r border-gray-100 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.qty }}
                         onClick={() => toggleSort('qty')}
                       >
@@ -624,7 +622,7 @@ export default function SalesReportClient() {
                         <div className="resizer" onMouseDown={(e) => startResizing('qty', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
                       <th 
-                        className="px-5 py-3.5 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors" 
+                        className="px-5 py-3.5 border-r border-gray-100 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors" 
                         style={{ width: columnWidths.harga }}
                         onClick={() => toggleSort('harga')}
                       >
@@ -639,43 +637,45 @@ export default function SalesReportClient() {
                         <div className="flex items-center justify-end gap-2 nowrap overflow-hidden">TOTAL <SortIcon config={sortConfig} sortKey="jumlah" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('jumlah', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
+
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-gray-100">
                     {paginatedData.map((row: any, idx) => {
                       const isSelected = selectedIds.has(row.id);
                       return (
                       <tr 
                         key={row.id || idx} 
                         onClick={(e) => toggleSelectRow(row.id, e)}
-                        className={`transition-all duration-150 group h-11 cursor-pointer select-none ${
+                        className={`transition-all duration-150 group h-11 cursor-pointer select-none border-b border-gray-100 ${
                           isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : idx % 2 === 1 ? 'bg-slate-50/20' : 'bg-white'
                         } hover:bg-green-50/40`}
                       >
-                        <td className={`px-5 py-1 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
+                        <td className={`px-5 py-1 border-r border-gray-100 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
                           {formatIndoDateStr(row.tgl)}
                         </td>
-                        <td className={`px-5 py-1 text-[13px] font-bold tracking-tight transition-colors ${isSelected ? 'text-green-600' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 border-r border-gray-100 text-[13px] font-bold tracking-tight transition-colors ${isSelected ? 'text-green-600' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {row.faktur}
                         </td>
-                        <td className={`px-5 py-1 font-bold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 border-r border-gray-100 font-bold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {row.nama_prd || '–'}
                         </td>
-                        <td className={`px-5 py-1 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-600' : 'text-gray-500 group-hover:text-gray-700'}`}>
+                        <td className={`px-5 py-1 border-r border-gray-100 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-600' : 'text-gray-500 group-hover:text-gray-700'}`}>
                           {row.nama_pelanggan || '–'}
                         </td>
-                        <td className={`px-5 py-1 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-600' : 'text-gray-500 group-hover:text-gray-700'}`}>
+                        <td className={`px-5 py-1 border-r border-gray-100 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-600' : 'text-gray-500 group-hover:text-gray-700'}`}>
                           {row.kd_barang || '–'}
                         </td>
-                        <td className={`px-5 py-1 text-right font-bold text-[13px] transition-colors tabular-nums ${isSelected ? 'text-green-700' : 'text-gray-600 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 border-r border-gray-100 text-right font-bold text-[13px] transition-colors tabular-nums ${isSelected ? 'text-green-700' : 'text-gray-600 group-hover:text-gray-900'}`}>
                           {row.qty ? new Intl.NumberFormat('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(row.qty) : '0,00'}
                         </td>
-                        <td className={`px-5 py-1 text-right font-bold text-[13px] transition-colors ${isSelected ? 'text-green-700' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 border-r border-gray-100 text-right font-bold text-[13px] transition-colors ${isSelected ? 'text-green-700' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {row.harga ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 2 }).format(row.harga) : '-'}
                         </td>
                         <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors ${isSelected ? 'text-green-700' : 'text-emerald-600 group-hover:text-emerald-700'}`}>
                           {row.jumlah ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 2 }).format(row.jumlah) : '-'}
                         </td>
+
                       </tr>
                     )})}
                   </tbody>
@@ -685,12 +685,23 @@ export default function SalesReportClient() {
 
             {/* Footer info Banner */}
             <div className="flex items-center justify-between shrink-0">
+              <span className="text-[12px] font-bold text-gray-400">
+                {totalCount === 0
+                  ? 'Tidak ada data tersedia'
+                  : `Menampilkan ${paginatedData.length} dari ${totalCount} data penjualan`}
+              </span>
               <div className="flex items-center gap-4">
-                <span className="text-[12px] font-bold text-gray-400">
-                  {totalCount === 0
-                    ? 'Tidak ada data tersedia'
-                    : `Menampilkan ${paginatedData.length} dari ${totalCount} data penjualan`}
-                </span>
+                {selectedIds.size > 0 && (
+                  <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
+                    <span className="text-[12px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
+                    <button 
+                      onClick={() => setSelectedIds(new Set())}
+                      className="text-[12px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                )}
                 {loadTime !== null && (
                   <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
                     loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
@@ -698,10 +709,11 @@ export default function SalesReportClient() {
                     'bg-red-50 text-red-600 border-red-100'
                   }`}>
                     <span className="animate-pulse">⚡</span>
-                    <span>{loadTime}ms</span>
+                    <span>{(loadTime / 1000).toFixed(2)}s</span>
                   </span>
                 )}
               </div>
+
               
               {loading && page > 1 && (
                 <div className="flex items-center gap-2 text-green-600 font-bold text-[11px] animate-pulse">

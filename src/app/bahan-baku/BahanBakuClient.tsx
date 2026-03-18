@@ -203,6 +203,7 @@ export default function BahanBakuClient() {
   useEffect(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
     const saved = localStorage.getItem('bahanBakuState');
     if (saved) {
@@ -211,9 +212,9 @@ export default function BahanBakuClient() {
         const sessionDate = parsed.sessionDate ? new Date(parsed.sessionDate) : null;
         if (sessionDate) sessionDate.setHours(0, 0, 0, 0);
 
-        // Jika ganti hari, paksa ke hari ini. Jika hari yang sama, gunakan yang tersimpan.
+        // Jika ganti hari, paksa ke awal bulan ini. Jika hari yang sama, gunakan yang tersimpan.
         if (!sessionDate || sessionDate.getTime() !== today.getTime()) {
-          setStartDate(today);
+          setStartDate(startOfMonth);
           setEndDate(today);
         } else {
           if (parsed.startDate) setStartDate(new Date(parsed.startDate));
@@ -223,9 +224,10 @@ export default function BahanBakuClient() {
         if (parsed.lastUpdated) setLastUpdated(parsed.lastUpdated);
       } catch(e) {}
     } else {
-      setStartDate(today);
+      setStartDate(startOfMonth);
       setEndDate(today);
     }
+
   }, []);
 
   const handleFetch = async () => {
@@ -525,18 +527,7 @@ export default function BahanBakuClient() {
                   <span>Diperbarui: {lastUpdated}</span>
                 </div>
               )}
-              {selectedIds.size > 0 && (
-                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                  <span className="text-gray-200">|</span>
-                  <span className="text-[11px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
-                  <button 
-                    onClick={() => setSelectedIds(new Set())}
-                    className="text-[11px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
-                  >
-                    Batal
-                  </button>
-                </div>
-              )}
+
             </div>
             
             {loading && data !== null && (
@@ -715,7 +706,7 @@ export default function BahanBakuClient() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-gray-100">
                     {paginatedData.map((item: any, idx) => {
                       const isSelected = selectedIds.has(item.id);
                       return (
@@ -783,7 +774,7 @@ export default function BahanBakuClient() {
                     'bg-red-50 text-red-600 border-red-100'
                   }`}>
                     <span className="animate-pulse">⚡</span>
-                    <span>{loadTime}ms</span>
+                    <span>{(loadTime / 1000).toFixed(2)}s</span>
                   </span>
                 )}
                 {loading && page > 1 && (

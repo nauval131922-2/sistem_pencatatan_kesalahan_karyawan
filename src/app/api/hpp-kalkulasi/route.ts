@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import * as xlsx from "xlsx";
 import { getSession } from "@/lib/session";
+import { logActivity } from "@/lib/activity";
+
 
 export const dynamic = 'force-dynamic';
 
@@ -21,8 +23,9 @@ export async function GET(request: NextRequest) {
       const result = await db.execute(`SELECT * FROM hpp_kalkulasi ORDER BY id ASC`);
       data = result.rows;
     }
-    
+
     return NextResponse.json({ success: true, data });
+
   } catch (error: any) {
     return NextResponse.json(
       { error: "Gagal mengambil data HPP Kalkulasi", details: error.message },
@@ -64,6 +67,7 @@ export async function POST(request: NextRequest) {
     for (const row of rawData) {
       let namaOrder = '';
       let hppValue = 0;
+      let keterangan = '';
 
       for (const key of Object.keys(row)) {
         const lowerKey = key.toLowerCase().trim();
@@ -75,17 +79,20 @@ export async function POST(request: NextRequest) {
             val = val.replace(/[^0-9,-]+/g, "").replace(',', '.');
           }
           hppValue = parseFloat(val) || 0;
+        } else if (lowerKey.includes('keterangan')) {
+          keterangan = String(row[key] || '').trim();
         }
       }
 
-      if (!namaOrder || hppValue <= 0) continue;
+      if (!namaOrder) continue;
 
       batchOps.push({
-        sql: `INSERT INTO hpp_kalkulasi (nama_order, hpp_kalkulasi) VALUES (?, ?)`,
-        args: [namaOrder, hppValue]
+        sql: `INSERT INTO hpp_kalkulasi (nama_order, hpp_kalkulasi, keterangan) VALUES (?, ?, ?)`,
+        args: [namaOrder, hppValue, keterangan || null]
       });
       importedCount++;
     }
+
 
     // Execute batch
     await db.batch(batchOps, "write");

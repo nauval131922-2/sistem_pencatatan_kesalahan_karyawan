@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import RecordsForm from './RecordsForm';
 import InfractionsTable from './InfractionsTable/InfractionsTable';
@@ -46,18 +47,31 @@ export default function RecordsTabs({ employees, orders, infractions: initialInf
     }
   }, [currentPeriod]);
 
-  const handleEdit = (inf: any) => {
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sikka_data_updated') {
+        refreshInfractions();
+        router.refresh();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [refreshInfractions, router]);
+
+
+  const handleEdit = useCallback((inf: any) => {
     setEditingInfraction(inf);
     setActiveTab('form');
-  };
+  }, [pathname, searchParams, router]);
 
-  const handleCancelEdit = () => {
+  const handleCancelEdit = useCallback(() => {
     setEditingInfraction(null);
-  };
+  }, []);
 
-  const handlePeriodChange = (start: string, end: string) => {
+  const handlePeriodChange = useCallback((start: string, end: string) => {
     setCurrentPeriod({ start, end });
-  };
+  }, []);
+
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden min-h-0">

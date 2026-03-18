@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { apiError } from "@/lib/api-utils";
+import { logActivity } from "@/lib/activity";
+
 
 export const dynamic = 'force-dynamic';
 
@@ -77,6 +79,7 @@ export async function GET(request: NextRequest) {
     const lastUpdated = lastScrape ? lastScrape.value : lastUpdatedRaw;
 
     return NextResponse.json({
+
       success: true,
       data: records,
       total,
@@ -84,6 +87,7 @@ export async function GET(request: NextRequest) {
       page,
       limit
     });
+
   } catch (error: any) {
     console.error("Fetch orders error:", error);
     return apiError("Failed to fetch orders", 500, { details: error.message });

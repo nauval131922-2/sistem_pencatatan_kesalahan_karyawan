@@ -3,6 +3,8 @@
 import db from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { getSession } from '@/lib/session';
+import { logActivity } from '@/lib/activity';
+
 
 // Helper to check Super Admin authorization
 async function requireSuperAdmin() {
@@ -32,8 +34,10 @@ export async function getUsers() {
       photo: row.photo ? String(row.photo) : null,
       created_at: row.created_at ? String(row.created_at) : null
     }));
-
+    
     return { success: true, users };
+
+
   } catch (error: any) {
     return { success: false, message: error.message || 'Terjadi kesalahan sistem' };
   }

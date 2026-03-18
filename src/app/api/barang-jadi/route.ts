@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
+import { logActivity } from "@/lib/activity";
+
 
 export const dynamic = 'force-dynamic';
 
@@ -76,6 +78,7 @@ export async function GET(request: Request) {
     const lastUpdated = lastScrape ? lastScrape.value : lastUpdatedRaw;
 
     return NextResponse.json({
+
       success: true,
       data: records,
       total,
@@ -83,6 +86,7 @@ export async function GET(request: Request) {
       page,
       limit
     });
+
   } catch (error: any) {
     console.error("Fetch barang-jadi error:", error);
     return NextResponse.json(

@@ -13,7 +13,7 @@ import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 
 import { useInfractionsData, useInfractionsFilter, useInfractionsSelection } from './hooks';
 import type { Infraction } from './types';
-import { formatDateToYYYYMMDD, formatIndoDateStr } from '@/lib/utils/date-formatters';
+import { formatDateToYYYYMMDD, formatIndoDateStr, parseLocalDate } from '@/lib/utils/date-formatters';
 
 const PAGE_SIZE = 50;
 
@@ -58,10 +58,11 @@ export default function InfractionsTable({
     endDate,
     setEndDate,
     fetchFilteredData,
+    loadTime,
   } = useInfractionsData({
     initial: infractions,
-    initialStartDate: initialStartDate ? new Date(initialStartDate) : undefined,
-    initialEndDate: initialEndDate ? new Date(initialEndDate) : undefined,
+    initialStartDate: initialStartDate ? parseLocalDate(initialStartDate) : undefined,
+    initialEndDate: initialEndDate ? parseLocalDate(initialEndDate) : undefined,
     onPeriodChange,
   });
 
@@ -96,7 +97,19 @@ export default function InfractionsTable({
   const resizingRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
   const isResizingDone = useRef(false);
 
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sikka_data_updated') {
+        fetchFilteredData();
+        router.refresh();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [fetchFilteredData, router]);
+
   // Column resize handlers (unchanged)
+
   const startResizing = (key: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -521,7 +534,7 @@ export default function InfractionsTable({
 
       {/* Search & Info Group */}
       <div className="flex flex-col gap-3 shrink-0">
-        {(query || isRefreshing || selectedIds.size > 0) && (
+        {(query || isRefreshing) && (
           <div className="flex items-center justify-between px-1 shrink-0 animate-in fade-in slide-in-from-top-1 duration-200">
             <div className="flex items-center gap-3">
               {query && filtered.length !== data.length && (
@@ -539,20 +552,7 @@ export default function InfractionsTable({
                 </div>
               )}
 
-              {selectedIds.size > 0 && (
-                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                  <span className="text-gray-200 text-xs mx-1">|</span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-[11px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
-                    <button 
-                      onClick={clearSelection}
-                      className="text-[11px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
-                    >
-                      Batal
-                    </button>
-                  </div>
-                </div>
-              )}
+
             </div>
           </div>
         )}
@@ -570,12 +570,18 @@ export default function InfractionsTable({
       </div>
 
       {/* Table */}
-      <div className="flex-1 flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden min-h-0">
+      <div className={`flex-1 flex flex-col bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden min-h-0 transition-opacity duration-300 relative ${isRefreshing ? 'opacity-60' : 'opacity-100'}`}>
+        {isRefreshing && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/5 backdrop-blur-[1px]">
+            {/* Minimalist loading - actually the spinner is already in the filter panel, but this overlay prevents clicks and confirms something is happening */}
+          </div>
+        )}
         <div className="overflow-auto flex-1 min-h-0 custom-scrollbar" onScroll={handleScroll}>
+
           <table className="text-left relative border-collapse table-fixed" style={{ width: Object.values(columnWidths).reduce((a, b) => a + b, 0), minWidth: '100%' }}>
             <thead className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-md">
               <tr className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider">
-                <th className="px-6 py-3 border-b border-gray-100 relative group" style={{ width: columnWidths.action }}>
+                <th className="px-6 py-3 border-r border-gray-100 border-b border-gray-100 relative group" style={{ width: columnWidths.action }}>
                   Action
                   <div 
                     className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
@@ -584,7 +590,7 @@ export default function InfractionsTable({
                     <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
                   </div>
                 </th>
-                <th className="px-6 py-3 border-b border-gray-100 relative group cursor-pointer hover:bg-gray-100/50" style={{ width: columnWidths.faktur }} onClick={() => handleSort('faktur')}>
+                <th className="px-6 py-3 border-r border-gray-100 border-b border-gray-100 relative group cursor-pointer hover:bg-gray-100/50" style={{ width: columnWidths.faktur }} onClick={() => handleSort('faktur')}>
                   <div className="flex items-center gap-2">Faktur <SortIcon config={sortConfig} sortKey="faktur" /></div>
                   <div 
                     className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
@@ -593,7 +599,7 @@ export default function InfractionsTable({
                     <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
                   </div>
                 </th>
-                <th className="px-6 py-3 border-b border-gray-100 relative group cursor-pointer hover:bg-gray-100/50" style={{ width: columnWidths.date }} onClick={() => handleSort('date')}>
+                <th className="px-6 py-3 border-r border-gray-100 border-b border-gray-100 relative group cursor-pointer hover:bg-gray-100/50" style={{ width: columnWidths.date }} onClick={() => handleSort('date')}>
                   <div className="flex items-center gap-2">Tanggal Kesalahan <SortIcon config={sortConfig} sortKey="date" /></div>
                   <div 
                     className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
@@ -602,7 +608,7 @@ export default function InfractionsTable({
                     <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
                   </div>
                 </th>
-                <th className="px-6 py-3 border-b border-gray-100 relative group cursor-pointer hover:bg-gray-100/50" style={{ width: columnWidths.employee }} onClick={() => handleSort('employee')}>
+                <th className="px-6 py-3 border-r border-gray-100 border-b border-gray-100 relative group cursor-pointer hover:bg-gray-100/50" style={{ width: columnWidths.employee }} onClick={() => handleSort('employee')}>
                   <div className="flex items-center gap-2">Karyawan <SortIcon config={sortConfig} sortKey="employee" /></div>
                   <div 
                     className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
@@ -611,7 +617,7 @@ export default function InfractionsTable({
                     <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
                   </div>
                 </th>
-                <th className="px-6 py-3 border-b border-gray-100 relative group cursor-pointer hover:bg-gray-100/50" style={{ width: columnWidths.description }} onClick={() => handleSort('description')}>
+                <th className="px-6 py-3 border-r border-gray-100 border-b border-gray-100 relative group cursor-pointer hover:bg-gray-100/50" style={{ width: columnWidths.description }} onClick={() => handleSort('description')}>
                   <div className="flex items-center gap-2">Deskripsi <SortIcon config={sortConfig} sortKey="description" /></div>
                   <div 
                     className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
@@ -620,7 +626,7 @@ export default function InfractionsTable({
                     <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
                   </div>
                 </th>
-                <th className="px-6 py-3 border-b border-gray-100 relative group cursor-pointer hover:bg-gray-100/50" style={{ width: columnWidths.item }} onClick={() => handleSort('item')}>
+                <th className="px-6 py-3 border-r border-gray-100 border-b border-gray-100 relative group cursor-pointer hover:bg-gray-100/50" style={{ width: columnWidths.item }} onClick={() => handleSort('item')}>
                   <div className="flex items-center gap-2">Item Detail <SortIcon config={sortConfig} sortKey="item" /></div>
                   <div 
                     className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
@@ -629,7 +635,7 @@ export default function InfractionsTable({
                     <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
                   </div>
                 </th>
-                <th className="px-6 py-3 text-right border-b border-gray-100 relative group cursor-pointer hover:bg-gray-100/50" style={{ width: columnWidths.qty }} onClick={() => handleSort('qty')}>
+                <th className="px-6 py-3 border-r border-gray-100 text-right border-b border-gray-100 relative group cursor-pointer hover:bg-gray-100/50" style={{ width: columnWidths.qty }} onClick={() => handleSort('qty')}>
                   <div className="flex items-center justify-end gap-2">Qty <SortIcon config={sortConfig} sortKey="qty" /></div>
                   <div 
                     className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
@@ -638,7 +644,7 @@ export default function InfractionsTable({
                     <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
                   </div>
                 </th>
-                <th className="px-6 py-3 text-right border-b border-gray-100 relative group cursor-pointer hover:bg-gray-100/50" style={{ width: columnWidths.harga }} onClick={() => handleSort('harga')}>
+                <th className="px-6 py-3 border-r border-gray-100 text-right border-b border-gray-100 relative group cursor-pointer hover:bg-gray-100/50" style={{ width: columnWidths.harga }} onClick={() => handleSort('harga')}>
                   <div className="flex items-center justify-end gap-2">Harga <SortIcon config={sortConfig} sortKey="harga" /></div>
                   <div 
                     className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
@@ -647,7 +653,7 @@ export default function InfractionsTable({
                     <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
                   </div>
                 </th>
-                <th className="px-6 py-3 text-right border-b border-gray-100 relative group cursor-pointer hover:bg-gray-100/50 font-bold" style={{ width: columnWidths.total }} onClick={() => handleSort('total')}>
+                 <th className="px-6 py-3 border-r border-gray-100 border-b border-gray-100 relative group cursor-pointer hover:bg-gray-100/50 font-bold" style={{ width: columnWidths.total }} onClick={() => handleSort('total')}>
                   <div className="flex items-center justify-end gap-2 text-gray-800">Total Beban <SortIcon config={sortConfig} sortKey="total" /></div>
                   <div 
                     className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
@@ -656,7 +662,7 @@ export default function InfractionsTable({
                     <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
                   </div>
                 </th>
-                <th className="px-6 py-3 border-b border-gray-100 relative group cursor-pointer hover:bg-gray-100/50" style={{ width: columnWidths.reference }} onClick={() => handleSort('reference')}>
+                <th className="px-6 py-3 border-r border-gray-100 border-b border-gray-100 relative group cursor-pointer hover:bg-gray-100/50" style={{ width: columnWidths.reference }} onClick={() => handleSort('reference')}>
                   <div className="flex items-center gap-2">Reference <SortIcon config={sortConfig} sortKey="reference" /></div>
                   <div 
                     className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
@@ -665,9 +671,10 @@ export default function InfractionsTable({
                     <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
                   </div>
                 </th>
+
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-100">
               {paginated.length === 0 ? (
                 <tr>
                   <td colSpan={10}>
@@ -694,13 +701,13 @@ export default function InfractionsTable({
                     <tr 
                       key={inf.id} 
                       onClick={(e) => handleRowClick(inf.id, e)}
-                      className={`transition-all group relative select-none cursor-pointer ${
+                      className={`transition-all group relative select-none border-b border-gray-100 cursor-pointer ${
                         isSelected 
                           ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' 
                           : `hover:bg-green-50/30 ${isOdd ? 'bg-gray-50/40' : 'bg-white'}`
                       }`}
                     >
-                      <td className="px-6 py-2.5 whitespace-nowrap overflow-hidden">
+                      <td className="px-6 py-2.5 border-r border-gray-100 whitespace-nowrap overflow-hidden">
                         <div className={`flex items-center gap-1.5 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
                           <button
                             onClick={(e) => { e.stopPropagation(); generateSinglePDF(inf); }}
@@ -726,16 +733,16 @@ export default function InfractionsTable({
                           </button>
                         </div>
                       </td>
-                      <td className={`px-6 py-2.5 text-[11px] font-bold transition-colors whitespace-nowrap overflow-hidden ${isSelected ? 'text-green-600' : 'text-gray-400'}`}>
+                      <td className={`px-6 py-2.5 border-r border-gray-100 text-[11px] font-bold transition-colors whitespace-nowrap overflow-hidden ${isSelected ? 'text-green-600' : 'text-gray-400'}`}>
                         {inf.faktur || '-'}
                       </td>
-                      <td className={`px-6 py-2.5 text-[13px] font-bold transition-colors whitespace-nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-500'}`}>
+                      <td className={`px-6 py-2.5 border-r border-gray-100 text-[13px] font-bold transition-colors whitespace-nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-500'}`}>
                         <div className="flex items-center gap-2">
                           <Calendar size={13} className={isSelected ? 'text-green-500' : 'text-gray-300'} />
                           {formatIndoDateStr(inf.date)}
                         </div>
                       </td>
-                      <td className="px-6 py-2.5 overflow-hidden">
+                      <td className="px-6 py-2.5 border-r border-gray-100 overflow-hidden">
                         <p className={`font-bold text-[14px] leading-snug transition-colors ${isSelected ? 'text-green-900' : 'text-gray-800'}`}>
                           {inf.employee_name || 'Karyawan Dihapus'}
                         </p>
@@ -745,12 +752,12 @@ export default function InfractionsTable({
                           </p>
                         )}
                       </td>
-                      <td className="px-6 py-2.5 overflow-hidden">
+                      <td className="px-6 py-2.5 border-r border-gray-100 overflow-hidden">
                         <p className={`text-[13px] leading-relaxed line-clamp-2 transition-colors ${isSelected ? 'text-green-800/80' : 'text-gray-500'}`} title={inf.description}>
                           {inf.description || '-'}
                         </p>
                       </td>
-                      <td className="px-6 py-2.5 overflow-hidden">
+                      <td className="px-6 py-2.5 border-r border-gray-100 overflow-hidden">
                         <div className={`font-bold text-[13px] truncate transition-colors ${isSelected ? 'text-green-900' : 'text-gray-800'}`} title={inf.nama_barang_display || inf.nama_barang || ''}>
                           {inf.nama_barang_display || inf.nama_barang || '-'}
                         </div>
@@ -760,22 +767,23 @@ export default function InfractionsTable({
                           </span>
                         </div>
                       </td>
-                      <td className={`px-6 py-2.5 text-right tabular-nums text-[13px] font-bold transition-colors overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-600'}`}>
+                      <td className={`px-6 py-2.5 border-r border-gray-100 text-right tabular-nums text-[13px] font-bold transition-colors overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-600'}`}>
                         {inf.jumlah || 0}
                       </td>
-                      <td className={`px-6 py-2.5 text-right tabular-nums text-[13px] font-medium transition-colors overflow-hidden ${isSelected ? 'text-green-600/60' : 'text-gray-400'}`}>
+                      <td className={`px-6 py-2.5 border-r border-gray-100 text-right tabular-nums text-[13px] font-medium transition-colors overflow-hidden ${isSelected ? 'text-green-600/60' : 'text-gray-400'}`}>
                         {inf.harga ? inf.harga.toLocaleString('id-ID') : '-'}
                       </td>
-                      <td className={`px-6 py-2.5 text-right tabular-nums text-[14px] font-black transition-colors overflow-hidden ${isSelected ? 'text-green-600' : 'text-emerald-600'}`}>
+                      <td className={`px-6 py-2.5 border-r border-gray-100 text-right tabular-nums text-[14px] font-black transition-colors overflow-hidden ${isSelected ? 'text-green-600' : 'text-emerald-600'}`}>
                         {inf.total ? inf.total.toLocaleString('id-ID') : '-'}
                       </td>
-                      <td className="px-6 py-2.5 overflow-hidden">
+                      <td className="px-6 py-2.5 border-r border-gray-100 overflow-hidden">
                         {(inf.order_name_display || inf.order_name) ? (
                           <span className={`inline-block px-2 py-1 rounded-lg border font-bold truncate transition-colors ${isSelected ? 'bg-green-100 border-green-200 text-green-700' : 'bg-slate-50 border-slate-100 text-slate-400'}`} title={inf.order_name_display || inf.order_name || ''}>
                             {inf.order_name_display || inf.order_name}
                           </span>
                         ) : '-'}
                       </td>
+
                     </tr>
                   );
                 })
@@ -791,6 +799,30 @@ export default function InfractionsTable({
             ? 'Tidak ada data tersedia'
             : `Menampilkan ${paginated.length} dari ${filtered.length} riwayat kesalahan terdata`}
         </span>
+        <div className="flex items-center gap-4">
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
+              <span className="text-[12px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
+              <button 
+                onClick={clearSelection}
+                className="text-[12px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
+              >
+                Batal
+              </button>
+            </div>
+          )}
+          {loadTime !== null && (
+            <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
+              loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+              loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+              'bg-red-50 text-red-600 border-red-100'
+            }`}>
+              <span className="animate-pulse">⚡</span>
+              <span>{(loadTime / 1000).toFixed(2)}s</span>
+            </span>
+          )}
+        </div>
+
       </div>
 
       <ConfirmDialog
