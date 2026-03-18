@@ -29,7 +29,8 @@ async function DashboardStats() {
       icon: AlertTriangle, 
       classes: 'bg-amber-50 text-amber-500', 
       href: '/stats',
-      subtitle: `${new Date().toLocaleString('id-ID', { month: 'long' })}`
+      subtitle: `${new Date().toLocaleString('id-ID', { month: 'long', timeZone: 'Asia/Jakarta' })}`
+
     },
     { 
       title: 'Kesalahan Hari Ini', 

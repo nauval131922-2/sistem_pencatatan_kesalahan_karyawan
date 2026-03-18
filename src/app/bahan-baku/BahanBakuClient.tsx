@@ -179,8 +179,10 @@ export default function BahanBakuClient() {
             if (!isNaN(latestDate.getTime())) {
               const timestamp = latestDate.toLocaleString('id-ID', {
                 day: '2-digit', month: 'short', year: 'numeric',
-                hour: '2-digit', minute: '2-digit', second: '2-digit'
+                hour: '2-digit', minute: '2-digit', second: '2-digit',
+                timeZone: 'Asia/Jakarta'
               });
+
               setLastUpdated(timestamp);
             } else {
               setLastUpdated(null);
