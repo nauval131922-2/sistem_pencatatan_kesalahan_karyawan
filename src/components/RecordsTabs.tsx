@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import RecordsForm from './RecordsForm';
-import InfractionsTable from './InfractionsTable';
+import InfractionsTable from './InfractionsTable/InfractionsTable';
 import { ClipboardList, PlusCircle, Pencil } from 'lucide-react';
 
 type RecordsTabsProps = {
