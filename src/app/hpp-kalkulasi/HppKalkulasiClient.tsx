@@ -164,14 +164,40 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
     setUploading(true);
     setError('');
 
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
+      // 1. IMPORT XLSX (Dynamic import)
+      const XLSX = await import('xlsx');
+
+      // 2. READ FILE
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, {
+        cellFormula: false,
+        cellHTML: false,
+        cellStyles: false,
+        cellText: false,
+        cellDates: false
+      });
+
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const rawData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+      if (rawData.length === 0) {
+        throw new Error("File Excel kosong atau format tidak sesuai.");
+      }
+
+      // 3. SEND JSON TO API
       const res = await fetch('/api/hpp-kalkulasi', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          filename: file.name,
+          data: rawData
+        }),
       });
+
 
       const json = await res.json();
       

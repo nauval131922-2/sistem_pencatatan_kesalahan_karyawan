@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
-import * as xlsx from "xlsx";
+
 import { getSession } from "@/lib/session";
+
 import { logActivity } from "@/lib/activity";
 
 
@@ -36,27 +37,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const file = formData.get("file") as File;
+    const { filename, data: rawData } = await request.json();
 
-    if (!file) {
-      return NextResponse.json({ error: "File Excel tidak ditemukan" }, { status: 400 });
+    if (!rawData || !Array.isArray(rawData) || rawData.length === 0) {
+       return NextResponse.json({ error: "Data Excel kosong atau format tidak sesuai." }, { status: 400 });
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    // Parse Excel workbook
-    const workbook = xlsx.read(buffer, { type: "buffer" });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-
-    // Convert sheet to JSON array
-    const rawData: any[] = xlsx.utils.sheet_to_json(worksheet, { defval: "" });
-
-    if (rawData.length === 0) {
-       return NextResponse.json({ error: "File Excel kosong atau format tidak sesuai." }, { status: 400 });
-    }
 
     // Prepare batch operations
     const batchOps: any[] = [
@@ -107,7 +93,8 @@ export async function POST(request: NextRequest) {
         'hpp_kalkulasi', 
         0, 
         `Upload HPP Kalkulasi dari Excel (${importedCount} data)`, 
-        JSON.stringify({ fileName: file.name, imported: importedCount }),
+        JSON.stringify({ fileName: filename, imported: importedCount }),
+
         session?.username || 'System'
       ]
     });

@@ -33,13 +33,40 @@ export default function ExcelUpload() {
     setMessage('');
 
     try {
+      // 1. IMPORT XLSX (Dynamic import to keep bundle small)
+      const XLSX = await import('xlsx');
+      
+      // 2. READ FILE LOCALLY
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, {
+        cellFormula: false,
+        cellHTML: false,
+        cellStyles: false,
+        cellText: false,
+        cellDates: false
+      });
+
+      const SHEET_NAME = 'A.DATA KARYAWAN';
+      if (!workbook.SheetNames.includes(SHEET_NAME)) {
+        setStatus('error');
+        setMessage(`Sheet "${SHEET_NAME}" tidak ditemukan.`);
+        return;
+      }
+
+      const sheet = workbook.Sheets[SHEET_NAME];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+      // 3. SEND PARSED DATA (JSON) TO API
+      // We only send the rows, which is MUCH smaller than the original file
       const res = await fetch('/api/employees/import-raw', {
         method: 'POST',
         headers: {
-          'x-filename': file.name,
-          'Content-Type': file.type || 'application/octet-stream',
+          'Content-Type': 'application/json',
         },
-        body: file, // Send file directly as raw binary
+        body: JSON.stringify({
+          filename: file.name,
+          rows: rows
+        }),
       });
 
       const data = await res.json();
@@ -57,9 +84,11 @@ export default function ExcelUpload() {
         setMessage(data.error || data.message || 'Gagal mengimpor data.');
       }
     } catch (err: any) {
+      console.error('Upload Error:', err);
       setStatus('error');
-      setMessage('Terjadi kesalahan koneksi atau sistem.');
+      setMessage('Terjadi kesalahan saat membaca file atau koneksi.');
     }
+
     // Reset file input
     if (fileRef.current) fileRef.current.value = '';
   };

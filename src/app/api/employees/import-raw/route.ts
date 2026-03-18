@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as XLSX from 'xlsx';
+
 import db from '@/lib/db';
 import { getSession } from '@/lib/session';
 
@@ -13,39 +13,14 @@ const COL_J = 9; // Jabatan/Bagian
 
 export async function POST(req: NextRequest) {
   try {
-    const filename = req.headers.get('x-filename') || 'uploaded_file.xlsx';
-    const contentLength = req.headers.get('content-length');
-    console.log(`[IMPORT-RAW] Received request for: ${filename}`);
-    console.log(`[IMPORT-RAW] Content-Length header: ${contentLength}`);
+    const { filename, rows } = await req.json();
 
-    const arrayBuffer = await req.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    
-    console.log(`[IMPORT-RAW] Buffer size: ${buffer.length} bytes`);
-    console.log(`[IMPORT-RAW] Buffer header (hex): ${buffer.slice(0, 8).toString('hex')}`);
-    
-    if (contentLength && parseInt(contentLength) !== buffer.length) {
-      console.warn(`[IMPORT-RAW] Mismatch: Content-Length ${contentLength} vs Received ${buffer.length}`);
+    if (!rows || !Array.isArray(rows)) {
+      return NextResponse.json({ error: 'Data tidak valid.' }, { status: 400 });
     }
 
-    const workbook = XLSX.read(buffer, { 
-      type: 'buffer',
-      cellFormula: false,
-      cellHTML: false,
-      cellStyles: false,
-      cellText: false,
-      cellDates: false
-    });
-
-    if (!workbook.SheetNames.includes(SHEET_NAME)) {
-      return NextResponse.json({
-        error: `Sheet "${SHEET_NAME}" tidak ditemukan. Sheet yang ada: ${workbook.SheetNames.join(', ')}`
-      }, { status: 400 });
-    }
-
-    const sheet = workbook.Sheets[SHEET_NAME];
-    const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
     const dataRows = rows.slice(START_ROW - 1);
+
 
     const batchOps: any[] = [
         { sql: `UPDATE employees SET is_active = 0 WHERE employee_no IS NOT NULL AND employee_no != ''`, args: [] }
