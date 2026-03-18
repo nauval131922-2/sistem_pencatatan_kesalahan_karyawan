@@ -309,21 +309,6 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                 </span>
               </div>
             )}
-
-            {selectedIds.size > 0 && (
-              <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                <span className="text-gray-200 text-xs mx-1">|</span>
-                <div className="flex items-center gap-3">
-                  <span className="text-[11px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
-                  <button 
-                    onClick={() => setSelectedIds(new Set())}
-                    className="text-[11px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
-                  >
-                    Batal
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
         <div className="relative w-full shrink-0 group">
