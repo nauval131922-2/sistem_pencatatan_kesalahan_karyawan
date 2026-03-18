@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
+import { apiError } from "@/lib/api-utils";
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
@@ -13,7 +14,7 @@ export async function GET(request: Request) {
     const toDate = searchParams.get('to') || '';
     const offset = (page - 1) * limit;
 
-    const dateFilterSQL = (fromDate && toDate) 
+    const dateFilterSQL = (fromDate && toDate)
       ? ` AND (substr(tgl, 7, 4) || '-' || substr(tgl, 4, 2) || '-' || substr(tgl, 1, 2) BETWEEN ? AND ?)`
       : ``;
 
@@ -26,18 +27,18 @@ export async function GET(request: Request) {
       const query = `%${search}%`;
       const baseArgs = [query, query, query];
       if (fromDate && toDate) { baseArgs.push(fromDate, toDate); }
-      
+
       sqlRecords = `
-        SELECT id, faktur, nama_prd, nama_pelanggan, tgl, qty, satuan, created_at 
-        FROM orders 
+        SELECT id, faktur, nama_prd, nama_pelanggan, tgl, qty, satuan, created_at
+        FROM orders
         WHERE (nama_prd LIKE ? OR nama_pelanggan LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
-        ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
+        ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC
         LIMIT ? OFFSET ?
       `;
       argsRecords = [...baseArgs, limit, offset];
 
       sqlTotal = `
-        SELECT COUNT(*) as count FROM orders 
+        SELECT COUNT(*) as count FROM orders
         WHERE (nama_prd LIKE ? OR nama_pelanggan LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
       `;
       argsTotal = baseArgs;
@@ -46,10 +47,10 @@ export async function GET(request: Request) {
       if (fromDate && toDate) { baseArgs.push(fromDate, toDate); }
 
       sqlRecords = `
-        SELECT id, faktur, nama_prd, nama_pelanggan, tgl, qty, satuan, created_at 
-        FROM orders 
+        SELECT id, faktur, nama_prd, nama_pelanggan, tgl, qty, satuan, created_at
+        FROM orders
         ${(fromDate && toDate) ? `WHERE 1=1 ${dateFilterSQL}` : ''}
-        ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
+        ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC
         LIMIT ? OFFSET ?
       `;
       argsRecords = [...baseArgs, limit, offset];
@@ -84,9 +85,7 @@ export async function GET(request: Request) {
       limit
     });
   } catch (error: any) {
-    return NextResponse.json(
-      { error: "Failed to fetch cached orders", details: error.message },
-      { status: 500 }
-    );
+    console.error("Fetch orders error:", error);
+    return apiError("Failed to fetch orders", 500, { details: error.message });
   }
 }
