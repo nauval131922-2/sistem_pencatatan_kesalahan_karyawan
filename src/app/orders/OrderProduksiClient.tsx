@@ -8,8 +8,8 @@ function SortIcon({ config, sortKey }: { config: any, sortKey: string }) {
   if (config.key !== sortKey || !config.direction) {
     return <ArrowUpDown size={12} className="text-gray-300 transition-opacity" />;
   }
-  return config.direction === 'asc' 
-    ? <ArrowUp size={12} className="text-green-600" /> 
+  return config.direction === 'asc'
+    ? <ArrowUp size={12} className="text-green-600" />
     : <ArrowDown size={12} className="text-green-600" />;
 }
 
@@ -81,7 +81,7 @@ export default function OrderProduksiClient() {
 
   const resizerRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
   const widthsRef = useRef(columnWidths);
-  
+
   useEffect(() => {
     widthsRef.current = columnWidths;
   }, [columnWidths]);
@@ -162,7 +162,7 @@ export default function OrderProduksiClient() {
       try {
         const res = await fetch(`/api/orders?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}&from=${formatDateToYYYYMMDD(startDate)}&to=${formatDateToYYYYMMDD(endDate)}&_t=${Date.now()}`);
         if (!active) return;
-        
+
         if (res.ok) {
           const json = await res.json();
           if (!json.success) {
@@ -228,7 +228,7 @@ export default function OrderProduksiClient() {
           if (parsed.startDate) setStartDate(new Date(parsed.startDate));
           if (parsed.endDate) setEndDate(new Date(parsed.endDate));
         }
-        
+
         if (parsed.lastUpdated) setLastUpdated(parsed.lastUpdated);
       } catch(e) {}
     } else {
@@ -252,7 +252,7 @@ export default function OrderProduksiClient() {
     setIsBatching(true);
     setLoading(true);
     setBatchProgress(0);
-    
+
     let successCount = 0;
     let totalScraped = 0;
     let totalNewInserted = 0;
@@ -282,7 +282,7 @@ export default function OrderProduksiClient() {
         setBatchStatus(`Memproses ${completedChunks}/${chunks.length} bulan...`);
       }
     };
-    
+
     try {
       // Parallel execution with concurrency limit 15 (Pol Mentok)
       const concurrency = 15;
@@ -295,10 +295,10 @@ export default function OrderProduksiClient() {
       });
 
       await Promise.all(workers);
-      
+
       setBatchProgress(100);
       setBatchStatus('Selesai! Memperbarui tampilan...');
-      
+
       if (successCount > 0) {
         // Clear batch state immediately before dialog to avoid stuck UI
         setIsBatching(false);
@@ -321,12 +321,12 @@ export default function OrderProduksiClient() {
 
         // Trigger refresh
         setRefreshKey(prev => prev + 1);
-        
+
         const failCount = chunks.length - successCount;
-        const message = failCount > 0 
-          ? `Selesai dengan catatan: ${successCount} bulan berhasil, ${failCount} bulan gagal.` 
+        const message = failCount > 0
+          ? `Selesai dengan catatan: ${successCount} bulan berhasil, ${failCount} bulan gagal.`
           : `Berhasil menarik data untuk ${successCount} periode (Parallel Sync).`;
-        
+
         setDialog({
           isOpen: true,
           type: failCount > 0 ? 'alert' : 'success',
@@ -414,8 +414,14 @@ export default function OrderProduksiClient() {
       if (next.has(id)) next.delete(id);
       else next.add(id);
     } else {
-      next.clear();
-      next.add(id);
+      // Single click (no modifier)
+      if (next.has(id)) {
+        // If already selected, deselect (toggle off)
+        next.clear();
+      } else {
+        next.clear();
+        next.add(id);
+      }
     }
     setLastSelectedId(id);
     setSelectedIds(next);
@@ -451,7 +457,7 @@ export default function OrderProduksiClient() {
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Rentang Tanggal</span>
               <div className="flex items-center gap-2">
                 <div className="w-[140px] relative group">
-                  <DatePicker 
+                  <DatePicker
                     name="startDate"
                     value={startDate}
                     onChange={setStartDate}
@@ -459,7 +465,7 @@ export default function OrderProduksiClient() {
                 </div>
                 <div className="w-4 h-[1px] bg-gray-200 mx-1"></div>
                 <div className="w-[140px] relative group">
-                  <DatePicker 
+                  <DatePicker
                     name="endDate"
                     value={endDate}
                     onChange={setEndDate}
@@ -476,15 +482,15 @@ export default function OrderProduksiClient() {
                   {batchStatus}
                 </div>
                 <div className="w-24 h-1 bg-gray-50 rounded-full mt-1.5 overflow-hidden border border-gray-100">
-                  <div 
-                    className="h-full bg-green-500 transition-all duration-300" 
+                  <div
+                    className="h-full bg-green-500 transition-all duration-300"
                     style={{ width: `${batchProgress}%` }}
                   />
                 </div>
               </div>
             )}
-            
-            <button 
+
+            <button
               key={isBatching ? "btn-syncing" : "btn-idle"}
               onClick={handleFetch}
               disabled={loading || isBatching || !startDate || !endDate}
@@ -523,21 +529,8 @@ export default function OrderProduksiClient() {
                   <span>Diperbarui: {lastUpdated}</span>
                 </div>
               )}
-
-              {selectedIds.size > 0 && (
-                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                  <span className="text-gray-200">|</span>
-                  <span className="text-[11px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
-                  <button 
-                    onClick={() => setSelectedIds(new Set())}
-                    className="text-[11px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
-                  >
-                    Batal
-                  </button>
-                </div>
-              )}
             </div>
-            
+
             {loading && data !== null && (
               <div className="flex items-center gap-2 text-[11px] font-bold text-green-600 animate-pulse bg-green-50 px-2.5 py-1 rounded-full border border-green-100">
                 <Loader2 size={12} className="animate-spin" />
@@ -548,9 +541,9 @@ export default function OrderProduksiClient() {
 
           <div className="relative w-full group">
             <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-            <input 
-              type="text" 
-              placeholder="Cari faktur, produk, pelanggan..." 
+            <input
+              type="text"
+              placeholder="Cari faktur, produk, pelanggan..."
               className="w-full pl-12 pr-4 h-12 bg-white border border-gray-200 rounded-[14px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
               value={searchQuery}
               onChange={handleSearch}
@@ -563,7 +556,7 @@ export default function OrderProduksiClient() {
             <AlertCircle size={40} className="text-rose-200 mb-4" />
             <h3 className="text-sm font-bold text-rose-800 mb-1">Gagal Memuat Data</h3>
             <p className="text-xs text-rose-500 max-w-md font-medium">{error}</p>
-            <button 
+            <button
               onClick={() => setRefreshKey(prev => prev + 1)}
               className="mt-4 px-4 py-2 bg-rose-500 text-white rounded-lg text-xs font-bold hover:bg-rose-600 transition-colors"
             >
@@ -601,54 +594,54 @@ export default function OrderProduksiClient() {
           <>
             <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] overflow-hidden flex-1 flex flex-col min-h-0 relative">
               <div className="overflow-auto custom-scrollbar flex-1 min-h-0" onScroll={handleScroll}>
-                <table 
-                  className="text-left relative border-collapse table-fixed" 
+                <table
+                  className="text-left relative border-collapse table-fixed"
                   style={{ width: totalTableWidth, minWidth: '100%' }}
                 >
                   <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
                     <tr className="text-[13px] text-gray-400 font-bold uppercase tracking-wider">
-                      <th 
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                      <th
+                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors border-r border-gray-100"
                         style={{ width: columnWidths.faktur }}
                         onClick={() => toggleSort('faktur')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">NO. FAKTUR <SortIcon config={sortConfig} sortKey="faktur" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('faktur', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
-                      <th 
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                      <th
+                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors border-r border-gray-100"
                         style={{ width: columnWidths.nama_prd }}
                         onClick={() => toggleSort('nama_prd')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">NAMA PRODUK <SortIcon config={sortConfig} sortKey="nama_prd" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('nama_prd', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
-                      <th 
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                      <th
+                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors border-r border-gray-100"
                         style={{ width: columnWidths.nama_pelanggan }}
                         onClick={() => toggleSort('nama_pelanggan')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">PELANGGAN <SortIcon config={sortConfig} sortKey="nama_pelanggan" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('nama_pelanggan', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
-                      <th 
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                      <th
+                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors border-r border-gray-100"
                         style={{ width: columnWidths.tgl }}
                         onClick={() => toggleSort('tgl')}
                       >
                         <div className="flex items-center gap-2 nowrap overflow-hidden">TANGGAL <SortIcon config={sortConfig} sortKey="tgl" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('tgl', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
-                      <th 
-                        className="px-5 py-3.5 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors" 
+                      <th
+                        className="px-5 py-3.5 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors border-r border-gray-100"
                         style={{ width: columnWidths.qty }}
                         onClick={() => toggleSort('qty')}
                       >
                         <div className="flex items-center justify-end gap-2 nowrap overflow-hidden">QTY ORDER <SortIcon config={sortConfig} sortKey="qty" /></div>
                         <div className="resizer" onMouseDown={(e) => startResizing('qty', e)} onClick={(e) => e.stopPropagation()} />
                       </th>
-                      <th 
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors" 
+                      <th
+                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors"
                         style={{ width: columnWidths.satuan }}
                         onClick={() => toggleSort('satuan')}
                       >
@@ -661,28 +654,28 @@ export default function OrderProduksiClient() {
                     {paginatedData.map((order: any, idx) => {
                       const isSelected = selectedIds.has(order.id);
                       return (
-                      <tr 
-                        key={order.id || idx} 
+                      <tr
+                        key={order.id || idx}
                         onClick={(e) => toggleSelectRow(order.id, e)}
-                        className={`transition-all duration-150 group h-11 cursor-pointer select-none ${
-                          isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : idx % 2 === 1 ? 'bg-slate-50/20' : 'bg-white'
+                        className={`transition-all duration-150 group h-11 cursor-pointer select-none border-b border-gray-100 ${
+                          isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : idx % 2 === 1 ? 'bg-slate-50/40' : 'bg-white'
                         } hover:bg-green-50/40`}
                       >
-                        <td className={`px-5 py-1 font-bold text-[13px] tracking-tight transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-500'}`}>
+                        <td className={`px-5 py-1 font-bold text-[13px] tracking-tight transition-colors nowrap overflow-hidden border-r border-gray-100 ${isSelected ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-500'}`}>
                           {order.faktur}
                         </td>
-                        <td className={`px-5 py-1 font-bold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <td className={`px-5 py-1 font-bold text-[13px] transition-colors nowrap overflow-hidden border-r border-gray-100 ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {order.nama_prd}
                         </td>
-                        <td className={`px-5 py-1 text-[13px] font-medium transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-500'}`}>
+                        <td className={`px-5 py-1 text-[13px] font-medium transition-colors nowrap overflow-hidden border-r border-gray-100 ${isSelected ? 'text-green-700' : 'text-gray-500'}`}>
                           <div className={`inline-block px-2.5 py-1 rounded-md transition-colors nowrap ${isSelected ? 'bg-green-100 text-green-700' : 'bg-slate-100/60 text-gray-500 border border-gray-100/50 group-hover:bg-white'}`}>
                             {order.nama_pelanggan || order.kd_pelanggan}
                           </div>
                         </td>
-                        <td className={`px-5 py-1 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
+                        <td className={`px-5 py-1 text-[13px] font-bold transition-colors nowrap overflow-hidden border-r border-gray-100 ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
                           {formatIndoDateStr(order.tgl)}
                         </td>
-                        <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
+                        <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors nowrap overflow-hidden border-r border-gray-100 ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
                           {Number(order.qty).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className={`px-5 py-1 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400'}`}>
@@ -696,13 +689,24 @@ export default function OrderProduksiClient() {
             </div>
 
             {/* Footer info Banner */}
-            <div className="flex items-center justify-between shrink-0">
+            <div className="flex items-center justify-between shrink-0 px-1">
+              <span className="text-[12px] font-bold text-gray-400">
+                {totalCount === 0
+                  ? 'Tidak ada data tersedia'
+                  : `Menampilkan ${paginatedData.length} dari ${totalCount} data order`}
+              </span>
               <div className="flex items-center gap-4">
-                <span className="text-[12px] font-bold text-gray-400">
-                  {totalCount === 0
-                    ? 'Tidak ada data tersedia'
-                    : `Menampilkan ${paginatedData.length} dari ${totalCount} data order`}
-                </span>
+                {selectedIds.size > 0 && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-[12px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
+                    <button 
+                      onClick={() => setSelectedIds(new Set())}
+                      className="text-[12px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                )}
                 {loadTime !== null && (
                   <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
                     loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
@@ -713,20 +717,19 @@ export default function OrderProduksiClient() {
                     <span>{loadTime}ms</span>
                   </span>
                 )}
+                {loading && page > 1 && (
+                  <div className="flex items-center gap-2 text-green-600 font-bold text-[11px] animate-pulse">
+                    <Loader2 size={12} className="animate-spin" />
+                    <span>Memuat hal. berikutnya...</span>
+                  </div>
+                )}
               </div>
-              
-              {loading && page > 1 && (
-                <div className="flex items-center gap-2 text-green-600 font-bold text-[11px] animate-pulse">
-                  <Loader2 size={12} className="animate-spin" />
-                  <span>Memuat hal. berikutnya...</span>
-                </div>
-              )}
             </div>
           </>
         )}
       </div>
 
-      <ConfirmDialog 
+      <ConfirmDialog
         isOpen={dialog.isOpen}
         type={dialog.type as any}
         title={dialog.title}
