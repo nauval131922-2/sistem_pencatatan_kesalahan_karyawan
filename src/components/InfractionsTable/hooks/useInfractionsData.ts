@@ -42,10 +42,10 @@ export function useInfractionsData({
   const fetchFilteredData = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      const formatDate = (d: Date) => {
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const d = String(d.getDate()).padStart(2, '0');
+      const formatDate = (date: Date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
         return `${y}-${m}-${d}`;
       };
 
