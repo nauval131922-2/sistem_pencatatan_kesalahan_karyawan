@@ -274,7 +274,13 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
       if (next.has(id)) next.delete(id);
       else next.add(id);
     } else {
-      next = new Set([id]);
+      // Single click (no modifier)
+      if (next.has(id)) {
+        // If already selected, deselect (toggle off)
+        next.clear();
+      } else {
+        next = new Set([id]);
+      }
     }
 
     setSelectedIds(next);
@@ -459,13 +465,13 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                     `}
                   >
                     <div 
-                      className={`px-6 py-1 text-xs whitespace-nowrap flex-shrink-0 overflow-hidden transition-colors ${isSelected ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-500'}`}
+                      className={`px-6 py-1 text-xs whitespace-nowrap flex-shrink-0 overflow-hidden transition-colors border-r border-gray-100 ${isSelected ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-500'}`}
                       style={{ width: columnWidths.datetime }}
                     >
                       {fmtDateTime(log.created_at)}
                     </div>
                     <div 
-                      className={`px-6 py-1 whitespace-nowrap flex-shrink-0 overflow-hidden transition-colors ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}
+                      className={`px-6 py-1 whitespace-nowrap flex-shrink-0 overflow-hidden transition-colors border-r border-gray-100 ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}
                       style={{ width: columnWidths.menu }}
                     >
                       <span className="text-[13px] font-bold block truncate">
@@ -473,7 +479,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                       </span>
                     </div>
                     <div 
-                      className="px-6 py-1 whitespace-nowrap flex-shrink-0 overflow-hidden text-[11px]"
+                      className="px-6 py-1 whitespace-nowrap flex-shrink-0 overflow-hidden text-[11px] border-r border-gray-100"
                       style={{ width: columnWidths.user }}
                     >
                       <span className={`font-bold px-2.5 py-1 rounded-md inline-block max-w-full truncate transition-colors ${isSelected ? 'bg-green-100 text-green-700' : 'bg-slate-100/60 text-gray-500 border border-gray-100/50 group-hover:bg-white'}`}>
@@ -481,7 +487,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                       </span>
                     </div>
                     <div 
-                      className={`px-6 py-1 text-[13px] flex-shrink-0 truncate overflow-hidden transition-colors ${isSelected ? 'text-green-700 font-medium' : 'text-gray-500'}`}
+                      className={`px-6 py-1 text-[13px] flex-shrink-0 truncate overflow-hidden transition-colors border-r border-gray-100 ${isSelected ? 'text-green-700 font-medium' : 'text-gray-500'}`}
                       style={{ width: columnWidths.keterangan }}
                     >
                       {log.message}
@@ -507,12 +513,23 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
       </div>
         
       {/* Footer info Banner outside the card for consistency */}
-      <div className="flex items-center justify-start shrink-0 px-1 mt-3">
+      <div className="flex items-center justify-between shrink-0 px-1 mt-3">
         <span className="text-[12px] font-bold text-gray-400">
-           {initialLogs.length === 0
-             ? 'Belum ada aktivitas'
-             : `Menampilkan ${sortedAndFiltered.length} dari ${initialLogs.length} total aktivitas`}
+          {initialLogs.length === 0
+            ? 'Belum ada aktivitas'
+            : `Menampilkan ${sortedAndFiltered.length} dari ${initialLogs.length} total aktivitas`}
         </span>
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-3">
+            <span className="text-[12px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
+            <button 
+              onClick={() => setSelectedIds(new Set())}
+              className="text-[12px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
+            >
+              Batal
+            </button>
+          </div>
+        )}
       </div>
 
       {selectedLog && (
