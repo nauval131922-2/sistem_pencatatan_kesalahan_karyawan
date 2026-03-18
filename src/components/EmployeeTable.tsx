@@ -313,14 +313,14 @@ export default function EmployeeTable({ employees, importInfo }: EmployeeTablePr
                     }}
                   >
                     <div 
-                      className="px-6 py-1 whitespace-nowrap text-center text-[12px] font-bold text-gray-300 group-hover:text-green-500 tabular-nums flex-shrink-0"
+                      className="px-6 py-1 whitespace-nowrap text-center text-[12px] font-bold text-gray-300 group-hover:text-green-500 tabular-nums flex-shrink-0 border-r border-gray-100"
                       style={{ width: columnWidths.no }}
                     >
                       {virtualRow.index+1}
                     </div>
                     
                     <div 
-                      className="px-6 py-1 whitespace-nowrap flex-shrink-0 overflow-hidden"
+                      className="px-6 py-1 whitespace-nowrap flex-shrink-0 overflow-hidden border-r border-gray-100"
                       style={{ width: columnWidths.name }}
                     >
                       <span className={`text-[13px] font-extrabold truncate block ${isSelected ? 'text-green-900' : 'text-gray-800'}`}>
@@ -329,7 +329,7 @@ export default function EmployeeTable({ employees, importInfo }: EmployeeTablePr
                     </div>
 
                     <div 
-                      className="px-6 py-1 flex-shrink-0"
+                      className="px-6 py-1 flex-shrink-0 border-r border-gray-100"
                       style={{ width: columnWidths.position }}
                     >
                       <span className="text-gray-500 text-[11px] font-bold bg-slate-100/60 px-2.5 py-1 rounded-md inline-block max-w-full truncate border border-gray-100/50 group-hover:bg-white transition-colors">
