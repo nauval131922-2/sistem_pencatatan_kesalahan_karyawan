@@ -162,8 +162,14 @@ export default function EmployeeTable({ employees, importInfo }: EmployeeTablePr
           next.add(id);
         }
       } else {
-        next.clear();
-        next.add(id);
+        // Single click (no modifier)
+        if (next.has(id)) {
+          // If already selected, deselect (toggle off)
+          next.clear();
+        } else {
+          next.clear();
+          next.add(id);
+        }
       }
       
       setLastSelectedId(id);
@@ -203,21 +209,6 @@ export default function EmployeeTable({ employees, importInfo }: EmployeeTablePr
                     <Clock size={12} className="text-gray-300" />
                     <span className="text-[11px] font-bold">Diperbarui: {importInfo.time}</span>
                   </div>
-                </div>
-              </div>
-            )}
-
-            {selectedIds.size > 0 && (
-              <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                <span className="text-gray-200 text-xs mx-1">|</span>
-                <div className="flex items-center gap-3">
-                  <span className="text-[11px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
-                  <button 
-                    onClick={() => setSelectedIds(new Set())}
-                    className="text-[11px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
-                  >
-                    Batal
-                  </button>
                 </div>
               </div>
             )}
@@ -315,7 +306,7 @@ export default function EmployeeTable({ employees, importInfo }: EmployeeTablePr
                   <div 
                     key={virtualRow.key}
                     onClick={(e) => handleRowClick(emp.id, e)}
-                    className={`flex items-center absolute top-0 left-0 w-full group select-none transition-colors ${isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : `hover:bg-green-50/30 ${isOdd ? 'bg-gray-50/40' : 'bg-white'}`}`}
+                    className={`flex items-center absolute top-0 left-0 w-full group select-none transition-colors border-b border-gray-100 ${isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : `hover:bg-green-50/30 ${isOdd ? 'bg-gray-50/40' : 'bg-white'}`}`}
                     style={{ 
                       height: `${virtualRow.size}px`,
                       transform: `translateY(${virtualRow.start}px)`
@@ -360,12 +351,23 @@ export default function EmployeeTable({ employees, importInfo }: EmployeeTablePr
       </div>
       
       {/* Footer info Banner outside the card for consistency */}
-      <div className="flex items-center justify-start shrink-0 px-1 mt-3">
+      <div className="flex items-center justify-between shrink-0 px-1 mt-3">
         <span className="text-[12px] font-bold text-gray-400">
-           {employees.length === 0
-             ? 'Belum ada data karyawan'
-             : `Menampilkan ${sortedAndFiltered.length} dari ${employees.length} total karyawan`}
+          {employees.length === 0
+            ? 'Belum ada data karyawan'
+            : `Menampilkan ${sortedAndFiltered.length} dari ${employees.length} total karyawan`}
         </span>
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-3">
+            <span className="text-[12px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
+            <button 
+              onClick={() => setSelectedIds(new Set())}
+              className="text-[12px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
+            >
+              Batal
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
