@@ -167,7 +167,12 @@ export default function ManualModal() {
             onClick={() => setIsOpen(false)}
           />
           
-          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300">
+          <div 
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+            className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300"
+          >
             {/* Header */}
             <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-emerald-50/50">
               <div className="flex items-center gap-3">
@@ -176,7 +181,7 @@ export default function ManualModal() {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[10px] font-bold text-emerald-600 mb-0.5">Detail Menu {currentGuide.title}</span>
-                  <h2 className="text-lg font-extrabold text-slate-800 flex items-center gap-2">
+                  <h2 id="modal-title" className="text-lg font-extrabold text-slate-800 flex items-center gap-2">
                     Bantuan & Panduan
                   </h2>
                 </div>
@@ -184,6 +189,7 @@ export default function ManualModal() {
               <button 
                 onClick={() => setIsOpen(false)}
                 className="p-2 hover:bg-white rounded-full text-slate-400 hover:text-red-500 transition-all"
+                aria-label="Tutup Panduan"
               >
                 <X size={18} />
               </button>

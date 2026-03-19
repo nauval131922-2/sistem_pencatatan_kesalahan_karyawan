@@ -1,37 +1,33 @@
-# AI Session Summary - Pengembangan SIKKA (18 Maret 2026)
+# AI Session Summary - Pengembangan SIKKA (19 Maret 2026)
 
-Sesi ini berfokus pada penyempurnaan fitur sinkronisasi data antar-tab, akurasi log aktivitas, dan peningkatan fungsionalitas HPP Kalkulasi.
+Sesi ini berfokus pada peningkatan interaksi pengguna (UX) melalui fitur klik ganda dan pembersihan audit aksesibilitas (A11y) sesuai standar Vercel Toolbar.
 
 ## ✅ Perubahan Utama
 
-### 1. Sinkronisasi Antar-Tab & Log Aktivitas (Refinement)
-- **Sinkronisasi Otomatis**: Menambahkan pendengar `localStorage ('sikka_data_updated')` di berbagai komponen utama (`InfractionsTable`, `ActivityTable`, `EmployeeTable`, `RecordsTabs`, dll). Sekarang, perubahan data di satu tab akan otomatis memicu `router.refresh()` di tab lain.
-- **Efisiensi Log**: Menghapus `logActivity('VIEW', ...)` dari sisi server (Server Actions & API Routes). Hal ini mencegah penumpukan log "Melihat..." yang tidak perlu akibat refresh otomatis di background.
-- **MainContentWrapper**: Menambahkan deteksi perubahan rute (`pathname`) untuk memastikan sinkronisasi data terjadi saat navigasi manual atau refresh halaman.
+### 1. Interaksi & Navigasi (Double-Click UX)
+- **Tabel Utama**: Menambahkan fitur **klik ganda (double-click)** pada baris tabel di dashboard (**Aktivitas Terkini**), manajemen (**Pencatatan Kesalahan**), dan **Kelola User**.
+- **Perilaku Selection**: Mengoptimalkan logika seleksi baris (`e.detail`) agar baris tetap terpilih saat melakukan klik ganda (mencegah deselect otomatis pada klik kedua).
+- **Aksi Cepat**: Klik ganda akan langsung membuka detail aktivitas (Dashboard) atau formulir edit (Kesalahan & User).
 
-### 2. Peningkatan Fitur HPP Kalkulasi
-- **Kolom Keterangan**: Menambahkan kolom `keterangan` pada tabel `hpp_kalkulasi` (Schema & UI).
-- **Impor Fleksibel**: Memperbarui parser Excel untuk mendukung kolom `keterangan` dan mengizinkan impor data meskipun nilai HPP-nya `0` atau kosong.
-- **Badge Keterangan**: Menampilkan badge 📌 keterangan pada form pencatatan kesalahan ketika kategori `HPP Kalkulasi` dipilih.
-- **Init-DB Script**: Menambahkan script `init-db:dev` untuk memudahkan sinkronisasi schema database development (`database_dev.sqlite`).
+### 2. Audit Aksesibilitas (A11y)
+- **Atribut Bahasa**: Mengubah `lang="en"` menjadi `lang="id"` pada `RootLayout` untuk mendukung SEO dan pembaca layar di Indonesia.
+- **Aria Labels**: Menambahkan kontras informasi pada tombol-tombol berbasis ikon (Pencil, Trash, PDF, Camera, X) menggunakan `aria-label`.
+- **Aria Roles**: Menambahkan `role="dialog"` dan `aria-modal="true"` pada modal panduan sistem (`ManualModal`) dan detail aktivitas.
+- **Header Tabel**: Menambahkan `role="button"` dan label deskriptif pada header tabel yang mendukung pengurutan (sorting).
 
-### 3. Monitoring & Analytics (Vercel)
-- **Integrasi Vercel Speed Insights**: Untuk memantau performa Real User Monitoring (Web Vitals).
-- **Integrasi Vercel Analytics**: Untuk memantau statistik pengunjung dan interaksi halaman di production.
-
-### 4. Perbaikan Bug & Optimasi
-- **Seleksi Data**: Memperbaiki bug pada `useInfractionsSelection` dan `InfractionsTable` yang menyebabkan seleksi data kacau saat tabel di-refresh atau data diperbarui (menggunakan `ref` untuk `selectedIds`).
-- **Format Tanggal**: Optimasi `date-formatters.ts` untuk konsistensi tampilan.
+### 3. Penyesuaian UI/UX Lainnya
+- **Default Sort**: Menghilangkan pengurutan default sisi klien pada tabel **Aktivitas Terkini** agar lebih efisien (tetap tampil terbaru dari server).
+- **Sidebar**: Menambahkan label aksesibilitas pada tombol toggle sidebar dan menu profil.
 
 ## 🚀 Status Saat Ini
 - **Branch**: `master`
-- **Terakhir Dikerjakan**: Form Pencatatan Kesalahan (Integrasi HPP Kalkulasi Note).
-- **Kondisi Database**: Schema terbaru sudah diaplikasikan di `database_dev.sqlite`.
+- **Kondisi Database**: Tidak ada perubahan skema (Stable).
+- **Audit Toolbar**: Sebagian besar isu aksesibilitas kritis sudah ditangani.
 
 ## 📝 Catatan Untuk Sesi Berikutnya (Rumah/Kantor)
-1. **Verifikasi Deploy**: Pastikan Vercel Speed Insights & Analytics muncul di dashboard Vercel setelah push.
-2. **Testing Cross-Tab**: Uji coba refresh otomatis Dashboard setelah melakukan perubahan di tab lain.
-3. **Impor Data**: Gunakan format Excel terbaru yang menyertakan kolom "Keterangan" untuk HPP Kalkulasi.
+1. **Verifikasi A11y**: Cek kembali skor aksesibilitas di Vercel Toolbar setelah push ke production.
+2. **Testing Double-Click**: Pastikan klik ganda terasa natural di semua perangkat (desktop/mobile).
+3. **Bahasa**: Pastikan elemen HTML sekarang terbaca sebagai bahasa Indonesia oleh browser.
 
 ---
-*Dibuat oleh AI Antigravity pada 18 Maret 2026, 21:59 WIB*
+*Dibuat oleh AI Antigravity pada 19 Maret 2026, 10:15 WIB*

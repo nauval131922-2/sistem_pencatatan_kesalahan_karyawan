@@ -50,7 +50,7 @@ export default async function RootLayout({
   } : null;
 
   return (
-    <html lang="en">
+    <html lang="id">
       <body className={jakarta.className}>
         <MainContentWrapper user={user}>
           {children}

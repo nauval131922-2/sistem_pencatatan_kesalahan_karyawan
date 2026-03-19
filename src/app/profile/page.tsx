@@ -177,6 +177,7 @@ export default function ProfilePage() {
                         onClick={() => fileInputRef.current?.click()}
                         className="absolute -bottom-2 -right-2 w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-xl flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95 border-4 border-white z-20"
                         title="Ubah Foto"
+                        aria-label="Ubah Foto Profil"
                       >
                         <Camera size={18} />
                       </button>

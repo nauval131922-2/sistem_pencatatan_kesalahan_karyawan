@@ -129,6 +129,7 @@ export default function Sidebar({ user }: SidebarProps) {
               setIsCollapsed(!isCollapsed);
               setIsHovered(false); // Reset hover state when toggling
             }}
+            aria-label={isCollapsed ? "Buka Sidebar" : "Tutup Sidebar"}
             className={`absolute -right-3 top-7 w-6 h-6 bg-white border border-gray-100 rounded-full flex items-center justify-center text-gray-400 hover:text-green-600 shadow-sm z-10 transition-colors ${
               !isExpanded && isCollapsed ? 'opacity-0 pointer-events-none' : 'opacity-100'
             }`}
@@ -224,6 +225,7 @@ export default function Sidebar({ user }: SidebarProps) {
           <>
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
+              aria-label="Menu Profil"
               className={`w-full flex items-center gap-2.5 p-1.5 rounded-lg transition-all hover:bg-gray-100 ${
                 isProfileOpen ? 'bg-white shadow-sm ring-1 ring-black/5' : ''
               } ${!isExpanded ? 'justify-center' : ''}`}
