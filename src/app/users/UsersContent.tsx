@@ -199,7 +199,10 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
       } else {
         // Single select (toggle off if already selected exclusively)
         if (next.has(id) && next.size === 1) {
-          next.clear();
+          // Only deselect if it's a single click
+          if (e.detail === 1) {
+            next.clear();
+          }
         } else {
           next.clear();
           next.add(id);
@@ -369,6 +372,7 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
           <button 
             onClick={() => setSearchImmediate('')}
             className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-gray-100 rounded-full text-gray-400 transition-colors"
+            aria-label="Hapus Pencarian"
           >
             <X size={16} />
           </button>
@@ -381,7 +385,7 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
         }`}>
           {message.type === 'success' ? <BadgeCheck size={18} /> : <AlertCircle size={18} />}
           <span className="font-bold">{message.text}</span>
-          <button onClick={() => setMessage(null)} className="ml-auto opacity-50 hover:opacity-100"><X size={16} /></button>
+          <button onClick={() => setMessage(null)} className="ml-auto opacity-50 hover:opacity-100" aria-label="Tutup Pesan"><X size={16} /></button>
         </div>
       )}
 
@@ -394,6 +398,8 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
                   className="px-6 py-4 relative group cursor-pointer hover:bg-gray-100/50 transition-colors border-r border-gray-100"
                   style={{ width: columnWidths.profile }}
                   onClick={() => toggleSort('name')}
+                  role="button"
+                  aria-label="Urutkan berdasarkan profil pengguna"
                 >
                   <div className="flex items-center gap-2">Profil Pengguna <SortIcon sortKey="name" /></div>
                   <div 
@@ -408,6 +414,8 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
                   className="px-6 py-4 relative group cursor-pointer hover:bg-gray-100/50 transition-colors border-r border-gray-100"
                   style={{ width: columnWidths.role }}
                   onClick={() => toggleSort('role')}
+                  role="button"
+                  aria-label="Urutkan berdasarkan jabatan"
                 >
                   <div className="flex items-center gap-2">Jabatan / Peran <SortIcon sortKey="role" /></div>
                   <div 
@@ -469,6 +477,7 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
                     <tr 
                       key={user.id} 
                       onClick={(e) => toggleSelectRow(user.id, e)}
+                      onDoubleClick={() => handleEdit(user)}
                       className={`transition-all duration-150 group h-14 cursor-pointer select-none border-b border-gray-100 ${isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : `${idx % 2 === 1 ? 'bg-slate-50/20' : 'bg-white'} hover:bg-green-50/40`}`}
                     >
 

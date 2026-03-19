@@ -40,7 +40,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
   const [isLoadingLive, setIsLoadingLive] = useState(false);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({
     key: 'created_at',
-    direction: 'desc'
+    direction: null
   });
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [lastSelectedId, setLastSelectedId] = useState<number | null>(null);
@@ -287,8 +287,10 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
     } else {
       // Single click (no modifier)
       if (next.has(id)) {
-        // If already selected, deselect (toggle off)
-        next.clear();
+        // Only deselect if it's a single click (not part of a double click)
+        if (e.detail === 1) {
+          next.clear();
+        }
       } else {
         next = new Set([id]);
       }
@@ -450,6 +452,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                     data-index={virtualRow.index}
                     ref={virtualizer.measureElement}
                     onClick={(e) => toggleSelectRow(log.id, e)}
+                    onDoubleClick={() => setSelectedLog(log)}
                     style={{
                       position: 'absolute',
                       top: 0,
@@ -564,6 +567,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
               <button
                 onClick={() => setSelectedLog(null)}
                 className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400 hover:text-slate-600"
+                aria-label="Tutup Detail"
               >
                 <X size={20} />
               </button>

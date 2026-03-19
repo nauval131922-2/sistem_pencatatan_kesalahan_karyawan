@@ -37,8 +37,10 @@ export function useInfractionsSelection(filteredData: Infraction[]) {
         } else {
           // Single select (replace selection)
           if (next.has(id)) {
-            // If already selected, deselect (toggle off)
-            next.clear();
+            // Only deselect if it's a single click (not part of a double click)
+            if (e.detail === 1) {
+              next.clear();
+            }
           } else {
             next.clear();
             next.add(id);

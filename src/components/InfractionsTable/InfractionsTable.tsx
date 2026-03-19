@@ -701,6 +701,7 @@ export default function InfractionsTable({
                     <tr 
                       key={inf.id} 
                       onClick={(e) => handleRowClick(inf.id, e)}
+                      onDoubleClick={() => onEdit?.(inf)}
                       className={`transition-all group relative select-none border-b border-gray-100 cursor-pointer ${
                         isSelected 
                           ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' 
@@ -721,6 +722,7 @@ export default function InfractionsTable({
                             onClick={(e) => { e.stopPropagation(); onEdit?.(inf); }}
                             className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
                             title="Edit Data"
+                            aria-label="Edit Data"
                           >
                             <Pencil size={15} />
                           </button>
@@ -728,6 +730,7 @@ export default function InfractionsTable({
                             onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(inf.id); }}
                             className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-all"
                             title="Hapus Data"
+                            aria-label="Hapus Data"
                           >
                             <Trash2 size={15} />
                           </button>
