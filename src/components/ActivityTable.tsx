@@ -89,16 +89,38 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
     document.body.style.cursor = 'col-resize';
   };
 
+  const isStaleRef = useRef(false);
+
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_data_updated') {
+    const handleRefresh = () => {
+      if (document.visibilityState === 'visible') {
         startTransition(() => {
           router.refresh();
         });
+        isStaleRef.current = false;
+      } else {
+        isStaleRef.current = true;
       }
     };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sikka_data_updated') {
+        handleRefresh();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isStaleRef.current) {
+        handleRefresh();
+      }
+    };
+
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [router]);
 
   useEffect(() => {

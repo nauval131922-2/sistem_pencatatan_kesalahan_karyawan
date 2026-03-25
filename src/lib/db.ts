@@ -94,9 +94,20 @@ const db = {
 
   async injectContext(menuContext?: string) {
     try {
-      const { getSession } = await import('./session');
-      const session = await getSession();
-      const username = session?.username || null;
+      // Check if we are in a request context by checking if 'cookies' can be called
+      const { cookies } = await import('next/headers');
+      let username = null;
+      
+      try {
+        // This will throw if called outside request scope (e.g. during initSchema)
+        const cookieStore = await cookies();
+        const { getSession } = await import('./session');
+        const session = await getSession();
+        username = session?.username || null;
+      } catch (e) {
+        // Outside request scope, skip session tracking
+        return;
+      }
 
       // Try to update with last_menu first
       try {
@@ -121,3 +132,8 @@ const db = {
 };
 
 export default db;
+
+// Auto-initialize schema on startup
+import('./schema').then(({ initSchema }) => {
+  initSchema(db).catch(e => console.error("[DB] Auto-initialization failed:", e));
+});

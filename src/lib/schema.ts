@@ -2,7 +2,19 @@ import path from 'path';
 import { initIndexing } from './db-indexing';
 
 export async function initSchema(db: any) {
-  // 1. Initialize core schema using batch for efficiency
+  // 1. Initial configuration for better concurrency
+  try {
+    const executor = db.client || db;
+    if (executor.execute) {
+      await executor.execute("PRAGMA busy_timeout = 5000;");
+      await executor.execute("PRAGMA journal_mode = WAL;");
+    }
+  } catch (e) {
+    // Ignore pragma errors
+  }
+
+  // 2. Initialize core schema using batch for efficiency
+  // All fields are consolidated here so NEW databases are perfect from start.
   await db.batch([
     `CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -11,6 +23,7 @@ export async function initSchema(db: any) {
       name TEXT NOT NULL,
       photo TEXT,
       role TEXT DEFAULT 'Admin',
+      recorded_by TEXT DEFAULT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`,
     `CREATE TABLE IF NOT EXISTS employees (
@@ -32,8 +45,25 @@ export async function initSchema(db: any) {
       date TEXT NOT NULL,
       recorded_by TEXT NOT NULL,
       order_name TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      faktur TEXT,
       updated_at DATETIME DEFAULT NULL,
+      jenis_barang TEXT,
+      nama_barang TEXT,
+      jenis_harga TEXT,
+      jumlah REAL,
+      harga REAL,
+      total REAL,
+      employee_name TEXT,
+      employee_position TEXT,
+      recorded_by_name TEXT,
+      recorded_by_position TEXT,
+      employee_no TEXT,
+      recorded_by_id INTEGER,
+      recorded_by_no TEXT,
+      order_faktur TEXT,
+      item_code TEXT,
+      item_faktur TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (employee_id) REFERENCES employees(id)
     );`,
     `CREATE TABLE IF NOT EXISTS activity_logs (
@@ -63,10 +93,24 @@ export async function initSchema(db: any) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       tgl TEXT,
       nama_barang TEXT NOT NULL,
+      kd_barang TEXT,
+      faktur TEXT,
+      faktur_prd TEXT,
+      faktur_aktifitas TEXT,
+      kd_cabang TEXT,
+      kd_gudang TEXT,
       qty REAL,
       satuan TEXT,
-      nama_prd TEXT NOT NULL,
+      status TEXT,
       hp REAL,
+      hp_total REAL,
+      keterangan TEXT,
+      fkt_hasil TEXT,
+      nama_prd TEXT NOT NULL,
+      aktifitas TEXT,
+      username TEXT,
+      kd_pelanggan TEXT,
+      recid TEXT,
       raw_data TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`,
@@ -74,10 +118,32 @@ export async function initSchema(db: any) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       tgl TEXT,
       nama_barang TEXT NOT NULL,
+      kd_barang TEXT,
+      faktur TEXT,
+      faktur_prd TEXT,
+      faktur_so TEXT,
+      kd_cabang TEXT,
+      kd_gudang TEXT,
+      qty_wip_awal REAL,
       qty REAL,
-      satuan TEXT,
-      nama_prd TEXT NOT NULL,
+      qty_wip_akhir REAL,
+      total_berat_kg REAL,
+      pers_alokasi_hp REAL,
+      mtd_alokasi_hp TEXT,
+      tgl_expired TEXT,
+      selesai INTEGER,
+      status INTEGER,
       hp REAL,
+      hp_total REAL,
+      bbb REAL,
+      btkl REAL,
+      bop REAL,
+      keterangan TEXT,
+      username TEXT,
+      kd_pelanggan TEXT,
+      qty_order REAL,
+      qty_so REAL,
+      recid TEXT,
       raw_data TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`,
@@ -91,16 +157,27 @@ export async function initSchema(db: any) {
 
     `CREATE TABLE IF NOT EXISTS sales_reports (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      faktur TEXT,
+      kd_pelanggan TEXT,
       tgl TEXT,
       kd_barang TEXT,
+      faktur_so TEXT,
+      jthtmp TEXT,
+      harga REAL,
+      qty REAL,
+      jumlah REAL,
+      ppn REAL,
+      faktur_prd TEXT,
       nama_prd TEXT,
+      no_ref_pelanggan TEXT,
       nama_pelanggan TEXT,
       dati_2 TEXT,
-      qty REAL,
-      harga REAL,
-      jumlah REAL,
+      gol_barang TEXT,
+      keterangan_so TEXT,
+      recid TEXT,
       raw_data TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(faktur, kd_barang, tgl)
     );`,
     `CREATE TABLE IF NOT EXISTS faktur_sequences (
       prefix TEXT PRIMARY KEY,
@@ -112,19 +189,147 @@ export async function initSchema(db: any) {
       value TEXT,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`,
+    `CREATE TABLE IF NOT EXISTS sph_out (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      faktur TEXT UNIQUE NOT NULL,
+      tgl TEXT,
+      kd_pelanggan TEXT,
+      barang TEXT,
+      total REAL,
+      status TEXT,
+      faktur_so TEXT,
+      raw_data TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS sales_orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      faktur TEXT UNIQUE NOT NULL,
+      kd_pelanggan TEXT,
+      tgl TEXT,
+      kd_barang TEXT,
+      faktur_sph TEXT,
+      top_hari TEXT,
+      harga REAL,
+      qty REAL,
+      satuan TEXT,
+      jumlah REAL,
+      ppn REAL,
+      faktur_prd TEXT,
+      nama_prd TEXT,
+      nama_pelanggan TEXT,
+      dati_2 TEXT,
+      gol_barang TEXT,
+      spesifikasi TEXT,
+      keterangan TEXT,
+      raw_data TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
     `CREATE TABLE IF NOT EXISTS session_context (
       id INTEGER PRIMARY KEY DEFAULT 1,
       username TEXT,
       last_menu TEXT,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS bill_of_materials (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      faktur TEXT UNIQUE NOT NULL,
+      tgl TEXT,
+      kd_mtd TEXT,
+      nama_prd TEXT,
+      kd_pelanggan TEXT,
+      bbb REAL,
+      btkl REAL,
+      bop REAL,
+      hp REAL,
+      spesifikasi TEXT,
+      kd_barang TEXT,
+      qty_order REAL,
+      faktur_sph TEXT,
+      faktur_prd TEXT,
+      raw_data TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS purchase_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      faktur TEXT UNIQUE NOT NULL,
+      tgl TEXT,
+      tgl_dibutuhkan TEXT,
+      faktur_prd TEXT,
+      kd_gudang TEXT,
+      kd_cabang TEXT,
+      status TEXT,
+      username TEXT,
+      keterangan TEXT,
+      faktur_spph TEXT,
+      faktur_po TEXT,
+      raw_data TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS spph_out (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      faktur TEXT UNIQUE NOT NULL,
+      tgl TEXT,
+      faktur_pr TEXT,
+      faktur_prd TEXT,
+      kd_gudang TEXT,
+      kd_cabang TEXT,
+      kd_supplier TEXT,
+      status TEXT,
+      keterangan TEXT,
+      faktur_sph TEXT,
+      raw_data TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS sph_in (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      faktur TEXT UNIQUE NOT NULL,
+      tgl TEXT,
+      top_hari TEXT,
+      faktur_spph TEXT,
+      faktur_prd TEXT,
+      kd_gudang TEXT,
+      kd_cabang TEXT,
+      kd_supplier TEXT,
+      subtotal REAL,
+      persppn REAL,
+      ppn REAL,
+      total REAL,
+      status TEXT,
+      username TEXT,
+      faktur_po TEXT,
+      raw_data TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS purchase_orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      faktur TEXT UNIQUE NOT NULL,
+      tgl TEXT,
+      top_hari TEXT,
+      faktur_pr TEXT,
+      faktur_sph TEXT,
+      kd_gudang TEXT,
+      kd_cabang TEXT,
+      kd_supplier TEXT,
+      subtotal REAL,
+      persppn REAL,
+      ppn REAL,
+      biaya_kirim REAL,
+      total REAL,
+      status TEXT,
+      tgl_close TEXT,
+      status_close TEXT,
+      mydata TEXT,
+      ket_pr TEXT,
+      faktur_pb TEXT,
+      raw_data TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`
   ], "write");
 
-  // 2. Incremental Migrations (catch errors if already exists)
+  // 2. Incremental Migrations (Silent execution to prevent red log noise)
   const migrations = [
     "ALTER TABLE users ADD COLUMN photo TEXT;",
     "ALTER TABLE employees ADD COLUMN employee_no TEXT;",
-    "CREATE UNIQUE INDEX IF NOT EXISTS idx_employee_no ON employees(employee_no);",
     "ALTER TABLE employees ADD COLUMN is_active INTEGER DEFAULT 1;",
     "ALTER TABLE users ADD COLUMN recorded_by TEXT DEFAULT NULL;",
     "ALTER TABLE employees ADD COLUMN recorded_by TEXT DEFAULT NULL;",
@@ -157,12 +362,67 @@ export async function initSchema(db: any) {
     "ALTER TABLE orders ADD COLUMN satuan TEXT;",
     "ALTER TABLE session_context ADD COLUMN last_menu TEXT;",
     "ALTER TABLE hpp_kalkulasi ADD COLUMN keterangan TEXT;",
-    "ALTER TABLE employees ADD COLUMN recorded_by TEXT;",
+    "ALTER TABLE bahan_baku ADD COLUMN faktur_aktifitas TEXT;",
+    "ALTER TABLE bahan_baku ADD COLUMN kd_cabang TEXT;",
+    "ALTER TABLE bahan_baku ADD COLUMN kd_gudang TEXT;",
+    "ALTER TABLE bahan_baku ADD COLUMN status TEXT;",
+    "ALTER TABLE bahan_baku ADD COLUMN hp_total REAL;",
+    "ALTER TABLE bahan_baku ADD COLUMN keterangan TEXT;",
+    "ALTER TABLE bahan_baku ADD COLUMN fkt_hasil TEXT;",
+    "ALTER TABLE bahan_baku ADD COLUMN aktifitas TEXT;",
+    "ALTER TABLE bahan_baku ADD COLUMN username TEXT;",
+    "ALTER TABLE bahan_baku ADD COLUMN kd_pelanggan TEXT;",
+    "ALTER TABLE bahan_baku ADD COLUMN recid TEXT;",
 
-
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_employee_no ON employees(employee_no);",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_sales_unique ON sales_reports(faktur, kd_barang, tgl);",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_barang_jadi_unique ON barang_jadi(faktur, kd_barang, tgl);",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_bahan_baku_unique ON bahan_baku(faktur, kd_barang, tgl);",
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_sales_orders_unique ON sales_orders(faktur, kd_barang, tgl);",
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_bom_unique ON bill_of_materials(faktur);",
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_pr_unique ON purchase_requests(faktur);",
+    "ALTER TABLE sales_orders ADD COLUMN satuan TEXT;",
+    "ALTER TABLE barang_jadi ADD COLUMN faktur_so TEXT;",
+    "ALTER TABLE barang_jadi ADD COLUMN kd_cabang TEXT;",
+    "ALTER TABLE barang_jadi ADD COLUMN kd_gudang TEXT;",
+    "ALTER TABLE barang_jadi ADD COLUMN qty_wip_awal REAL;",
+    "ALTER TABLE barang_jadi ADD COLUMN qty_wip_akhir REAL;",
+    "ALTER TABLE barang_jadi ADD COLUMN total_berat_kg REAL;",
+    "ALTER TABLE barang_jadi ADD COLUMN pers_alokasi_hp REAL;",
+    "ALTER TABLE barang_jadi ADD COLUMN mtd_alokasi_hp TEXT;",
+    "ALTER TABLE barang_jadi ADD COLUMN tgl_expired TEXT;",
+    "ALTER TABLE barang_jadi ADD COLUMN selesai INTEGER;",
+    "ALTER TABLE barang_jadi ADD COLUMN status INTEGER;",
+    "ALTER TABLE barang_jadi ADD COLUMN hp_total REAL;",
+    "ALTER TABLE barang_jadi ADD COLUMN bbb REAL;",
+    "ALTER TABLE barang_jadi ADD COLUMN btkl REAL;",
+    "ALTER TABLE barang_jadi ADD COLUMN bop REAL;",
+    "ALTER TABLE barang_jadi ADD COLUMN keterangan TEXT;",
+    "ALTER TABLE barang_jadi ADD COLUMN username TEXT;",
+    "ALTER TABLE barang_jadi ADD COLUMN kd_pelanggan TEXT;",
+    "ALTER TABLE barang_jadi ADD COLUMN qty_order REAL;",
+    "ALTER TABLE barang_jadi ADD COLUMN qty_so REAL;",
+    "ALTER TABLE barang_jadi ADD COLUMN recid TEXT;",
+    "ALTER TABLE barang_jadi ADD COLUMN nama_prd TEXT;"
+  ];
+
+  const executor = db.client || db;
+  for (const sql of migrations) {
+    try {
+      if (executor.execute) {
+        await executor.execute(sql);
+      }
+    } catch (e: any) {
+      const msg = (e.message || '').toLowerCase();
+      // Only throw if it's NOT a 'already exists' or 'locked' error
+      if (!msg.includes('already exists') && !msg.includes('duplicate') && !msg.includes('locked')) {
+        console.warn(`[DB] Migration failed for: ${sql.slice(0, 50)}...`, e.message);
+      }
+    }
+  }
+
+  // 3. Performance Optimization
+  await db.batch([
     "CREATE INDEX IF NOT EXISTS idx_infractions_date ON infractions(date);",
     "CREATE INDEX IF NOT EXISTS idx_infractions_faktur ON infractions(faktur);",
     "CREATE INDEX IF NOT EXISTS idx_infractions_emp_id ON infractions(employee_id);",
@@ -178,181 +438,331 @@ export async function initSchema(db: any) {
     "DROP INDEX IF EXISTS idx_orders_sorting;",
     "CREATE INDEX IF NOT EXISTS idx_orders_expr_tgl ON orders(substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC);",
     "CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);",
+    "CREATE INDEX IF NOT EXISTS idx_sales_orders_expr_tgl ON sales_orders(substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC);",
+    "CREATE INDEX IF NOT EXISTS idx_sales_orders_created_at ON sales_orders(created_at);",
+    "CREATE INDEX IF NOT EXISTS idx_sales_reports_expr_tgl ON sales_reports(substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC);",
+    "CREATE INDEX IF NOT EXISTS idx_sales_reports_created_at ON sales_reports(created_at);",
     "DROP INDEX IF EXISTS idx_sales_reports_tgl_id;",
     "CREATE INDEX IF NOT EXISTS idx_sales_reports_expr_tgl ON sales_reports(substr(tgl, 7, 4), substr(tgl, 4, 2), substr(tgl, 1, 2), id ASC);",
     "CREATE INDEX IF NOT EXISTS idx_sales_reports_created_at ON sales_reports(created_at);",
-    
-    // --- DROP OLD TRIGGERS TO ENSURE UPDATES ---
-    "DROP TRIGGER IF EXISTS trg_users_insert;",
-    "DROP TRIGGER IF EXISTS trg_users_update;",
-    "DROP TRIGGER IF EXISTS trg_users_delete;",
-    "DROP TRIGGER IF EXISTS trg_employees_insert;",
-    "DROP TRIGGER IF EXISTS trg_employees_update;",
-    "DROP TRIGGER IF EXISTS trg_employees_delete;",
-    "DROP TRIGGER IF EXISTS trg_infractions_insert;",
-    "DROP TRIGGER IF EXISTS trg_infractions_update;",
-    "DROP TRIGGER IF EXISTS trg_infractions_delete;",
-    "DROP TRIGGER IF EXISTS trg_orders_insert;",
-    "DROP TRIGGER IF EXISTS trg_orders_update;",
-    "DROP TRIGGER IF EXISTS trg_orders_delete;",
-    "DROP TRIGGER IF EXISTS trg_bahan_baku_insert;",
-    "DROP TRIGGER IF EXISTS trg_bahan_baku_update;",
-    "DROP TRIGGER IF EXISTS trg_bahan_baku_delete;",
-    "DROP TRIGGER IF EXISTS trg_barang_jadi_insert;",
-    "DROP TRIGGER IF EXISTS trg_barang_jadi_update;",
-    "DROP TRIGGER IF EXISTS trg_barang_jadi_delete;",
-    "DROP TRIGGER IF EXISTS trg_hpp_kalkulasi_insert;",
-    "DROP TRIGGER IF EXISTS trg_hpp_kalkulasi_update;",
-    "DROP TRIGGER IF EXISTS trg_hpp_kalkulasi_delete;",
-    "DROP TRIGGER IF EXISTS trg_sales_reports_insert;",
-    "DROP TRIGGER IF EXISTS trg_sales_reports_update;",
-    "DROP TRIGGER IF EXISTS trg_sales_reports_delete;",
-    
-    // --- AUTOMATED ACTIVITY LOG TRIGGERS ---
-    
-    // 1. users
-    `CREATE TRIGGER IF NOT EXISTS trg_users_insert AFTER INSERT ON users BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('CREATE', 'users', NEW.id, 'User baru ditambahkan: ' || NEW.name, json_object('id', NEW.id, 'name', NEW.name, 'username', NEW.username, 'role', NEW.role, 'created_at', NEW.created_at), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
-    `CREATE TRIGGER IF NOT EXISTS trg_users_update AFTER UPDATE ON users BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES (
-        'UPDATE', 
-        'users', 
-        NEW.id, 
-        CASE 
-          WHEN (SELECT last_menu FROM session_context WHERE id = 1) = 'Pengaturan Profil' THEN 'Profil diperbarui'
-          ELSE 'User diupdate: ' || NEW.name
-        END,
-        json_object('id', NEW.id, 'name', NEW.name, 'username', NEW.username, 'role', NEW.role, 'photo', NEW.photo), 
-        COALESCE((SELECT username FROM session_context WHERE id = 1), 'System')
-      );
-    END;`,
-    `CREATE TRIGGER IF NOT EXISTS trg_users_delete AFTER DELETE ON users BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('DELETE', 'users', OLD.id, 'User dihapus: ' || OLD.name, json_object('name', OLD.name, 'username', OLD.username), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
+    "CREATE INDEX IF NOT EXISTS idx_sales_orders_expr_tgl ON sales_orders(substr(tgl, 7, 4), substr(tgl, 4, 2), substr(tgl, 1, 2), id ASC);",
+    "CREATE INDEX IF NOT EXISTS idx_spph_out_expr_tgl ON spph_out(substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC);",
+    "CREATE INDEX IF NOT EXISTS idx_sph_in_expr_tgl ON sph_in(substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC);",
+    "CREATE INDEX IF NOT EXISTS idx_purchase_orders_expr_tgl ON purchase_orders(substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC);"
+  ], "write");
 
-    // 2. employees
-    `CREATE TRIGGER IF NOT EXISTS trg_employees_insert AFTER INSERT ON employees BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('CREATE', 'employees', NEW.id, 'Karyawan baru: ' || NEW.name || ' (' || NEW.position || ')', json_object('id', NEW.id, 'name', NEW.name, 'position', NEW.position, 'department', NEW.department, 'employee_no', NEW.employee_no, 'is_active', NEW.is_active), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
-    `CREATE TRIGGER IF NOT EXISTS trg_employees_update AFTER UPDATE ON employees BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('UPDATE', 'employees', NEW.id, 'Data Karyawan diupdate: ' || NEW.name, json_object('name', NEW.name, 'position', NEW.position, 'department', NEW.department, 'is_active', NEW.is_active), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
-    `CREATE TRIGGER IF NOT EXISTS trg_employees_delete AFTER DELETE ON employees BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('DELETE', 'employees', OLD.id, 'Karyawan dihapus: ' || OLD.name, json_object('name', OLD.name), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
+  // 4. SMART AUTOMATED ACTIVITY LOG TRIGGERS
+  await initDynamicTriggers(db);
 
-    // 3. infractions
-    `CREATE TRIGGER IF NOT EXISTS trg_infractions_insert AFTER INSERT ON infractions BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('CREATE', 'infractions', NEW.id, 'Pencatatan Kesalahan baru ditambahkan (' || NEW.severity || ')', json_object('id', NEW.id, 'faktur', NEW.faktur, 'date', NEW.date, 'description', NEW.description, 'severity', NEW.severity, 'jumlah', NEW.jumlah, 'harga', NEW.harga, 'total', NEW.total, 'order_faktur', NEW.order_faktur, 'order_name', NEW.order_name, 'nama_barang', NEW.nama_barang, 'item_faktur', NEW.item_faktur, 'employee_id', NEW.employee_id), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
-    `CREATE TRIGGER IF NOT EXISTS trg_infractions_update AFTER UPDATE ON infractions BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('UPDATE', 'infractions', NEW.id, 'Catatan Kesalahan diupdate', json_object('id', NEW.id, 'faktur', NEW.faktur, 'date', NEW.date, 'description', NEW.description, 'severity', NEW.severity, 'jumlah', NEW.jumlah, 'harga', NEW.harga, 'total', NEW.total, 'order_faktur', NEW.order_faktur, 'order_name', NEW.order_name, 'nama_barang', NEW.nama_barang, 'item_faktur', NEW.item_faktur, 'employee_id', NEW.employee_id), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
-    `CREATE TRIGGER IF NOT EXISTS trg_infractions_delete AFTER DELETE ON infractions BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('DELETE', 'infractions', OLD.id, 'Catatan Kesalahan dihapus', json_object('id', OLD.id, 'faktur', OLD.faktur, 'date', OLD.date, 'description', OLD.description, 'severity', OLD.severity, 'jumlah', OLD.jumlah, 'harga', OLD.harga, 'total', OLD.total), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
+  // 5. FTS5 Search Initialization (Global Search Version incl. ID)
+  try {
+      // Force recreation of FTS5 tables to ensure structure matches triggers
+      await db.execute(`DROP TABLE IF EXISTS bahan_baku_fts`);
+      await db.execute(`DROP TABLE IF EXISTS barang_jadi_fts`);
+      await db.execute(`DROP TABLE IF EXISTS orders_fts`);
+      await db.execute(`DROP TABLE IF EXISTS sales_orders_fts`);
+      await db.execute(`DROP TABLE IF EXISTS sales_reports_fts`);
+      await db.execute(`DROP TABLE IF EXISTS employees_fts`);
 
-    // 4. orders
-    `CREATE TRIGGER IF NOT EXISTS trg_orders_insert AFTER INSERT ON orders BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('CREATE', 'orders', NEW.id, 'Data Order Baru: ' || IFNULL(NEW.faktur, NEW.nama_prd), json_object('id', NEW.id, 'faktur', NEW.faktur, 'nama_prd', NEW.nama_prd, 'nama_pelanggan', NEW.nama_pelanggan, 'tgl', NEW.tgl, 'qty', NEW.qty, 'satuan', NEW.satuan, 'harga', NEW.harga, 'jumlah', NEW.jumlah), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
-    `CREATE TRIGGER IF NOT EXISTS trg_orders_update AFTER UPDATE ON orders BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('UPDATE', 'orders', NEW.id, 'Data Order Diperbarui: ' || IFNULL(NEW.faktur, NEW.nama_prd), json_object('faktur', NEW.faktur, 'nama_prd', NEW.nama_prd), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
-    `CREATE TRIGGER IF NOT EXISTS trg_orders_delete AFTER DELETE ON orders BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('DELETE', 'orders', OLD.id, 'Data Order Dihapus: ' || IFNULL(OLD.faktur, OLD.nama_prd), json_object('faktur', OLD.faktur, 'nama_prd', OLD.nama_prd), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
+      // --- FTS5 FOR BAHAN BAKU ---
+      await db.execute(`
+         CREATE VIRTUAL TABLE bahan_baku_fts USING fts5(
+           id, nama_barang, nama_prd, kd_barang, faktur, 
+           faktur_prd, faktur_aktifitas, kd_cabang, kd_gudang, 
+           status, keterangan, fkt_hasil, aktifitas, 
+           username, kd_pelanggan, recid,
+           tokenize='unicode61 remove_diacritics 1'
+         );
+      `);
 
-    // 5. bahan_baku
-    `CREATE TRIGGER IF NOT EXISTS trg_bahan_baku_insert AFTER INSERT ON bahan_baku BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('CREATE', 'bahan_baku', NEW.id, 'Bahan Baku Masuk: ' || NEW.nama_barang, json_object('nama_barang', NEW.nama_barang, 'qty', NEW.qty, 'nama_prd', NEW.nama_prd), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
-    `CREATE TRIGGER IF NOT EXISTS trg_bahan_baku_update AFTER UPDATE ON bahan_baku BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('UPDATE', 'bahan_baku', NEW.id, 'Bahan Baku Diperbarui: ' || NEW.nama_barang, json_object('nama_barang', NEW.nama_barang, 'qty', NEW.qty), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
-    `CREATE TRIGGER IF NOT EXISTS trg_bahan_baku_delete AFTER DELETE ON bahan_baku BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('DELETE', 'bahan_baku', OLD.id, 'Bahan Baku Dihapus: ' || OLD.nama_barang, json_object('nama_barang', OLD.nama_barang), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
+      // --- FTS5 FOR BARANG JADI ---
+      await db.execute(`
+         CREATE VIRTUAL TABLE barang_jadi_fts USING fts5(
+           id, nama_barang, nama_prd, kd_barang, faktur, 
+           faktur_prd, faktur_so, kd_pelanggan, keterangan, username,
+           tokenize='unicode61 remove_diacritics 1'
+         );
+      `);
 
-    // 6. barang_jadi
-    `CREATE TRIGGER IF NOT EXISTS trg_barang_jadi_insert AFTER INSERT ON barang_jadi BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('CREATE', 'barang_jadi', NEW.id, 'Barang Jadi Masuk: ' || NEW.nama_barang, json_object('nama_barang', NEW.nama_barang, 'qty', NEW.qty, 'nama_prd', NEW.nama_prd), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
-    `CREATE TRIGGER IF NOT EXISTS trg_barang_jadi_update AFTER UPDATE ON barang_jadi BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('UPDATE', 'barang_jadi', NEW.id, 'Barang Jadi Diperbarui: ' || NEW.nama_barang, json_object('nama_barang', NEW.nama_barang, 'qty', NEW.qty), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
-    `CREATE TRIGGER IF NOT EXISTS trg_barang_jadi_delete AFTER DELETE ON barang_jadi BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('DELETE', 'barang_jadi', OLD.id, 'Barang Jadi Dihapus: ' || OLD.nama_barang, json_object('nama_barang', OLD.nama_barang), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
+      // --- FTS5 FOR ORDERS ---
+      await db.execute(`
+         CREATE VIRTUAL TABLE orders_fts USING fts5(
+           id, faktur, nama_prd, nama_pelanggan, satuan,
+           tokenize='unicode61 remove_diacritics 1'
+         );
+      `);
 
-    // 7. hpp_kalkulasi
-    `CREATE TRIGGER IF NOT EXISTS trg_hpp_kalkulasi_insert AFTER INSERT ON hpp_kalkulasi BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('CREATE', 'hpp_kalkulasi', NEW.id, 'HPP Kalkulasi Baru: ' || NEW.nama_order, json_object('nama_order', NEW.nama_order, 'hpp', NEW.hpp_kalkulasi), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
-    `CREATE TRIGGER IF NOT EXISTS trg_hpp_kalkulasi_update AFTER UPDATE ON hpp_kalkulasi BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('UPDATE', 'hpp_kalkulasi', NEW.id, 'HPP Kalkulasi Diperbarui: ' || NEW.nama_order, json_object('nama_order', NEW.nama_order, 'hpp', NEW.hpp_kalkulasi), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
-    `CREATE TRIGGER IF NOT EXISTS trg_hpp_kalkulasi_delete AFTER DELETE ON hpp_kalkulasi BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('DELETE', 'hpp_kalkulasi', OLD.id, 'HPP Kalkulasi Dihapus: ' || OLD.nama_order, json_object('nama_order', OLD.nama_order), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
+      // --- FTS5 FOR SALES ORDERS ---
+      await db.execute(`
+         CREATE VIRTUAL TABLE sales_orders_fts USING fts5(
+           id, faktur, nama_pelanggan, kd_pelanggan, nama_prd, kd_barang, 
+           faktur_sph, faktur_prd, keterangan,
+           tokenize='unicode61 remove_diacritics 1'
+         );
+      `);
 
-    // 8. sales_reports
-    `CREATE TRIGGER IF NOT EXISTS trg_sales_reports_insert AFTER INSERT ON sales_reports BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('CREATE', 'sales_reports', NEW.id, 'Laporan Penjualan Masuk: ' || IFNULL(NEW.faktur, NEW.nama_prd), json_object('faktur', NEW.faktur, 'nama_prd', NEW.nama_prd), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
-    `CREATE TRIGGER IF NOT EXISTS trg_sales_reports_update AFTER UPDATE ON sales_reports BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('UPDATE', 'sales_reports', NEW.id, 'Laporan Penjualan Diperbarui: ' || IFNULL(NEW.faktur, NEW.nama_prd), json_object('faktur', NEW.faktur, 'nama_prd', NEW.nama_prd), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`,
-    `CREATE TRIGGER IF NOT EXISTS trg_sales_reports_delete AFTER DELETE ON sales_reports BEGIN
-      INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-      VALUES ('DELETE', 'sales_reports', OLD.id, 'Laporan Penjualan Dihapus: ' || IFNULL(OLD.faktur, OLD.nama_prd), json_object('faktur', OLD.faktur, 'nama_prd', OLD.nama_prd), COALESCE((SELECT username FROM session_context WHERE id = 1), 'System'));
-    END;`
-  ];
+      // --- FTS5 FOR EMPLOYEES ---
+      await db.execute(`
+         CREATE VIRTUAL TABLE employees_fts USING fts5(
+           id, name, position, department, employee_no,
+           tokenize='unicode61 remove_diacritics 1'
+         );
+      `);
+      await db.execute(`
+         CREATE VIRTUAL TABLE sales_reports_fts USING fts5(
+           id, faktur, kd_pelanggan, kd_barang, faktur_so, faktur_prd, 
+           nama_prd, nama_pelanggan, dati_2, gol_barang, keterangan_so, recid,
+           tokenize='unicode61 remove_diacritics 1'
+         );
+      `);
 
-  for (const sql of migrations) {
-    try {
-      await db.execute(sql);
-    } catch (e) {
-      // Ignore errors (usually "column already exists")
-    }
+      // Background rebuild of index if empty or structure changed
+      try {
+        // Sync Bahan Baku
+        const ftsCountBB = await db.execute("SELECT COUNT(*) as count FROM bahan_baku_fts");
+        const bbCount = await db.execute("SELECT COUNT(*) as count FROM bahan_baku");
+        if (Number(ftsCountBB.rows[0].count) < Number(bbCount.rows[0].count)) {
+           await db.batch([
+              "DELETE FROM bahan_baku_fts",
+              `INSERT INTO bahan_baku_fts(id, rowid, nama_barang, nama_prd, kd_barang, faktur, faktur_prd, faktur_aktifitas, kd_cabang, kd_gudang, status, keterangan, fkt_hasil, aktifitas, username, kd_pelanggan, recid)
+               SELECT id, id, nama_barang, nama_prd, kd_barang, faktur, faktur_prd, faktur_aktifitas, kd_cabang, kd_gudang, status, keterangan, fkt_hasil, aktifitas, username, kd_pelanggan, recid FROM bahan_baku`
+           ], "write");
+        }
+
+        // Sync Barang Jadi
+        const ftsCountBJ = await db.execute("SELECT COUNT(*) as count FROM barang_jadi_fts");
+        const bjCount = await db.execute("SELECT COUNT(*) as count FROM barang_jadi");
+        if (Number(ftsCountBJ.rows[0].count) < Number(bjCount.rows[0].count)) {
+           await db.batch([
+              "DELETE FROM barang_jadi_fts",
+              `INSERT INTO barang_jadi_fts(id, rowid, nama_barang, nama_prd, kd_barang, faktur, faktur_prd)
+               SELECT id, id, nama_barang, nama_prd, kd_barang, faktur, faktur_prd FROM barang_jadi`
+           ], "write");
+        }
+
+        // Sync Orders
+        const ftsCountORD = await db.execute("SELECT COUNT(*) as count FROM orders_fts");
+        const ordCount = await db.execute("SELECT COUNT(*) as count FROM orders");
+        if (Number(ftsCountORD.rows[0].count) < Number(ordCount.rows[0].count)) {
+           await db.batch([
+              "DELETE FROM orders_fts",
+              `INSERT INTO orders_fts(id, rowid, faktur, nama_prd, nama_pelanggan, satuan)
+               SELECT id, id, faktur, nama_prd, nama_pelanggan, satuan FROM orders`
+           ], "write");
+        }
+
+        // Sync Sales Orders
+        const ftsCountSO = await db.execute("SELECT COUNT(*) as count FROM sales_orders_fts");
+        const soCount = await db.execute("SELECT COUNT(*) as count FROM sales_orders");
+        if (Number(ftsCountSO.rows[0].count) < Number(soCount.rows[0].count)) {
+           await db.batch([
+              "DELETE FROM sales_orders_fts",
+              `INSERT INTO sales_orders_fts(id, rowid, faktur, nama_pelanggan, kd_pelanggan, nama_prd, kd_barang, faktur_sph, faktur_prd, keterangan)
+               SELECT id, id, faktur, nama_pelanggan, kd_pelanggan, nama_prd, kd_barang, faktur_sph, faktur_prd, keterangan FROM sales_orders`
+           ], "write");
+        }
+
+        // Sync Employees
+        const ftsCountEMP = await db.execute("SELECT COUNT(*) as count FROM employees_fts");
+        const empCount = await db.execute("SELECT COUNT(*) as count FROM employees");
+        if (Number(ftsCountEMP.rows[0].count) < Number(empCount.rows[0].count)) {
+           await db.batch([
+              "DELETE FROM employees_fts",
+              `INSERT INTO employees_fts(id, rowid, name, position, department, employee_no)
+               SELECT id, id, name, position, department, employee_no FROM employees WHERE is_active = 1`
+           ], "write");
+        }
+
+        // Sync Sales Reports
+        const ftsCountSR = await db.execute("SELECT COUNT(*) as count FROM sales_reports_fts");
+        const srCount = await db.execute("SELECT COUNT(*) as count FROM sales_reports");
+        if (Number(ftsCountSR.rows[0].count) < Number(srCount.rows[0].count)) {
+           await db.batch([
+              "DELETE FROM sales_reports_fts",
+              `INSERT INTO sales_reports_fts(id, rowid, faktur, kd_pelanggan, kd_barang, faktur_so, faktur_prd, nama_prd, nama_pelanggan, dati_2, gol_barang, keterangan_so, recid)
+               SELECT id, id, faktur, kd_pelanggan, kd_barang, faktur_so, faktur_prd, nama_prd, nama_pelanggan, dati_2, gol_barang, keterangan_so, recid FROM sales_reports`
+           ], "write");
+        }
+
+      // --- FTS5 FOR HPP KALKULASI ---
+      await db.execute(`
+         INSERT INTO hpp_kalkulasi_fts(id, rowid, nama_order, keterangan)
+         SELECT id, id, nama_order, keterangan FROM hpp_kalkulasi
+      `);
+      
+      await db.batch([
+        `DROP TRIGGER IF EXISTS trg_hpp_kalkulasi_fts_insert;`,
+        `CREATE TRIGGER trg_hpp_kalkulasi_fts_insert AFTER INSERT ON hpp_kalkulasi BEGIN
+          INSERT INTO hpp_kalkulasi_fts(id, rowid, nama_order, keterangan)
+          VALUES (NEW.id, NEW.id, NEW.nama_order, NEW.keterangan);
+        END;`,
+        `DROP TRIGGER IF EXISTS trg_hpp_kalkulasi_fts_update;`,
+        `CREATE TRIGGER trg_hpp_kalkulasi_fts_update AFTER UPDATE ON hpp_kalkulasi BEGIN
+          DELETE FROM hpp_kalkulasi_fts WHERE rowid = OLD.id;
+          INSERT INTO hpp_kalkulasi_fts(id, rowid, nama_order, keterangan)
+          VALUES (NEW.id, NEW.id, NEW.nama_order, NEW.keterangan);
+        END;`,
+        `DROP TRIGGER IF EXISTS trg_hpp_kalkulasi_fts_delete;`,
+        `CREATE TRIGGER trg_hpp_kalkulasi_fts_delete AFTER DELETE ON hpp_kalkulasi BEGIN
+          DELETE FROM hpp_kalkulasi_fts WHERE rowid = OLD.id;
+        END;`
+      ], "write");
+      } catch (e) {
+        // Table might have wrong columns due to older schema
+      }
+
+      // Sync Triggers for Global Search (Bahan Baku)
+      await db.batch([
+         `DROP TRIGGER IF EXISTS trg_bahan_baku_fts_insert;`,
+         `CREATE TRIGGER trg_bahan_baku_fts_insert AFTER INSERT ON bahan_baku BEGIN
+           INSERT INTO bahan_baku_fts(id, rowid, nama_barang, nama_prd, kd_barang, faktur, faktur_prd, faktur_aktifitas, kd_cabang, kd_gudang, status, keterangan, fkt_hasil, aktifitas, username, kd_pelanggan, recid)
+           VALUES (NEW.id, NEW.id, NEW.nama_barang, NEW.nama_prd, NEW.kd_barang, NEW.faktur, NEW.faktur_prd, NEW.faktur_aktifitas, NEW.kd_cabang, NEW.kd_gudang, NEW.status, NEW.keterangan, NEW.fkt_hasil, NEW.aktifitas, NEW.username, NEW.kd_pelanggan, NEW.recid);
+         END;`,
+         `DROP TRIGGER IF EXISTS trg_bahan_baku_fts_update;`,
+         `CREATE TRIGGER trg_bahan_baku_fts_update AFTER UPDATE ON bahan_baku BEGIN
+           DELETE FROM bahan_baku_fts WHERE rowid = OLD.id;
+           INSERT INTO bahan_baku_fts(id, rowid, nama_barang, nama_prd, kd_barang, faktur, faktur_prd, faktur_aktifitas, kd_cabang, kd_gudang, status, keterangan, fkt_hasil, aktifitas, username, kd_pelanggan, recid)
+           VALUES (NEW.id, NEW.id, NEW.nama_barang, NEW.nama_prd, NEW.kd_barang, NEW.faktur, NEW.faktur_prd, NEW.faktur_aktifitas, NEW.kd_cabang, NEW.kd_gudang, NEW.status, NEW.keterangan, NEW.fkt_hasil, NEW.aktifitas, NEW.username, NEW.kd_pelanggan, NEW.recid);
+         END;`,
+         `DROP TRIGGER IF EXISTS trg_bahan_baku_fts_delete;`,
+         `CREATE TRIGGER trg_bahan_baku_fts_delete AFTER DELETE ON bahan_baku BEGIN
+           DELETE FROM bahan_baku_fts WHERE rowid = OLD.id;
+         END;`
+      ], "write");
+
+      // Sync Triggers for Global Search (Barang Jadi)
+      await db.batch([
+         `DROP TRIGGER IF EXISTS trg_barang_jadi_fts_insert;`,
+         `CREATE TRIGGER trg_barang_jadi_fts_insert AFTER INSERT ON barang_jadi BEGIN
+           INSERT INTO barang_jadi_fts(id, rowid, nama_barang, nama_prd, kd_barang, faktur, faktur_prd, faktur_so, kd_pelanggan, keterangan, username)
+           VALUES (NEW.id, NEW.id, NEW.nama_barang, NEW.nama_prd, NEW.kd_barang, NEW.faktur, NEW.faktur_prd, NEW.faktur_so, NEW.kd_pelanggan, NEW.keterangan, NEW.username);
+         END;`,
+         `DROP TRIGGER IF EXISTS trg_barang_jadi_fts_update;`,
+         `CREATE TRIGGER trg_barang_jadi_fts_update AFTER UPDATE ON barang_jadi BEGIN
+           DELETE FROM barang_jadi_fts WHERE rowid = OLD.id;
+           INSERT INTO barang_jadi_fts(id, rowid, nama_barang, nama_prd, kd_barang, faktur, faktur_prd, faktur_so, kd_pelanggan, keterangan, username)
+           VALUES (NEW.id, NEW.id, NEW.nama_barang, NEW.nama_prd, NEW.kd_barang, NEW.faktur, NEW.faktur_prd, NEW.faktur_so, NEW.kd_pelanggan, NEW.keterangan, NEW.username);
+         END;`,
+         `DROP TRIGGER IF EXISTS trg_barang_jadi_fts_delete;`,
+         `CREATE TRIGGER trg_barang_jadi_fts_delete AFTER DELETE ON barang_jadi BEGIN
+           DELETE FROM barang_jadi_fts WHERE rowid = OLD.id;
+         END;`
+      ], "write");
+
+      // Sync Triggers for Global Search (Orders)
+      await db.batch([
+         `DROP TRIGGER IF EXISTS trg_orders_fts_insert;`,
+         `CREATE TRIGGER trg_orders_fts_insert AFTER INSERT ON orders BEGIN
+           INSERT INTO orders_fts(id, rowid, faktur, nama_prd, nama_pelanggan, satuan)
+           VALUES (NEW.id, NEW.id, NEW.faktur, NEW.nama_prd, NEW.nama_pelanggan, NEW.satuan);
+         END;`,
+         `DROP TRIGGER IF EXISTS trg_orders_fts_update;`,
+         `CREATE TRIGGER trg_orders_fts_update AFTER UPDATE ON orders BEGIN
+           DELETE FROM orders_fts WHERE rowid = OLD.id;
+           INSERT INTO orders_fts(id, rowid, faktur, nama_prd, nama_pelanggan, satuan)
+           VALUES (NEW.id, NEW.id, NEW.faktur, NEW.nama_prd, NEW.nama_pelanggan, NEW.satuan);
+         END;`,
+         `DROP TRIGGER IF EXISTS trg_orders_fts_delete;`,
+         `CREATE TRIGGER trg_orders_fts_delete AFTER DELETE ON orders BEGIN
+           DELETE FROM orders_fts WHERE rowid = OLD.id;
+         END;`
+      ], "write");
+  } catch (e: any) {
+     console.error("[FTS-INIT] Failed to initialize FTS5 for bahan_baku:", e.message);
   }
 
-  // 3. Insert default admin user if users table is empty
+  // 6. Default Admin Setup
   const userCount = await db.execute("SELECT COUNT(*) as count FROM users");
   if (userCount.rows[0].count === 0 || userCount.rows[0].count === BigInt(0)) {
-    // Hash for 'admin123' generated with bcryptjs
     const defaultPasswordHash = "$2b$10$HLZeYWR0DjrRN0Dlk/IxGOIbONTF/wup2YJv8TwApJeRbYQ8K7s3.";
     await db.execute({
       sql: `INSERT INTO users (username, password, name, role) VALUES (?, ?, ?, ?)`,
       args: ['admin', defaultPasswordHash, 'Administrator', 'Super Admin']
     });
-    console.log("[DB] Default admin user created (admin / admin123)");
   }
 
-  // 4. Performance Optimization
+  // 6. Performance Initialization
   await initIndexing(db);
+}
+
+/**
+ * Dynamically generates C.R.U.D triggers for all tables to ensure 100% audit coverage.
+ */
+async function initDynamicTriggers(db: any) {
+  try {
+    const tablesResult = await db.execute(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '%_fts%' AND name NOT IN ('activity_logs', 'session_context', 'sqlite_sequence', 'system_settings', 'db_indexing_status', 'faktur_sequences')"
+    );
+
+    const tables = tablesResult.rows.map((r: any) => r.name);
+
+    for (const table of tables) {
+      const info = await db.execute(`PRAGMA table_info(${table})`);
+      const cols = info.rows.map((c: any) => c.name as string);
+
+      let label = "NEW.id";
+      if (table === 'infractions') label = "NEW.description || ' (' || NEW.severity || ')'";
+      else if (table === 'users') label = "NEW.name";
+      else if (cols.includes('faktur')) label = "IFNULL(NEW.faktur, 'ID:' || NEW.id)";
+      else if (cols.includes('nama_barang')) label = "NEW.nama_barang";
+      else if (cols.includes('name')) label = "NEW.name";
+      else if (cols.includes('nama_prd')) label = "NEW.nama_prd";
+      else if (cols.includes('username')) label = "NEW.username";
+
+      const oldLabel = label.replace(/NEW\./g, 'OLD.');
+
+      const dataCols = cols.filter((c: string) => c !== 'password').map((c: string) => `'${c}', NEW.${c}`).join(', ');
+      const oldDataCols = cols.filter((c: string) => c !== 'password').map((c: string) => `'${c}', OLD.${c}`).join(', ');
+
+      const triggerOps = [
+        `DROP TRIGGER IF EXISTS trg_${table}_insert`,
+        `DROP TRIGGER IF EXISTS trg_${table}_update`,
+        `DROP TRIGGER IF EXISTS trg_${table}_delete`,
+
+        `CREATE TRIGGER trg_${table}_insert AFTER INSERT ON ${table} BEGIN
+          INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+          VALUES ('CREATE', '${table}', NEW.id, 
+            CASE 
+              WHEN '${table}' = 'users' THEN 'User baru ditambahkan: ' || ${label}
+              WHEN '${table}' = 'infractions' THEN 'Pencatatan Kesalahan baru: ' || ${label}
+              ELSE 'Data ' || '${table}' || ' baru: ' || ${label}
+            END, 
+            json_object(${dataCols}), 
+            COALESCE((SELECT username FROM session_context WHERE id = 1), 'System')
+          );
+        END;`,
+
+        `CREATE TRIGGER trg_${table}_update AFTER UPDATE ON ${table} BEGIN
+          INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+          VALUES ('UPDATE', '${table}', NEW.id, 
+            CASE 
+              WHEN '${table}' = 'users' AND (SELECT last_menu FROM session_context WHERE id = 1) = 'Pengaturan Profil' THEN 'Profil diperbarui'
+              ELSE 'Update ' || '${table}' || ': ' || ${label}
+            END, 
+            json_object(${dataCols}), 
+            COALESCE((SELECT username FROM session_context WHERE id = 1), 'System')
+          );
+        END;`,
+
+        `CREATE TRIGGER trg_${table}_delete AFTER DELETE ON ${table} BEGIN
+          INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+          VALUES ('DELETE', '${table}', OLD.id, 
+            'Hapus ' || '${table}' || ': ' || ${oldLabel}, 
+            json_object(${oldDataCols}), 
+            COALESCE((SELECT username FROM session_context WHERE id = 1), 'System')
+          );
+        END;`
+      ];
+
+      try {
+        await db.batch(triggerOps, "write");
+      } catch (e) {
+        console.error(`[DB] Failed to setup triggers for table ${table}:`, e);
+      }
+    }
+
+    console.log(`[DB] Automated Audit Triggers initialized for ${tables.length} tables.`);
+  } catch (err) {
+    console.error("[DB] Dynamic Trigger Initialization failed:", err);
+  }
 }

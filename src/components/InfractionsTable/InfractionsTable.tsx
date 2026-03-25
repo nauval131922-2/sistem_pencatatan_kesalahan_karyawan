@@ -97,15 +97,37 @@ export default function InfractionsTable({
   const resizingRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
   const isResizingDone = useRef(false);
 
+  const isStaleRef = useRef(false);
+
   useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_data_updated') {
+    const handleRefresh = () => {
+      if (document.visibilityState === 'visible') {
         fetchFilteredData();
         router.refresh();
+        isStaleRef.current = false;
+      } else {
+        isStaleRef.current = true;
       }
     };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sikka_data_updated') {
+        handleRefresh();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isStaleRef.current) {
+        handleRefresh();
+      }
+    };
+
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [fetchFilteredData, router]);
 
   // Column resize handlers (unchanged)

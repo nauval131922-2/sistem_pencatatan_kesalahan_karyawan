@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from "./Sidebar";
 
@@ -19,6 +19,7 @@ export default function MainContentWrapper({
   user
 }: MainContentWrapperProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const isStaleRef = useRef(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -27,27 +28,40 @@ export default function MainContentWrapper({
       setIsCollapsed(e.detail.isCollapsed);
     };
 
+    const handleRefresh = () => {
+      if (document.visibilityState === 'visible') {
+        router.refresh();
+        isStaleRef.current = false;
+      } else {
+        isStaleRef.current = true;
+      }
+    };
+
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'sikka_profile_updated' || e.key === 'sikka_data_updated') {
-        router.refresh();
+        handleRefresh();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isStaleRef.current) {
+        handleRefresh();
       }
     };
 
     window.addEventListener('sidebar-toggle', handleToggle);
     window.addEventListener('storage', handleStorageChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
       window.removeEventListener('sidebar-toggle', handleToggle);
       window.removeEventListener('storage', handleStorageChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [router]);
 
-  useEffect(() => {
-    // Signal other tabs on navigation or refresh to update activity logs/stats
-    if (pathname && !pathname.startsWith('/login')) {
-      localStorage.setItem('sikka_data_updated', Date.now().toString());
-    }
-  }, [pathname]);
+  // NO LONGER updating sikka_data_updated on every navigation.
+  // Data changes should be the only trigger to avoid heavy load across tabs.
 
 
   const isLoginPage = pathname?.startsWith('/login');
