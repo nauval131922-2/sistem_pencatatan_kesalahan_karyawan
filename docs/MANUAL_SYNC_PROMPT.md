@@ -1,6 +1,6 @@
-# 📜 Panduan Sinkronisasi Manual SIKKA (ManualModal.tsx)
+# 📜 Panduan Sinkronisasi Manual SINTAK (ManualModal.tsx)
 
-Dokumen ini berisi instruksi dan prompt khusus untuk AI agar dapat memperbarui panduan dalam sistem SIKKA dengan tingkat akurasi 100% terhadap UI dan fitur teknis terbaru.
+Dokumen ini berisi instruksi dan prompt khusus untuk AI agar dapat memperbarui panduan dalam sistem SINTAK dengan tingkat akurasi 100% terhadap UI dan fitur teknis terbaru.
 
 ---
 
@@ -14,7 +14,7 @@ Salin dan tempel prompt di bawah ini jika terdapat perubahan fitur pada suatu me
 > **Langkah-langkah yang harus dilakukan AI:**
 > 1. **Analisis Kode:** Baca file implementasi halaman menu tersebut (Page dan Client component) untuk memahami logika terbarunya (misalnya: Parallel Sync, Infinite Scroll, atau Filter baru).
 > 2. **Harmonisasi Istilah:** Pastikan SEMUA nama tombol, label input, dan kolom tabel di panduan **PERSIS SAMA** dengan yang tertulis di kode UI. Jangan gunakan istilah umum jika di UI tertulis istilah spesifik.
-> 3. **Format Standar SIKKA:**
+> 3. **Format Standar SINTAK:**
 >    - Gunakan format objek: `title`, `icon`, `description`, dan `steps`.
 >    - Gunakan **bold** (`**teks**`) untuk istilah kunci/label UI.
 >    - Jika ada sub-step, gunakan bullet point (`•`).
@@ -30,7 +30,7 @@ Salin dan tempel prompt di bawah ini jika terdapat perubahan fitur pada suatu me
 
 ---
 
-## 🛠️ Standar Penulisan Panduan SIKKA
+## 🛠️ Standar Penulisan Panduan SINTAK
 
 Untuk menjaga konsistensi desain dan pengalaman pengguna, ikuti aturan berikut:
 
@@ -51,7 +51,7 @@ Setiap panduan dalam `ManualModal.tsx` harus mengikuti struktur ini:
 }
 ```
 
-### 2. Harmonisasi Istilah (Glossary SIKKA)
+### 2. Harmonisasi Istilah (Glossary SINTAK)
 Jangan gunakan kata lain selain yang ada di UI:
 - **SALAH:** "Klik tombol buat PDF" | **BENAR:** "Klik tombol **Cetak Rekap PDF**"
 - **SALAH:** "Cari data di tabel" | **BENAR:** "Gunakan **Kotak Pencarian**"

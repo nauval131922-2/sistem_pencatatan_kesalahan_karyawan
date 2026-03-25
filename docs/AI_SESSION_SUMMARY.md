@@ -1,33 +1,40 @@
-# AI Session Summary - Pengembangan SIKKA (19 Maret 2026)
+# AI Session Summary - Pengembangan SINTAK (26 Maret 2026)
 
-Sesi ini berfokus pada peningkatan interaksi pengguna (UX) melalui fitur klik ganda dan pembersihan audit aksesibilitas (A11y) sesuai standar Vercel Toolbar.
+Sesi ini berfokus pada migrasi arsitektur basis data ke Turso/SQLite, implementasi sistem scraping administrasi yang komprehensif, dan standarisasi logika persistensi tanggal di seluruh aplikasi.
 
 ## ✅ Perubahan Utama
 
-### 1. Interaksi & Navigasi (Double-Click UX)
-- **Tabel Utama**: Menambahkan fitur **klik ganda (double-click)** pada baris tabel di dashboard (**Aktivitas Terkini**), manajemen (**Pencatatan Kesalahan**), dan **Kelola User**.
-- **Perilaku Selection**: Mengoptimalkan logika seleksi baris (`e.detail`) agar baris tetap terpilih saat melakukan klik ganda (mencegah deselect otomatis pada klik kedua).
-- **Aksi Cepat**: Klik ganda akan langsung membuka detail aktivitas (Dashboard) atau formulir edit (Kesalahan & User).
+### 1. Arsitektur Basis Data (Turso/SQLite)
+- **Migrasi**: Transisi dari PostgreSQL ke **Turso (LibSQL/SQLite)** untuk efisiensi biaya dan performa query lokal yang lebih cepat.
+- **Skema**: Refaktor `src/lib/db.ts` dan `src/lib/schema.ts` untuk mendukung sintaks LibSQL dan pengindeksan FTS5 (Full-Text Search).
+- **Tooling**: Implementasi skrip sinkronisasi data manual (`docs/MANUAL_SYNC_PROMPT.md`) untuk mempermudah pembaruan data dari sumber eksternal (Digit).
 
-### 2. Audit Aksesibilitas (A11y)
-- **Atribut Bahasa**: Mengubah `lang="en"` menjadi `lang="id"` pada `RootLayout` untuk mendukung SEO dan pembaca layar di Indonesia.
-- **Aria Labels**: Menambahkan kontras informasi pada tombol-tombol berbasis ikon (Pencil, Trash, PDF, Camera, X) menggunakan `aria-label`.
-- **Aria Roles**: Menambahkan `role="dialog"` dan `aria-modal="true"` pada modal panduan sistem (`ManualModal`) dan detail aktivitas.
-- **Header Tabel**: Menambahkan `role="button"` dan label deskriptif pada header tabel yang mendukung pengurutan (sorting).
+### 2. Modul Scraper & API Administrasi
+- **Implementasi Baru**: Menambahkan 10+ modul scraping baru di Sidebar (Data Digit) termasuk:
+  - **Purchasing**: SPH In/Out, SPPH Out, Purchase Request (PR), Purchase Order (PO).
+  - **Produksi**: Order Produksi, Bill of Material (BOM).
+  - **Logistik**: Bahan Baku, Barang Jadi.
+  - **Sales**: Sales Order (SO), Laporan Penjualan (Refined).
+- **Batch Processing**: Implementasi *split-date-range* (pemecahan rentang tanggal per bulan) untuk menghindari timeout pada API sumber dan memberikan indikator progres ke pengguna.
 
-### 3. Penyesuaian UI/UX Lainnya
-- **Default Sort**: Menghilangkan pengurutan default sisi klien pada tabel **Aktivitas Terkini** agar lebih efisien (tetap tampil terbaru dari server).
-- **Sidebar**: Menambahkan label aksesibilitas pada tombol toggle sidebar dan menu profil.
+### 3. Logika Persistensi Tanggal ("Scrape-First")
+- **Kebijakan Baru**: Mengubah perilaku penyimpanan tanggal kalender di `localStorage`. Tanggal sekarang **hanya akan tersimpan** setelah pengguna menekan tombol **"Tarik Data"** (Scrape). 
+- **Tujuan**: Mencegah *state drift* di mana pilihan tanggal tersimpan meskipun penarikan data belum dilakukan/gagal.
+- **New Day Detection**: Sistem otomatis meriset tanggal awal ke **1 Januari 2026** jika mendeteksi penggunaan di hari kalender baru untuk memastikan data yang ditampilkan selalu aktual.
+
+### 4. Konsistensi Visual UI
+- **Header Section**: Sinkronisasi gaya visual judul di atas bilah pencarian (font `text-sm`, weight `font-extrabold`, color `green-600`) antara halaman Laporan Penjualan dan Pencatatan Kesalahan.
+- **Ikonografi**: Mempertahankan ikon originil (`ClipboardList` untuk Records, `Clock` untuk Sales) namun dengan standarisasi warna dan ukuran untuk harmoni desain.
 
 ## 🚀 Status Saat Ini
 - **Branch**: `master`
-- **Kondisi Database**: Tidak ada perubahan skema (Stable).
-- **Audit Toolbar**: Sebagian besar isu aksesibilitas kritis sudah ditangani.
+- **Kondisi Database**: Migrasi Turso SELESAI. Tabel utama (infractions, employees, scrapers) sudah aktif.
+- **Fungsionalitas**: Semua tombol "Tarik Data" sudah mengikuti kebijakan persistensi terbaru.
 
 ## 📝 Catatan Untuk Sesi Berikutnya (Rumah/Kantor)
-1. **Verifikasi A11y**: Cek kembali skor aksesibilitas di Vercel Toolbar setelah push ke production.
-2. **Testing Double-Click**: Pastikan klik ganda terasa natural di semua perangkat (desktop/mobile).
-3. **Bahasa**: Pastikan elemen HTML sekarang terbaca sebagai bahasa Indonesia oleh browser.
+1. **Verifikasi Turso**: Pastikan token API Turso di `.env` sudah sesuai (gunakan `.env.local` jika di perangkat berbeda).
+2. **Testing Scraper**: Lakukan uji coba "Tarik Data" untuk rentang $> 6$ bulan untuk memastikan batching berjalan lancar.
+3. **Date Reset**: Pastikan pada pergantian hari besok, sistem benar-benar meriset tanggal awal ke 1 Januari 2026 secara otomatis.
 
 ---
-*Dibuat oleh AI Antigravity pada 19 Maret 2026, 10:15 WIB*
+*Dibuat oleh AI Antigravity pada 26 Maret 2026, 05:40 WIB*

@@ -35,9 +35,19 @@
     - [x] Evaluasi Penggunaan Turso & Vercel Free Tiers
     - [x] Pembuatan Prompt Sinkronisasi Otomatis (`docs/MANUAL_SYNC_PROMPT.md`)
 
+- [x] **Ekspansi Modul Scraping (Digit Suite)**
+    - [x] Implementasi Scraper SPH In, SPH Out, & SPPH Out
+    - [x] Implementasi Scraper Purchase Request (PR) & Purchase Order (PO)
+    - [x] Implementasi Scraper Order Produksi, BOM, & Bahan Baku
+    - [x] Implementasi Scraper Barang Jadi, SO, & Laporan Penjualan
+    - [x] Optimalisasi Scraper dengan Month-Batching (Concurrency 10-15)
+- [x] **Refinement UX & Konsistensi UI**
+    - [x] Kebijakan "Scrape-First" untuk persistensi tanggal (Hanya simpan saat Tarik Data)
+    - [x] Sinkronisasi gaya visual (Header, Font, Icon Color) di seluruh Scraper & Reports
+    - [x] Perbaikan bug double-useEffect & redundant states pada OrderProduksiClient
+    - [x] Penyeleksian tanggal otomatis (Default ke 2026-01-01 pada hari baru)
+
 - [ ] **Next Steps**
-    - [x] Implementasi fitur audit log untuk perubahan data kritkal (via Triggers)
-    - [x] Penajaman laporan statistik tahunan (Grafik & Audit Tren)
-    - [x] Optimasi Performa Database (Indexing & Analyze)
-    - [x] Implementasi Premium Loading Experience (Skeleton Screens)
-    - [x] Perbaikan Bug Integritas Data (Severitas & Format Angka)
+    - [ ] Optimasi Performa Database (FTS5 Advanced Search)
+    - [ ] Penambahan fitur ekspor data ke format JSON (Arsip Digital)
+    - [ ] Implementasi PWA untuk akses cepat di perangkat mobile
