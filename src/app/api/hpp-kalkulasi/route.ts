@@ -1,37 +1,75 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
-
 import { getSession } from "@/lib/session";
-
 import { logActivity } from "@/lib/activity";
-
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const orderName = searchParams.get('order_name');
+    const searchParams = request.nextUrl.searchParams;
+    const search = searchParams.get("search");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "50");
+    const offset = (page - 1) * limit;
 
-    let data;
-    if (orderName) {
-      const result = await db.execute({
-        sql: `SELECT * FROM hpp_kalkulasi WHERE TRIM(nama_order) = ? ORDER BY id ASC`,
-        args: [orderName.trim()]
-      });
-      data = result.rows;
+    let sqlData = "";
+    let sqlTotal = "";
+    let argsData: any[] = [];
+    let argsTotal: any[] = [];
+
+    if (search) {
+      const queryValue = `${search}*`;
+      try {
+          // Attempt FTS matching
+          const ftsMatch = await db.execute({ 
+            sql: "SELECT id FROM hpp_kalkulasi_fts WHERE hpp_kalkulasi_fts MATCH ?", 
+            args: [queryValue] 
+          });
+          
+          if (ftsMatch.rows.length > 0) {
+              const ids = ftsMatch.rows.map(r => r.id).join(',');
+              sqlData = `SELECT * FROM hpp_kalkulasi WHERE id IN (${ids}) ORDER BY id ASC LIMIT ? OFFSET ?`;
+              sqlTotal = `SELECT COUNT(*) as count FROM hpp_kalkulasi WHERE id IN (${ids})`;
+              argsData = [limit, offset];
+              argsTotal = [];
+          } else {
+              // Fallback to LIKE
+              const qPattern = `%${search}%`;
+              sqlData = `SELECT * FROM hpp_kalkulasi WHERE (nama_order LIKE ? OR keterangan LIKE ?) ORDER BY id ASC LIMIT ? OFFSET ?`;
+              sqlTotal = `SELECT COUNT(*) as count FROM hpp_kalkulasi WHERE (nama_order LIKE ? OR keterangan LIKE ?)`;
+              argsData = [qPattern, qPattern, limit, offset];
+              argsTotal = [qPattern, qPattern];
+          }
+      } catch (e) {
+          // Safe fallback
+          const qPattern = `%${search}%`;
+          sqlData = `SELECT * FROM hpp_kalkulasi WHERE (nama_order LIKE ? OR keterangan LIKE ?) ORDER BY id ASC LIMIT ? OFFSET ?`;
+          sqlTotal = `SELECT COUNT(*) as count FROM hpp_kalkulasi WHERE (nama_order LIKE ? OR keterangan LIKE ?)`;
+          argsData = [qPattern, qPattern, limit, offset];
+          argsTotal = [qPattern, qPattern];
+      }
     } else {
-      const result = await db.execute(`SELECT * FROM hpp_kalkulasi ORDER BY id ASC`);
-      data = result.rows;
+      sqlData = "SELECT * FROM hpp_kalkulasi ORDER BY id ASC LIMIT ? OFFSET ?";
+      sqlTotal = "SELECT COUNT(*) as count FROM hpp_kalkulasi";
+      argsData = [limit, offset];
+      argsTotal = [];
     }
 
-    return NextResponse.json({ success: true, data });
+    const batchResults = await db.batch([
+      { sql: sqlData, args: argsData },
+      { sql: sqlTotal, args: argsTotal },
+      { sql: "SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM hpp_kalkulasi", args: [] }
+    ], "read");
+
+    const data = batchResults[0].rows;
+    const total = Number((batchResults[1].rows[0] as any).count);
+    const lastUpdated = (batchResults[2].rows[0] as any).lastUpdated;
+
+    return NextResponse.json({ success: true, data, total, lastUpdated, page, limit });
 
   } catch (error: any) {
-    return NextResponse.json(
-      { error: "Gagal mengambil data HPP Kalkulasi", details: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
@@ -43,8 +81,7 @@ export async function POST(request: NextRequest) {
        return NextResponse.json({ error: "Data Excel kosong atau format tidak sesuai." }, { status: 400 });
     }
 
-
-    // Prepare batch operations
+    // 1. Prepare batch operations
     const batchOps: any[] = [
       { sql: 'DELETE FROM hpp_kalkulasi', args: [] }
     ];
@@ -57,16 +94,34 @@ export async function POST(request: NextRequest) {
 
       for (const key of Object.keys(row)) {
         const lowerKey = key.toLowerCase().trim();
+        const rawVal = row[key];
+
         if (lowerKey.includes('nama order')) {
-          namaOrder = String(row[key] || '').trim();
+          namaOrder = String(rawVal || '').trim();
         } else if (lowerKey.includes('hpp kalkulasi')) {
-          let val = row[key];
-          if (typeof val === 'string') {
-            val = val.replace(/[^0-9,-]+/g, "").replace(',', '.');
+          // High-precision numerical parser (Smart-Parsing)
+          if (typeof rawVal === 'number') {
+            hppValue = rawVal;
+          } else if (typeof rawVal === 'string') {
+            let cleanVal = rawVal.trim().replace(/\s/g, '');
+            // Detect locale pattern: 1.500,50 (Indonesian) or 1,500.50 (US)
+            if (cleanVal.includes(',') && cleanVal.includes('.')) {
+                // If comma is after dot, treat as Indonesian (Dot=Thousand, Comma=Decimal)
+                if (cleanVal.lastIndexOf(',') > cleanVal.lastIndexOf('.')) {
+                    cleanVal = cleanVal.replace(/\./g, "").replace(",", ".");
+                } else {
+                    // Otherwise treat as US (Comma=Thousand, Dot=Decimal)
+                    cleanVal = cleanVal.replace(/,/g, "");
+                }
+            } else if (cleanVal.includes(',')) {
+                // Single separator found: comma. 
+                // Likely a decimal for 379,1.
+                cleanVal = cleanVal.replace(',', '.');
+            }
+            hppValue = parseFloat(cleanVal) || 0;
           }
-          hppValue = parseFloat(val) || 0;
         } else if (lowerKey.includes('keterangan')) {
-          keterangan = String(row[key] || '').trim();
+          keterangan = String(rawVal || '').trim();
         }
       }
 
@@ -79,8 +134,7 @@ export async function POST(request: NextRequest) {
       importedCount++;
     }
 
-
-    // Execute batch
+    // 2. Execute batch
     await db.batch(batchOps, "write");
 
     const session = await getSession();
@@ -94,10 +148,10 @@ export async function POST(request: NextRequest) {
         0, 
         `Upload HPP Kalkulasi dari Excel (${importedCount} data)`, 
         JSON.stringify({ fileName: filename, imported: importedCount }),
-
         session?.username || 'System'
       ]
     });
+
     return NextResponse.json({
       success: true,
       message: `Berhasil mengimpor ${importedCount} data HPP Kalkulasi.`,

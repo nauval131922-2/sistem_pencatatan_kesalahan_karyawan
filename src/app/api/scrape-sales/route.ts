@@ -104,27 +104,50 @@ export async function GET(request: NextRequest) {
     for (const record of allRecords) {
       batchOps.push({
         sql: `
-          INSERT INTO sales_reports (tgl, kd_barang, nama_prd, nama_pelanggan, dati_2, qty, harga, jumlah, faktur, raw_data)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO sales_reports (
+            faktur, kd_pelanggan, tgl, kd_barang, faktur_so, 
+            jthtmp, harga, qty, jumlah, ppn, 
+            faktur_prd, nama_prd, no_ref_pelanggan, nama_pelanggan, dati_2, 
+            gol_barang, keterangan_so, recid, raw_data
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(faktur, kd_barang, tgl) DO UPDATE SET
+            kd_pelanggan = excluded.kd_pelanggan,
+            faktur_so = excluded.faktur_so,
+            jthtmp = excluded.jthtmp,
+            harga = excluded.harga,
+            qty = excluded.qty,
+            jumlah = excluded.jumlah,
+            ppn = excluded.ppn,
+            faktur_prd = excluded.faktur_prd,
             nama_prd = excluded.nama_prd,
+            no_ref_pelanggan = excluded.no_ref_pelanggan,
             nama_pelanggan = excluded.nama_pelanggan,
             dati_2 = excluded.dati_2,
-            qty = excluded.qty,
-            harga = excluded.harga,
-            jumlah = excluded.jumlah,
+            gol_barang = excluded.gol_barang,
+            keterangan_so = excluded.keterangan_so,
+            recid = excluded.recid,
             raw_data = excluded.raw_data
         `,
         args: [
+          record.faktur || '',
+          record.kd_pelanggan || '',
           record.tgl || '',
           record.kd_barang || '',
+          record.faktur_so || '',
+          record.jthtmp || '',
+          parseFloat(record.harga || "0") || 0,
+          parseFloat(record.qty || "0") || 0,
+          parseFloat(record.jumlah || "0") || 0,
+          parseFloat(record.ppn || "0") || 0,
+          record.faktur_prd || '',
           record.nama_prd || '',
+          record.no_ref_pelanggan || '',
           record.nama_pelanggan || '',
           record.dati_2 || '',
-          parseFloat(record.qty || "0") || 0,
-          parseFloat(record.harga || "0") || 0,
-          parseFloat(record.jumlah || "0") || 0,
-          record.faktur || '',
+          record.gol_barang || '',
+          record.keterangan_so || '',
+          record.recid || '',
           JSON.stringify(record)
         ]
       });

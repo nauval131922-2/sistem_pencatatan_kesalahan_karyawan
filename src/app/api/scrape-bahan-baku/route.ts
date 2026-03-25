@@ -100,17 +100,17 @@ export async function GET(request: NextRequest) {
         String(r.nama_barang || "").toLowerCase().trim() !== "subtotal"
     );
 
-    const finalRecords = filteredRecords.map((r: any) => {
-      const parseNumber = (val: any) => {
-        if (!val) return 0;
-        if (typeof val === 'number') return val;
-        try {
-          return parseFloat(String(val).replace(/,/g, "")) || 0;
-        } catch {
-          return 0;
-        }
+    const parseNumber = (val: any) => {
+      if (!val) return 0;
+      if (typeof val === 'number') return val;
+      try {
+        return parseFloat(String(val).replace(/,/g, "")) || 0;
+      } catch {
+        return 0;
       }
+    };
 
+    const finalRecords = filteredRecords.map((r: any) => {
       return {
         ...r,
         qty: parseNumber(r.qty),
@@ -130,15 +130,30 @@ export async function GET(request: NextRequest) {
       
       batchOps.push({
         sql: `
-          INSERT INTO bahan_baku (tgl, nama_barang, kd_barang, faktur, faktur_prd, qty, satuan, nama_prd, hp, raw_data)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO bahan_baku (
+            tgl, nama_barang, kd_barang, faktur, faktur_prd, 
+            faktur_aktifitas, kd_cabang, kd_gudang, qty, satuan, 
+            status, hp, hp_total, keterangan, fkt_hasil, 
+            nama_prd, aktifitas, username, kd_pelanggan, recid, 
+            raw_data
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(faktur, kd_barang, tgl) DO UPDATE SET
-            nama_barang = excluded.nama_barang,
-            faktur_prd = excluded.faktur_prd,
+            faktur_aktifitas = excluded.faktur_aktifitas,
+            kd_cabang = excluded.kd_cabang,
+            kd_gudang = excluded.kd_gudang,
             qty = excluded.qty,
             satuan = excluded.satuan,
-            nama_prd = excluded.nama_prd,
+            status = excluded.status,
             hp = excluded.hp,
+            hp_total = excluded.hp_total,
+            keterangan = excluded.keterangan,
+            fkt_hasil = excluded.fkt_hasil,
+            nama_prd = excluded.nama_prd,
+            aktifitas = excluded.aktifitas,
+            username = excluded.username,
+            kd_pelanggan = excluded.kd_pelanggan,
+            recid = excluded.recid,
             raw_data = excluded.raw_data
         `,
         args: [
@@ -147,10 +162,21 @@ export async function GET(request: NextRequest) {
           record.kd_barang || '',
           record.faktur || '',
           record.faktur_prd || '',
+          record.faktur_aktifitas || '',
+          record.kd_cabang || '',
+          record.kd_gudang || '',
           record.qty || 0,
           record.satuan || '',
-          record.nama_prd || '',
+          record.status || '',
           record.hp || 0,
+          parseNumber(record.hp_total),
+          record.keterangan || '',
+          record.fkt_hasil || '',
+          record.nama_prd || '',
+          record.aktifitas || '',
+          record.username || '',
+          record.kd_pelanggan || '',
+          record.recid || '',
           JSON.stringify(record)
         ]
       });

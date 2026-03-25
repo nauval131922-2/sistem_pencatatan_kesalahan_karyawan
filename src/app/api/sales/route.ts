@@ -31,30 +31,37 @@ export async function GET(request: NextRequest) {
       sqlTotal = "SELECT COUNT(*) as count FROM sales_reports WHERE nama_prd = ?";
       argsTotal = [orderName];
     } else if (search) {
-      const query = `%${search}%`;
-      const baseArgs = [query, query, query, query];
-      if (fromDate && toDate) { baseArgs.push(fromDate, toDate); }
-      
-      sqlData = `
-        SELECT id, tgl, kd_barang, nama_prd, nama_pelanggan, dati_2, qty, harga, jumlah, faktur, created_at 
-        FROM sales_reports 
-        WHERE (nama_prd LIKE ? OR nama_pelanggan LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
-        ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
-        LIMIT ? OFFSET ?
-      `;
-      argsData = [...baseArgs, limit, offset];
-
-      sqlTotal = `
-        SELECT COUNT(*) as count FROM sales_reports 
-        WHERE (nama_prd LIKE ? OR nama_pelanggan LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}
-      `;
-      argsTotal = baseArgs;
+      const queryValue = `${search}*`;
+      try {
+          const ftsMatch = await db.execute({ sql: "SELECT id FROM sales_reports_fts WHERE sales_reports_fts MATCH ?", args: [queryValue] });
+          if (ftsMatch.rows.length > 0) {
+              const ids = ftsMatch.rows.map(r => r.id).join(',');
+              sqlData = `SELECT * FROM sales_reports WHERE id IN (${ids}) ${dateFilterSQL} ORDER BY substr(tgl,7,4) DESC, substr(tgl,4,2) DESC, substr(tgl,1,2) DESC, id DESC LIMIT ? OFFSET ?`;
+              sqlTotal = `SELECT COUNT(*) as count FROM sales_reports WHERE id IN (${ids}) ${dateFilterSQL}`;
+              argsData = [...(fromDate && toDate ? [fromDate, toDate] : []), limit, offset];
+              argsTotal = (fromDate && toDate ? [fromDate, toDate] : []);
+          } else {
+              // Fallback to LIKE
+              const qPattern = `%${search}%`;
+              sqlData = `SELECT * FROM sales_reports WHERE (nama_prd LIKE ? OR nama_pelanggan LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL} ORDER BY substr(tgl,7,4) DESC, substr(tgl,4,2) DESC, substr(tgl,1,2) DESC, id DESC LIMIT ? OFFSET ?`;
+              sqlTotal = `SELECT COUNT(*) as count FROM sales_reports WHERE (nama_prd LIKE ? OR nama_pelanggan LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}`;
+              argsData = [qPattern, qPattern, qPattern, qPattern, ...(fromDate && toDate ? [fromDate, toDate] : []), limit, offset];
+              argsTotal = [qPattern, qPattern, qPattern, qPattern, ...(fromDate && toDate ? [fromDate, toDate] : [])];
+          }
+      } catch (e) {
+          // Fallback
+          const qPattern = `%${search}%`;
+          sqlData = `SELECT * FROM sales_reports WHERE (nama_prd LIKE ? OR nama_pelanggan LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL} ORDER BY substr(tgl,7,4) DESC, substr(tgl,4,2) DESC, substr(tgl,1,2) DESC, id DESC LIMIT ? OFFSET ?`;
+          sqlTotal = `SELECT COUNT(*) as count FROM sales_reports WHERE (nama_prd LIKE ? OR nama_pelanggan LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}`;
+          argsData = [qPattern, qPattern, qPattern, qPattern, ...(fromDate && toDate ? [fromDate, toDate] : []), limit, offset];
+          argsTotal = [qPattern, qPattern, qPattern, qPattern, ...(fromDate && toDate ? [fromDate, toDate] : [])];
+      }
     } else {
       const baseArgs: any[] = [];
       if (fromDate && toDate) { baseArgs.push(fromDate, toDate); }
 
       sqlData = `
-        SELECT id, tgl, kd_barang, nama_prd, nama_pelanggan, dati_2, qty, harga, jumlah, faktur, created_at 
+        SELECT * 
         FROM sales_reports 
         ${(fromDate && toDate) ? `WHERE 1=1 ${dateFilterSQL}` : ''}
         ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 

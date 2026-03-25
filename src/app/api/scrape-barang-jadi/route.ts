@@ -102,10 +102,11 @@ export async function GET(request: NextRequest) {
 
     const finalRecords = filteredRecords.map((r: any) => {
       const parseNumber = (val: any) => {
-        if (!val) return 0;
+        if (!val === undefined || val === null) return 0;
         if (typeof val === 'number') return val;
         try {
-          return parseFloat(String(val).replace(/,/g, "")) || 0;
+          const s = String(val).replace(/,/g, "");
+          return isNaN(parseFloat(s)) ? 0 : parseFloat(s);
         } catch {
           return 0;
         }
@@ -114,7 +115,17 @@ export async function GET(request: NextRequest) {
       return {
         ...r,
         qty: parseNumber(r.qty),
+        qty_wip_awal: parseNumber(r.qty_wip_awal),
+        qty_wip_akhir: parseNumber(r.qty_wip_akhir),
+        qty_order: parseNumber(r.qty_order),
+        qty_so: parseNumber(r.qty_so),
+        total_berat_kg: parseNumber(r.total_berat_kg),
+        pers_alokasi_hp: parseNumber(r.pers_alokasi_hp),
         hp: parseNumber(r.hp),
+        hp_total: parseNumber(r.hp_total),
+        bbb: parseNumber(r.bbb),
+        btkl: parseNumber(r.btkl),
+        bop: parseNumber(r.bop),
       };
     });
 
@@ -125,15 +136,41 @@ export async function GET(request: NextRequest) {
       
       batchOps.push({
         sql: `
-          INSERT INTO barang_jadi (tgl, nama_barang, kd_barang, faktur, faktur_prd, qty, satuan, nama_prd, hp, raw_data)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO barang_jadi (
+            tgl, nama_barang, kd_barang, faktur, faktur_prd, faktur_so,
+            kd_cabang, kd_gudang, qty_wip_awal, qty, qty_wip_akhir,
+            total_berat_kg, pers_alokasi_hp, mtd_alokasi_hp, tgl_expired,
+            selesai, status, hp, hp_total, bbb, btkl, bop,
+            keterangan, username, kd_pelanggan, nama_prd, qty_order, qty_so, recid, raw_data
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT(faktur, kd_barang, tgl) DO UPDATE SET
             nama_barang = excluded.nama_barang,
             faktur_prd = excluded.faktur_prd,
+            faktur_so = excluded.faktur_so,
+            kd_cabang = excluded.kd_cabang,
+            kd_gudang = excluded.kd_gudang,
+            qty_wip_awal = excluded.qty_wip_awal,
             qty = excluded.qty,
-            satuan = excluded.satuan,
-            nama_prd = excluded.nama_prd,
+            qty_wip_akhir = excluded.qty_wip_akhir,
+            total_berat_kg = excluded.total_berat_kg,
+            pers_alokasi_hp = excluded.pers_alokasi_hp,
+            mtd_alokasi_hp = excluded.mtd_alokasi_hp,
+            tgl_expired = excluded.tgl_expired,
+            selesai = excluded.selesai,
+            status = excluded.status,
             hp = excluded.hp,
+            hp_total = excluded.hp_total,
+            bbb = excluded.bbb,
+            btkl = excluded.btkl,
+            bop = excluded.bop,
+            keterangan = excluded.keterangan,
+            username = excluded.username,
+            kd_pelanggan = excluded.kd_pelanggan,
+            nama_prd = excluded.nama_prd,
+            qty_order = excluded.qty_order,
+            qty_so = excluded.qty_so,
+            recid = excluded.recid,
             raw_data = excluded.raw_data
         `,
         args: [
@@ -142,10 +179,30 @@ export async function GET(request: NextRequest) {
           record.kd_barang || '',
           record.faktur || '',
           record.faktur_prd || '',
+          record.faktur_so || '',
+          record.kd_cabang || '',
+          record.kd_gudang || '',
+          record.qty_wip_awal || 0,
           record.qty || 0,
-          record.satuan || '',
-          record.nama_prd || '',
+          record.qty_wip_akhir || 0,
+          record.total_berat_kg || 0,
+          record.pers_alokasi_hp || 0,
+          record.mtd_alokasi_hp || '',
+          record.tgl_expired || '',
+          record.selesai || 0,
+          record.status || 0,
           record.hp || 0,
+          record.hp_total || 0,
+          record.bbb || 0,
+          record.btkl || 0,
+          record.bop || 0,
+          record.keterangan || '',
+          record.username || '',
+          record.kd_pelanggan || '',
+          record.nama_prd || '',
+          record.qty_order || 0,
+          record.qty_so || 0,
+          record.recid || '',
           JSON.stringify(record)
         ]
       });
