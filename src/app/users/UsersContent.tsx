@@ -389,179 +389,183 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
         </div>
       )}
 
-      <div className="flex-1 bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col min-h-0 overflow-hidden relative">
-        <div className="overflow-auto flex-1 custom-scrollbar">
-          <table className="w-full text-left table-fixed border-collapse" style={{ width: Object.values(columnWidths).reduce((a, b) => a + b, 0), minWidth: '100%' }}>
-            <thead className="sticky top-0 bg-gray-50/95 backdrop-blur-md z-10 border-b border-gray-100">
-              <tr className="text-[10px] text-gray-400 font-extrabold uppercase tracking-widest">
-                <th 
-                  className="px-6 py-4 relative group cursor-pointer hover:bg-gray-100/50 transition-colors border-r border-gray-100"
-                  style={{ width: columnWidths.profile }}
-                  onClick={() => toggleSort('name')}
-                  role="button"
-                  aria-label="Urutkan berdasarkan profil pengguna"
-                >
-                  <div className="flex items-center gap-2">Profil Pengguna <SortIcon sortKey="name" /></div>
-                  <div 
-                    className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
-                    onMouseDown={(e) => { e.stopPropagation(); startResizing('profile', e); }}
+      {/* Table & Footer Wrapper */}
+      <div className="flex-1 flex flex-col min-h-0 gap-2 overflow-hidden">
+        <div className="flex-1 bg-white border border-gray-200 rounded-2xl shadow-sm flex flex-col min-h-0 overflow-hidden relative">
+          <div className="overflow-auto flex-1 custom-scrollbar">
+            <table className="w-full text-left table-fixed border-collapse" style={{ width: Object.values(columnWidths).reduce((a, b) => a + b, 0), minWidth: '100%' }}>
+              <thead className="sticky top-0 bg-gray-50/95 backdrop-blur-md z-10 border-b border-gray-100">
+                <tr className="text-[10px] text-gray-400 font-extrabold uppercase tracking-widest">
+                  <th 
+                    className="px-6 py-4 relative group cursor-pointer hover:bg-gray-100/50 transition-colors border-r border-gray-100"
+                    style={{ width: columnWidths.profile }}
+                    onClick={() => toggleSort('name')}
+                    role="button"
+                    aria-label="Urutkan berdasarkan profil pengguna"
                   >
-                    <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
-                  </div>
-                </th>
+                    <div className="flex items-center gap-2 leading-none">Profil Pengguna <SortIcon sortKey="name" /></div>
+                    <div 
+                      className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
+                      onMouseDown={(e) => { e.stopPropagation(); startResizing('profile', e); }}
+                    >
+                      <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                    </div>
+                  </th>
 
-                <th 
-                  className="px-6 py-4 relative group cursor-pointer hover:bg-gray-100/50 transition-colors border-r border-gray-100"
-                  style={{ width: columnWidths.role }}
-                  onClick={() => toggleSort('role')}
-                  role="button"
-                  aria-label="Urutkan berdasarkan jabatan"
-                >
-                  <div className="flex items-center gap-2">Jabatan / Peran <SortIcon sortKey="role" /></div>
-                  <div 
-                    className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
-                    onMouseDown={(e) => { e.stopPropagation(); startResizing('role', e); }}
+                  <th 
+                    className="px-6 py-4 relative group cursor-pointer hover:bg-gray-100/50 transition-colors border-r border-gray-100"
+                    style={{ width: columnWidths.role }}
+                    onClick={() => toggleSort('role')}
+                    role="button"
+                    aria-label="Urutkan berdasarkan jabatan"
                   >
-                    <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
-                  </div>
-                </th>
+                    <div className="flex items-center gap-2 leading-none">Jabatan / Peran <SortIcon sortKey="role" /></div>
+                    <div 
+                      className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
+                      onMouseDown={(e) => { e.stopPropagation(); startResizing('role', e); }}
+                    >
+                      <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                    </div>
+                  </th>
 
-                <th className="px-6 py-4 relative group" style={{ width: columnWidths.action }}>
-                  <div className="text-right pr-4">Manajemen</div>
-                  <div 
-                    className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
-                    onMouseDown={(e) => { e.stopPropagation(); startResizing('action', e); }}
-                  >
-                    <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {loading ? (
-                Array(5).fill(0).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-gray-100"></div>
-                        <div className="flex flex-col gap-1.5">
-                          <div className="h-3 w-32 bg-gray-100 rounded"></div>
-                          <div className="h-2.5 w-20 bg-gray-50 rounded"></div>
+                  <th className="px-6 py-4 relative group" style={{ width: columnWidths.action }}>
+                    <div className="text-right pr-4 leading-none">Manajemen</div>
+                    <div 
+                      className="absolute -right-2 top-0 bottom-0 w-4 z-20 cursor-col-resize group/resizer" 
+                      onMouseDown={(e) => { e.stopPropagation(); startResizing('action', e); }}
+                    >
+                      <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {loading ? (
+                  Array(5).fill(0).map((_, i) => (
+                    <tr key={i} className="animate-pulse h-14">
+                      <td className="px-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-gray-100"></div>
+                          <div className="flex flex-col gap-1.5">
+                            <div className="h-3 w-32 bg-gray-100 rounded"></div>
+                            <div className="h-2.5 w-20 bg-gray-50 rounded"></div>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="h-5 w-24 bg-gray-100 rounded-full"></div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-end gap-2">
-                        <div className="h-8 w-16 bg-gray-50 rounded-lg"></div>
-                        <div className="h-8 w-16 bg-gray-50 rounded-lg"></div>
+                      </td>
+                      <td className="px-6">
+                        <div className="h-5 w-24 bg-gray-100 rounded-full"></div>
+                      </td>
+                      <td className="px-6">
+                        <div className="flex justify-end gap-2">
+                          <div className="h-8 w-16 bg-gray-50 rounded-lg"></div>
+                          <div className="h-8 w-16 bg-gray-50 rounded-lg"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-20 text-center">
+                      <div className="flex flex-col items-center gap-3 grayscale opacity-30">
+                        <Users size={48} />
+                        <p className="text-sm font-bold text-gray-400">Tidak ada user ditemukan.</p>
                       </div>
                     </td>
                   </tr>
-                ))
-              ) : filteredUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="px-6 py-20 text-center">
-                    <div className="flex flex-col items-center gap-3 grayscale opacity-30">
-                      <Users size={48} />
-                      <p className="text-sm font-bold text-gray-400">Tidak ada user ditemukan.</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredUsers.map((user, idx) => {
-                  const isSelected = selectedIds.has(user.id);
-                  return (
-                    <tr 
-                      key={user.id} 
-                      onClick={(e) => toggleSelectRow(user.id, e)}
-                      onDoubleClick={() => handleEdit(user)}
-                      className={`transition-all duration-150 group h-14 cursor-pointer select-none border-b border-gray-100 ${isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : `${idx % 2 === 1 ? 'bg-slate-50/20' : 'bg-white'} hover:bg-green-50/40`}`}
-                    >
+                ) : (
+                  filteredUsers.map((user, idx) => {
+                    const isSelected = selectedIds.has(user.id);
+                    return (
+                      <tr 
+                        key={user.id} 
+                        onClick={(e) => toggleSelectRow(user.id, e)}
+                        onDoubleClick={() => handleEdit(user)}
+                        className={`transition-all duration-150 group h-14 cursor-pointer select-none border-b border-gray-100 ${isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : `${idx % 2 === 1 ? 'bg-slate-50/20' : 'bg-white'} hover:bg-green-50/40`}`}
+                      >
 
-                      <td className="px-6 py-2 truncate relative border-r border-gray-100">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center text-white font-black text-[10px] shadow-sm shrink-0 overflow-hidden ring-1 ring-black/5">
-                          {user.photo ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
-                          ) : getInitials(user.name)}
+                        <td className="px-6 py-2 truncate relative border-r border-gray-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-green-500 flex items-center justify-center text-white font-black text-[10px] shadow-sm shrink-0 overflow-hidden ring-1 ring-black/5">
+                            {user.photo ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
+                            ) : getInitials(user.name)}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[13px] font-extrabold text-gray-700 truncate leading-none mb-1">{user.name}</span>
+                            <span className="text-[11px] text-gray-400 font-medium truncate leading-none">@{user.username}</span>
+                          </div>
                         </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-[13px] font-extrabold text-gray-700 truncate">{user.name}</span>
-                          <span className="text-[11px] text-gray-400 font-medium truncate">@{user.username}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-2 border-r border-gray-100">
-                      <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-tight inline-flex items-center gap-1.5 ${
-                        user.role === 'Super Admin' 
-                          ? 'bg-purple-50 text-purple-600 border border-purple-100/50' 
-                          : 'bg-indigo-50 text-indigo-600 border border-indigo-100/50'
-                      }`}>
-                        {user.role === 'Super Admin' ? <ShieldCheck size={10} /> : <UserCog size={10} />}
-                        {user.role}
-                      </span>
-                    </td>
+                      </td>
+                      <td className="px-6 py-2 border-r border-gray-100">
+                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-tight inline-flex items-center gap-1.5 leading-none ${
+                          user.role === 'Super Admin' 
+                            ? 'bg-purple-50 text-purple-600 border border-purple-100/50' 
+                            : 'bg-indigo-50 text-indigo-600 border border-indigo-100/50'
+                        }`}>
+                          {user.role === 'Super Admin' ? <ShieldCheck size={10} /> : <UserCog size={10} />}
+                          {user.role}
+                        </span>
+                      </td>
 
-                    <td className="px-6 py-2">
-                      <div className={`flex items-center justify-end gap-2 transition-all duration-200 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                      <td className="px-6 py-2">
+                        <div className={`flex items-center justify-end gap-2 transition-all duration-200 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
 
-                        <button 
-                          onClick={() => handleEdit(user)}
-                          className="h-8 px-3 rounded-lg border border-gray-200 text-gray-400 hover:text-green-600 hover:border-green-100 hover:bg-green-50 text-[11px] font-bold transition-all flex items-center gap-1.5"
-                        >
-                          <Edit2 size={12} />
-                          <span>Edit</span>
-                        </button>
-                        {user.id !== currentUserId && (
                           <button 
-                            onClick={() => handleDelete(user.id, user.username)}
-                            className="h-8 px-3 rounded-lg border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-100 hover:bg-red-50 text-[11px] font-bold transition-all flex items-center gap-1.5"
+                            onClick={() => handleEdit(user)}
+                            className="h-8 px-3 rounded-lg border border-gray-200 text-gray-400 hover:text-green-600 hover:border-green-100 hover:bg-green-50 text-[11px] font-bold transition-all flex items-center gap-1.5 leading-none"
                           >
-                            <Trash2 size={12} />
-                            <span>Hapus</span>
+                            <Edit2 size={12} />
+                            <span>Edit</span>
                           </button>
-                        )}
-                      </div>
-                    </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                          {user.id !== currentUserId && (
+                            <button 
+                              onClick={() => handleDelete(user.id, user.username)}
+                              className="h-8 px-3 rounded-lg border border-gray-200 text-gray-400 hover:text-red-600 hover:border-red-100 hover:bg-red-50 text-[11px] font-bold transition-all flex items-center gap-1.5 leading-none"
+                            >
+                              <Trash2 size={12} />
+                              <span>Hapus</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
 
-      <div className="flex items-center justify-between px-1 shrink-0 mt-auto">
-        <span className="text-[12px] font-bold text-gray-400">
-          Menampilkan {filteredUsers.length} dari {users.length} total pengguna sistem
-        </span>
-        <div className="flex items-center gap-4">
-          {selectedIds.size > 0 && (
-            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-              <span className="text-[12px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
-              <button 
-                onClick={() => setSelectedIds(new Set())}
-                className="text-[12px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
-              >
-                Batal
-              </button>
-            </div>
-          )}
-          {loadTime !== null && (
-            <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
-              loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-              loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
-              'bg-red-50 text-red-600 border-red-100'
-            }`}>
-              <span className="animate-pulse">⚡</span>
-              <span>{(loadTime / 1000).toFixed(2)}s</span>
-            </span>
-          )}
+        {/* Footer Info Banner */}
+        <div className="flex items-center justify-between px-1 shrink-0 mt-1">
+          <span className="text-[12px] leading-none font-bold text-gray-400">
+            Menampilkan {filteredUsers.length} dari {users.length} total pengguna sistem
+          </span>
+          <div className="flex items-center gap-4">
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
+                <span className="text-[12px] leading-none font-bold text-gray-400">{selectedIds.size} dipilih</span>
+                <button 
+                  onClick={() => setSelectedIds(new Set())}
+                  className="text-[12px] leading-none font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
+                >
+                  Batal
+                </button>
+              </div>
+            )}
+            {loadTime !== null && (
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
+                loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+                'bg-red-50 text-red-600 border-red-100'
+              }`}>
+                <span className="animate-pulse">⚡</span>
+                <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

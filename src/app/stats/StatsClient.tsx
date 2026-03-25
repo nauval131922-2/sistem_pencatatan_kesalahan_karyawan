@@ -59,13 +59,13 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
   }, [detailedData.monthlyData, selectedYear]);
 
   return (
-    <div className="flex-1 flex flex-col gap-6 pb-10 overflow-y-auto custom-scrollbar">
+    <div className="flex-1 flex flex-col gap-5 pb-10 overflow-y-auto custom-scrollbar sm:px-0">
       {/* Year Selector - Back at the top */}
       <div className="shrink-0">
         <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] px-5 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Calendar size={16} className="text-green-600" />
-            <span className="text-[13px] font-extrabold text-gray-400 uppercase tracking-wider">Tahun Analisis</span>
+            <span className="text-[13px] font-extrabold text-gray-400 tracking-wider">Tahun Analisis</span>
           </div>
 
           <div className="relative" ref={dropdownRef}>
@@ -117,7 +117,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
 
 
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
         {/* Monthly Trend Chart */}
         <div className="lg:col-span-3 bg-white border border-gray-100 p-6 rounded-2xl shadow-sm flex flex-col min-h-[500px]">
           <div className="flex items-center justify-between mb-8">
@@ -336,7 +336,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Top Repeaters List */}
         <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden min-h-[350px] flex flex-col">
           <div className="p-6 border-b border-gray-50 flex items-center justify-between">
@@ -440,7 +440,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
               </p>
               
               <div className="flex flex-wrap gap-2">
-                 <div className="px-3 py-1.5 bg-white/20 backdrop-blur-sm border border-white/20 text-white text-[10px] font-black rounded-lg uppercase tracking-wider">
+                 <div className="px-3 py-1.5 bg-white/20 backdrop-blur-sm border border-white/20 text-white text-[10px] font-black rounded-lg tracking-wider">
                    {stats.totalInfractions === 0 
                      ? '⭐ Sertifikasi Kualitas' 
                      : stats.highSeverity > 0 
@@ -448,7 +448,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
                        : '📚 Edukasi SOP'
                    }
                  </div>
-                 <div className="px-3 py-1.5 bg-white/20 backdrop-blur-sm border border-white/20 text-white text-[10px] font-black rounded-lg uppercase tracking-wider">
+                 <div className="px-3 py-1.5 bg-white/20 backdrop-blur-sm border border-white/20 text-white text-[10px] font-black rounded-lg tracking-wider">
                    {stats.totalInfractions === 0 
                      ? '🏆 Pertahankan Standar' 
                      : stats.highSeverity > 0 

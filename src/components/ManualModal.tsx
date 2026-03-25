@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
-import { HelpCircle, X, Home, Users, Package, Box, Star, BarChart3, Calculator, AlertCircle, Info, Search, Filter, Database, FileText, CheckCircle2 } from 'lucide-react';
+import { HelpCircle, X, Home, Users, Package, Box, Star, BarChart3, Calculator, AlertCircle, Info, Search, Filter, Database, FileText, FileCheck, CheckCircle2, TrendingDown, Monitor, ShieldCheck, ShoppingCart, ClipboardList } from 'lucide-react';
 
 export default function ManualModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,9 +18,9 @@ export default function ManualModal() {
   }, []);
 
   const allGuides = useMemo(() => ({
-    '/': {
-      title: 'Dashboard (Beranda)',
-      icon: Home,
+    '/dashboard-kesalahan-karyawan': {
+      title: 'Dashboard Kesalahan Karyawan',
+      icon: TrendingDown,
       description: 'Ringkasan aktivitas dan metrik sistem secara real-time untuk audit cepat performa harian.',
       steps: [
         'Pantau 3 metrik utama pada kartu statistik:',
@@ -31,6 +31,36 @@ export default function ManualModal() {
         'Gunakan **Kotak Pencarian** di atas tabel untuk memfilter aktivitas berdasarkan menu, user, atau keterangan.',
         'Klik tombol **Detail** pada baris tabel untuk melihat rincian data aktivitas (termasuk data mentah JSON).',
         'Klik pada **Kartu Statistik** sebagai jalan pintas (**shortcut**) cepat menuju ke halamannya.'
+      ]
+    },
+    '/dashboard-manufaktur': {
+      title: 'Dashboard Manufaktur',
+      icon: Monitor,
+      description: 'Ringkasan operasional dan progres produksi harian yang terintegrasi dengan Digit.',
+      steps: [
+        'Pantau progres produksi harian dan efisiensi operasional.',
+        'Fitur ini sedang dalam tahap **Sinkronisasi Database** dengan sistem Digit.',
+        'Digunakan untuk melihat pencapaian target produksi secara visual.'
+      ]
+    },
+    '/tracking-manufaktur': {
+      title: 'Tracking Manufaktur',
+      icon: Search,
+      description: 'Mesin pencari histori dan alur faktur produksi secara instan.',
+      steps: [
+        'Masukkan **Nomor Faktur** pada kotak pencarian untuk melihat alur produksinya.',
+        'Sistem akan menampilkan status terakhir barang di bagian produksi.',
+        'Gunakan fitur ini untuk menjawab pertanyaan pelanggan mengenai status order mereka secara cepat.'
+      ]
+    },
+    '/roles': {
+      title: 'Hak Akses (Roles)',
+      icon: ShieldCheck,
+      description: 'Manajemen tingkat keamanan dan batasan akses user dalam sistem SINTAK.',
+      steps: [
+        'Lihat daftar **Role** yang tersedia (misal: Super Admin, Admin, Viewers).',
+        'Konfigurasi izin akses untuk setiap modul (Kesalahan, Manufaktur, Sistem).',
+        'Pastikan setiap user memiliki role yang sesuai dengan tanggung jawabnya untuk menjaga integritas data.'
       ]
     },
     '/employees': {
@@ -46,13 +76,61 @@ export default function ManualModal() {
         'Data di sini akan tampil otomatis pada dropdown **Nama Karyawan** saat mengisi form **Pencatatan Kesalahan**.'
       ]
     },
+    '/sph-out': {
+      title: 'SPH Out (Surat Penawaran Harga Keluar)',
+      icon: FileText,
+      description: 'Sinkronisasi daftar SPH Out secara langsung dari sistem Digit.',
+      steps: [
+        'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel Periode di bagian atas.',
+        'Klik tombol **Tarik Data** untuk memulai sinkronisasi dari Digit.',
+        'Pantau **Indikator Persentase (%)** dan status proses pada panel atas hingga sinkronisasi selesai.',
+        'Gunakan **Kotak Pencarian** untuk memfilter data berdasarkan **Faktur**, **Pelanggan**, atau **Nama Barang**.',
+        'Lihat indikator **Diperbarui** dan **Kecepatan Load (s)** untuk memastikan Anda melihat data terbaru.'
+      ]
+    },
+    '/sph-in': {
+      title: 'SPH In (Surat Penawaran Harga Masuk)',
+      icon: FileText,
+      description: 'Sinkronisasi daftar SPH In secara langsung dari sistem Digit.',
+      steps: [
+        'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel periode di bagian atas.',
+        'Klik tombol **Tarik Data** untuk memulai sinkronisasi dari Digit.',
+        'Tunggu hingga indikator **Persentase (%)** selesai memproses data.',
+        'Gunakan **Kotak Pencarian** untuk memfilter data berdasarkan **Faktur**, **Supplier**, atau **Faktur SPPH**.',
+        'Lihat indikator **Diperbarui** untuk memastikan Anda melihat data terbaru dari server Digit.'
+      ]
+    },
+    '/spph-out': {
+      title: 'SPPH Out',
+      icon: FileText,
+      description: 'Sinkronisasi daftar SPPH Out secara langsung dari Digit',
+      steps: [
+        'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel periode di bagian atas.',
+        'Klik tombol **Tarik Data** untuk memulai sinkronisasi dari Digit.',
+        'Tunggu hingga indikator **Persentase (%)** selesai memproses data.',
+        'Gunakan **Kotak Pencarian** untuk memfilter data berdasarkan **Faktur SPPH**, **Faktur PR**, atau **Supplier**.',
+        'Lihat indikator **Diperbarui** untuk memastikan Anda melihat data terbaru dari server Digit.'
+      ]
+    },
+    '/sales-orders': {
+      title: 'Sales Order',
+      icon: FileCheck,
+      description: 'Sinkronisasi daftar Sales Order (SO) secara langsung dari sistem Digit.',
+      steps: [
+        'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel Periode di bagian atas.',
+        'Klik tombol **Tarik Data** untuk memulai sinkronisasi dari Digit.',
+        'Pantau **Indikator Persentase (%)** dan status proses pada panel atas hingga sinkronisasi selesai.',
+        'Gunakan **Kotak Pencarian** untuk memfilter data berdasarkan **Faktur**, **Pelanggan**, atau **Nama Barang**.',
+        'Lihat indikator **Diperbarui** dan **Kecepatan Load (s)** untuk memastikan Anda melihat data terbaru.'
+      ]
+    },
     '/orders': {
       title: 'Order Produksi',
-      icon: Package,
+      icon: ClipboardList,
       description: 'Sinkronisasi daftar Order Produksi secara langsung dari sistem Digit.',
       steps: [
         'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel Periode di bagian atas.',
-        'Klik tombol **Tarik Data** untuk memulai proses sinkronisasi otomatis (Parallel Sync).',
+        'Klik tombol **Tarik Data** untuk memulai proses sinkronisasi otomatis.',
         'Tunggu hingga indikator **Persentase (%)** selesai memproses data bulan demi bulan.',
         'Gunakan **Kotak Pencarian** untuk memfilter hasil berdasarkan **Nomor Faktur**, **Nama Produk**, atau **Pelanggan**.',
         'Pantau status **Diperbarui** dan indikator **Kecepatan Load (ms)** untuk memastikan data terbaru sudah tampil.',
@@ -61,12 +139,24 @@ export default function ManualModal() {
       ],
       tips: 'Lakukan penarikan data secara berkala untuk memastikan nomor faktur terbaru dari Digit tersedia di sistem.'
     },
+    '/purchase-orders': {
+      title: 'Purchase Order',
+      icon: ShoppingCart,
+      description: 'Sinkronisasi daftar Purchase Order (PO) secara langsung dari sistem Digit.',
+      steps: [
+        'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel periode di bagian atas.',
+        'Klik tombol **Tarik Data** untuk memulai sinkronisasi.',
+        'Pantau progres pada indikator status hingga pesan **Berhasil** muncul.',
+        'Gunakan **Kotak Pencarian** untuk memfilter data berdasarkan **Faktur PO**, **Supplier**, atau **Referensi PR/SPH**.',
+        'Lihat kolom **Status Penerimaan** untuk memantau apakah PO sudah diproses menjadi Penerimaan Barang di Digit.'
+      ]
+    },
     '/bahan-baku': {
       title: 'Daftar Bahan Baku Keluar',
       icon: Box,
       description: 'Sinkronisasi daftar pengeluaran Bahan Baku secara langsung dari sistem Digit.',
       steps: [
-        'Atur **Rentang Tanggal** pada panel Periode dan klik **Tarik Data** untuk sinkronisasi (Parallel Sync).',
+        'Atur **Rentang Tanggal** pada panel Periode dan klik **Tarik Data** untuk sinkronisasi.',
         'Tabel menampilkan kolom **Faktur**, **Faktur PRD**, **Nama Barang**, **Qty**, dan **HPP Digit**.',
         'Gunakan **Kotak Pencarian** untuk memfilter berdasarkan **Nomor Faktur**, **Nama Barang**, atau **Supplier**.',
         'Pantau indikator **Load Time (ms)** untuk melihat kecepatan akses data.',
@@ -86,6 +176,18 @@ export default function ManualModal() {
         'Scroll tabel ke bawah untuk melihat lebih banyak data tanpa perlu berpindah halaman (Infinite Scroll).'
       ]
     },
+    '/bom': {
+      title: 'Bill of Material (BOM)',
+      icon: Calculator,
+      description: 'Sinkronisasi riwayat kalkulasi biaya produksi (BOM) secara langsung dari sistem Digit.',
+      steps: [
+        'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel periode di bagian atas.',
+        'Klik tombol **Tarik Data** untuk memulai sinkronisasi.',
+        'Pantau progres pada indikator status hingga pesan **Berhasil** muncul.',
+        'Gunakan **Kotak Pencarian** untuk memfilter data berdasarkan **Faktur**, **Nama Produk**, atau **Pelanggan**.',
+        'Lihat indikator **Diperbarui** untuk memastikan Anda melihat data terbaru dari server Digit.'
+      ]
+    },
     '/sales': {
       title: 'Laporan Penjualan',
       icon: BarChart3,
@@ -96,6 +198,18 @@ export default function ManualModal() {
         'Data di sini menjadi **source** pada form **Pencatatan Kesalahan** dengan format khusus **[Faktur] Nama Order**.',
         'Harga akan ditarik dari kolom **Harga** saat memilih Jenis Dasar Harga **Harga Jual Digit** di form pencatatan.',
         'Lihat status **Diperbarui** di bagian atas untuk mengetahui waktu sinkronisasi terakhir.'
+      ]
+    },
+    '/pr': {
+      title: 'Purchase Request',
+      icon: FileText,
+      description: 'Sinkronisasi riwayat permintaan pembelian (PR) secara langsung dari sistem Digit.',
+      steps: [
+        'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel periode di bagian atas.',
+        'Klik tombol **Tarik Data** untuk memulai sinkronisasi.',
+        'Pantau progres pada indikator status hingga pesan **Berhasil** muncul.',
+        'Gunakan **Kotak Pencarian** untuk memfilter data berdasarkan **Faktur PR**, **Keterangan**, atau **Faktur Produksi**.',
+        'Lihat indikator **Diperbarui** untuk memastikan Anda melihat data terbaru dari server Digit.'
       ]
     },
     '/hpp-kalkulasi': {
@@ -155,7 +269,7 @@ export default function ManualModal() {
     return () => window.removeEventListener('open-manual', handleOpen);
   }, []);
 
-  const currentGuide = allGuides[pathname as keyof typeof allGuides] || allGuides['/'];
+  const currentGuide = allGuides[pathname as keyof typeof allGuides] || allGuides['/dashboard-kesalahan-karyawan'];
 
   return (
     <>
@@ -268,7 +382,7 @@ export default function ManualModal() {
 
             {/* Footer */}
             <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-center">
-              <p className="text-[10px] text-slate-400 font-medium italic">Panduan Penggunaan SIKKA</p>
+              <p className="text-[10px] text-slate-400 font-medium italic">Panduan Penggunaan SINTAK</p>
             </div>
           </div>
         </div>

@@ -3,7 +3,7 @@ import BahanBakuClient from './BahanBakuClient';
 import PageHeader from '@/components/PageHeader';
 
 export const metadata: Metadata = {
-  title: 'SIKKA | Bahan Baku',
+  title: 'SINTAK | Bahan Baku',
 };
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +16,7 @@ export default function BahanBakuPage() {
         title="Bahan Baku"
         description={
           <>
-            Tarik data Pengeluaran Bahan Baku dari <a href="https://digit.ptbuya.com" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-bold">Digit</a>
+            Sinkronisasi daftar Pengeluaran Bahan Baku secara langsung dari <a href="https://buyapercetakan.mdthoster.com/#cHJkL3JfYnJnX2JiYg==" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-bold">Digit</a>
           </>
         }
       />

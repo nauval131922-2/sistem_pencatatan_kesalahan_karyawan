@@ -37,9 +37,9 @@ export default function PageHeader({
       {(description || children) && (
         <div className="pl-5 mt-2 flex flex-col gap-2">
           {description && (
-            <p className="text-[13px] text-gray-400 font-medium">
+            <div className="text-[13px] text-gray-400 font-medium">
               {description}
-            </p>
+            </div>
           )}
           {children}
         </div>

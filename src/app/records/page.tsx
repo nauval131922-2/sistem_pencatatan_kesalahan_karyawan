@@ -7,7 +7,7 @@ import PageHeader from '@/components/PageHeader';
 import { redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
-  title: 'SIKKA | Pencatatan Kesalahan',
+  title: 'SINTAK | Pencatatan Kesalahan',
 };
 
 export const dynamic = 'force-dynamic';
@@ -47,7 +47,7 @@ export default async function RecordsPage() {
         description="Kelola data kesalahan karyawan dan rincian bebannya."
       />
 
-      <div className="flex-1 overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col gap-6 w-full">
         <Suspense fallback={<RecordsSkeleton />}>
           <RecordsContent today={today} />
         </Suspense>

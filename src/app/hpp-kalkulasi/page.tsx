@@ -1,15 +1,14 @@
 import HppKalkulasiClient from './HppKalkulasiClient';
+import HppKalkulasiExcelUpload from './HppKalkulasiExcelUpload';
 import type { Metadata } from 'next';
 import { getLastHppImport } from '@/lib/actions';
-import { FileSpreadsheet, Clock } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 
 export const metadata: Metadata = {
-  title: 'SIKKA | HPP Kalkulasi',
+  title: 'SINTAK | HPP Kalkulasi',
 };
 
 export const dynamic = 'force-dynamic';
-
 
 export default async function HppKalkulasiPage() {
   const lastImport = await getLastHppImport();
@@ -34,19 +33,26 @@ export default async function HppKalkulasiPage() {
         timeZone: 'Asia/Jakarta'
       });
 
-    } catch(e) {}
+    } catch(e) {
+      console.warn('Failed to parse HPP import metadata');
+    }
   }
+
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-700 overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700">
       <PageHeader
         title="HPP Kalkulasi"
         description="Upload data HPP Kalkulasi dari file Excel."
       />
 
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-        <HppKalkulasiClient 
-          importInfo={importFileName ? { fileName: importFileName, time: importTime } : undefined} 
-        />
+      <div className="flex-1 min-h-0 flex flex-col gap-6 max-w-7xl mx-auto w-full px-4 md:px-6">
+        <HppKalkulasiExcelUpload />
+
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <HppKalkulasiClient 
+            importInfo={importFileName ? { fileName: importFileName, time: importTime } : undefined} 
+          />
+        </div>
       </div>
     </div>
   );

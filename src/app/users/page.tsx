@@ -5,7 +5,7 @@ import type { Metadata } from 'next';
 import PageHeader from "@/components/PageHeader";
 
 export const metadata: Metadata = {
-  title: 'SIKKA | Kelola User',
+  title: 'SINTAK | Kelola User',
 };
 
 export default async function UsersPage() {

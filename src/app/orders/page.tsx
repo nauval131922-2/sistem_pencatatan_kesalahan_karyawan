@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import PageHeader from '@/components/PageHeader';
 
 export const metadata: Metadata = {
-  title: 'SIKKA | Order Produksi',
+  title: 'SINTAK | Order Produksi',
 };
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +16,7 @@ export default function OrdersPage() {
         title="Order Produksi"
         description={
           <>
-            Tarik data Order Produksi dari <a href="https://digit.ptbuya.com" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-bold">Digit</a>
+            Sinkronisasi daftar Order Produksi secara langsung dari <a href="https://buyapercetakan.mdthoster.com/" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-bold">Digit</a>
           </>
         }
       />

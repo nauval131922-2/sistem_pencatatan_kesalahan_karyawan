@@ -12,8 +12,8 @@ import { getSession } from "@/lib/session";
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "SIKKA | Dashboard",
-  description: "Sistem Pencatatan Kesalahan Karyawan - Divisi Percetakan",
+  title: "SINTAK | Dashboard",
+  description: "SINTAK - Sistem Informasi Cetak - Divisi Percetakan PT Buya Barokah",
   icons: {
     icon: "/icon.png",
     apple: "/icon.png",

@@ -1,10 +1,16 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, useTransition, useCallback } from 'react';
-import { Upload, FileSpreadsheet, Loader2, Search, AlertCircle, Calculator, Clock, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { Search, Loader2, AlertCircle, Clock, FileSpreadsheet, Calculator } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useVirtualizer } from '@tanstack/react-virtual';
-import ConfirmDialog from '@/components/ConfirmDialog';
+import { DataTable } from '@/components/ui/DataTable';
+
+interface HppRecord {
+  id: number;
+  nama_order: string;
+  hpp_kalkulasi: number;
+  keterangan: string | null;
+}
 
 interface HppKalkulasiClientProps {
   importInfo?: {
@@ -13,588 +19,275 @@ interface HppKalkulasiClientProps {
   };
 }
 
-function SortIcon({ config, sortKey }: { config: any, sortKey: string }) {
-  if (config.key !== sortKey || !config.direction) {
-    return <ArrowUpDown size={12} className="text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />;
-  }
-  return config.direction === 'asc' 
-    ? <ArrowUp size={12} className="text-green-600" /> 
-    : <ArrowDown size={12} className="text-green-600" />;
-}
+const PAGE_SIZE = 50;
 
 export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientProps) {
-  const [data, setData] = useState<any[] | null>(null);
+  const router = useRouter();
+  const mountedRef = useRef(true);
+  
+  // State
+  const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [data, setData] = useState<HppRecord[]>([]);
   const [error, setError] = useState('');
   const [loadTime, setLoadTime] = useState<number | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  
-  const [dialog, setDialog] = useState<{isOpen: boolean, type: 'success' | 'error', title: string, message: string}>({
-    isOpen: false,
-    type: 'success',
-    title: '',
-    message: ''
-  });
+  // Search & Pagination
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
-  const [searchImmediate, setSearchImmediate] = useState('');
-  const [searchDebounced, setSearchDebounced] = useState('');
-  const [isPending, startTransition] = useTransition();
-
-  const parentRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const router = useRouter();
-
-  const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: 'asc' | 'desc' | null }>({
-    key: null,
-    direction: null
-  });
-
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [lastSelectedId, setLastSelectedId] = useState<number | null>(null);
-
-  // Column Resizing State
-  const [columnWidths, setColumnWidths] = useState({
-    no: 64,
-    nama_order: 500,
-    hpp_kalkulasi: 200,
-    keterangan: 280,
-  });
-
-
-  const resizingRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
-  const isResizingDone = useRef(false);
-
-  const startResizing = (key: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    resizingRef.current = {
-      key,
-      startX: e.clientX,
-      startWidth: (columnWidths as any)[key]
-    };
-
-    const handleMouseMove = (mouseEvent: MouseEvent) => {
-      if (!resizingRef.current) return;
-      const { key, startX, startWidth } = resizingRef.current;
-      const moveX = mouseEvent.clientX - startX;
-      const newWidth = Math.max(50, startWidth + moveX);
-      setColumnWidths(prev => ({ ...prev, [key]: newWidth }));
-    };
-
-    const handleMouseUp = () => {
-      resizingRef.current = null;
-      isResizingDone.current = true;
-      setTimeout(() => { isResizingDone.current = false; }, 100);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = 'default';
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    document.body.style.cursor = 'col-resize';
-  };
-
-  const fetchHppData = async () => {
-    setLoading(true);
-    const startTime = performance.now();
-    try {
-      const res = await fetch(`/api/hpp-kalkulasi?_t=${Date.now()}`);
-      const endTime = performance.now();
-      setLoadTime(Math.round(endTime - startTime));
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data || []);
-      } else {
-        setData([]);
-      }
-    } catch (err) {
-      console.error('Failed to fetch HPP', err);
-      setData([]);
-    } finally {
-      setLoading(false);
+  // Table State
+  const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('hpp_columnWidths');
+      if (saved) return JSON.parse(saved);
     }
-  };
+    return {
+      'no': 60,
+      'nama_order': 450,
+      'hpp_kalkulasi': 180,
+      'keterangan': 250
+    };
+  });
 
-
+  // Debounce search
   useEffect(() => {
-    fetchHppData();
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Handle cross-tab refresh
+  useEffect(() => {
+    setIsMounted(true);
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_data_updated') {
-        fetchHppData();
+      if (e.key === 'sikka_data_updated' || e.key === 'hpp_data_updated') {
+        setRefreshKey(prev => prev + 1);
         router.refresh();
       }
     };
+    const handleNotify = () => {
+      setRefreshKey(prev => prev + 1);
+      router.refresh();
+    };
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('sikka:data-updated', handleNotify);
+    return () => { 
+        mountedRef.current = false;
+        window.removeEventListener('storage', handleStorageChange); 
+        window.removeEventListener('sikka:data-updated', handleNotify);
+    };
   }, [router]);
 
+  // Fetch Data
   useEffect(() => {
-    const timer = setTimeout(() => {
-      startTransition(() => {
-        setSearchDebounced(searchImmediate);
-      });
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchImmediate]);
-
-  const toggleSort = (key: string) => {
-    if (isResizingDone.current) return;
-    setSortConfig((prev) => {
-      if (prev.key === key) {
-        if (prev.direction === 'asc') return { key, direction: 'desc' };
-        if (prev.direction === 'desc') return { key, direction: null };
-        return { key, direction: 'asc' };
-      }
-      return { key, direction: 'asc' };
-    });
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls') && !file.name.endsWith('.xlsm')) {
-      setError('Harap masukkan file Excel yang valid (.xlsx, .xls, atau .xlsm)');
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      return;
-    }
-
-    setUploading(true);
-    setError('');
-
-    try {
-      // 1. IMPORT XLSX (Dynamic import)
-      const XLSX = await import('xlsx');
-
-      // 2. READ FILE
-      const arrayBuffer = await file.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer, {
-        cellFormula: false,
-        cellHTML: false,
-        cellStyles: false,
-        cellText: false,
-        cellDates: false
-      });
-
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const rawData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-
-      if (rawData.length === 0) {
-        throw new Error("File Excel kosong atau format tidak sesuai.");
-      }
-
-      // 3. SEND JSON TO API
-      const res = await fetch('/api/hpp-kalkulasi', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          filename: file.name,
-          data: rawData
-        }),
-      });
-
-
-      const json = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(json.error || 'Terjadi kesalahan saat mengunggah file.');
-      }
-
-      setDialog({
-        isOpen: true,
-        type: 'success',
-        title: 'Berhasil',
-        message: json.message || 'Data HPP Kalkulasi berhasil diperbarui.'
-      });
-      localStorage.setItem('sikka_data_updated', Date.now().toString());
-      await fetchHppData();
-      router.refresh();
-    } catch (err: any) {
-      setError(err.message || 'Gagal terhubung ke server');
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
-
-  const sortedAndFiltered = useMemo(() => {
-    if (!data) return [];
-    let result = [...data];
-    
-    // Search
-    if (searchDebounced) {
-      const q = searchDebounced.toLowerCase();
-      result = result.filter(d => d.nama_order.toLowerCase().includes(q));
-    }
-
-    // Sort
-    const { key, direction } = sortConfig;
-    if (key && direction) {
-      result.sort((a: any, b: any) => {
-        const aVal = a[key] || '';
-        const bVal = b[key] || '';
-        if (aVal < bVal) return direction === 'asc' ? -1 : 1;
-        if (aVal > bVal) return direction === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-
-    return result;
-  }, [data, searchDebounced, sortConfig]);
-
-  const virtualizer = useVirtualizer({
-    count: sortedAndFiltered.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 48,
-    overscan: 10,
-  });
-
-  const virtualItems = virtualizer.getVirtualItems();
-
-  const handleRowClick = useCallback((id: number, e: React.MouseEvent) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      
-      if (e.shiftKey && lastSelectedId !== null) {
-        const currentIndex = sortedAndFiltered.findIndex(d => d.id === id);
-        const lastIndex = sortedAndFiltered.findIndex(d => d.id === lastSelectedId);
-        
-        if (currentIndex !== -1 && lastIndex !== -1) {
-          const start = Math.min(currentIndex, lastIndex);
-          const end = Math.max(currentIndex, lastIndex);
-          for (let i = start; i <= end; i++) {
-            next.add(sortedAndFiltered[i].id);
+    let active = true;
+    async function loadData() {
+      if (mountedRef.current) setLoading(true);
+      const startTime = performance.now();
+      try {
+        const res = await fetch(`/api/hpp-kalkulasi?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}&_t=${Date.now()}`);
+        if (!active) return;
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && mountedRef.current) {
+            setLoadTime(Math.round(performance.now() - startTime));
+            if (page === 1) {
+              setData(json.data || []);
+            } else {
+              setData(prev => [...prev, ...(json.data || [])]);
+            }
+            setTotalCount(json.total || 0);
+            setError('');
           }
         }
-      } else if (e.ctrlKey || e.metaKey) {
-        if (next.has(id)) {
-          next.delete(id);
-        } else {
-          next.add(id);
-        }
-      } else {
-        // Toggle single (deselect if already selected exclusively)
-        if (next.has(id) && next.size === 1) {
-          next.clear();
-        } else {
-          next.clear();
-          next.add(id);
-        }
+      } catch (err: any) {
+        if (mountedRef.current) setError(err.message || 'Gagal memuat data');
+      } finally {
+        if (mountedRef.current) setLoading(false);
       }
-      
-      setLastSelectedId(id);
-      return next;
-    });
+    }
+    if (!isMounted) return;
+    loadData();
+    return () => { active = false; };
+  }, [page, debouncedQuery, refreshKey, isMounted]);
 
-  }, [sortedAndFiltered, lastSelectedId]);
+  // Columns definition
+  const columns = useMemo(() => [
+    { 
+        accessorKey: 'id', 
+        header: 'No.', 
+        cell: (info: any) => info.row.index + 1,
+        size: 60,
+        meta: { align: 'center' }
+    },
+    { 
+        accessorKey: 'nama_order', 
+        header: 'Nama Order',
+        size: 450,
+        cell: (info: any) => (
+            <span className="truncate block" title={info.getValue() as string}>
+                {info.getValue()}
+            </span>
+        )
+    },
+    { 
+        accessorKey: 'hpp_kalkulasi', 
+        header: 'HPP Kalkulasi',
+        size: 180,
+        meta: { align: 'right' },
+        cell: (info: any) => {
+            const val = info.getValue() as number;
+            if (val <= 0) return <span className="text-gray-200 italic">—</span>;
+            
+            // Format accounting with 2 decimals
+            const formatted = val.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).trim();
+            
+            return (
+                <div className="flex items-center justify-between w-full font-mono font-black text-green-600 pr-2">
+                    <span className="text-[10px] opacity-70">Rp</span>
+                    <span>{formatted}</span>
+                </div>
+            );
+        }
+    },
+    { 
+        accessorKey: 'keterangan', 
+        header: 'Keterangan',
+        size: 250,
+        cell: (info: any) => info.getValue() || <span className="text-gray-200 italic">—</span>
+    }
+  ], []);
+
+  // Handlers
+  const handleResize = useCallback((widths: any) => {
+    setColumnWidths(widths);
+    localStorage.setItem('hpp_columnWidths', JSON.stringify(widths));
+  }, []);
+
+  const handleSelection = useCallback((id: string | number) => {
+    setSelectedIds(prev => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        return next;
+    });
+  }, []);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight + 300 && !loading && data.length < totalCount) {
+       setPage(prev => prev + 1);
+    }
+  };
+
+  if (!isMounted) return null;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden">
-      {/* Upload Panel - MATCHING ExcelUpload.tsx */}
-      <div className="shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] px-4 py-3 flex items-center justify-between gap-4 relative overflow-hidden">
-          <div className="flex items-center gap-4 flex-1 relative z-10">
-            <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center shrink-0">
-              <Upload className="text-green-600" size={20} />
-            </div>
-            <div className="flex flex-col">
-              <h3 className="text-sm font-bold text-gray-800 leading-none mb-1">Upload Data HPP Kalkulasi</h3>
-              <p className="text-[11px] text-gray-400 font-medium leading-tight max-w-xl">
-                Unggah file Excel yang berisi Data HPP Kalkulasi. Data yang lama akan dihapus dan digantikan seluruhnya.
-              </p>
-            </div>
+    <div className="h-full flex flex-col gap-4 overflow-hidden">
+      {/* Search Bar Section */}
+      <div className="flex flex-col gap-4 shrink-0">
+        <div className="flex items-center justify-between gap-4 min-h-[32px]">
+          <div className="flex items-center gap-4">
+             <h3 className="text-[15px] font-extrabold text-gray-800 flex items-center gap-2 leading-none">
+                <Calculator size={18} className="text-green-600" />
+                <span>Data HPP Kalkulasi</span>
+             </h3>
+             {importInfo && (
+                <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none" style={{ color: '#99a1af' }}>
+                    <span className="opacity-40">|</span>
+                    <div className="flex items-center gap-1.5 transition-colors">
+                        <span className="cursor-help hover:text-green-600" title={importInfo.fileName}>
+                            {importInfo.fileName}
+                        </span>
+                        <span className="opacity-30">|</span>
+                        <span>Diperbarui: {importInfo.time}</span>
+                    </div>
+                </div>
+             )}
           </div>
-
-          <div className="shrink-0 relative z-10">
-            <input 
-              type="file" 
-              accept=".xlsx, .xls, .xlsm"
-              className="hidden" 
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-            />
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="px-4 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-bold rounded-lg transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm active:scale-[0.98]"
-            >
-              {uploading ? <Loader2 size={16} className="animate-spin" /> : <FileSpreadsheet size={16} />}
-              <span>{uploading ? 'Mengunggah...' : 'Pilih & Upload Excel'}</span>
-            </button>
-          </div>
+          {loading && data.length > 0 && (
+              <div className="text-[11px] font-bold text-green-600 flex items-center gap-2 bg-green-50 px-2.5 py-1 rounded-full border border-green-100 animate-pulse uppercase tracking-tighter leading-none">
+                <Loader2 size={12} className="animate-spin" />
+                <span>Memproses...</span>
+              </div>
+          )}
         </div>
 
-        {error && (
-          <div className="mt-3 p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[13px] flex items-start gap-2 animate-in fade-in shrink-0 font-semibold shadow-sm">
-            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-            <p>{error}</p>
-          </div>
-        )}
+        <div className="relative w-full group">
+          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-green-600 transition-colors" />
+          <input 
+            type="text" 
+            placeholder="Cari berdasarkan nama order..." 
+            className="w-full pl-12 pr-4 h-10 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-green-600 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm" 
+            value={searchQuery} 
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }} 
+          />
+        </div>
       </div>
 
-      {/* Results View */}
-      <div className="flex-1 flex flex-col gap-5 overflow-hidden min-h-0 relative">
-        {data === null && loading ? (
-          <div className="flex-1 bg-white border border-gray-100 rounded-[16px] flex flex-col items-center justify-center text-center p-10">
-            <Loader2 size={48} className="text-green-500 animate-spin mb-4" />
-            <h3 className="text-sm font-extrabold text-gray-800">Menyiapkan Data...</h3>
-          </div>
-        ) : (data === null || data.length === 0) && !loading ? (
-          <div className="flex-1 bg-white border border-gray-200 rounded-[16px] flex flex-col items-center justify-center text-center p-20 shadow-sm border-dashed">
-            <div className="w-20 h-20 bg-gray-50 rounded-3xl flex items-center justify-center mb-6">
-              <Calculator className="text-gray-200" size={40} />
-            </div>
-            <h3 className="text-sm font-black text-gray-800 mb-2">Belum Ada Data HPP</h3>
-            <p className="text-[12px] text-gray-400 max-w-[280px] mx-auto leading-relaxed font-medium">
-              Gunakan panel upload di atas untuk memasukkan data kalkulasi HPP dari file Excel.
-            </p>
-          </div>
-        ) : data !== null && (
-          <>
-            <div className="flex flex-col gap-3 shrink-0">
-              <div className="flex items-center justify-between px-1">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-[15px] font-extrabold text-gray-800 flex items-center gap-2">
-                      <Calculator size={18} className="text-green-600" />
-                      <span>Data HPP Kalkulasi</span>
-                  </h3>
-
-                  {searchDebounced && sortedAndFiltered.length !== data.length && (
-                    <div className="flex items-center gap-3">
-                      <span className="text-gray-200 text-xs mx-1">|</span>
-                      <span className="text-[10px] bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full font-black uppercase tracking-wider border border-amber-100/50 animate-in fade-in zoom-in-95">
-                        {sortedAndFiltered.length} HASIL
-                      </span>
-                    </div>
-                  )}
-
-                  {importInfo && (
-                    <div className="flex items-center gap-3">
-                      <span className="text-gray-200 text-xs mx-1">|</span>
-                      <div className="flex items-center gap-3 animate-in fade-in duration-700">
-                        <div className="flex items-center gap-1.5 bg-gray-50/50 text-gray-400 border border-gray-100 px-2 py-1 rounded-md">
-                          <FileSpreadsheet size={13} className="text-green-500/70" />
-                          <span className="text-[11px] font-bold truncate max-w-[150px]" title={importInfo.fileName}>{importInfo.fileName}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-gray-400">
-                          <Clock size={12} className="text-gray-300" />
-                          <span className="text-[11px] font-bold">Diperbarui: {importInfo.time}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-
-                </div>
+      {/* Main Table */}
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
+         {error ? (
+           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-rose-50/10">
+              <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mb-4">
+                  <AlertCircle className="text-rose-500" size={32} />
               </div>
-              
-              <div className="relative w-full shrink-0 group">
-                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                <input 
-                  type="text" 
-                  value={searchImmediate}
-                  onChange={(e) => setSearchImmediate(e.target.value)}
-                  placeholder="Cari berdasarkan nama order..." 
-                  className="w-full pl-12 pr-4 h-12 bg-white border border-gray-200 rounded-[14px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
-                />
-                {isPending && (
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                    <Loader2 size={16} className="text-green-500 animate-spin" />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-white border border-gray-200 shadow-sm rounded-[16px] overflow-hidden flex flex-col flex-1 min-h-0 relative">
-              {/* Header Row */}
-              <div className="flex items-center bg-gray-50/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-20 shrink-0">
-                <div className="px-6 py-4 flex-shrink-0 text-center text-[11px] text-gray-400 font-bold uppercase tracking-wider border-r border-gray-100" style={{ width: columnWidths.no }}>
-                  NO.
-                </div>
-
-                
-                <div 
-                  className="px-6 py-4 flex-shrink-0 cursor-pointer hover:bg-gray-100/50 transition-colors group relative border-r border-gray-100"
-                  style={{ width: columnWidths.nama_order }}
-                  onClick={() => toggleSort('nama_order')}
-                >
-                  <div className="flex items-center gap-2 text-[11px] text-gray-500 font-bold uppercase tracking-wider">
-                    NAMA ORDER <SortIcon config={sortConfig} sortKey="nama_order" />
-                  </div>
-                  <div 
-                    className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
-                    onMouseDown={(e) => startResizing('nama_order', e)}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
-                  </div>
-                </div>
-
-
-                <div 
-                  className="px-6 py-4 flex-shrink-0 cursor-pointer hover:bg-gray-100/50 transition-colors group relative border-r border-gray-100 text-right"
-                  style={{ width: columnWidths.hpp_kalkulasi }}
-                  onClick={() => toggleSort('hpp_kalkulasi')}
-                >
-                  <div className="flex items-center justify-end gap-2 text-[11px] text-gray-500 font-bold uppercase tracking-wider">
-                    HPP KALKULASI <SortIcon config={sortConfig} sortKey="hpp_kalkulasi" />
-                  </div>
-                </div>
-
-                <div 
-                  className="px-6 py-4 flex-shrink-0 cursor-pointer hover:bg-gray-100/50 transition-colors group relative"
-                  style={{ width: columnWidths.keterangan }}
-                  onClick={() => toggleSort('keterangan')}
-                >
-                  <div className="flex items-center gap-2 text-[11px] text-gray-500 font-bold uppercase tracking-wider">
-                    KETERANGAN <SortIcon config={sortConfig} sortKey="keterangan" />
-                  </div>
-                  <div 
-                    className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
-                    onMouseDown={(e) => startResizing('keterangan', e)}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Scrollable Virtual Area */}
-
-              <div ref={parentRef} className="flex-1 overflow-auto custom-scrollbar relative min-h-0 select-none">
-                {sortedAndFiltered.length === 0 ? (
-                  <div className="py-24 text-center">
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="p-5 bg-slate-50 rounded-3xl mb-4">
-                        <Search className="text-slate-200" size={56} />
-                      </div>
-                      <p className="text-sm font-black text-gray-800">Data Tidak Ditemukan</p>
-                      <p className="text-[12px] text-gray-400 mt-1 font-medium">"{searchDebounced}" tidak cocok dengan data apapun.</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div 
-                    style={{ 
-                      height: `${virtualizer.getTotalSize()}px`,
-                      position: 'relative',
-                      width: '100%'
-                    }}
-                  >
-                    {virtualItems.map((virtualRow) => {
-                      const row = sortedAndFiltered[virtualRow.index];
-                      const isOdd = virtualRow.index % 2 === 1;
-                      const isSelected = selectedIds.has(row.id);
-
-                      return (
-                        <div 
-                          key={virtualRow.key}
-                          onClick={(e) => handleRowClick(row.id, e)}
-                          className={`flex items-center absolute top-0 left-0 w-full group select-none transition-colors border-b border-gray-100 ${isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : `hover:bg-green-50/30 ${isOdd ? 'bg-gray-50/40' : 'bg-white'}`}`}
-
-                          style={{ 
-                            height: `${virtualRow.size}px`,
-                            transform: `translateY(${virtualRow.start}px)`
-                          }}
-                        >
-                          <div 
-                            className="px-6 py-1 whitespace-nowrap text-center text-[12px] font-bold text-gray-300 group-hover:text-green-500 tabular-nums flex-shrink-0 border-r border-gray-100"
-                            style={{ width: columnWidths.no }}
-                          >
-                            {virtualRow.index + 1}
-                          </div>
-
-                          
-                          <div 
-                            className="px-6 py-1 whitespace-nowrap flex-shrink-0 overflow-hidden border-r border-gray-100"
-                            style={{ width: columnWidths.nama_order }}
-                          >
-
-                            <span className={`text-[13px] font-extrabold truncate block ${isSelected ? 'text-green-900' : 'text-gray-800'}`}>
-                              {row.nama_order}
-                            </span>
-                          </div>
-
-                          <div className="px-6 py-1 flex-shrink-0 text-right overflow-hidden" style={{ width: columnWidths.hpp_kalkulasi }}>
-                            <span className={`font-black text-[12px] tracking-tight tabular-nums transition-colors ${
-                              row.hpp_kalkulasi > 0
-                                ? (isSelected ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-600')
-                                : 'text-gray-200'
-                            }`}>
-                              {row.hpp_kalkulasi > 0
-                                ? row.hpp_kalkulasi.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 })
-                                : '—'}
-                            </span>
-                          </div>
-
-                          <div className="px-6 py-1 flex-shrink-0 overflow-hidden" style={{ width: columnWidths.keterangan }}>
-                            <span className={`text-[12px] font-medium truncate block ${
-                              isSelected ? 'text-green-700' : 'text-gray-400'
-                            }`}>
-                              {row.keterangan || <span className="text-gray-200 italic text-[11px]">—</span>}
-                            </span>
-                          </div>
-
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between shrink-0 px-1 mt-3">
-              <span className="text-[12px] font-bold text-gray-400">
-                 {data.length === 0
-                   ? 'Tidak ada data'
-                   : `Menampilkan ${sortedAndFiltered.length} dari ${data.length} total data kalkulasi`}
-              </span>
-              <div className="flex items-center gap-4">
-                {selectedIds.size > 0 && (
-                  <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                    <span className="text-[12px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
-                    <button 
-                      onClick={() => setSelectedIds(new Set())}
-                      className="text-[12px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
-                    >
-                      Batal
-                    </button>
-                  </div>
-                )}
-                {loadTime !== null && (
-                  <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
-                    loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                    loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
-                    'bg-red-50 text-red-600 border-red-100'
-                  }`}>
-                    <span className="animate-pulse">⚡</span>
-                    <span>{(loadTime / 1000).toFixed(2)}s</span>
-                  </span>
-                )}
-                {isPending && (
-                  <div className="flex items-center gap-2 text-green-600 font-bold text-[11px] animate-pulse">
-                    <Loader2 size={12} className="animate-spin" />
-                    <span>Memperbarui hasil...</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-          </>
-        )}
+              <p className="text-sm font-black text-gray-800">{error}</p>
+              <button 
+                onClick={() => setRefreshKey(k => k + 1)}
+                className="mt-4 px-6 py-2 bg-white border border-rose-200 text-rose-600 rounded-xl text-xs font-black hover:bg-rose-50 transition-colors"
+              >
+                Coba Lagi
+              </button>
+           </div>
+         ) : (
+           <DataTable
+             data={data}
+             columns={columns}
+             columnWidths={columnWidths}
+             onColumnWidthChange={handleResize}
+             isLoading={loading && page === 1}
+             selectedIds={selectedIds}
+             onRowClick={handleSelection} 
+             onScroll={handleScroll}
+           />
+         )}
       </div>
 
-      <ConfirmDialog 
-        isOpen={dialog.isOpen}
-        type={dialog.type as any}
-        title={dialog.title}
-        message={dialog.message}
-        onConfirm={() => setDialog(prev => ({ ...prev, isOpen: false }))}
-      />
+      {/* Footer Info Banner */}
+      <div className="flex items-center justify-between shrink-0 px-1 mt-1">
+          <span className="text-[12px] leading-none font-bold text-gray-400">
+             {totalCount === 0 ? 'Tidak ada data HPP' : `Menampilkan ${data.length} dari ${totalCount} Kalkulasi`}
+          </span>
+          
+          <div className="flex items-center gap-4">
+            {selectedIds.size > 0 && (
+                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
+                   <span className="text-[12px] leading-none font-bold text-gray-400">{selectedIds.size} dipilih</span>
+                   <button 
+                    onClick={() => setSelectedIds(new Set())}
+                    className="text-[12px] leading-none font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
+                   >
+                     BATAL
+                   </button>
+                </div>
+            )}
+            {loadTime !== null && (
+               <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
+                loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+                'bg-red-50 text-red-600 border-red-100'
+              }`}>
+                  <span className="animate-pulse">⚡</span>
+                  <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
+               </span>
+            )}
+          </div>
+      </div>
     </div>
   );
 }

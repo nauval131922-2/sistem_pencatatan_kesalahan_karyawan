@@ -5,7 +5,7 @@ import PageHeader from '@/components/PageHeader';
 import { Calendar } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'SIKKA | Statistik Performa',
+  title: 'SINTAK | Statistik Performa',
 };
 
 export const dynamic = 'force-dynamic';

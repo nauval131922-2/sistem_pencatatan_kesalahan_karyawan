@@ -274,7 +274,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
   const virtualizer = useVirtualizer({
     count: sortedAndFiltered.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 40,
+    estimateSize: () => 36,
     overscan: 10,
   });
 
@@ -327,9 +327,9 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
   };
 
   return (
-    <div className="flex flex-col gap-6 overflow-hidden">
+    <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0">
       {/* Heading & Search Container */}
-      <div className="flex flex-col gap-3 shrink-0">
+      <div className="flex flex-col gap-4 shrink-0">
         <div className="flex items-center px-1">
           <div className="flex items-center gap-3">
             <h3 className="text-[15px] font-extrabold text-gray-800 flex items-center gap-2">
@@ -347,227 +347,229 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
           </div>
         </div>
         <div className="relative w-full shrink-0 group">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-green-500 transition-colors" />
           <input
             type="text"
             value={searchImmediate}
             onChange={handleSearch}
             placeholder="Cari menu, user, keterangan, snapshot log, atau ID..."
-            className="w-full pl-12 pr-4 h-12 bg-white border border-gray-200 rounded-[14px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
+            className="w-full pl-12 pr-4 h-10 bg-white border border-gray-200 rounded-[14px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
           />
         </div>
       </div>
 
-      {/* Table Content */}
-      <div className="bg-white border border-[#e5e7eb] shadow-sm rounded-[10px] flex-1 flex flex-col min-h-0 overflow-hidden">
-        <div 
-          ref={parentRef}
-          className="overflow-auto flex-1 min-h-0 custom-scrollbar" 
-        >
+      {/* Table & Footer Container */}
+      <div className="flex-1 flex flex-col min-h-0 gap-2 overflow-hidden">
+        {/* Table Content */}
+        <div className="bg-white border border-[#e5e7eb] shadow-sm rounded-[10px] flex-1 flex flex-col min-h-0 overflow-hidden relative">
           <div 
-            className="w-full min-w-[800px]"
+            ref={parentRef}
+            className="overflow-auto flex-1 min-h-0 custom-scrollbar" 
           >
-            {/* Fake Table Header for alignment */}
             <div 
-              className="sticky top-0 z-20 bg-white border-b border-gray-100 shadow-[0_1px_2px_rgba(0,0,0,0.05)] w-full flex text-left"
-              style={{ minWidth: `${columnWidths.datetime + columnWidths.menu + columnWidths.user + columnWidths.keterangan + 100}px` }}
+              className="w-full min-w-[800px]"
             >
+              {/* Fake Table Header for alignment */}
               <div 
-                className="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors group flex-shrink-0 relative border-r border-gray-100"
-                style={{ width: columnWidths.datetime }}
-                onClick={() => handleSort('created_at')}
+                className="sticky top-0 z-20 bg-white border-b border-gray-200 shadow-sm w-full flex text-left shrink-0"
+                style={{ minWidth: `${columnWidths.datetime + columnWidths.menu + columnWidths.user + columnWidths.keterangan + 100}px` }}
               >
-                <div className="flex items-center gap-2 text-[11px] text-[#6b7280] font-bold uppercase tracking-wider">
-                  DATETIME <SortIcon config={sortConfig} sortKey="created_at" />
-                </div>
                 <div 
-                  className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
-                  onMouseDown={(e) => startResizing('datetime', e)}
-                  onClick={(e) => e.stopPropagation()}
+                  className="px-6 py-3 cursor-pointer hover:bg-gray-50 transition-colors group relative flex-shrink-0 border-r border-gray-200"
+                  style={{ width: columnWidths.datetime }}
+                  onClick={() => handleSort('created_at')}
                 >
-                  <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
-                </div>
-              </div>
-
-              <div 
-                className="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors group flex-shrink-0 relative border-r border-gray-100"
-                style={{ width: columnWidths.menu }}
-                onClick={() => handleSort('menu')}
-              >
-                <div className="flex items-center gap-2 text-[11px] text-[#6b7280] font-bold uppercase tracking-wider">
-                  MENU <SortIcon config={sortConfig} sortKey="menu" />
-                </div>
-                <div 
-                  className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
-                  onMouseDown={(e) => startResizing('menu', e)}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
-                </div>
-              </div>
-
-              <div 
-                className="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors group flex-shrink-0 relative border-r border-gray-100"
-                style={{ width: columnWidths.user }}
-                onClick={() => handleSort('user')}
-              >
-                <div className="flex items-center gap-2 text-[11px] text-[#6b7280] font-bold uppercase tracking-wider">
-                  USER <SortIcon config={sortConfig} sortKey="user" />
-                </div>
-                <div 
-                  className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
-                  onMouseDown={(e) => startResizing('user', e)}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
-                </div>
-              </div>
-
-              <div 
-                className="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors group relative flex-shrink-0 border-r border-gray-100"
-                style={{ width: columnWidths.keterangan }}
-                onClick={() => handleSort('message')}
-              >
-                <div className="flex items-center gap-2 text-[11px] text-[#6b7280] font-bold uppercase tracking-wider">
-                  KETERANGAN <SortIcon config={sortConfig} sortKey="message" />
-                </div>
-                <div 
-                  className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
-                  onMouseDown={(e) => startResizing('keterangan', e)}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
-                </div>
-              </div>
-
-              <div className="px-6 py-4 whitespace-nowrap w-[100px] text-right flex-shrink-0 text-[11px] text-[#6b7280] font-bold uppercase tracking-wider">
-                AKSI
-              </div>
-            </div>
-
-            {/* Virtual Container for Rows */}
-            <div 
-              style={{ 
-                height: `${virtualizer.getTotalSize()}px`,
-                position: 'relative',
-                width: '100%'
-              }}
-            >
-              {/* Virtual Rows */}
-              {sortedAndFiltered.length === 0 ? (
-              <div className="py-24 text-center">
-                <p className="text-sm font-extrabold text-gray-800 mb-2">
-                  {search ? 'Tidak ada hasil ditemukan' : 'Belum ada aktivitas'}
-                </p>
-                <p className="text-[12px] text-[#9ca3af] font-medium">
-                  {search ? 'Coba kata kunci lain.' : 'Aktivitas sistem akan muncul di sini.'}
-                </p>
-              </div>
-            ) : (
-              virtualItems.map((virtualRow) => {
-                const log = sortedAndFiltered[virtualRow.index];
-                const isOdd = virtualRow.index % 2 === 1;
-                const isSelected = selectedIds.has(log.id);
-                return (
-                  <div
-                    key={virtualRow.key}
-                    data-index={virtualRow.index}
-                    ref={virtualizer.measureElement}
-                    onClick={(e) => toggleSelectRow(log.id, e)}
-                    onDoubleClick={() => setSelectedLog(log)}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      transform: `translateY(${virtualRow.start}px)`,
-                      minWidth: `${columnWidths.datetime + columnWidths.menu + columnWidths.user + columnWidths.keterangan + 100}px`
-                    }}
-                    className={`
-                      flex items-center border-b border-gray-100 transition-all duration-150 group h-10 cursor-pointer select-none
-                      ${isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : isOdd ? 'bg-slate-50/20' : 'bg-white'} 
-                      hover:bg-green-50/40
-                    `}
-                  >
-                    <div 
-                      className={`px-6 py-1 text-xs whitespace-nowrap flex-shrink-0 overflow-hidden transition-colors border-r border-gray-100 ${isSelected ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-500'}`}
-                      style={{ width: columnWidths.datetime }}
-                    >
-                      {fmtDateTime(log.created_at)}
-                    </div>
-                    <div 
-                      className={`px-6 py-1 whitespace-nowrap flex-shrink-0 overflow-hidden transition-colors border-r border-gray-100 ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}
-                      style={{ width: columnWidths.menu }}
-                    >
-                      <span className="text-[13px] font-bold block truncate">
-                        {getChannelName(log)}
-                      </span>
-                    </div>
-                    <div 
-                      className="px-6 py-1 whitespace-nowrap flex-shrink-0 overflow-hidden text-[11px] border-r border-gray-100"
-                      style={{ width: columnWidths.user }}
-                    >
-                      <span className={`font-bold px-2.5 py-1 rounded-md inline-block max-w-full truncate transition-colors ${isSelected ? 'bg-green-100 text-green-700' : 'bg-slate-100/60 text-gray-500 border border-gray-100/50 group-hover:bg-white'}`}>
-                        {log.recorded_by || 'System'}
-                      </span>
-                    </div>
-                    <div 
-                      className={`px-6 py-1 text-[13px] flex-shrink-0 truncate overflow-hidden transition-colors border-r border-gray-100 ${isSelected ? 'text-green-700 font-medium' : 'text-gray-500'}`}
-                      style={{ width: columnWidths.keterangan }}
-                    >
-                      {log.message}
-                    </div>
-                    <div className="px-6 py-1 text-right w-[100px] flex-shrink-0 overflow-hidden">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedLog(log);
-                        }}
-                        className="px-3 py-1 text-[11px] font-extrabold text-[#16a34a] border border-[#16a34a]/30 hover:bg-[#16a34a] hover:text-white rounded-md transition-all active:scale-[0.95]"
-                      >
-                        Detail
-                      </button>
-                    </div>
+                  <div className="flex items-center gap-2 text-[12px] leading-none text-[#6b7280] font-bold uppercase tracking-wider">
+                    WAKTU <SortIcon config={sortConfig} sortKey="created_at" />
                   </div>
-                );
-              })
-            )}
+                  <div 
+                    className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
+                    onMouseDown={(e) => startResizing('datetime', e)}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                  </div>
+                </div>
+
+                <div 
+                  className="px-6 py-3 cursor-pointer hover:bg-gray-50 transition-colors group relative flex-shrink-0 border-r border-gray-200"
+                  style={{ width: columnWidths.menu }}
+                  onClick={() => handleSort('table_name')}
+                >
+                  <div className="flex items-center gap-2 text-[12px] leading-none text-[#6b7280] font-bold uppercase tracking-wider">
+                    MENU <SortIcon config={sortConfig} sortKey="table_name" />
+                  </div>
+                  <div 
+                    className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
+                    onMouseDown={(e) => startResizing('menu', e)}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                  </div>
+                </div>
+
+                <div 
+                  className="px-6 py-3 cursor-pointer hover:bg-gray-50 transition-colors group flex-shrink-0 relative border-r border-gray-200"
+                  style={{ width: columnWidths.user }}
+                  onClick={() => handleSort('user')}
+                >
+                  <div className="flex items-center gap-2 text-[12px] leading-none text-[#6b7280] font-bold uppercase tracking-wider">
+                    USER <SortIcon config={sortConfig} sortKey="user" />
+                  </div>
+                  <div 
+                    className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
+                    onMouseDown={(e) => startResizing('user', e)}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                  </div>
+                </div>
+
+                <div 
+                  className="px-6 py-3 cursor-pointer hover:bg-gray-50 transition-colors group relative flex-shrink-0 border-r border-gray-200"
+                  style={{ width: columnWidths.keterangan }}
+                  onClick={() => handleSort('message')}
+                >
+                  <div className="flex items-center gap-2 text-[12px] leading-none text-[#6b7280] font-bold uppercase tracking-wider">
+                    KETERANGAN <SortIcon config={sortConfig} sortKey="message" />
+                  </div>
+                  <div 
+                    className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
+                    onMouseDown={(e) => startResizing('keterangan', e)}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
+                  </div>
+                </div>
+
+                <div className="px-6 py-3 whitespace-nowrap w-[100px] text-right flex-shrink-0 text-[12px] leading-none text-[#6b7280] font-bold uppercase tracking-wider">
+                  AKSI
+                </div>
+              </div>
+
+              {/* Virtual Container for Rows */}
+              <div 
+                style={{ 
+                  height: `${virtualizer.getTotalSize()}px`,
+                  position: 'relative',
+                  width: '100%'
+                }}
+              >
+                {/* Virtual Rows */}
+                {sortedAndFiltered.length === 0 ? (
+                <div className="py-24 text-center">
+                  <p className="text-sm font-extrabold text-gray-800 mb-2 leading-none">
+                    {search ? 'Tidak ada hasil ditemukan' : 'Belum ada aktivitas'}
+                  </p>
+                  <p className="text-[12px] text-[#9ca3af] font-medium leading-none">
+                    {search ? 'Coba kata kunci lain.' : 'Aktivitas sistem akan muncul di sini.'}
+                  </p>
+                </div>
+              ) : (
+                virtualItems.map((virtualRow) => {
+                  const log = sortedAndFiltered[virtualRow.index];
+                  const isOdd = virtualRow.index % 2 === 1;
+                  const isSelected = selectedIds.has(log.id);
+                  return (
+                    <div
+                      key={virtualRow.key}
+                      data-index={virtualRow.index}
+                      ref={virtualizer.measureElement}
+                      onClick={(e) => toggleSelectRow(log.id, e)}
+                      onDoubleClick={() => setSelectedLog(log)}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        transform: `translateY(${virtualRow.start}px)`,
+                        minWidth: `${columnWidths.datetime + columnWidths.menu + columnWidths.user + columnWidths.keterangan + 100}px`
+                      }}
+                      className={`
+                        flex items-center border-b border-gray-200 transition-all duration-150 group h-9 cursor-pointer select-none
+                        ${isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : isOdd ? 'bg-slate-50/20' : 'bg-white'} 
+                        hover:bg-green-50/40
+                      `}
+                    >
+                      <div 
+                        className={`px-6 py-1 text-[12px] leading-none whitespace-nowrap flex-shrink-0 overflow-hidden transition-colors border-r border-gray-200 ${isSelected ? 'text-green-600' : 'text-gray-700 group-hover:text-gray-500'}`}
+                        style={{ width: columnWidths.datetime }}
+                      >
+                        {fmtDateTime(log.created_at)}
+                      </div>
+                      <div 
+                        className={`px-6 py-1 whitespace-nowrap flex-shrink-0 overflow-hidden transition-colors border-r border-gray-200 ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}
+                        style={{ width: columnWidths.menu }}
+                      >
+                        <span className="text-[12px] leading-none font-bold block truncate">
+                          {getChannelName(log)}
+                        </span>
+                      </div>
+                      <div 
+                        className="px-6 py-1 whitespace-nowrap flex-shrink-0 overflow-hidden text-[12px] leading-none border-r border-gray-200"
+                        style={{ width: columnWidths.user }}
+                      >
+                        <span className={`font-bold px-2.5 py-1 rounded-md inline-block max-w-full truncate transition-colors leading-none ${isSelected ? 'bg-green-100 text-green-700' : 'bg-slate-100/60 text-gray-500 border border-gray-200/50 group-hover:bg-white'}`}>
+                          {log.recorded_by || 'System'}
+                        </span>
+                      </div>
+                      <div 
+                        className={`px-6 py-1 text-[12px] leading-none flex-shrink-0 truncate overflow-hidden transition-colors border-r border-gray-200 ${isSelected ? 'text-green-700 font-medium' : 'text-gray-500'}`}
+                        style={{ width: columnWidths.keterangan }}
+                      >
+                        {log.message}
+                      </div>
+                      <div className="px-6 py-1 text-right w-[100px] flex-shrink-0 overflow-hidden">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedLog(log);
+                          }}
+                          className="px-3 py-1 text-[12px] font-extrabold text-[#16a34a] border border-[#16a34a]/30 hover:bg-[#16a34a] hover:text-white rounded-md transition-all active:scale-[0.95] leading-none"
+                        >
+                          Detail
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-        
-      {/* Footer info Banner outside the card for consistency */}
-      <div className="flex items-center justify-between shrink-0 px-1 mt-3">
-        <span className="text-[12px] font-bold text-gray-400">
-          {initialLogs.length === 0
-            ? 'Belum ada aktivitas'
-            : `Menampilkan ${sortedAndFiltered.length} dari ${initialLogs.length} total aktivitas`}
-        </span>
-        <div className="flex items-center gap-4">
-          {selectedIds.size > 0 && (
-            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-              <span className="text-[12px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
-              <button 
-                onClick={() => setSelectedIds(new Set())}
-                className="text-[12px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
-              >
-                Batal
-              </button>
-            </div>
-          )}
-          {loadTime !== null && (
-            <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
-              loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-              loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
-              'bg-red-50 text-red-600 border-red-100'
-            }`}>
-              <span className="animate-pulse">⚡</span>
-              <span>{(loadTime / 1000).toFixed(2)}s</span>
-            </span>
-          )}
+          
+        {/* Footer info Banner outside the card for consistency */}
+        <div className="flex items-center justify-between shrink-0 px-1 mt-1">
+          <span className="text-[12px] leading-none font-bold text-gray-400">
+            {initialLogs.length === 0
+              ? 'Belum ada aktivitas'
+              : `Menampilkan ${sortedAndFiltered.length} dari ${initialLogs.length} total aktivitas`}
+          </span>
+          <div className="flex items-center gap-4">
+            {selectedIds.size > 0 && (
+              <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
+                <span className="text-[12px] font-bold text-gray-400 leading-none">{selectedIds.size} dipilih</span>
+                <button 
+                  onClick={() => setSelectedIds(new Set())}
+                  className="text-[12px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4 leading-none"
+                >
+                  Batal
+                </button>
+              </div>
+            )}
+            {loadTime !== null && (
+              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
+                loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+                'bg-red-50 text-red-600 border-red-100'
+              }`}>
+                <span className="animate-pulse">⚡</span>
+                <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
+              </span>
+            )}
+          </div>
         </div>
-
       </div>
 
       {selectedLog && (
@@ -576,7 +578,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
             className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+            <div className="flex items-center justify-between px-6 py-3 border-b border-slate-100 bg-slate-50/50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-600">
                   <Cpu size={20} />
@@ -716,7 +718,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
               </div>
             </div>
 
-            <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3">
+            <div className="px-6 py-3 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3">
               <button
                 onClick={() => setSelectedLog(null)}
                 className="px-6 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95 shadow-sm"

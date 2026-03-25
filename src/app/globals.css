@@ -118,23 +118,31 @@ body {
   /* Resizable Table Column Utility */
   .resizer {
     position: absolute;
-    right: 0;
+    right: -8px;
     top: 0;
     height: 100%;
-    width: 8px;
+    width: 16px;
     background: transparent;
     cursor: col-resize;
     user-select: none;
     touch-action: none;
-    transition: background-color 0.15s;
     z-index: 20;
   }
 
-  .resizer:hover, .resizer.resizing {
+  .resizer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 7px;
+    width: 2px;
+    background: transparent;
+    transition: background-color 0.15s;
+  }
+
+  .resizer:hover::after, .resizer.resizing::after {
     background-color: var(--accent-primary);
-    opacity: 0.8;
-    width: 4px;
-    right: 0;
+    opacity: 0.6;
   }
 
   /* Prevent text wrapping in resizable tables */

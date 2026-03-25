@@ -1,21 +1,12 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Search, ChevronLeft, ChevronRight, Package, Calendar, User, Tag, Hash, RefreshCw, BarChart3, Download, Printer, Loader2, AlertCircle, Clock, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { Search, Loader2, RefreshCw, Clock, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-
-function SortIcon({ config, sortKey }: { config: any, sortKey: string }) {
-  if (config.key !== sortKey || !config.direction) {
-    return <ArrowUpDown size={12} className="text-gray-300 transition-opacity" />;
-  }
-  return config.direction === 'asc'
-    ? <ArrowUp size={12} className="text-green-600" />
-    : <ArrowDown size={12} className="text-green-600" />;
-}
-
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { splitDateRangeIntoMonths } from '@/lib/date-utils';
+import { DataTable } from '@/components/ui/DataTable';
 
 // Helper to format Date to YYYY-MM-DD
 function formatDateToYYYYMMDD(date: Date) {
@@ -42,10 +33,11 @@ const PAGE_SIZE = 50;
 
 export default function OrderProduksiClient() {
   const router = useRouter();
-  const [startDate, setStartDate] = useState<Date>(new Date());
+  const [isMounted, setIsMounted] = useState(false);
+  const [startDate, setStartDate] = useState<Date>(new Date(2025, 0, 1));
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<any[] | null>(null);
+  const [data, setData] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
@@ -55,86 +47,122 @@ export default function OrderProduksiClient() {
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [loadTime, setLoadTime] = useState<number | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0); // Add this to force refresh
-
-  // Table state
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [lastSelectedId, setLastSelectedId] = useState<number | null>(null);
-  const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: 'asc' | 'desc' | null }>({
-    key: null,
-    direction: null
-  });
-
-  // Resizable Columns State
-  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({
-    faktur: 128,
-    nama_prd: 300,
-    nama_pelanggan: 200,
-    tgl: 128,
-    qty: 96,
-    satuan: 80
-  });
-
-  const totalTableWidth = useMemo(() => {
-    return Object.values(columnWidths).reduce((a, b) => a + b, 0);
-  }, [columnWidths]);
-
-  const resizerRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
-  const isLoadingMore = useRef(false);
-  const widthsRef = useRef(columnWidths);
-
-
-  useEffect(() => {
-    widthsRef.current = columnWidths;
-  }, [columnWidths]);
-
-  const startResizing = useCallback((key: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    resizerRef.current = {
-      key,
-      startX: e.pageX,
-      startWidth: widthsRef.current[key] || 0
-    };
-    document.addEventListener('mousemove', onResizing);
-    document.addEventListener('mouseup', stopResizing);
-    document.body.style.cursor = 'col-resize';
-  }, [columnWidths]);
-
-  const onResizing = useCallback((e: MouseEvent) => {
-    if (!resizerRef.current) return;
-    const { key, startX, startWidth } = resizerRef.current;
-    const delta = e.pageX - startX;
-    setColumnWidths(prev => ({
-      ...prev,
-      [key]: Math.max(50, startWidth + delta)
-    }));
-  }, []);
-
-  const stopResizing = useCallback(() => {
-    resizerRef.current = null;
-    document.removeEventListener('mousemove', onResizing);
-    document.removeEventListener('mouseup', stopResizing);
-    document.body.style.cursor = 'default';
-  }, [onResizing]);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const mountedRef = useRef(true);
 
   // Batch states
   const [isBatching, setIsBatching] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
   const [batchStatus, setBatchStatus] = useState('');
 
-  const mountedRef = useRef(true);
+  // Table state
+  const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('orders_columnWidths');
+      return saved ? JSON.parse(saved) : {
+        faktur: 180,
+        nama_prd: 350,
+        nama_pelanggan: 250,
+        tgl: 120,
+        qty: 120,
+        satuan: 100,
+      };
+    }
+    return {};
+  });
 
+  useEffect(() => {
+    localStorage.setItem('orders_columnWidths', JSON.stringify(columnWidths));
+  }, [columnWidths]);
+
+  // Debounce search with 100ms for instant feel
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
       setPage(1);
-    }, 500);
+    }, 100);
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
+  // Columns Definition
+  const columns = useMemo(() => [
+    { 
+      accessorKey: 'faktur', 
+      header: 'Faktur'
+    },
+    { 
+      accessorKey: 'nama_prd', 
+      header: 'Nama Produk',
+      size: 350
+    },
+    { 
+      accessorKey: 'nama_pelanggan', 
+      header: 'Pelanggan',
+      size: 250,
+      cell: (info: any) => {
+        const val = info.getValue() || info.row.original.kd_pelanggan;
+        return (
+          <div className="inline-block px-1.5 py-0.5 rounded-md bg-slate-100/60 text-gray-500 border border-gray-200/50">
+            {val || '-'}
+          </div>
+        );
+      }
+    },
+    { 
+      accessorKey: 'tgl', 
+      header: 'Tanggal',
+      cell: (info: any) => formatIndoDateStr(info.getValue())
+    },
+    { 
+      accessorKey: 'qty', 
+      header: 'QTY Order',
+      cell: (info: any) => Number(info.getValue()).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
+      meta: { align: 'right' }
+    },
+    { 
+      accessorKey: 'satuan', 
+      header: 'Satuan'
+    }
+  ], []);
+  // Restore state on mount with New Day Detection
   useEffect(() => {
-    // Sync with other tabs
+    setIsMounted(true);
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    const defaultStartDate = new Date(2026, 0, 1);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+
+    let initialStart = defaultStartDate;
+    let initialEnd = today;
+
+    const saved = localStorage.getItem('orderProduksiState');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const savedDate = parsed.sessionDate || '';
+        if (savedDate === todayStr) {
+          initialStart = new Date(parsed.startDate);
+          initialEnd = new Date(parsed.endDate);
+        }
+      } catch(e) {}
+    }
+    setStartDate(initialStart);
+    setEndDate(initialEnd);
+  }, []);
+
+  useEffect(() => {
+    if (isMounted) {
+      localStorage.setItem('orderProduksiState', JSON.stringify({
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        sessionDate: new Date().toLocaleDateString('en-CA')
+      }));
+    }
+  }, [startDate, endDate, isMounted]);
+
+  useEffect(() => {
+    mountedRef.current = true;
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'sikka_data_updated') {
         setRefreshKey(prev => prev + 1);
@@ -148,7 +176,7 @@ export default function OrderProduksiClient() {
     };
   }, [router]);
 
-  const [dialog, setDialog] = useState<{isOpen: boolean, type: 'success' | 'error' | 'danger' | 'confirm' | 'alert', title: string, message: string}>({
+  const [dialog, setDialog] = useState<{isOpen: boolean, type: 'success' | 'alert' | 'error' | 'danger' | 'confirm', title: string, message: string}>({
     isOpen: false,
     type: 'success',
     title: '',
@@ -159,8 +187,7 @@ export default function OrderProduksiClient() {
   useEffect(() => {
     let active = true;
     async function loadData() {
-      setLoading(true);
-      isLoadingMore.current = true;
+      if (mountedRef.current) setLoading(true);
       const startTime = performance.now();
 
       try {
@@ -169,113 +196,80 @@ export default function OrderProduksiClient() {
 
         if (res.ok) {
           const json = await res.json();
-          if (!json.success) {
-            throw new Error(json.error || 'Terjadi kesalahan saat memuat data');
-          }
-          const endTime = performance.now();
-          if (active) {
+          if (mountedRef.current && json.success) {
+            const endTime = performance.now();
             setLoadTime(Math.round(endTime - startTime));
-            setData(prev => {
-              if (page === 1) return json.data || [];
-              const currentData = prev || [];
-              const newData = json.data || [];
-              // Deduplicate if needed (using faktur as key for orders)
-              const existingFakturs = new Set(currentData.map((d: any) => d.faktur));
-              const filteredNew = newData.filter((d: any) => !existingFakturs.has(d.faktur));
-              return [...currentData, ...filteredNew];
-
-            });
+            
+            if (page === 1) {
+              setData(json.data || []);
+            } else {
+              setData(prev => {
+                const currentData = prev || [];
+                const newData = json.data || [];
+                const existingIds = new Set(currentData.map((d: any) => d.id));
+                const filteredNew = newData.filter((d: any) => !existingIds.has(d.id));
+                return [...currentData, ...filteredNew];
+              });
+            }
             setTotalCount(json.total || 0);
-            setError('');
-
 
             if (json.lastUpdated) {
               const latestDate = new Date(json.lastUpdated);
               if (!isNaN(latestDate.getTime())) {
                 const timestamp = latestDate.toLocaleString('id-ID', {
                   day: '2-digit', month: 'short', year: 'numeric',
-                  hour: '2-digit', minute: '2-digit', second: '2-digit'
+                  hour: '2-digit', minute: '2-digit', second: '2-digit',
+                  timeZone: 'Asia/Jakarta'
                 });
                 setLastUpdated(timestamp);
-              } else {
-                setLastUpdated(null);
               }
             } else {
               setLastUpdated(null);
             }
           }
-        } else {
-          const errJson = await res.json().catch(() => ({}));
-          throw new Error(errJson.error || `Server error: ${res.status}`);
         }
       } catch (err: any) {
-        if (active) {
-          console.error('Failed to fetch:', err);
-          setError(err.message || 'Gagal memuat data dari server');
-          setData([]); // Prevent infinite loading
-        }
+        if (mountedRef.current) setError(err.message || 'Gagal memuat data');
       } finally {
-        if (active) {
-          setLoading(false);
-          isLoadingMore.current = false;
-        }
+        if (mountedRef.current) setLoading(false);
       }
-
     }
+    if (!isMounted) return;
     loadData();
     return () => { active = false; };
-  }, [page, debouncedQuery, refreshKey, startDate, endDate]); // Add dates and refreshKey here
+  }, [page, debouncedQuery, refreshKey, startDate, endDate, isMounted]);
 
-  // Restore state on mount
-  useEffect(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const defaultStartDate = new Date(2026, 0, 1); // 1/1/2026
-
-
-    const saved = localStorage.getItem('orderProduksiState');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const sessionDate = parsed.sessionDate ? new Date(parsed.sessionDate) : null;
-        if (sessionDate) sessionDate.setHours(0, 0, 0, 0);
-
-        // Jika ganti hari, paksa ke awal bulan ini. Jika hari yang sama, gunakan yang tersimpan.
-        if (!sessionDate || sessionDate.getTime() !== today.getTime()) {
-          setStartDate(defaultStartDate);
-          setEndDate(today);
-        } else {
-
-          if (parsed.startDate) setStartDate(new Date(parsed.startDate));
-          if (parsed.endDate) setEndDate(new Date(parsed.endDate));
-        }
-
-        if (parsed.lastUpdated) setLastUpdated(parsed.lastUpdated);
-      } catch(e) {}
-    } else {
-      setStartDate(defaultStartDate);
-      setEndDate(today);
-    }
-
-
-  }, []);
 
   const handleFetch = async () => {
     if (!startDate || !endDate) {
-      alert("Pilih rentang tanggal terlebih dahulu");
+      setError('Pilih tanggal mulai dan akhir terlebih dahulu.');
       return;
     }
 
+    if (startDate > endDate) {
+      setError('Tanggal mulai tidak boleh lebih dari tanggal akhir.');
+      return;
+    }
+
+    // Save state to localStorage only when "Tarik Data" is clicked
+    localStorage.setItem('orderProduksiState', JSON.stringify({
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      sessionDate: new Date().toLocaleDateString('en-CA')
+    }));
+
+    setLoading(true);
     setError('');
-    setData(null);
+    setData([]);
     setPage(1);
     setSearchQuery('');
 
-    const chunks = splitDateRangeIntoMonths(formatDateToYYYYMMDD(startDate), formatDateToYYYYMMDD(endDate));
+    const startStr = formatDateToYYYYMMDD(startDate);
+    const endStr = formatDateToYYYYMMDD(endDate);
+    const chunks = splitDateRangeIntoMonths(startStr, endStr);
     setIsBatching(true);
-    setLoading(true);
     setBatchProgress(0);
-
+    
     let successCount = 0;
     let totalScraped = 0;
     let totalNewInserted = 0;
@@ -293,8 +287,6 @@ export default function OrderProduksiClient() {
           if (json.lastUpdated) {
             lastUpdatedFromScrape = json.lastUpdated;
           }
-        } else {
-          console.error(`Failed to scrape chunk: ${chunk.start} - ${chunk.end}`);
         }
       } catch (err) {
         console.error("Chunk error:", err);
@@ -305,9 +297,8 @@ export default function OrderProduksiClient() {
         setBatchStatus(`Memproses ${completedChunks}/${chunks.length} bulan...`);
       }
     };
-
+    
     try {
-      // Parallel execution with concurrency limit 15 (Pol Mentok)
       const concurrency = 15;
       const queue = [...chunks];
       const workers = Array(Math.min(concurrency, queue.length)).fill(null).map(async () => {
@@ -319,42 +310,32 @@ export default function OrderProduksiClient() {
 
       await Promise.all(workers);
 
-      setBatchProgress(100);
-      setBatchStatus('Selesai! Memperbarui tampilan...');
-
       if (successCount > 0) {
-        // Clear batch state immediately before dialog to avoid stuck UI
         setIsBatching(false);
         setBatchStatus('');
         setBatchProgress(0);
 
-        // Post one summary log for the full range
-        const fullStart = formatDateToYYYYMMDD(startDate);
-        const fullEnd = formatDateToYYYYMMDD(endDate);
         await fetch('/api/activity-log', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action_type: 'SCRAPE',
             table_name: 'orders',
-            message: `Tarik Data Order Produksi (${fullStart} s/d ${fullEnd})`,
+            message: `Tarik Data Order Produksi (${startStr} s/d ${endStr})`,
             raw_data: JSON.stringify({ "Total Data Ditarik dari Digit": totalScraped, "Data Baru Ditambahkan": totalNewInserted })
           })
         });
 
-        // Trigger refresh
         setRefreshKey(prev => prev + 1);
-
+        
         const failCount = chunks.length - successCount;
-        const message = failCount > 0
-          ? `Selesai dengan catatan: ${successCount} bulan berhasil, ${failCount} bulan gagal.`
-          : `Berhasil menarik data untuk ${successCount} periode (Parallel Sync).`;
-
         setDialog({
           isOpen: true,
           type: failCount > 0 ? 'alert' : 'success',
           title: failCount > 0 ? 'Selesai Sebagian' : 'Berhasil',
-          message: message
+          message: failCount > 0 
+            ? `Berhasil menarik ${totalScraped} data Order dari Digit. (${failCount} bulan gagal)`
+            : `Berhasil menarik ${totalScraped} data Order dari Digit.`
         });
 
         localStorage.setItem('sikka_data_updated', Date.now().toString());
@@ -364,126 +345,48 @@ export default function OrderProduksiClient() {
           if (!isNaN(latestDate.getTime())) {
             const timestamp = latestDate.toLocaleString('id-ID', {
               day: '2-digit', month: 'short', year: 'numeric',
-              hour: '2-digit', minute: '2-digit', second: '2-digit'
+              hour: '2-digit', minute: '2-digit', second: '2-digit',
+              timeZone: 'Asia/Jakarta'
             });
             setLastUpdated(timestamp);
-
-            // Save to localStorage
-            localStorage.setItem('orderProduksiState', JSON.stringify({
-              startDate: startDate.toISOString(),
-              endDate: endDate.toISOString(),
-              lastUpdated: timestamp,
-              sessionDate: new Date().toISOString()
-            }));
           }
         }
       } else {
         setError("Gagal menarik data. Periksa koneksi atau log sistem.");
       }
-    } catch (error: any) {
-      console.error("Scrape error:", error);
+    } catch (err: any) {
       if (!mountedRef.current) return;
-      setError(error.message || "Terjadi kesalahan saat menarik data");
+      setError(err.message || 'Terjadi kesalahan saat menarik data');
     } finally {
       if (mountedRef.current) {
         setIsBatching(false);
         setLoading(false);
         setBatchStatus('');
-        setBatchProgress(0); // Clear progress when done
-        // Trigger one final refresh to show results
+        setBatchProgress(0);
         setRefreshKey(prev => prev + 1);
       }
     }
   };
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    setPage(1); // Reset page on search
-  };
-
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
-    // Increased threshold to 150px and used isLoadingMore ref for instant locking
-    if (scrollHeight - scrollTop <= clientHeight + 150 && !loading && !isLoadingMore.current) {
-      if (data && data.length < totalCount) {
-        isLoadingMore.current = true; // Temporary lock before state update propagates
-        setPage(prev => prev + 1);
-      }
+    if (scrollHeight - scrollTop <= clientHeight + 300 && !loading && data.length < totalCount) {
+      setPage(prev => prev + 1);
     }
   };
 
-
-  const toggleSort = (key: string) => {
-    setSortConfig((prev) => {
-      if (prev.key === key) {
-        if (prev.direction === 'asc') return { key, direction: 'desc' };
-        if (prev.direction === 'desc') return { key, direction: null };
-        return { key, direction: 'asc' };
-      }
-      return { key, direction: 'asc' };
-    });
-  };
-
-  const toggleSelectRow = (id: number, e: React.MouseEvent) => {
-    let next = new Set(selectedIds);
-    if (e.shiftKey && lastSelectedId !== null && data) {
-      const currentIndex = data.findIndex((o: any) => o.id === id);
-      const lastIndex = data.findIndex((o: any) => o.id === lastSelectedId);
-      if (currentIndex !== -1 && lastIndex !== -1) {
-        const start = Math.min(currentIndex, lastIndex);
-        const end = Math.max(currentIndex, lastIndex);
-        for (let i = start; i <= end; i++) {
-          next.add(data[i].id);
-        }
-      }
-    } else if (e.ctrlKey || e.metaKey) {
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-    } else {
-      // Single click (no modifier)
-      if (next.has(id)) {
-        // If already selected, deselect (toggle off)
-        next.clear();
-      } else {
-        next.clear();
-        next.add(id);
-      }
-    }
-    setLastSelectedId(id);
-    setSelectedIds(next);
-  };
-
-  const paginatedData = useMemo(() => {
-    let result = [...(data || [])];
-    if (sortConfig.key && sortConfig.direction) {
-      result.sort((a, b) => {
-        let aValue = a[sortConfig.key!];
-        let bValue = b[sortConfig.key!];
-        if (sortConfig.key === 'tgl') {
-          const pa = aValue ? String(aValue).split('-') : [];
-          const pb = bValue ? String(bValue).split('-') : [];
-          aValue = pa.length === 3 ? `${pa[2]}${pa[1]}${pa[0]}` : aValue;
-          bValue = pb.length === 3 ? `${pb[2]}${pb[1]}${pb[0]}` : bValue;
-        }
-        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-    return result;
-  }, [data, sortConfig]);
+  if (!isMounted) return null;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
-      {/* Top Filter Bar */}
-      <div className="bg-white rounded-[16px] border border-gray-100 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative z-20">
+      <div className="bg-white rounded-[16px] border border-gray-200 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative z-50">
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex flex-wrap items-center gap-6">
             <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Rentang Tanggal</span>
+              <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Rentang Tanggal</span>
               <div className="flex items-center gap-2">
                 <div className="w-[140px] relative group">
-                  <DatePicker
+                  <DatePicker 
                     name="startDate"
                     value={startDate}
                     onChange={setStartDate}
@@ -491,7 +394,7 @@ export default function OrderProduksiClient() {
                 </div>
                 <div className="w-4 h-[1px] bg-gray-200 mx-1"></div>
                 <div className="w-[140px] relative group">
-                  <DatePicker
+                  <DatePicker 
                     name="endDate"
                     value={endDate}
                     onChange={setEndDate}
@@ -503,21 +406,20 @@ export default function OrderProduksiClient() {
 
           <div className="shrink-0 flex items-center gap-3">
             {isBatching && (
-              <div className="flex flex-col items-end">
-                <div className="text-[10px] text-green-600 font-bold animate-pulse leading-none uppercase tracking-tighter">
-                  {batchStatus}
+                <div className="flex flex-col items-end">
+                    <div className="text-[10px] text-green-600 font-bold animate-pulse leading-none uppercase tracking-tighter">
+                    {batchStatus}
+                    </div>
+                    <div className="w-24 h-1 bg-gray-50 rounded-full mt-1.5 overflow-hidden border border-gray-200">
+                    <div 
+                        className="h-full bg-green-500 transition-all duration-300" 
+                        style={{ width: `${batchProgress}%` }}
+                    />
+                    </div>
                 </div>
-                <div className="w-24 h-1 bg-gray-50 rounded-full mt-1.5 overflow-hidden border border-gray-100">
-                  <div
-                    className="h-full bg-green-500 transition-all duration-300"
-                    style={{ width: `${batchProgress}%` }}
-                  />
-                </div>
-              </div>
             )}
-
-            <button
-              key={isBatching ? "btn-syncing" : "btn-idle"}
+            
+            <button 
               onClick={handleFetch}
               disabled={loading || isBatching || !startDate || !endDate}
               className="px-5 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-lg transition-all flex items-center justify-center gap-2.5 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm active:scale-[0.98]"
@@ -525,7 +427,7 @@ export default function OrderProduksiClient() {
               {isBatching ? (
                 <Loader2 size={16} className="animate-spin" />
               ) : (
-                <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+                <RefreshCw size={16} className={loading && data.length === 0 ? "animate-spin" : ""} />
               )}
               <span>{isBatching ? `${batchProgress}%` : 'Tarik Data'}</span>
             </button>
@@ -540,224 +442,86 @@ export default function OrderProduksiClient() {
         </div>
       )}
 
-      {/* Results View */}
-      <div className="flex-1 flex flex-col gap-5 overflow-hidden min-h-0 relative">
-        {/* Results Header & Search */}
+      <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
         <div className="flex flex-col gap-4 shrink-0">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">              <h3 className="text-15px font-extrabold text-gray-800 flex items-center gap-2">
+          <div className="flex items-center justify-between gap-4 min-h-[32px]">
+            <div className="flex items-center gap-4">
+              <h3 className="text-15px font-extrabold text-gray-800 flex items-center gap-2 leading-none">
                 <Clock size={18} className="text-green-600" />
                 <span>Hasil Scrapping</span>
               </h3>
               {lastUpdated && (
-                <div className="flex items-center gap-1.5 text-[12px] text-gray-400 font-medium">
-                  <span className="text-gray-200">|</span>
+                <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none" style={{ color: '#99a1af' }}>
+                  <span className="opacity-40">|</span>
                   <span>Diperbarui: {lastUpdated}</span>
                 </div>
               )}
             </div>
-
-            {loading && data !== null && (
-              <div className="flex items-center gap-2 text-[11px] font-bold text-green-600 animate-pulse bg-green-50 px-2.5 py-1 rounded-full border border-green-100">
-                <Loader2 size={12} className="animate-spin" />
-                <span>Memproses...</span>
-              </div>
-            )}
+            
+            <div className="flex items-center gap-3">
+               {loadTime !== null && (
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
+                  loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                  loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'
+                }`}>
+                  <span className="animate-pulse">⚡</span>
+                  <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
+                </span>
+                )}
+                {loading && data.length > 0 && (
+                <div className="flex items-center gap-2 text-[11px] font-bold text-green-600 animate-pulse bg-green-50 px-2.5 py-1 rounded-full border border-green-100 uppercase tracking-tighter leading-none">
+                    <Loader2 size={12} className="animate-spin" />
+                    <span>Memproses...</span>
+                </div>
+                )}
+            </div>
           </div>
 
           <div className="relative w-full group">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-            <input
-              type="text"
-              placeholder="Cari faktur, produk, pelanggan..."
-              className="w-full pl-12 pr-4 h-12 bg-white border border-gray-200 rounded-[14px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-green-500 transition-colors" />
+            <input 
+              type="text" 
+              placeholder="Cari ID, faktur, produk, atau pelanggan..." 
+              className="w-full pl-12 pr-4 h-10 bg-white border border-gray-200 rounded-[14px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
               value={searchQuery}
-              onChange={handleSearch}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
 
-        {error ? (
-          <div className="flex-1 bg-rose-50 border-2 border-dashed border-rose-100 rounded-[10px] flex flex-col items-center justify-center text-center p-10">
-            <AlertCircle size={40} className="text-rose-200 mb-4" />
-            <h3 className="text-sm font-bold text-rose-800 mb-1">Gagal Memuat Data</h3>
-            <p className="text-xs text-rose-500 max-w-md font-medium">{error}</p>
-            <button
-              onClick={() => setRefreshKey(prev => prev + 1)}
-              className="mt-4 px-4 py-2 bg-rose-500 text-white rounded-lg text-xs font-bold hover:bg-rose-600 transition-colors"
-            >
-              Coba Lagi
-            </button>
-          </div>
-        ) : data === null ? (
-          <div className="flex-1 bg-white border border-gray-100 rounded-[10px] shadow-sm overflow-hidden flex flex-col min-h-0">
-            <div className="border-b border-gray-100 bg-gray-50/50 px-5 py-3.5 flex items-center justify-between">
-              <div className="h-4 w-32 bg-gray-200 rounded-md animate-pulse"></div>
-              <div className="h-4 w-24 bg-gray-200 rounded-md animate-pulse"></div>
-            </div>
-            <div className="flex-1 p-5 space-y-4">
-               {Array(10).fill(0).map((_, i) => (
-                 <div key={i} className="flex items-center gap-4 w-full">
-                   <div className="h-4 w-32 bg-gray-100 rounded animate-pulse"></div>
-                   <div className="h-4 flex-1 bg-gray-50 rounded animate-pulse"></div>
-                   <div className="h-4 w-40 bg-gray-100 rounded animate-pulse"></div>
-                   <div className="h-4 w-24 bg-gray-100 rounded animate-pulse"></div>
-                 </div>
-               ))}
-            </div>
-          </div>
-        ) : data && data.length === 0 ? (
-          <div className="flex-1 bg-white border border-gray-200 rounded-[10px] flex flex-col items-center justify-center text-center p-20 shadow-sm">
-            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-5">
-              <Search className="text-gray-200" size={32} />
-            </div>
-            <h3 className="text-sm font-bold text-gray-800 mb-2">Tidak ada data ditemukan</h3>
-            <p className="text-[12px] text-gray-400 max-w-[260px] mx-auto leading-relaxed font-medium">
-              Coba sesuaikan kata kunci pencarian atau ganti rentang tanggal periode di atas.
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] overflow-hidden flex-1 flex flex-col min-h-0 relative">
-              <div className="overflow-auto custom-scrollbar flex-1 min-h-0" onScroll={handleScroll}>
-                <table
-                  className="text-left relative border-collapse table-fixed"
-                  style={{ width: totalTableWidth, minWidth: '100%' }}
-                >
-                  <thead className="sticky top-0 z-10 bg-gray-50 border-b border-gray-100">
-                    <tr className="text-[13px] text-gray-400 font-bold uppercase tracking-wider">
-                      <th
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors border-r border-gray-100"
-                        style={{ width: columnWidths.faktur }}
-                        onClick={() => toggleSort('faktur')}
-                      >
-                        <div className="flex items-center gap-2 nowrap overflow-hidden">NO. FAKTUR <SortIcon config={sortConfig} sortKey="faktur" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('faktur', e)} onClick={(e) => e.stopPropagation()} />
-                      </th>
-                      <th
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors border-r border-gray-100"
-                        style={{ width: columnWidths.nama_prd }}
-                        onClick={() => toggleSort('nama_prd')}
-                      >
-                        <div className="flex items-center gap-2 nowrap overflow-hidden">NAMA PRODUK <SortIcon config={sortConfig} sortKey="nama_prd" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('nama_prd', e)} onClick={(e) => e.stopPropagation()} />
-                      </th>
-                      <th
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors border-r border-gray-100"
-                        style={{ width: columnWidths.nama_pelanggan }}
-                        onClick={() => toggleSort('nama_pelanggan')}
-                      >
-                        <div className="flex items-center gap-2 nowrap overflow-hidden">PELANGGAN <SortIcon config={sortConfig} sortKey="nama_pelanggan" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('nama_pelanggan', e)} onClick={(e) => e.stopPropagation()} />
-                      </th>
-                      <th
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors border-r border-gray-100"
-                        style={{ width: columnWidths.tgl }}
-                        onClick={() => toggleSort('tgl')}
-                      >
-                        <div className="flex items-center gap-2 nowrap overflow-hidden">TANGGAL <SortIcon config={sortConfig} sortKey="tgl" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('tgl', e)} onClick={(e) => e.stopPropagation()} />
-                      </th>
-                      <th
-                        className="px-5 py-3.5 relative group/h text-right cursor-pointer hover:bg-gray-100 transition-colors border-r border-gray-100"
-                        style={{ width: columnWidths.qty }}
-                        onClick={() => toggleSort('qty')}
-                      >
-                        <div className="flex items-center justify-end gap-2 nowrap overflow-hidden">QTY ORDER <SortIcon config={sortConfig} sortKey="qty" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('qty', e)} onClick={(e) => e.stopPropagation()} />
-                      </th>
-                      <th
-                        className="px-5 py-3.5 relative group/h cursor-pointer hover:bg-gray-100 transition-colors"
-                        style={{ width: columnWidths.satuan }}
-                        onClick={() => toggleSort('satuan')}
-                      >
-                        <div className="flex items-center gap-2 nowrap overflow-hidden">SATUAN <SortIcon config={sortConfig} sortKey="satuan" /></div>
-                        <div className="resizer" onMouseDown={(e) => startResizing('satuan', e)} onClick={(e) => e.stopPropagation()} />
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {paginatedData.map((order: any, idx) => {
-                      const isSelected = selectedIds.has(order.id);
-                      return (
-                      <tr
-                        key={order.id || idx}
-                        onClick={(e) => toggleSelectRow(order.id, e)}
-                        className={`transition-all duration-150 group h-11 cursor-pointer select-none border-b border-gray-100 ${
-                          isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : idx % 2 === 1 ? 'bg-slate-50/40' : 'bg-white'
-                        } hover:bg-green-50/40`}
-                      >
-                        <td className={`px-5 py-1 font-bold text-[13px] tracking-tight transition-colors nowrap overflow-hidden border-r border-gray-100 ${isSelected ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-500'}`}>
-                          {order.faktur}
-                        </td>
-                        <td className={`px-5 py-1 font-bold text-[13px] transition-colors nowrap overflow-hidden border-r border-gray-100 ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}>
-                          {order.nama_prd}
-                        </td>
-                        <td className={`px-5 py-1 text-[13px] font-medium transition-colors nowrap overflow-hidden border-r border-gray-100 ${isSelected ? 'text-green-700' : 'text-gray-500'}`}>
-                          <div className={`inline-block px-2.5 py-1 rounded-md transition-colors nowrap ${isSelected ? 'bg-green-100 text-green-700' : 'bg-slate-100/60 text-gray-500 border border-gray-100/50 group-hover:bg-white'}`}>
-                            {order.nama_pelanggan || order.kd_pelanggan}
-                          </div>
-                        </td>
-                        <td className={`px-5 py-1 text-[13px] font-bold transition-colors nowrap overflow-hidden border-r border-gray-100 ${isSelected ? 'text-green-700' : 'text-gray-400'}`}>
-                          {formatIndoDateStr(order.tgl)}
-                        </td>
-                        <td className={`px-5 py-1 text-right font-extrabold text-[13px] transition-colors nowrap overflow-hidden border-r border-gray-100 ${isSelected ? 'text-green-700' : 'text-gray-800'}`}>
-                          {Number(order.qty).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </td>
-                        <td className={`px-5 py-1 text-[13px] font-bold transition-colors nowrap overflow-hidden ${isSelected ? 'text-green-500' : 'text-gray-400'}`}>
-                          {order.satuan || '-'}
-                        </td>
-                      </tr>
-                    )})}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+        <DataTable
+          columns={columns}
+          data={data}
+          isLoading={loading}
+          totalCount={totalCount}
+          onScroll={handleScroll}
+          selectedIds={selectedIds}
+          onRowClick={(id) => {
+            const next = new Set(selectedIds);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            setSelectedIds(next);
+          }}
+          columnWidths={columnWidths}
+          onColumnWidthChange={setColumnWidths}
+        />
 
-            {/* Footer info Banner */}
-            <div className="flex items-center justify-between shrink-0 px-1">
-              <span className="text-[12px] font-bold text-gray-400">
-                {totalCount === 0
-                  ? 'Tidak ada data tersedia'
-                  : `Menampilkan ${paginatedData.length} dari ${totalCount} data order`}
-              </span>
-              <div className="flex items-center gap-4">
-                {selectedIds.size > 0 && (
-                  <div className="flex items-center gap-3">
-                    <span className="text-[12px] font-bold text-gray-400">{selectedIds.size} dipilih</span>
-                    <button 
-                      onClick={() => setSelectedIds(new Set())}
-                      className="text-[12px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
-                    >
-                      Batal
-                    </button>
-                  </div>
-                )}
-                {loadTime !== null && (
-                  <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
-                    loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                    loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
-                    'bg-red-50 text-red-600 border-red-100'
-                  }`}>
-                    <span className="animate-pulse">⚡</span>
-                    <span>{(loadTime / 1000).toFixed(2)}s</span>
-                  </span>
-                )}
-                {loading && page > 1 && (
-                  <div className="flex items-center gap-2 text-green-600 font-bold text-[11px] animate-pulse">
-                    <Loader2 size={12} className="animate-spin" />
-                    <span>Memuat hal. berikutnya...</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </>
-        )}
+        <div className="flex items-center justify-between shrink-0 px-1">
+          <span className="text-[12px] leading-none font-bold text-gray-400">
+            {totalCount === 0 ? 'Tidak ada data Order' : `Menampilkan ${data.length} dari ${totalCount} data Order`}
+          </span>
+          {selectedIds.size > 0 && (
+             <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
+                <span className="text-[12px] leading-none font-bold text-gray-400">{selectedIds.size} dipilih</span>
+                <button onClick={() => setSelectedIds(new Set())} className="text-[12px] leading-none font-black text-rose-500 hover:text-rose-600 underline underline-offset-4">Batal</button>
+             </div>
+          )}
+        </div>
       </div>
 
-      <ConfirmDialog
+      <ConfirmDialog 
         isOpen={dialog.isOpen}
-        type={dialog.type as any}
+        type={dialog.type}
         title={dialog.title}
         message={dialog.message}
         onConfirm={() => setDialog(prev => ({ ...prev, isOpen: false }))}

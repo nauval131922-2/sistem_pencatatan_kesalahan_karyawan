@@ -3,7 +3,7 @@ import BarangJadiClient from './BarangJadiClient';
 import PageHeader from '@/components/PageHeader';
 
 export const metadata: Metadata = {
-  title: 'SIKKA | Barang Jadi',
+  title: 'SINTAK | Barang Jadi',
 };
 
 export const dynamic = 'force-dynamic';
@@ -16,7 +16,7 @@ export default function BarangJadiPage() {
         title="Barang Jadi"
         description={
           <>
-            Tarik data Barang Hasil Produksi dari <a href="https://digit.ptbuya.com" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-bold">Digit</a>
+            Sinkronisasi daftar Barang Hasil Produksi secara langsung dari <a href="https://buyapercetakan.mdthoster.com/" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-bold">Digit</a>
           </>
         }
       />

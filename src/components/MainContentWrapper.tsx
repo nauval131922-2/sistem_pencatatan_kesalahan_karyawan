@@ -64,13 +64,14 @@ export default function MainContentWrapper({
   // Data changes should be the only trigger to avoid heavy load across tabs.
 
 
-  const isLoginPage = pathname?.startsWith('/login');
+  // If pathname is not ready (on server), assume it's not login page by default
+  const isLoginPage = pathname ? pathname.startsWith('/login') : false;
 
   if (isLoginPage) {
     return (
-      <main className="flex-1 w-full min-h-screen bg-slate-50">
+      <div className="flex-1 w-full min-h-screen bg-slate-50">
         {children}
-      </main>
+      </div>
     );
   }
 
@@ -78,9 +79,10 @@ export default function MainContentWrapper({
     <div className="flex h-screen overflow-hidden bg-slate-50">
       <Sidebar user={user} />
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        <main className="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar bg-slate-50 px-6 md:px-8 py-8">
+        {/* Changed from main to div with standardized classes to reduce hydration mismatch risk */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar bg-slate-50 px-6 md:px-8 py-8">
           {children}
-        </main>
+        </div>
       </div>
     </div>
   );
