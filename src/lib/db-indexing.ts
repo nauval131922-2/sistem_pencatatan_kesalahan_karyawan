@@ -23,7 +23,23 @@ export async function initIndexing(database: any) {
     "CREATE INDEX IF NOT EXISTS idx_barang_jadi_faktur_prd ON barang_jadi(faktur_prd);",
     "CREATE INDEX IF NOT EXISTS idx_sales_reports_faktur ON sales_reports(faktur);",
     
-    // 5. System Optimization
+    // 5. Rekap Pembelian Barang Optimization
+    "CREATE INDEX IF NOT EXISTS idx_rekap_pembelian_barang_tgl ON rekap_pembelian_barang(tgl DESC);",
+    "CREATE INDEX IF NOT EXISTS idx_rekap_pembelian_barang_faktur ON rekap_pembelian_barang(faktur);",
+    
+    // 6. Pelunasan Hutang Optimization
+    "CREATE INDEX IF NOT EXISTS idx_pelunasan_hutang_tgl ON pelunasan_hutang(tgl DESC);",
+    "CREATE INDEX IF NOT EXISTS idx_pelunasan_hutang_faktur ON pelunasan_hutang(faktur);",
+    
+    // 7. Pelunasan Piutang Optimization
+    "CREATE INDEX IF NOT EXISTS idx_pelunasan_piutang_tgl ON pelunasan_piutang(tgl DESC);",
+    "CREATE INDEX IF NOT EXISTS idx_pelunasan_piutang_faktur ON pelunasan_piutang(faktur);",
+    
+    // 8. Pengiriman Optimization
+    "CREATE INDEX IF NOT EXISTS idx_pengiriman_tgl ON pengiriman(tgl DESC);",
+    "CREATE INDEX IF NOT EXISTS idx_pengiriman_recid ON pengiriman(recid);",
+    
+    // 9. System Optimization
     "ANALYZE;" // Update SQLite statistics for query planner
   ];
 

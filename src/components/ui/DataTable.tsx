@@ -12,7 +12,6 @@ import {
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ArrowUp, ArrowDown, ArrowUpDown, Loader2, AlertCircle } from 'lucide-react';
-
 interface DataTableProps<TData> {
   columns: ColumnDef<TData, any>[];
   data: TData[];
@@ -20,11 +19,16 @@ interface DataTableProps<TData> {
   totalCount?: number;
   onScroll?: (event: React.UIEvent<HTMLDivElement>) => void;
   selectedIds?: Set<number | string>;
-  onRowClick?: (id: number | string, event: React.MouseEvent) => void;
+  onRowClick?: (id: any, event: React.MouseEvent) => void;
+  onRowDoubleClick?: (id: any, event: React.MouseEvent) => void;
   columnWidths?: Record<string, number>;
   onColumnWidthChange?: (widths: Record<string, number>) => void;
   height?: string;
   className?: string;
+  rowHeight?: string;
+  hideSorting?: boolean;
+  disableHover?: boolean;
+  rowCursor?: string;
 }
 
 export function DataTable<TData extends { id: number | string }>({
@@ -35,10 +39,15 @@ export function DataTable<TData extends { id: number | string }>({
   onScroll,
   selectedIds = new Set(),
   onRowClick,
+  onRowDoubleClick,
   columnWidths: initialColumnWidths,
   onColumnWidthChange,
   height = 'flex-1',
   className = '',
+  rowHeight = 'h-10',
+  hideSorting = false,
+  disableHover = false,
+  rowCursor = 'cursor-pointer',
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnSizing, setColumnSizing] = React.useState<ColumnSizingState>(
@@ -49,9 +58,46 @@ export function DataTable<TData extends { id: number | string }>({
   
   // To avoid hydration mismatch
   const [isMounted, setIsMounted] = React.useState(false);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const startX = React.useRef(0);
+  const startY = React.useRef(0);
+  const scrollLeft = React.useRef(0);
+  const scrollTop = React.useRef(0);
+
   React.useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    if (!parentRef.current) return;
+    // Only drag if it's the left mouse button
+    if (e.button !== 0) return;
+    
+    setIsDragging(true);
+    startX.current = e.pageX - parentRef.current.offsetLeft;
+    startY.current = e.pageY - parentRef.current.offsetTop;
+    scrollLeft.current = parentRef.current.scrollLeft;
+    scrollTop.current = parentRef.current.scrollTop;
+  };
+
+  const onMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  const onMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !parentRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - parentRef.current.offsetLeft;
+    const y = e.pageY - parentRef.current.offsetTop;
+    const walkX = (x - startX.current) * 1.5; // Multiplier for speed
+    const walkY = (y - startY.current) * 1.5;
+    parentRef.current.scrollLeft = scrollLeft.current - walkX;
+    parentRef.current.scrollTop = scrollTop.current - walkY;
+  };
 
   const table = useReactTable({
     data,
@@ -91,12 +137,16 @@ export function DataTable<TData extends { id: number | string }>({
   if (!isMounted) return <div className={`bg-white border border-gray-200 rounded-xl overflow-hidden ${height} animate-pulse`} />;
 
   return (
-    <div className={`bg-white border border-gray-200 shadow-sm rounded-xl overflow-hidden flex flex-col min-h-0 relative ${height} ${className} ${isResizingColumn ? 'is-resizing' : ''}`}>
+    <div className={`bg-white border border-gray-200 shadow-[0_4px_20px_-3px_rgba(0,0,0,0.06),0_10px_20px_-2px_rgba(0,0,0,0.02)] rounded-xl overflow-hidden flex flex-col min-h-0 relative ${height} ${className} ${isResizingColumn ? 'is-resizing' : ''}`}>
       <style jsx global>{`.is-resizing * { user-select: none !important; transition: none !important; cursor: col-resize !important; } .is-resizing th > div { cursor: col-resize !important; }`}</style>
       <div 
         ref={parentRef}
-        className="overflow-auto custom-scrollbar flex-1 min-h-0" 
+        className={`overflow-auto custom-scrollbar flex-1 min-h-0 relative bg-white select-none ${isDragging ? 'cursor-grabbing' : ''}`} 
         onScroll={onScroll}
+        onMouseDown={onMouseDown}
+        onMouseLeave={onMouseLeave}
+        onMouseUp={onMouseUp}
+        onMouseMove={onMouseMove}
       >
         <div style={{ width: totalWidth, minWidth: '100%' }}>
           <table 
@@ -107,7 +157,7 @@ export function DataTable<TData extends { id: number | string }>({
                 {headers.map((header) => (<col key={`col-${header.id}`} style={{ width: columnSizing[header.id] || (header.column.columnDef as any).size || 150 }} />))}
                 <col style={{ width: 'auto' }} />
             </colgroup>
-            <thead className="sticky top-0 z-20 bg-gray-50 shadow-sm">
+            <thead className="sticky top-0 z-20 bg-gray-50/95 backdrop-blur-sm shadow-[0_1px_2px_rgba(0,0,0,0.08)]">
               <tr className="h-0 border-none pointer-events-none">
                 {headers.map((h) => (<th key={`anchor-${h.id}`} className="p-0 border-none h-0"></th>))}
                 <th key="anchor-end" className="p-0 border-none h-0"></th>
@@ -118,15 +168,17 @@ export function DataTable<TData extends { id: number | string }>({
                     const sortingState = sorting.find((s) => s.id === header.id);
                     return (<th key={header.id} className="p-0 border-b border-r border-gray-200 relative group transition-colors overflow-hidden">
                         <div 
-                          className={`px-4 py-3 flex items-center gap-2 cursor-pointer hover:bg-gray-100/80 transition-colors select-none ${(header.column.columnDef.meta as any)?.align === 'right' ? 'justify-end flex-row-reverse' : (header.column.columnDef.meta as any)?.align === 'center' ? 'justify-center' : 'justify-start'}`}
-                          onClick={header.column.getToggleSortingHandler()}
+                          className={`px-4 py-3 flex items-center gap-2 transition-colors select-none ${!hideSorting ? 'cursor-pointer hover:bg-gray-100/80' : ''} ${(header.column.columnDef.meta as any)?.align === 'right' ? 'justify-end flex-row-reverse' : (header.column.columnDef.meta as any)?.align === 'center' ? 'justify-center' : 'justify-start'}`}
+                          onClick={!hideSorting ? header.column.getToggleSortingHandler() : undefined}
                         >
                             <span className="text-[12px] font-bold text-gray-700 tracking-tight whitespace-nowrap overflow-hidden truncate">
                                 {flexRender(header.column.columnDef.header, header.getContext())}
                             </span>
-                            <div className="flex-shrink-0">
-                            {sortingState ? (sortingState.desc ? <ArrowDown size={14} className="text-green-600" /> : <ArrowUp size={14} className="text-green-600" />) : (<ArrowUpDown size={14} className="text-gray-300 group-hover:text-gray-400" />)}
-                            </div>
+                            {!hideSorting && (
+                                <div className="flex-shrink-0">
+                                {sortingState ? (sortingState.desc ? <ArrowDown size={14} className="text-green-600" /> : <ArrowUp size={14} className="text-green-600" />) : (<ArrowUpDown size={14} className="text-gray-300 group-hover:text-gray-400" />)}
+                                </div>
+                            )}
                         </div>
                         {header.column.getCanResize() && (
                           <div
@@ -174,6 +226,10 @@ export function DataTable<TData extends { id: number | string }>({
                         isSelected={isSelected}
                         isOdd={isOdd}
                         onRowClick={onRowClick}
+                        onRowDoubleClick={onRowDoubleClick}
+                        rowHeight={rowHeight}
+                        disableHover={disableHover}
+                        rowCursor={rowCursor}
                       />
                     );
                   })}
@@ -197,18 +253,29 @@ export function DataTable<TData extends { id: number | string }>({
   );
 }
 
-const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick }: any) => {
+const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick, onRowDoubleClick, rowHeight, disableHover, rowCursor }: any) => {
   return (
     <tr
       onClick={(e) => onRowClick && onRowClick(row.original.id, e)}
-      className={`h-10 cursor-pointer select-none border-b border-gray-200 transition-colors ${
-        isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : isOdd ? 'bg-slate-50/30' : 'bg-white'
-      } hover:bg-green-50/50 text-[13px]`}
+      onDoubleClick={(e) => onRowDoubleClick && onRowDoubleClick(row.original.id, e)}
+      className={`${rowHeight} ${rowCursor} select-none group border-b border-gray-200 transition-colors ${
+        isSelected ? 'bg-green-50 is-selected shadow-[inset_4px_0_0_0_#16a34a]' : isOdd ? 'bg-slate-50/30' : 'bg-white'
+      } ${!disableHover ? 'hover:bg-green-50/50' : ''} text-[13px]`}
     >{row.getVisibleCells().map((cell: any) => {
         const meta = cell.column.columnDef.meta as any;
         const alignClass = meta?.align === 'right' ? 'justify-end text-right font-mono' : meta?.align === 'center' ? 'justify-center text-center' : 'justify-start text-left';
+        const wrapClass = meta?.wrap ? 'whitespace-normal' : 'truncate';
+        const vAlignClass = meta?.valign === 'top' ? 'items-start py-3' : 'items-center';
         return (
-          <td key={cell.id} className="p-0 border-r border-gray-200 whitespace-nowrap overflow-hidden"><div className={`px-4 h-10 flex items-center text-[12px] leading-tight font-medium truncate ${alignClass} ${isSelected ? 'text-green-700 font-bold' : 'text-[#364153]'}`}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</div></td>
+          <td 
+            key={cell.id} 
+            className="p-0 border-r border-gray-200"
+            style={meta?.valign === 'top' ? { verticalAlign: 'top' } : {}}
+          >
+            <div className={`px-4 ${meta?.valign === 'top' ? '' : rowHeight} flex ${vAlignClass} text-[12px] leading-snug font-medium ${wrapClass} ${alignClass} ${isSelected ? 'text-green-700 font-bold' : 'text-[#364153]'}`}>
+              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            </div>
+          </td>
         );
       })}<td className="p-0 border-none w-0 pointer-events-none"></td></tr>
   );

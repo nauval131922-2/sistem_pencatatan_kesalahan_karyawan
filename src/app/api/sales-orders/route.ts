@@ -70,9 +70,14 @@ export async function GET(req: NextRequest) {
 
     const total = (countResults.rows[0]?.total as number) || 0;
     
-    // Get last updated timestamp if any
-    const latest = await db.execute("SELECT strftime('%Y-%m-%dT%H:%M:%SZ', created_at) as lastUpdated FROM activity_logs WHERE table_name = 'sales_orders' AND action_type = 'SCRAPE' ORDER BY created_at DESC LIMIT 1");
-    const lastUpdated = latest.rows[0]?.lastUpdated || null;
+    const metadataResults = await db.batch([
+      { sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_sales_orders'`, args: [] },
+      { sql: `SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM sales_orders`, args: [] }
+    ], "read");
+
+    const lastScrape = metadataResults[0].rows[0] as any;
+    const lastUpdatedRaw = (metadataResults[1].rows[0] as any).lastUpdated;
+    const lastUpdated = lastScrape?.value || lastUpdatedRaw;
 
     return NextResponse.json({
       success: true,

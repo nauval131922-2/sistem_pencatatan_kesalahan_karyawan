@@ -16,9 +16,9 @@ export async function GET(req: NextRequest) {
     const args: any[] = [];
 
     if (q) {
-      whereClause += " AND (faktur LIKE ? OR kd_supplier LIKE ? OR faktur_pr LIKE ? OR faktur_sph LIKE ?)";
+      whereClause += " AND (id LIKE ? OR faktur LIKE ? OR kd_supplier LIKE ? OR faktur_pr LIKE ? OR faktur_sph LIKE ?)";
       const searchTag = `%${q}%`;
-      args.push(searchTag, searchTag, searchTag, searchTag);
+      args.push(searchTag, searchTag, searchTag, searchTag, searchTag);
     }
 
     if (start && end) {
@@ -37,29 +37,26 @@ export async function GET(req: NextRequest) {
       LIMIT ? OFFSET ?
     `;
     
-    const countQuery = `SELECT COUNT(*) as count FROM purchase_orders ${whereClause}`;
+    const countQuery = `SELECT COUNT(*) as total FROM purchase_orders ${whereClause}`;
     
-    const [dataRes, countRes] = await Promise.all([
-      db.execute({ sql: dataQuery, args: [...args, pageSize, offset] }),
-      db.execute({ sql: countQuery, args })
-    ]);
+    const [recordsRes, totalRes, lastScrapeRes, lastUpdatedRawRes] = await db.batch([
+      { sql: dataQuery, args: [...args, pageSize, offset] },
+      { sql: countQuery, args: args },
+      { sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_purchase_orders'`, args: [] },
+      { sql: `SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM purchase_orders`, args: [] }
+    ], "read");
 
-    const total = Number((countRes.rows[0] as any).count);
-    
-    const settingRes = await db.execute({
-      sql: "SELECT value FROM system_settings WHERE key = ?",
-      args: ['last_scrape_purchase_orders']
-    });
-    const lastUpdated = (settingRes.rows[0] as any)?.value || null;
-
-    // Convert rows to plain objects to ensure they are properly serialized
-    const rows = (dataRes.rows || []).map((r: any) => ({ ...r }));
+    const lastScrape = lastScrapeRes.rows[0] as any;
+    const lastUpdatedRaw = (lastUpdatedRawRes.rows[0] as any)?.lastUpdated;
+    const lastUpdated = lastScrape?.value || lastUpdatedRaw;
 
     return NextResponse.json({
       success: true,
-      data: rows,
-      total,
-      lastUpdated
+      data: recordsRes.rows,
+      total: Number((totalRes.rows[0] as any).total || 0),
+      lastUpdated,
+      page,
+      pageSize
     });
   } catch (err: any) {
     console.error("[API-PO] Error:", err);

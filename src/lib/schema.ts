@@ -244,6 +244,7 @@ export async function initSchema(db: any) {
       spesifikasi TEXT,
       kd_barang TEXT,
       qty_order REAL,
+      satuan TEXT,
       faktur_sph TEXT,
       faktur_prd TEXT,
       raw_data TEXT,
@@ -321,6 +322,118 @@ export async function initSchema(db: any) {
       mydata TEXT,
       ket_pr TEXT,
       faktur_pb TEXT,
+      raw_data TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS penerimaan_pembelian (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      faktur TEXT UNIQUE NOT NULL,
+      tgl TEXT,
+      top_hari TEXT,
+      jthtmp TEXT,
+      faktur_po TEXT,
+      faktur_prd TEXT,
+      faktur_supplier TEXT,
+      kd_gudang TEXT,
+      kd_cabang TEXT,
+      kd_supplier TEXT,
+      subtotal REAL,
+      diskon REAL,
+      pembulatan REAL,
+      persppn REAL,
+      ppn REAL,
+      biaya_kirim REAL,
+      total REAL,
+      porsekot REAL,
+      hutang REAL,
+      kas REAL,
+      status TEXT,
+      tgl_lunas TEXT,
+      username TEXT,
+      keterangan_pr TEXT,
+      raw_data TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS rekap_pembelian_barang (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      faktur TEXT,
+      kd_supplier TEXT,
+      tgl TEXT,
+      kd_barang TEXT,
+      faktur_po TEXT,
+      jthtmp TEXT,
+      harga REAL,
+      qty REAL,
+      kd_cabang TEXT,
+      pers_diskon1 REAL,
+      diskon_item REAL,
+      jumlah REAL,
+      ppn REAL,
+      username TEXT,
+      total_item REAL,
+      hj REAL,
+      gol_barang TEXT,
+      diskon REAL,
+      margin REAL,
+      recid TEXT UNIQUE,
+      raw_data TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS pelunasan_hutang (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      faktur TEXT UNIQUE NOT NULL,
+      tgl TEXT,
+      kd_cabang TEXT,
+      kd_supplier TEXT,
+      pembelian REAL,
+      retur REAL,
+      subtotal REAL,
+      diskon REAL,
+      pembulatan REAL,
+      total REAL,
+      kas REAL,
+      bgcek REAL,
+      bank REAL,
+      porsekot REAL,
+      kd_porsekot TEXT,
+      kd_bank TEXT,
+      status TEXT,
+      faktur_pb TEXT,
+      keterangan TEXT,
+      username TEXT,
+      recid TEXT,
+      raw_data TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS pelunasan_piutang (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      faktur TEXT UNIQUE NOT NULL,
+      fkt TEXT,
+      tgl TEXT,
+      kredit REAL,
+      kd_pelanggan TEXT,
+      kd_gudang TEXT,
+      kd_sales TEXT,
+      recid TEXT,
+      raw_data TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS pengiriman (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      faktur TEXT,
+      tgl TEXT,
+      kd_supir TEXT,
+      kd_armada TEXT,
+      kd_eks TEXT,
+      no_resi TEXT,
+      status TEXT,
+      status_faktur TEXT,
+      keterangan TEXT,
+      username TEXT,
+      waktu_kirim TEXT,
+      waktu_selesai TEXT,
+      total_faktur INTEGER,
+      recid TEXT UNIQUE NOT NULL,
       raw_data TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`
@@ -403,7 +516,8 @@ export async function initSchema(db: any) {
     "ALTER TABLE barang_jadi ADD COLUMN qty_order REAL;",
     "ALTER TABLE barang_jadi ADD COLUMN qty_so REAL;",
     "ALTER TABLE barang_jadi ADD COLUMN recid TEXT;",
-    "ALTER TABLE barang_jadi ADD COLUMN nama_prd TEXT;"
+    "ALTER TABLE barang_jadi ADD COLUMN nama_prd TEXT;",
+    "ALTER TABLE bill_of_materials ADD COLUMN satuan TEXT;"
   ];
 
   const executor = db.client || db;
@@ -448,7 +562,8 @@ export async function initSchema(db: any) {
     "CREATE INDEX IF NOT EXISTS idx_sales_orders_expr_tgl ON sales_orders(substr(tgl, 7, 4), substr(tgl, 4, 2), substr(tgl, 1, 2), id ASC);",
     "CREATE INDEX IF NOT EXISTS idx_spph_out_expr_tgl ON spph_out(substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC);",
     "CREATE INDEX IF NOT EXISTS idx_sph_in_expr_tgl ON sph_in(substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC);",
-    "CREATE INDEX IF NOT EXISTS idx_purchase_orders_expr_tgl ON purchase_orders(substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC);"
+    "CREATE INDEX IF NOT EXISTS idx_purchase_orders_expr_tgl ON purchase_orders(substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC);",
+    "CREATE INDEX IF NOT EXISTS idx_penerimaan_pembelian_expr_tgl ON penerimaan_pembelian(substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC);"
   ], "write");
 
   // 4. SMART AUTOMATED ACTIVITY LOG TRIGGERS
@@ -463,6 +578,7 @@ export async function initSchema(db: any) {
       await db.execute(`DROP TABLE IF EXISTS sales_orders_fts`);
       await db.execute(`DROP TABLE IF EXISTS sales_reports_fts`);
       await db.execute(`DROP TABLE IF EXISTS employees_fts`);
+      await db.execute(`DROP TABLE IF EXISTS sph_out_fts`);
 
       // --- FTS5 FOR BAHAN BAKU ---
       await db.execute(`
@@ -513,6 +629,14 @@ export async function initSchema(db: any) {
            id, faktur, kd_pelanggan, kd_barang, faktur_so, faktur_prd, 
            nama_prd, nama_pelanggan, dati_2, gol_barang, keterangan_so, recid,
            tokenize='unicode61 remove_diacritics 1'
+         );
+      `);
+
+      // --- FTS5 FOR SPH OUT ---
+      await db.execute(`
+         CREATE VIRTUAL TABLE sph_out_fts USING fts5(
+            id, faktur, kd_pelanggan, barang, faktur_so,
+            tokenize='unicode61 remove_diacritics 1'
          );
       `);
 
@@ -584,91 +708,93 @@ export async function initSchema(db: any) {
            ], "write");
         }
 
-      // --- FTS5 FOR HPP KALKULASI ---
-      await db.execute(`
-         INSERT INTO hpp_kalkulasi_fts(id, rowid, nama_order, keterangan)
-         SELECT id, id, nama_order, keterangan FROM hpp_kalkulasi
-      `);
-      
-      await db.batch([
-        `DROP TRIGGER IF EXISTS trg_hpp_kalkulasi_fts_insert;`,
-        `CREATE TRIGGER trg_hpp_kalkulasi_fts_insert AFTER INSERT ON hpp_kalkulasi BEGIN
-          INSERT INTO hpp_kalkulasi_fts(id, rowid, nama_order, keterangan)
-          VALUES (NEW.id, NEW.id, NEW.nama_order, NEW.keterangan);
-        END;`,
-        `DROP TRIGGER IF EXISTS trg_hpp_kalkulasi_fts_update;`,
-        `CREATE TRIGGER trg_hpp_kalkulasi_fts_update AFTER UPDATE ON hpp_kalkulasi BEGIN
-          DELETE FROM hpp_kalkulasi_fts WHERE rowid = OLD.id;
-          INSERT INTO hpp_kalkulasi_fts(id, rowid, nama_order, keterangan)
-          VALUES (NEW.id, NEW.id, NEW.nama_order, NEW.keterangan);
-        END;`,
-        `DROP TRIGGER IF EXISTS trg_hpp_kalkulasi_fts_delete;`,
-        `CREATE TRIGGER trg_hpp_kalkulasi_fts_delete AFTER DELETE ON hpp_kalkulasi BEGIN
-          DELETE FROM hpp_kalkulasi_fts WHERE rowid = OLD.id;
-        END;`
-      ], "write");
-      } catch (e) {
-        // Table might have wrong columns due to older schema
+        // Sync SPH Out
+        const ftsCountSPH = await db.execute("SELECT COUNT(*) as count FROM sph_out_fts");
+        const sphCount = await db.execute("SELECT COUNT(*) as count FROM sph_out");
+        if (Number(ftsCountSPH.rows[0].count) < Number(sphCount.rows[0].count)) {
+           await db.batch([
+              "DELETE FROM sph_out_fts",
+              `INSERT INTO sph_out_fts(id, rowid, faktur, kd_pelanggan, barang, faktur_so)
+               SELECT id, id, faktur, kd_pelanggan, barang, faktur_so FROM sph_out`
+           ], "write");
+        }
+      } catch (err) {
+        console.warn("FTS5 background sync failed (non-critical):", err);
       }
 
-      // Sync Triggers for Global Search (Bahan Baku)
+      // Triggers for FTS5 consistency
       await db.batch([
-         `DROP TRIGGER IF EXISTS trg_bahan_baku_fts_insert;`,
-         `CREATE TRIGGER trg_bahan_baku_fts_insert AFTER INSERT ON bahan_baku BEGIN
-           INSERT INTO bahan_baku_fts(id, rowid, nama_barang, nama_prd, kd_barang, faktur, faktur_prd, faktur_aktifitas, kd_cabang, kd_gudang, status, keterangan, fkt_hasil, aktifitas, username, kd_pelanggan, recid)
-           VALUES (NEW.id, NEW.id, NEW.nama_barang, NEW.nama_prd, NEW.kd_barang, NEW.faktur, NEW.faktur_prd, NEW.faktur_aktifitas, NEW.kd_cabang, NEW.kd_gudang, NEW.status, NEW.keterangan, NEW.fkt_hasil, NEW.aktifitas, NEW.username, NEW.kd_pelanggan, NEW.recid);
-         END;`,
-         `DROP TRIGGER IF EXISTS trg_bahan_baku_fts_update;`,
-         `CREATE TRIGGER trg_bahan_baku_fts_update AFTER UPDATE ON bahan_baku BEGIN
-           DELETE FROM bahan_baku_fts WHERE rowid = OLD.id;
-           INSERT INTO bahan_baku_fts(id, rowid, nama_barang, nama_prd, kd_barang, faktur, faktur_prd, faktur_aktifitas, kd_cabang, kd_gudang, status, keterangan, fkt_hasil, aktifitas, username, kd_pelanggan, recid)
-           VALUES (NEW.id, NEW.id, NEW.nama_barang, NEW.nama_prd, NEW.kd_barang, NEW.faktur, NEW.faktur_prd, NEW.faktur_aktifitas, NEW.kd_cabang, NEW.kd_gudang, NEW.status, NEW.keterangan, NEW.fkt_hasil, NEW.aktifitas, NEW.username, NEW.kd_pelanggan, NEW.recid);
-         END;`,
-         `DROP TRIGGER IF EXISTS trg_bahan_baku_fts_delete;`,
-         `CREATE TRIGGER trg_bahan_baku_fts_delete AFTER DELETE ON bahan_baku BEGIN
-           DELETE FROM bahan_baku_fts WHERE rowid = OLD.id;
-         END;`
+          // Bahan Baku
+          `DROP TRIGGER IF EXISTS trg_bahan_baku_fts_insert;`,
+          `CREATE TRIGGER trg_bahan_baku_fts_insert AFTER INSERT ON bahan_baku BEGIN
+            INSERT INTO bahan_baku_fts(id, rowid, nama_barang, nama_prd, kd_barang, faktur, faktur_prd, faktur_aktifitas, kd_cabang, kd_gudang, status, keterangan, fkt_hasil, aktifitas, username, kd_pelanggan, recid)
+            VALUES (NEW.id, NEW.id, NEW.nama_barang, NEW.nama_prd, NEW.kd_barang, NEW.faktur, NEW.faktur_prd, NEW.faktur_aktifitas, NEW.kd_cabang, NEW.kd_gudang, NEW.status, NEW.keterangan, NEW.fkt_hasil, NEW.aktifitas, NEW.username, NEW.kd_pelanggan, NEW.recid);
+          END;`,
+          `DROP TRIGGER IF EXISTS trg_bahan_baku_fts_update;`,
+          `CREATE TRIGGER trg_bahan_baku_fts_update AFTER UPDATE ON bahan_baku BEGIN
+            DELETE FROM bahan_baku_fts WHERE rowid = OLD.id;
+            INSERT INTO bahan_baku_fts(id, rowid, nama_barang, nama_prd, kd_barang, faktur, faktur_prd, faktur_aktifitas, kd_cabang, kd_gudang, status, keterangan, fkt_hasil, aktifitas, username, kd_pelanggan, recid)
+            VALUES (NEW.id, NEW.id, NEW.nama_barang, NEW.nama_prd, NEW.kd_barang, NEW.faktur, NEW.faktur_prd, NEW.faktur_aktifitas, NEW.kd_cabang, NEW.kd_gudang, NEW.status, NEW.keterangan, NEW.fkt_hasil, NEW.aktifitas, NEW.username, NEW.kd_pelanggan, NEW.recid);
+          END;`,
+          `DROP TRIGGER IF EXISTS trg_bahan_baku_fts_delete;`,
+          `CREATE TRIGGER trg_bahan_baku_fts_delete AFTER DELETE ON bahan_baku BEGIN
+            DELETE FROM bahan_baku_fts WHERE rowid = OLD.id;
+          END;`,
+
+          // Barang Jadi
+          `DROP TRIGGER IF EXISTS trg_barang_jadi_fts_insert;`,
+          `CREATE TRIGGER trg_barang_jadi_fts_insert AFTER INSERT ON barang_jadi BEGIN
+            INSERT INTO barang_jadi_fts(id, rowid, nama_barang, nama_prd, kd_barang, faktur, faktur_prd, faktur_so, kd_pelanggan, keterangan, username)
+            VALUES (NEW.id, NEW.id, NEW.nama_barang, NEW.nama_prd, NEW.kd_barang, NEW.faktur, NEW.faktur_prd, NEW.faktur_so, NEW.kd_pelanggan, NEW.keterangan, NEW.username);
+          END;`,
+          `DROP TRIGGER IF EXISTS trg_barang_jadi_fts_update;`,
+          `CREATE TRIGGER trg_barang_jadi_fts_update AFTER UPDATE ON barang_jadi BEGIN
+            DELETE FROM barang_jadi_fts WHERE rowid = OLD.id;
+            INSERT INTO barang_jadi_fts(id, rowid, nama_barang, nama_prd, kd_barang, faktur, faktur_prd, faktur_so, kd_pelanggan, keterangan, username)
+            VALUES (NEW.id, NEW.id, NEW.nama_barang, NEW.nama_prd, NEW.kd_barang, NEW.faktur, NEW.faktur_prd, NEW.faktur_so, NEW.kd_pelanggan, NEW.keterangan, NEW.username);
+          END;`,
+          `DROP TRIGGER IF EXISTS trg_barang_jadi_fts_delete;`,
+          `CREATE TRIGGER trg_barang_jadi_fts_delete AFTER DELETE ON barang_jadi BEGIN
+            DELETE FROM barang_jadi_fts WHERE rowid = OLD.id;
+          END;`,
+
+          // Orders
+          `DROP TRIGGER IF EXISTS trg_orders_fts_insert;`,
+          `CREATE TRIGGER trg_orders_fts_insert AFTER INSERT ON orders BEGIN
+            INSERT INTO orders_fts(id, rowid, faktur, nama_prd, nama_pelanggan, satuan)
+            VALUES (NEW.id, NEW.id, NEW.faktur, NEW.nama_prd, NEW.nama_pelanggan, NEW.satuan);
+          END;`,
+          `DROP TRIGGER IF EXISTS trg_orders_fts_update;`,
+          `CREATE TRIGGER trg_orders_fts_update AFTER UPDATE ON orders BEGIN
+            DELETE FROM orders_fts WHERE rowid = OLD.id;
+            INSERT INTO orders_fts(id, rowid, faktur, nama_prd, nama_pelanggan, satuan)
+            VALUES (NEW.id, NEW.id, NEW.faktur, NEW.nama_prd, NEW.nama_pelanggan, NEW.satuan);
+          END;`,
+          `DROP TRIGGER IF EXISTS trg_orders_fts_delete;`,
+          `CREATE TRIGGER trg_orders_fts_delete AFTER DELETE ON orders BEGIN
+            DELETE FROM orders_fts WHERE rowid = OLD.id;
+          END;`,
+
+          // SPH Out
+          `DROP TRIGGER IF EXISTS trg_sph_out_fts_insert;`,
+          `CREATE TRIGGER trg_sph_out_fts_insert AFTER INSERT ON sph_out BEGIN
+            INSERT INTO sph_out_fts(id, rowid, faktur, kd_pelanggan, barang, faktur_so)
+            VALUES (NEW.id, NEW.id, NEW.faktur, NEW.kd_pelanggan, NEW.barang, NEW.faktur_so);
+          END;`,
+          `DROP TRIGGER IF EXISTS trg_sph_out_fts_update;`,
+          `CREATE TRIGGER trg_sph_out_fts_update AFTER UPDATE ON sph_out BEGIN
+            DELETE FROM sph_out_fts WHERE rowid = OLD.id;
+            INSERT INTO sph_out_fts(id, rowid, faktur, kd_pelanggan, barang, faktur_so)
+            VALUES (NEW.id, NEW.id, NEW.faktur, NEW.kd_pelanggan, NEW.barang, NEW.faktur_so);
+          END;`,
+          `DROP TRIGGER IF EXISTS trg_sph_out_fts_delete;`,
+          `CREATE TRIGGER trg_sph_out_fts_delete AFTER DELETE ON sph_out BEGIN
+            DELETE FROM sph_out_fts WHERE rowid = OLD.id;
+          END;`
       ], "write");
 
-      // Sync Triggers for Global Search (Barang Jadi)
-      await db.batch([
-         `DROP TRIGGER IF EXISTS trg_barang_jadi_fts_insert;`,
-         `CREATE TRIGGER trg_barang_jadi_fts_insert AFTER INSERT ON barang_jadi BEGIN
-           INSERT INTO barang_jadi_fts(id, rowid, nama_barang, nama_prd, kd_barang, faktur, faktur_prd, faktur_so, kd_pelanggan, keterangan, username)
-           VALUES (NEW.id, NEW.id, NEW.nama_barang, NEW.nama_prd, NEW.kd_barang, NEW.faktur, NEW.faktur_prd, NEW.faktur_so, NEW.kd_pelanggan, NEW.keterangan, NEW.username);
-         END;`,
-         `DROP TRIGGER IF EXISTS trg_barang_jadi_fts_update;`,
-         `CREATE TRIGGER trg_barang_jadi_fts_update AFTER UPDATE ON barang_jadi BEGIN
-           DELETE FROM barang_jadi_fts WHERE rowid = OLD.id;
-           INSERT INTO barang_jadi_fts(id, rowid, nama_barang, nama_prd, kd_barang, faktur, faktur_prd, faktur_so, kd_pelanggan, keterangan, username)
-           VALUES (NEW.id, NEW.id, NEW.nama_barang, NEW.nama_prd, NEW.kd_barang, NEW.faktur, NEW.faktur_prd, NEW.faktur_so, NEW.kd_pelanggan, NEW.keterangan, NEW.username);
-         END;`,
-         `DROP TRIGGER IF EXISTS trg_barang_jadi_fts_delete;`,
-         `CREATE TRIGGER trg_barang_jadi_fts_delete AFTER DELETE ON barang_jadi BEGIN
-           DELETE FROM barang_jadi_fts WHERE rowid = OLD.id;
-         END;`
-      ], "write");
-
-      // Sync Triggers for Global Search (Orders)
-      await db.batch([
-         `DROP TRIGGER IF EXISTS trg_orders_fts_insert;`,
-         `CREATE TRIGGER trg_orders_fts_insert AFTER INSERT ON orders BEGIN
-           INSERT INTO orders_fts(id, rowid, faktur, nama_prd, nama_pelanggan, satuan)
-           VALUES (NEW.id, NEW.id, NEW.faktur, NEW.nama_prd, NEW.nama_pelanggan, NEW.satuan);
-         END;`,
-         `DROP TRIGGER IF EXISTS trg_orders_fts_update;`,
-         `CREATE TRIGGER trg_orders_fts_update AFTER UPDATE ON orders BEGIN
-           DELETE FROM orders_fts WHERE rowid = OLD.id;
-           INSERT INTO orders_fts(id, rowid, faktur, nama_prd, nama_pelanggan, satuan)
-           VALUES (NEW.id, NEW.id, NEW.faktur, NEW.nama_prd, NEW.nama_pelanggan, NEW.satuan);
-         END;`,
-         `DROP TRIGGER IF EXISTS trg_orders_fts_delete;`,
-         `CREATE TRIGGER trg_orders_fts_delete AFTER DELETE ON orders BEGIN
-           DELETE FROM orders_fts WHERE rowid = OLD.id;
-         END;`
-      ], "write");
   } catch (e: any) {
-     console.error("[FTS-INIT] Failed to initialize FTS5 for bahan_baku:", e.message);
+     console.error("[FTS-INIT] Failed to initialize FTS5:", e.message);
   }
 
   // 6. Default Admin Setup

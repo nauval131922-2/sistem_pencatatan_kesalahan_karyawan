@@ -41,11 +41,13 @@ export async function GET(request: NextRequest) {
       args: [...args, pageSize, offset]
     });
 
-    const settingsRes = await db.execute({
-      sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_sph_in'`,
-      args: []
-    });
-    const lastUpdated = settingsRes.rows[0]?.value || null;
+    const metadataResults = await db.batch([
+      { sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_sph_in'`, args: [] },
+      { sql: `SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM sph_in`, args: [] }
+    ], "read");
+    const lastScrape = metadataResults[0].rows[0] as any;
+    const lastUpdatedRaw = (metadataResults[1].rows[0] as any).lastUpdated;
+    const lastUpdated = lastScrape?.value || lastUpdatedRaw;
 
     return NextResponse.json({
       success: true,

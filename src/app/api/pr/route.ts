@@ -28,33 +28,23 @@ export async function GET(request: NextRequest) {
       args.push(startDate, endDate);
     }
 
-    // 1. Get total count
-    const totalRes = await db.execute({
-      sql: `SELECT COUNT(*) as count FROM purchase_requests ${whereClause}`,
-      args
-    });
-    const total = Number(totalRes.rows[0].count);
-
-    // 2. Get data with default sorting (tgl desc, id desc)
-    // Client-side will handle further sorting
     const orderBy = `ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC`;
 
-    const dataRes = await db.execute({
-      sql: `SELECT * FROM purchase_requests ${whereClause} ${orderBy} LIMIT ? OFFSET ?`,
-      args: [...args, pageSize, offset]
-    });
+    const [totalRes, dataRes, lastScrapeRes, lastUpdatedRawRes] = await db.batch([
+      { sql: `SELECT COUNT(*) as count FROM purchase_requests ${whereClause}`, args },
+      { sql: `SELECT * FROM purchase_requests ${whereClause} ${orderBy} LIMIT ? OFFSET ?`, args: [...args, pageSize, offset] },
+      { sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_pr'`, args: [] },
+      { sql: `SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM purchase_requests`, args: [] }
+    ], "read");
 
-    // 3. Get last updated time from system_settings
-    const settingsRes = await db.execute({
-      sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_pr'`,
-      args: []
-    });
-    const lastUpdated = settingsRes.rows[0]?.value || null;
+    const lastScrape = lastScrapeRes.rows[0] as any;
+    const lastUpdatedRaw = (lastUpdatedRawRes.rows[0] as any)?.lastUpdated;
+    const lastUpdated = lastScrape?.value || lastUpdatedRaw;
 
     return NextResponse.json({
       success: true,
       data: dataRes.rows,
-      total,
+      total: Number(totalRes.rows[0].count),
       lastUpdated
     });
 

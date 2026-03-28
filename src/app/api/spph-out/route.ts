@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
     const args: any[] = [];
 
     if (query) {
-      whereClause += ` AND (faktur LIKE ? OR keterangan LIKE ? OR faktur_pr LIKE ? OR kd_supplier LIKE ?)`;
-      args.push(`%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`);
+      whereClause += ` AND (faktur LIKE ? OR keterangan LIKE ? OR faktur_pr LIKE ? OR kd_supplier LIKE ? OR faktur_prd LIKE ? OR kd_gudang LIKE ? OR kd_cabang LIKE ?)`;
+      args.push(`%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`, `%${query}%`);
     }
 
     if (startDate && endDate) {
@@ -28,29 +28,23 @@ export async function GET(request: NextRequest) {
       args.push(startDate, endDate);
     }
 
-    const totalRes = await db.execute({
-      sql: `SELECT COUNT(*) as count FROM spph_out ${whereClause}`,
-      args
-    });
-    const total = Number(totalRes.rows[0].count);
-
     const orderBy = `ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC`;
 
-    const dataRes = await db.execute({
-      sql: `SELECT * FROM spph_out ${whereClause} ${orderBy} LIMIT ? OFFSET ?`,
-      args: [...args, pageSize, offset]
-    });
+    const [totalRes, dataRes, lastScrapeRes, lastUpdatedRawRes] = await db.batch([
+      { sql: `SELECT COUNT(*) as count FROM spph_out ${whereClause}`, args },
+      { sql: `SELECT * FROM spph_out ${whereClause} ${orderBy} LIMIT ? OFFSET ?`, args: [...args, pageSize, offset] },
+      { sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_spph_out'`, args: [] },
+      { sql: `SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM spph_out`, args: [] }
+    ], "read");
 
-    const settingsRes = await db.execute({
-      sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_spph_out'`,
-      args: []
-    });
-    const lastUpdated = settingsRes.rows[0]?.value || null;
+    const lastScrape = lastScrapeRes.rows[0] as any;
+    const lastUpdatedRaw = (lastUpdatedRawRes.rows[0] as any)?.lastUpdated;
+    const lastUpdated = lastScrape?.value || lastUpdatedRaw;
 
     return NextResponse.json({
       success: true,
       data: dataRes.rows,
-      total,
+      total: Number(totalRes.rows[0].count),
       lastUpdated
     });
 

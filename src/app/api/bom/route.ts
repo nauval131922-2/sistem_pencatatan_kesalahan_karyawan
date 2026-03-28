@@ -35,36 +35,27 @@ export async function GET(request: NextRequest) {
       args.push(startDate, endDate);
     }
 
-    // 1. Get total count
-    const totalRes = await db.execute({
-      sql: `SELECT COUNT(*) as count FROM bill_of_materials ${whereClause}`,
-      args
-    });
-    const total = Number(totalRes.rows[0].count);
-
-    // 2. Get data with sorting & pagination
-    // Sort logic mapping for custom expression if needed
     let orderBy = `ORDER BY ${sortKey} ${sortOrder}`;
     if (sortKey === 'tgl') {
         orderBy = `ORDER BY substr(tgl, 7, 4) ${sortOrder}, substr(tgl, 4, 2) ${sortOrder}, substr(tgl, 1, 2) ${sortOrder}`;
     }
 
-    const dataRes = await db.execute({
-      sql: `SELECT * FROM bill_of_materials ${whereClause} ${orderBy} LIMIT ? OFFSET ?`,
-      args: [...args, pageSize, offset]
-    });
+    const [totalRes, dataRes, lastScrapeRes, lastUpdatedRawRes] = await db.batch([
+      { sql: `SELECT COUNT(*) as count FROM bill_of_materials ${whereClause}`, args },
+      { sql: `SELECT * FROM bill_of_materials ${whereClause} ${orderBy} LIMIT ? OFFSET ?`, args: [...args, pageSize, offset] },
+      { sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_bom'`, args: [] },
+      { sql: `SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM bill_of_materials`, args: [] }
+    ], "read");
 
-    // 3. Get last synced time
-    const settingsRes = await db.execute({
-      sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_bom'`,
-      args: []
-    });
-    const lastUpdated = settingsRes.rows[0]?.value || null;
+    console.log("DEBUG BOM RAW:", (dataRes.rows[0] as any)?.raw_data);
+    const lastScrape = lastScrapeRes.rows[0] as any;
+    const lastUpdatedRaw = (lastUpdatedRawRes.rows[0] as any)?.lastUpdated;
+    const lastUpdated = lastScrape?.value || lastUpdatedRaw;
 
     return NextResponse.json({
       success: true,
       data: dataRes.rows,
-      total,
+      total: Number(totalRes.rows[0].count),
       lastUpdated
     });
 
