@@ -5,7 +5,7 @@ import { Loader2, Search, AlertCircle, Clock, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import { splitDateRangeIntoMonths } from '@/lib/date-utils';
+import { splitDateRangeIntoMonths, formatLastUpdate } from '@/lib/date-utils';
 import { DataTable } from '@/components/ui/DataTable';
 
 // Helper to format Date to YYYY-MM-DD
@@ -34,7 +34,7 @@ const PAGE_SIZE = 50;
 export default function BarangJadiClient() {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
-  const [startDate, setStartDate] = useState<Date>(new Date(2025, 0, 1));
+  const [startDate, setStartDate] = useState<Date>(new Date(2026, 0, 1));
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
@@ -112,6 +112,124 @@ export default function BarangJadiClient() {
   }, [searchQuery]);
 
   useEffect(() => {
+    setIsMounted(true);
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    
+    mountedRef.current = true;
+    
+    // Sync with other tabs
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sintak_data_updated') {
+        setRefreshKey(prev => prev + 1);
+        router.refresh();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      mountedRef.current = false;
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [router]);
+
+
+  // Columns Definition (ORDERED EXACTLY AS JSON)
+  const columns = useMemo(() => [
+    { accessorKey: 'id', header: 'ID' },
+    { accessorKey: 'faktur', header: 'Faktur' },
+    { accessorKey: 'faktur_prd', header: 'Faktur Prd' },
+    { accessorKey: 'tgl', header: 'Tanggal', cell: (info: any) => formatIndoDateStr(info.getValue() as string) },
+    { accessorKey: 'kd_cabang', header: 'Cabang' },
+    { accessorKey: 'kd_gudang', header: 'Gudang' },
+    { accessorKey: 'kd_barang', header: 'Kode Barang' },
+    { 
+        accessorKey: 'qty_wip_awal', 
+        header: 'WIP Awal', 
+        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        meta: { align: 'right' }
+    },
+    { 
+        accessorKey: 'qty', 
+        header: 'Qty', 
+        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        meta: { align: 'right' }
+    },
+    { 
+        accessorKey: 'qty_wip_akhir', 
+        header: 'WIP Akhir', 
+        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        meta: { align: 'right' }
+    },
+    { 
+        accessorKey: 'total_berat_kg', 
+        header: 'Berat (kg)', 
+        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        meta: { align: 'right' }
+    },
+    { 
+        accessorKey: 'pers_alokasi_hp', 
+        header: '% Alokasi', 
+        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        meta: { align: 'right' }
+    },
+    { accessorKey: 'mtd_alokasi_hp', header: 'Metode' },
+    { accessorKey: 'tgl_expired', header: 'Expired' },
+    { accessorKey: 'status', header: 'Status' },
+    { accessorKey: 'selesai', header: 'Selesai', cell: (info: any) => info.getValue() === 1 ? 'Ya' : 'Tdk' },
+    { 
+        accessorKey: 'hp', 
+        header: 'HPP Satuan', 
+        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        meta: { align: 'right' }
+    },
+    { 
+        accessorKey: 'hp_total', 
+        header: 'HPP Total', 
+        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        meta: { align: 'right' }
+    },
+    { 
+        accessorKey: 'bbb', 
+        header: 'Bbb', 
+        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        meta: { align: 'right' }
+    },
+    { 
+        accessorKey: 'btkl', 
+        header: 'Btkl', 
+        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        meta: { align: 'right' }
+    },
+    { 
+        accessorKey: 'bop', 
+        header: 'Bop', 
+        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        meta: { align: 'right' }
+    },
+    { accessorKey: 'keterangan', header: 'Keterangan', size: 350 },
+    { accessorKey: 'created_at', header: 'Dibuat', size: 150 },
+    { accessorKey: 'username', header: 'Admin' },
+    { accessorKey: 'kd_pelanggan', header: 'Pelanggan', size: 250 },
+    { accessorKey: 'nama_prd', header: 'Produk', size: 300 },
+    { accessorKey: 'faktur_so', header: 'Faktur SO' },
+    { 
+        accessorKey: 'qty_order', 
+        header: 'Order', 
+        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        meta: { align: 'right' }
+    },
+    { 
+        accessorKey: 'qty_so', 
+        header: 'SO', 
+        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        meta: { align: 'right' }
+    },
+    { accessorKey: 'nama_barang', header: 'Nama Barang', size: 350 },
+    { accessorKey: 'satuan', header: 'Satuan' },
+    { accessorKey: 'recid', header: 'RecID' }
+  ], []);
+
+  useEffect(() => {
+    setIsMounted(true);
     const todayStr = new Date().toLocaleDateString('en-CA');
     const defaultStartDate = new Date(2026, 0, 1);
     const today = new Date();
@@ -129,129 +247,16 @@ export default function BarangJadiClient() {
           initialStart = new Date(parsed.startDate);
           initialEnd = new Date(parsed.endDate);
         }
-      } catch (e) {}
+      } catch(e) {}
     }
     setStartDate(initialStart);
     setEndDate(initialEnd);
-    setIsMounted(true);
-    
-    mountedRef.current = true;
-    
-    // Sync with other tabs
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_data_updated') {
-        setRefreshKey(prev => prev + 1);
-        router.refresh();
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-      mountedRef.current = false;
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [router]);
-
-
-  // Columns Definition (ORDERED EXACTLY AS JSON)
-  const columns = useMemo(() => [
-    { accessorKey: 'id', header: 'ID' },
-    { accessorKey: 'faktur', header: 'Faktur' },
-    { accessorKey: 'faktur_prd', header: 'Faktur PRD' },
-    { accessorKey: 'tgl', header: 'Tanggal', cell: (info: any) => formatIndoDateStr(info.getValue() as string) },
-    { accessorKey: 'kd_cabang', header: 'Cabang' },
-    { accessorKey: 'kd_gudang', header: 'Gudang' },
-    { accessorKey: 'kd_barang', header: 'Kode Barang' },
-    { 
-        accessorKey: 'qty_wip_awal', 
-        header: 'WIP Awal', 
-        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
-        meta: { align: 'right' }
-    },
-    { 
-        accessorKey: 'qty', 
-        header: 'QTY', 
-        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
-        meta: { align: 'right' }
-    },
-    { 
-        accessorKey: 'qty_wip_akhir', 
-        header: 'WIP Akhir', 
-        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
-        meta: { align: 'right' }
-    },
-    { 
-        accessorKey: 'total_berat_kg', 
-        header: 'Berat (kg)', 
-        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
-        meta: { align: 'right' }
-    },
-    { 
-        accessorKey: 'pers_alokasi_hp', 
-        header: '% Alokasi', 
-        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
-        meta: { align: 'right' }
-    },
-    { accessorKey: 'mtd_alokasi_hp', header: 'Metode' },
-    { accessorKey: 'tgl_expired', header: 'Expired' },
-    { accessorKey: 'status', header: 'Status' },
-    { accessorKey: 'selesai', header: 'Selesai', cell: (info: any) => info.getValue() === 1 ? 'Ya' : 'Tdk' },
-    { 
-        accessorKey: 'hp', 
-        header: 'HPP Satuan', 
-        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
-        meta: { align: 'right' }
-    },
-    { 
-        accessorKey: 'hp_total', 
-        header: 'HPP Total', 
-        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
-        meta: { align: 'right' }
-    },
-    { 
-        accessorKey: 'bbb', 
-        header: 'BBB', 
-        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
-        meta: { align: 'right' }
-    },
-    { 
-        accessorKey: 'btkl', 
-        header: 'BTKL', 
-        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
-        meta: { align: 'right' }
-    },
-    { 
-        accessorKey: 'bop', 
-        header: 'BOP', 
-        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
-        meta: { align: 'right' }
-    },
-    { accessorKey: 'keterangan', header: 'Keterangan', size: 350 },
-    { accessorKey: 'created_at', header: 'Dibuat', size: 150 },
-    { accessorKey: 'username', header: 'Admin' },
-    { accessorKey: 'kd_pelanggan', header: 'Pelanggan', size: 250 },
-    { accessorKey: 'nama_prd', header: 'Produk', size: 300 },
-    { accessorKey: 'faktur_so', header: 'Faktur SO' },
-    { 
-        accessorKey: 'qty_order', 
-        header: 'Order', 
-        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
-        meta: { align: 'right' }
-    },
-    { 
-        accessorKey: 'qty_so', 
-        header: 'SO', 
-        cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
-        meta: { align: 'right' }
-    },
-    { accessorKey: 'nama_barang', header: 'Nama Barang', size: 350 },
-    { accessorKey: 'satuan', header: 'Satuan' },
-    { accessorKey: 'recid', header: 'RECID' }
-  ], []);
+  }, []);
 
   useEffect(() => {
     mountedRef.current = true;
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_data_updated') {
+      if (e.key === 'sintak_data_updated') {
         setRefreshKey(prev => prev + 1);
         router.refresh();
       }
@@ -274,58 +279,48 @@ export default function BarangJadiClient() {
   useEffect(() => {
     let active = true;
     async function loadData() {
-      if (mountedRef.current) setLoading(true);
-      const startTime = performance.now();
-
+      if (page === 1) setLoading(true);
+      const startTimer = performance.now();
       try {
-        const res = await fetch(`/api/barang-jadi?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}&from=${formatDateToYYYYMMDD(startDate)}&to=${formatDateToYYYYMMDD(endDate)}&_t=${Date.now()}`);
-        if (!active) return;
-
-        if (res.ok) {
+        const queryParams = new URLSearchParams({
+          page: page.toString(),
+          limit: PAGE_SIZE.toString(),
+          search: debouncedQuery,
+          from: formatDateToYYYYMMDD(startDate),
+          to: formatDateToYYYYMMDD(endDate),
+          _t: Date.now().toString()
+        });
+        const res = await fetch(`/api/barang-jadi?${queryParams.toString()}`);
+        
+        if (res.ok && active) {
           const json = await res.json();
-          if (mountedRef.current && json.success) {
-            const endTime = performance.now();
-            setLoadTime(Math.round(endTime - startTime));
+          if (json.success) {
+            setLoadTime(Math.round(performance.now() - startTimer));
             
-            if (page === 1) {
-              setData(json.data || []);
-            } else {
-              setData(prev => {
-                const currentData = prev || [];
-                const newData = json.data || [];
-                const existingIds = new Set(currentData.map((d: any) => d.id));
-                const filteredNew = newData.filter((d: any) => !existingIds.has(d.id));
-                return [...currentData, ...filteredNew];
-              });
-            }
+            setData(prev => {
+              if (page === 1) return json.data || [];
+              const currentData = prev || [];
+              const newData = json.data || [];
+              const existingIds = new Set(currentData.map((d: any) => d.id));
+              const filteredNew = newData.filter((d: any) => !existingIds.has(d.id));
+              return [...currentData, ...filteredNew];
+            });
             setTotalCount(json.total || 0);
-
-            if (json.lastUpdated) {
-              const latestDate = new Date(json.lastUpdated);
-              if (!isNaN(latestDate.getTime())) {
-                const timestamp = latestDate.toLocaleString('id-ID', {
-                  day: '2-digit', month: 'short', year: 'numeric',
-                  hour: '2-digit', minute: '2-digit', second: '2-digit',
-                  timeZone: 'Asia/Jakarta'
-                });
-                setLastUpdated(timestamp);
-              }
-            } else {
-              setLastUpdated(null);
-            }
+            setLastUpdated(json.lastUpdated ? formatLastUpdate(new Date(json.lastUpdated)) : null);
             setError('');
           }
         }
       } catch (err: any) {
-        if (mountedRef.current) setError(err.message || 'Gagal memuat data');
+        if (active) setError(err.message || 'Gagal memuat data');
       } finally {
-        if (mountedRef.current) setLoading(false);
+        if (active) setLoading(false);
       }
     }
-    if (!isMounted) return;
+    
     loadData();
     return () => { active = false; };
-  }, [page, debouncedQuery, refreshKey, startDate, endDate, isMounted]);
+  }, [page, debouncedQuery, refreshKey, startDate, endDate]);
+
 
   useEffect(() => {
     setIsMounted(true);
@@ -370,9 +365,9 @@ export default function BarangJadiClient() {
       sessionDate: new Date().toLocaleDateString('en-CA')
     }));
 
+    setIsBatching(true);
     setLoading(true);
     setError('');
-    setData([]);
     setPage(1);
     setSearchQuery('');
 
@@ -439,16 +434,12 @@ export default function BarangJadiClient() {
             : `Berhasil menarik ${totalScraped} data Barang Jadi dari Digit.`
         });
 
-        localStorage.setItem('sikka_data_updated', Date.now().toString());
+        localStorage.setItem('sintak_data_updated', Date.now().toString());
 
         if (lastUpdatedFromScrape) {
           const latestDate = new Date(lastUpdatedFromScrape);
           if (!isNaN(latestDate.getTime())) {
-            const timestamp = latestDate.toLocaleString('id-ID', {
-              day: '2-digit', month: 'short', year: 'numeric',
-              hour: '2-digit', minute: '2-digit', second: '2-digit',
-              timeZone: 'Asia/Jakarta'
-            });
+            const timestamp = formatLastUpdate(latestDate);
             setLastUpdated(timestamp);
           }
         }
@@ -471,37 +462,41 @@ export default function BarangJadiClient() {
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop <= clientHeight + 300 && !loading && !isBatching && data.length < totalCount) {
+    if (scrollHeight - scrollTop <= clientHeight + 300 && !loading && !isBatching && (data?.length || 0) < totalCount) {
       setPage(prev => prev + 1);
     }
   };
-
-  if (!isMounted) return null;
+   
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
-      {/* Top Filter Bar */}
       <div className="bg-white rounded-[16px] border border-gray-200 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative z-50">
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex flex-wrap items-center gap-6">
             <div className="flex flex-col gap-1.5">
               <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Rentang Tanggal</span>
               <div className="flex items-center gap-2">
-                <div className="w-[140px] relative group">
-                  <DatePicker 
-                    name="startDate"
-                    value={startDate}
-                    onChange={setStartDate}
-                  />
-                </div>
-                <div className="w-4 h-[1px] bg-gray-200 mx-1"></div>
-                <div className="w-[140px] relative group">
-                  <DatePicker 
-                    name="endDate"
-                    value={endDate}
-                    onChange={setEndDate}
-                  />
-                </div>
+                {!isMounted ? (
+                   <div className="w-[300px] h-10 bg-gray-50 animate-pulse rounded-lg" />
+                ) : (
+                  <>
+                    <div className="w-[140px] relative group">
+                      <DatePicker 
+                        name="startDate"
+                        value={startDate}
+                        onChange={setStartDate}
+                      />
+                    </div>
+                    <div className="w-4 h-[1px] bg-gray-200 mx-1"></div>
+                    <div className="w-[140px] relative group">
+                      <DatePicker 
+                        name="endDate"
+                        value={endDate}
+                        onChange={setEndDate}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -549,7 +544,7 @@ export default function BarangJadiClient() {
         <div className="flex flex-col gap-4 shrink-0">
           <div className="flex items-center justify-between gap-4 min-h-[32px]">
             <div className="flex items-center gap-4">
-              <h3 className="text-[15px] font-extrabold text-gray-800 flex items-center gap-2 leading-none">
+              <h3 className="text-[14px] font-extrabold text-gray-800 flex items-center gap-2.5 leading-none">
                 <Clock size={18} className="text-green-600" />
                 <span>Hasil Scrapping</span>
               </h3>
@@ -583,45 +578,47 @@ export default function BarangJadiClient() {
           </div>
         </div>
 
-        <DataTable
-          columns={columns}
-          data={data}
-          isLoading={loading}
-          totalCount={totalCount}
-          onScroll={handleScroll}
-          selectedIds={selectedIds}
-          onRowClick={(id) => {
-            const next = new Set(selectedIds);
-            if (next.has(id)) next.delete(id);
-            else next.add(id);
-            setSelectedIds(next);
-          }}
-          columnWidths={columnWidths}
-          onColumnWidthChange={setColumnWidths}
-        />
+        <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
+          <DataTable
+            columns={columns}
+            data={data}
+            isLoading={loading}
+            totalCount={totalCount}
+            onScroll={handleScroll}
+            selectedIds={selectedIds}
+            onRowClick={(id: any) => {
+              const next = new Set(selectedIds);
+              if (next.has(id)) next.delete(id);
+              else next.add(id);
+              setSelectedIds(next);
+            }}
+            columnWidths={columnWidths}
+            onColumnWidthChange={setColumnWidths}
+          />
 
-        {/* Footer info Banner (Synced with Bahan Baku layout) */}
-        <div className="flex items-center justify-between shrink-0 px-1 mt-1">
-          <span className="text-[12px] leading-none font-bold text-gray-400">
-            {totalCount === 0 ? 'Tidak ada data Barang Jadi' : `Menampilkan ${data.length} dari ${totalCount} total data Barang Jadi`}
-          </span>
-          <div className="flex items-center gap-4">
-            {selectedIds.size > 0 && (
-                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
+          {/* Footer info Banner (Synced with Bahan Baku layout) */}
+          <div className="flex items-center justify-between shrink-0 px-1 mt-1">
+            <span className="text-[12px] leading-none font-bold text-gray-400">
+              {totalCount === 0 ? 'Tidak ada data Barang Jadi' : `Menampilkan ${data?.length || 0} dari ${totalCount} Barang Jadi`}
+            </span>
+            <div className="flex items-center gap-4">
+              {selectedIds.size > 0 && (
+                  <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
                     <span className="text-[12px] leading-none font-bold text-gray-400">{selectedIds.size} dipilih</span>
                     <button onClick={() => setSelectedIds(new Set())} className="text-[12px] leading-none font-black text-rose-500 hover:text-rose-600 underline underline-offset-4">Batal</button>
-                </div>
-            )}
-            {loadTime !== null && (
-              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
-                loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
-                'bg-red-50 text-red-600 border-red-100'
-              }`}>
-                <span className="animate-pulse">⚡</span>
-                <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
-              </span>
-            )}
+                  </div>
+              )}
+              {loadTime !== null && (
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
+                  loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                  loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+                  'bg-red-50 text-red-600 border-red-100'
+                }`}>
+                    <span className="animate-pulse">⚡</span>
+                    <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -636,3 +633,9 @@ export default function BarangJadiClient() {
     </div>
   );
 }
+
+
+
+
+
+

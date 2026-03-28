@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Search, Loader2, AlertCircle, Clock, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { splitDateRangeIntoMonths } from '@/lib/date-utils';
 import { DataTable } from '@/components/ui/DataTable';
+import { useTableSelection } from '@/lib/hooks/useTableSelection';
+import { formatLastUpdate } from '@/lib/date-utils';
 
 // Helper to format Date to YYYY-MM-DD
 function formatDateToYYYYMMDD(date: Date) {
@@ -35,6 +37,7 @@ const PAGE_SIZE = 50;
 export default function SalesReportClient() {
   const router = useRouter();
   const mountedRef = useRef(true);
+  const isLoadingMore = useRef(false);
   
   // State
   const [isMounted, setIsMounted] = useState(false);
@@ -113,7 +116,7 @@ export default function SalesReportClient() {
     },
     { 
         accessorKey: 'qty', 
-        header: 'QTY', 
+        header: 'Qty', 
         cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
         meta: { align: 'right' },
         size: 100
@@ -132,7 +135,7 @@ export default function SalesReportClient() {
         meta: { align: 'right' },
         size: 120
     },
-    { accessorKey: 'faktur_prd', header: 'Faktur PRD', size: 180 },
+    { accessorKey: 'faktur_prd', header: 'Faktur Prd', size: 180 },
     { accessorKey: 'nama_prd', header: 'Produk (Nama)', size: 300 },
     { accessorKey: 'no_ref_pelanggan', header: 'No Ref Pel.', size: 160 },
     { accessorKey: 'nama_pelanggan', header: 'Pelanggan', size: 280 },
@@ -146,7 +149,7 @@ export default function SalesReportClient() {
   useEffect(() => {
     mountedRef.current = true;
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_data_updated') {
+      if (e.key === 'sintak_data_updated') {
         setRefreshKey(prev => prev + 1);
         router.refresh();
       }
@@ -190,49 +193,44 @@ export default function SalesReportClient() {
   useEffect(() => {
     let active = true;
     async function loadData() {
-      if (mountedRef.current) setLoading(true);
+      if (!active || !mountedRef.current) return;
+      setLoading(true);
       const startTime = performance.now();
       try {
         const res = await fetch(`/api/sales?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}&from=${formatDateToYYYYMMDD(startDate)}&to=${formatDateToYYYYMMDD(endDate)}&_t=${Date.now()}`);
-        if (!active) return;
-        if (res.ok) {
+        
+        if (res.ok && active) {
           const json = await res.json();
-          if (json.success && mountedRef.current) {
+          if (json.success) {
             setLoadTime(Math.round(performance.now() - startTime));
-            if (page === 1) {
-              setData(json.data || []);
-            } else {
-              setData(prev => {
-                const currentData = prev || [];
-                const newData = json.data || [];
-                const existingIds = new Set(currentData.map((d: any) => d.id));
-                const filteredNew = newData.filter((d: any) => !existingIds.has(d.id));
-                return [...currentData, ...filteredNew];
-              });
-            }
+            setData(prev => {
+              if (page === 1) return json.data || [];
+              const currentData = prev || [];
+              const newData = json.data || [];
+              const existingIds = new Set(currentData.map((d: any) => d.id));
+              const filteredNew = newData.filter((d: any) => !existingIds.has(d.id));
+              return [...currentData, ...filteredNew];
+            });
             setTotalCount(json.total || 0);
-            if (json.lastUpdated) {
-                const date = new Date(json.lastUpdated);
-                if (!isNaN(date.getTime())) {
-                  setLastUpdated(date.toLocaleString('id-ID', { 
-                      day: '2-digit', month: 'short', year: 'numeric', 
-                      hour: '2-digit', minute: '2-digit', second: '2-digit' 
-                  }));
-                }
-            }
+            setLastUpdated(json.lastUpdated ? formatLastUpdate(new Date(json.lastUpdated)) : null);
             setError('');
           }
         }
       } catch (err: any) {
-        if (mountedRef.current) setError(err.message || 'Gagal memuat data');
+        if (active) setError(err.message || 'Gagal memuat data');
       } finally {
-        if (mountedRef.current) setLoading(false);
+        if (active) {
+          setLoading(false);
+          isLoadingMore.current = false;
+        }
       }
     }
-    if (!isMounted) return;
-    loadData();
+
+    if (typeof window !== 'undefined') {
+      loadData();
+    }
     return () => { active = false; };
-  }, [page, debouncedQuery, refreshKey, startDate, endDate, isMounted]);
+  }, [page, debouncedQuery, refreshKey, startDate, endDate]);
 
   // Scrape Digit
   const [isBatching, setIsBatching] = useState(false);
@@ -299,9 +297,9 @@ export default function SalesReportClient() {
           isOpen: true,
           type: (chunks.length - successCount) > 0 ? 'alert' : 'success',
           title: (chunks.length - successCount) > 0 ? 'Selesai Sebagian' : 'Berhasil',
-          message: `Berhasil menarik ${totalScraped} data Laporan Penjualan dari Digit.`
+          message: `Berhasil menarik ${totalScraped} Laporan Penjualan dari Digit.`
         });
-        localStorage.setItem('sikka_data_updated', Date.now().toString());
+        localStorage.setItem('sintak_data_updated', Date.now().toString());
         setRefreshKey(prev => prev + 1);
       } else {
         setError("Gagal menarik data. Cek koneksi.");
@@ -311,12 +309,13 @@ export default function SalesReportClient() {
     }
   };
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop <= clientHeight + 300 && !loading && !isBatching && data.length < totalCount) {
+    if (scrollHeight - scrollTop <= clientHeight + 300 && !loading && !isBatching && !isLoadingMore.current && data.length < totalCount) {
+       isLoadingMore.current = true;
        setPage(prev => prev + 1);
     }
-  };
+  }, [loading, isBatching, data.length, totalCount]);
 
   if (!isMounted) return null;
 
@@ -367,7 +366,7 @@ export default function SalesReportClient() {
         <div className="flex flex-col gap-4 shrink-0">
           <div className="flex items-center justify-between gap-4 min-h-[32px]">
             <div className="flex items-center gap-4">
-              <h3 className="text-sm font-extrabold text-gray-800 flex items-center gap-2 leading-none">
+              <h3 className="text-[14px] font-extrabold text-gray-800 flex items-center gap-2.5 leading-none">
                 <Clock size={18} className="text-green-600" />
                 <span>Hasil Scrapping</span>
               </h3>
@@ -397,45 +396,46 @@ export default function SalesReportClient() {
           </div>
         </div>
 
-        <DataTable
-          columns={columns}
-          data={data}
-          isLoading={loading}
-          totalCount={totalCount}
-          onScroll={handleScroll}
-          selectedIds={selectedIds}
-          onRowClick={(id) => {
-            const next = new Set(selectedIds);
-            if (next.has(id)) next.delete(id);
-            else next.add(id);
-            setSelectedIds(next);
-          }}
-          columnWidths={columnWidths}
-          onColumnWidthChange={setColumnWidths}
-        />
+        <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
+          <DataTable
+            columns={columns}
+            data={data}
+            isLoading={loading}
+            totalCount={totalCount}
+            onScroll={handleScroll}
+            selectedIds={selectedIds}
+            onRowClick={(id: any) => {
+              const next = new Set(selectedIds);
+              if (next.has(id)) next.delete(id);
+              else next.add(id);
+              setSelectedIds(next);
+            }}
+            columnWidths={columnWidths}
+            onColumnWidthChange={setColumnWidths}
+          />
 
-        {/* Footer info Banner */}
-        <div className="flex items-center justify-between shrink-0 px-1 mt-1">
-          <span className="text-[12px] leading-none font-bold text-gray-400">
-            {totalCount === 0 ? 'Tidak ada data Laporan Penjualan' : `Menampilkan ${data.length} dari ${totalCount} Laporan Penjualan`}
-          </span>
-          <div className="flex items-center gap-4">
-            {selectedIds.size > 0 && (
-                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                    <span className="text-[12px] leading-none font-bold text-gray-400">{selectedIds.size} dipilih</span>
-                    <button onClick={() => setSelectedIds(new Set())} className="text-[12px] leading-none font-black text-rose-500 hover:text-rose-600 underline underline-offset-4">Batal</button>
-                </div>
-            )}
-            {loadTime !== null && (
-              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
-                loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
-                'bg-red-50 text-red-600 border-red-100'
-              }`}>
-                <span className="animate-pulse">⚡</span>
-                <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
-              </span>
-            )}
+          <div className="flex items-center justify-between shrink-0 px-1 mt-1">
+            <span className="text-[12px] leading-none font-bold text-gray-400">
+              {totalCount === 0 ? 'Tidak ada Laporan Penjualan' : `Menampilkan ${data.length} dari ${totalCount} Laporan Penjualan`}
+            </span>
+            <div className="flex items-center gap-4">
+              {selectedIds.size > 0 && (
+                  <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
+                      <span className="text-[12px] leading-none font-bold text-gray-400">{selectedIds.size} dipilih</span>
+                      <button onClick={() => setSelectedIds(new Set())} className="text-[12px] leading-none font-black text-rose-500 hover:text-rose-600 underline underline-offset-4">Batal</button>
+                  </div>
+              )}
+              {loadTime !== null && (
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
+                  loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                  loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+                  'bg-red-50 text-red-600 border-red-100'
+                }`}>
+                  <span className="animate-pulse">⚡</span>
+                  <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -444,3 +444,9 @@ export default function SalesReportClient() {
     </div>
   );
 }
+
+
+
+
+
+

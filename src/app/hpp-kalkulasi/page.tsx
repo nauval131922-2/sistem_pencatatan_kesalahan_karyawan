@@ -3,6 +3,7 @@ import HppKalkulasiExcelUpload from './HppKalkulasiExcelUpload';
 import type { Metadata } from 'next';
 import { getLastHppImport } from '@/lib/actions';
 import PageHeader from '@/components/PageHeader';
+import { formatLastUpdate } from '@/lib/date-utils';
 
 export const metadata: Metadata = {
   title: 'SINTAK | HPP Kalkulasi',
@@ -27,11 +28,7 @@ export default async function HppKalkulasiPage() {
       
       const d = new Date(dateString); 
       
-      importTime = d.toLocaleString('id-ID', {
-        day: '2-digit', month: 'short', year: 'numeric',
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-        timeZone: 'Asia/Jakarta'
-      });
+      importTime = formatLastUpdate(d);
 
     } catch(e) {
       console.warn('Failed to parse HPP import metadata');

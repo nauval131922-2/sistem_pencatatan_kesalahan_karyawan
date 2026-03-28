@@ -144,11 +144,12 @@ export default function HppKalkulasiExcelUpload() {
         message={dialog.message}
         onConfirm={() => {
           setDialog(prev => ({ ...prev, isOpen: false }));
-          window.dispatchEvent(new Event('sikka:data-updated'));
-          localStorage.setItem('sikka_data_updated', Date.now().toString());
+          window.dispatchEvent(new Event('sintak:data-updated'));
+          localStorage.setItem('sintak_data_updated', Date.now().toString());
           router.refresh();
         }}
       />
     </div>
   );
 }
+

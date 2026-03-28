@@ -7,8 +7,9 @@ import { ColumnDef } from '@tanstack/react-table';
 
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import { splitDateRangeIntoMonths } from '@/lib/date-utils';
+import { splitDateRangeIntoMonths, formatLastUpdate } from '@/lib/date-utils';
 import { DataTable } from '@/components/ui/DataTable';
+import { useTableSelection } from '@/lib/hooks/useTableSelection';
 
 // Helper to format Date to YYYY-MM-DD
 function formatDateToYYYYMMDD(date: Date) {
@@ -36,7 +37,7 @@ const PAGE_SIZE = 50;
 export default function BahanBakuClient() {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
-  const [startDate, setStartDate] = useState<Date>(new Date(2025, 0, 1));
+  const [startDate, setStartDate] = useState<Date>(new Date(2026, 0, 1));
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[] | null>(null);
@@ -101,34 +102,14 @@ export default function BahanBakuClient() {
   }, [columnWidths]);
 
   useEffect(() => {
-    const todayStr = new Date().toLocaleDateString('en-CA');
-    const defaultStartDate = new Date(2026, 0, 1);
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-
-    let initialStart = defaultStartDate;
-    let initialEnd = today;
-
-    const saved = localStorage.getItem('bahanBakuState');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const savedDate = parsed.sessionDate || '';
-        if (savedDate === todayStr) {
-          initialStart = new Date(parsed.startDate);
-          initialEnd = new Date(parsed.endDate);
-        }
-      } catch (e) {}
-    }
-    setStartDate(initialStart);
-    setEndDate(initialEnd);
     setIsMounted(true);
+    const todayStr = new Date().toLocaleDateString('en-CA');
 
     mountedRef.current = true;
     
     // Sync with other tabs
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_data_updated') {
+      if (e.key === 'sintak_data_updated') {
         setRefreshKey(prev => prev + 1);
         router.refresh();
       }
@@ -152,19 +133,16 @@ export default function BahanBakuClient() {
   useEffect(() => {
     let active = true;
     async function loadData() {
-      if (mountedRef.current) setLoading(true);
-      isLoadingMore.current = true;
+      if (!active || !mountedRef.current) return;
+      setLoading(true);
       const startTime = performance.now();
 
       try {
         const res = await fetch(`/api/bahan-baku?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}&from=${formatDateToYYYYMMDD(startDate)}&to=${formatDateToYYYYMMDD(endDate)}&_t=${Date.now()}`);
-        if (!active) return;
-
-        if (res.ok) {
+        if (res.ok && active) {
           const json = await res.json();
-          if (mountedRef.current && json.success) {
-            const endTime = performance.now();
-            setLoadTime(Math.round(endTime - startTime));
+          if (json.success) {
+            setLoadTime(Math.round(performance.now() - startTime));
             setData(prev => {
               if (page === 1) return json.data || [];
               const currentData = prev || [];
@@ -174,39 +152,20 @@ export default function BahanBakuClient() {
               return [...currentData, ...filteredNew];
             });
             setTotalCount(json.total || 0);
-
-            if (json.lastUpdated) {
-              const latestDate = new Date(json.lastUpdated);
-              if (!isNaN(latestDate.getTime())) {
-                const timestamp = latestDate.toLocaleString('id-ID', {
-                  day: '2-digit', month: 'short', year: 'numeric',
-                  hour: '2-digit', minute: '2-digit', second: '2-digit',
-                  timeZone: 'Asia/Jakarta'
-                });
-                setLastUpdated(timestamp);
-              }
-            } else {
-              setLastUpdated(null);
-            }
+            setLastUpdated(json.lastUpdated ? formatLastUpdate(new Date(json.lastUpdated)) : null);
             setError('');
           }
         }
       } catch (err: any) {
-        if (mountedRef.current) {
-          console.error('Failed to fetch:', err);
-          setError(err.message || 'Gagal memuat data');
-        }
+        if (active) setError(err.message || 'Gagal memuat data');
       } finally {
-        if (mountedRef.current) {
-          setLoading(false);
-          isLoadingMore.current = false;
-        }
+        if (active) setLoading(false);
       }
     }
-    if (!isMounted) return;
+    
     loadData();
     return () => { active = false; };
-  }, [page, debouncedQuery, refreshKey, startDate, endDate, isMounted]);
+  }, [page, debouncedQuery, refreshKey, startDate, endDate]);
 
   const handleFetch = async () => {
     if (!startDate || !endDate) {
@@ -219,24 +178,21 @@ export default function BahanBakuClient() {
       return;
     }
 
-    // Save state to localStorage only when "Tarik Data" is clicked
+    const startStr = formatDateToYYYYMMDD(startDate);
+    const endStr = formatDateToYYYYMMDD(endDate);
+    const chunks = splitDateRangeIntoMonths(startStr, endStr);
+    
     localStorage.setItem('bahanBakuState', JSON.stringify({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       sessionDate: new Date().toLocaleDateString('en-CA')
     }));
 
-    setLoading(true);
-    setError('');
-    setData(null);
-    setPage(1);
-    setSearchQuery('');
-
-    const startStr = formatDateToYYYYMMDD(startDate);
-    const endStr = formatDateToYYYYMMDD(endDate);
-    const chunks = splitDateRangeIntoMonths(startStr, endStr);
     setIsBatching(true);
     setLoading(true);
+    setSearchQuery('');
+    setPage(1);
+    setError('');
     setBatchProgress(0);
     
     let successCount = 0;
@@ -309,16 +265,12 @@ export default function BahanBakuClient() {
             : `Berhasil menarik ${totalScraped} data Bahan Baku dari Digit.`
         });
 
-        localStorage.setItem('sikka_data_updated', Date.now().toString());
+        localStorage.setItem('sintak_data_updated', Date.now().toString());
 
         if (lastUpdatedFromScrape) {
           const latestDate = new Date(lastUpdatedFromScrape);
           if (!isNaN(latestDate.getTime())) {
-            const timestamp = latestDate.toLocaleString('id-ID', {
-              day: '2-digit', month: 'short', year: 'numeric',
-              hour: '2-digit', minute: '2-digit', second: '2-digit',
-              timeZone: 'Asia/Jakarta'
-            });
+            const timestamp = formatLastUpdate(latestDate);
             setLastUpdated(timestamp);
 
             localStorage.setItem('bahanBakuState', JSON.stringify({
@@ -353,9 +305,8 @@ export default function BahanBakuClient() {
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop <= clientHeight + 150 && !loading && !isLoadingMore.current) {
+    if (scrollHeight - scrollTop <= clientHeight + 150 && !loading) {
       if (data && data.length < totalCount) {
-        isLoadingMore.current = true;
         setPage(prev => prev + 1);
       }
     }
@@ -392,7 +343,7 @@ export default function BahanBakuClient() {
   const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'id', header: 'ID', size: columnWidths.id },
     { accessorKey: 'faktur', header: 'Faktur', size: columnWidths.faktur },
-    { accessorKey: 'faktur_prd', header: 'Faktur PRD', size: columnWidths.faktur_prd },
+    { accessorKey: 'faktur_prd', header: 'Faktur Prd', size: columnWidths.faktur_prd },
     { accessorKey: 'faktur_aktifitas', header: 'Faktur Aktifitas', size: columnWidths.faktur_aktifitas },
     { 
       accessorKey: 'tgl', 
@@ -405,9 +356,9 @@ export default function BahanBakuClient() {
     { accessorKey: 'kd_barang', header: 'Kode Barang', size: columnWidths.kd_barang },
     { 
       accessorKey: 'qty', 
-      header: 'QTY', 
+      header: 'Qty', 
       size: columnWidths.qty,
-      cell: ({ getValue }) => (getValue() as number || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
+      cell: ({ getValue }) => (getValue() as number || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
       meta: { align: 'right' }
     },
     { accessorKey: 'status', header: 'Status', size: columnWidths.status },
@@ -415,14 +366,14 @@ export default function BahanBakuClient() {
       accessorKey: 'hp', 
       header: 'HPP Satuan', 
       size: columnWidths.hp,
-      cell: ({ getValue }) => (getValue() as number || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
+      cell: ({ getValue }) => (getValue() as number || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
       meta: { align: 'right' }
     },
     { 
       accessorKey: 'hp_total', 
       header: 'HPP Total', 
       size: columnWidths.hp_total,
-      cell: ({ getValue }) => (getValue() as number || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
+      cell: ({ getValue }) => (getValue() as number || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
       meta: { align: 'right' }
     },
     { accessorKey: 'keterangan', header: 'Keterangan', size: columnWidths.keterangan },
@@ -430,14 +381,12 @@ export default function BahanBakuClient() {
     { accessorKey: 'create_at', header: 'Dibuat', size: columnWidths.create_at },
     { accessorKey: 'username', header: 'Petugas', size: columnWidths.username },
     { accessorKey: 'kd_pelanggan', header: 'Pelanggan', size: columnWidths.kd_pelanggan },
-    { accessorKey: 'nama_prd', header: 'PRD', size: columnWidths.nama_prd },
+    { accessorKey: 'nama_prd', header: 'Prd', size: columnWidths.nama_prd },
     { accessorKey: 'aktifitas', header: 'Aktifitas', size: columnWidths.aktifitas },
     { accessorKey: 'nama_barang', header: 'Nama Barang', size: columnWidths.nama_barang },
     { accessorKey: 'satuan', header: 'Satuan', size: columnWidths.satuan },
-    { accessorKey: 'recid', header: 'RECID', size: columnWidths.recid },
+    { accessorKey: 'recid', header: 'RecID', size: columnWidths.recid },
   ], [columnWidths]);
-
-  if (!isMounted) return null;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
@@ -448,21 +397,19 @@ export default function BahanBakuClient() {
             <div className="flex flex-col gap-1.5">
               <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Rentang Tanggal</span>
               <div className="flex items-center gap-2">
-                <div className="w-[140px] relative group">
-                  <DatePicker 
-                    name="startDate"
-                    value={startDate}
-                    onChange={setStartDate}
-                  />
-                </div>
-                <div className="w-4 h-[1px] bg-gray-200 mx-1"></div>
-                <div className="w-[140px] relative group">
-                  <DatePicker 
-                    name="endDate"
-                    value={endDate}
-                    onChange={setEndDate}
-                  />
-                </div>
+                {!isMounted ? (
+                   <div className="w-[300px] h-10 bg-gray-50 animate-pulse rounded-lg" />
+                ) : (
+                  <>
+                    <div className="w-[140px]">
+                      <DatePicker value={startDate} onChange={setStartDate} name="startDate" />
+                    </div>
+                    <div className="w-4 h-[1px] bg-gray-200 mx-1"></div>
+                    <div className="w-[140px]">
+                      <DatePicker value={endDate} onChange={setEndDate} name="endDate" />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -511,7 +458,7 @@ export default function BahanBakuClient() {
         <div className="flex flex-col gap-4 shrink-0">
           <div className="flex items-center justify-between gap-4 min-h-[32px]">
             <div className="flex items-center gap-4">
-              <h3 className="text-[15px] font-extrabold text-gray-800 flex items-center gap-2 leading-none">
+              <h3 className="text-[14px] font-extrabold text-gray-800 flex items-center gap-2.5 leading-none">
                 <Clock size={18} className="text-green-600" />
                 <span>Hasil Scrapping</span>
               </h3>
@@ -557,7 +504,7 @@ export default function BahanBakuClient() {
         {/* Footer Info Banner */}
         <div className="flex items-center justify-between shrink-0 px-1 mt-1">
           <span className="text-[12px] leading-none font-bold text-gray-400">
-            {data === null ? 'Memuat...' : totalCount === 0 ? 'Tidak ada data' : `Menampilkan ${data.length} dari ${totalCount} total data Bahan Baku`}
+            {data === null ? 'Memuat...' : totalCount === 0 ? 'Tidak ada data' : `Menampilkan ${data?.length || 0} dari ${totalCount} Bahan Baku`}
           </span>
           <div className="flex items-center gap-4">
             {selectedIds.size > 0 && (
@@ -578,7 +525,7 @@ export default function BahanBakuClient() {
                 'bg-red-50 text-red-600 border-red-100'
               }`}>
                 <span className="animate-pulse">⚡</span>
-                <span>{(loadTime / 1000).toFixed(2)}s</span>
+                <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
               </span>
             )}
           </div>
@@ -596,3 +543,9 @@ export default function BahanBakuClient() {
     </div>
   );
 }
+
+
+
+
+
+

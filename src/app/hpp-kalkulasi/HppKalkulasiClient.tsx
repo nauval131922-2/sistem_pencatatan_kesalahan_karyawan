@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Search, Loader2, AlertCircle, Clock, FileSpreadsheet, Calculator } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
+import { useTableSelection } from '@/lib/hooks/useTableSelection';
 
 interface HppRecord {
   id: number;
@@ -24,11 +25,12 @@ const PAGE_SIZE = 50;
 export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientProps) {
   const router = useRouter();
   const mountedRef = useRef(true);
+  const isLoadingMore = useRef(false);
   
   // State
   const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<HppRecord[]>([]);
+  const [data, setData] = useState<HppRecord[] | null>(null);
   const [error, setError] = useState('');
   const [loadTime, setLoadTime] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -40,7 +42,7 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
   const [totalCount, setTotalCount] = useState(0);
 
   // Table State
-  const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
+  const { selectedIds, setSelectedIds, handleRowClick, clearSelection } = useTableSelection(data || []);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('hpp_columnWidths');
@@ -64,7 +66,7 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
   useEffect(() => {
     setIsMounted(true);
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_data_updated' || e.key === 'hpp_data_updated') {
+      if (e.key === 'sintak_data_updated' || e.key === 'hpp_data_updated') {
         setRefreshKey(prev => prev + 1);
         router.refresh();
       }
@@ -74,46 +76,54 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
       router.refresh();
     };
     window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('sikka:data-updated', handleNotify);
+    window.addEventListener('sintak:data-updated', handleNotify);
     return () => { 
         mountedRef.current = false;
         window.removeEventListener('storage', handleStorageChange); 
-        window.removeEventListener('sikka:data-updated', handleNotify);
+        window.removeEventListener('sintak:data-updated', handleNotify);
     };
   }, [router]);
 
   // Fetch Data
   useEffect(() => {
     let active = true;
+
     async function loadData() {
-      if (mountedRef.current) setLoading(true);
+      setLoading(true);
       const startTime = performance.now();
       try {
         const res = await fetch(`/api/hpp-kalkulasi?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}&_t=${Date.now()}`);
         if (!active) return;
+
         if (res.ok) {
           const json = await res.json();
-          if (json.success && mountedRef.current) {
+          if (json.success) {
             setLoadTime(Math.round(performance.now() - startTime));
-            if (page === 1) {
-              setData(json.data || []);
-            } else {
-              setData(prev => [...prev, ...(json.data || [])]);
-            }
+            setData(prev => {
+              if (page === 1) return json.data || [];
+              const currentData = prev || [];
+              const newData = json.data || [];
+              const existingIds = new Set(currentData.map(d => d.id));
+              const filteredNew = newData.filter((d: any) => !existingIds.has(d.id));
+              return [...currentData, ...filteredNew];
+            });
             setTotalCount(json.total || 0);
             setError('');
           }
         }
       } catch (err: any) {
-        if (mountedRef.current) setError(err.message || 'Gagal memuat data');
+        if (active) setError(err.message || 'Gagal memuat data');
       } finally {
-        if (mountedRef.current) setLoading(false);
+        if (active) {
+          setLoading(false);
+          isLoadingMore.current = false;
+        }
       }
     }
-    if (!isMounted) return;
+    
     loadData();
     return () => { active = false; };
-  }, [page, debouncedQuery, refreshKey, isMounted]);
+  }, [page, debouncedQuery, refreshKey]);
 
   // Columns definition
   const columns = useMemo(() => [
@@ -168,31 +178,21 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
     localStorage.setItem('hpp_columnWidths', JSON.stringify(widths));
   }, []);
 
-  const handleSelection = useCallback((id: string | number) => {
-    setSelectedIds(prev => {
-        const next = new Set(prev);
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
-        return next;
-    });
-  }, []);
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop <= clientHeight + 300 && !loading && data.length < totalCount) {
-       setPage(prev => prev + 1);
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight + 300 && !loading && !isLoadingMore.current && (data?.length || 0) < totalCount) {
+      isLoadingMore.current = true;
+      setPage(prev => prev + 1);
     }
-  };
-
-  if (!isMounted) return null;
+  }, [loading, data, totalCount]);
 
   return (
-    <div className="h-full flex flex-col gap-4 overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
       {/* Search Bar Section */}
       <div className="flex flex-col gap-4 shrink-0">
         <div className="flex items-center justify-between gap-4 min-h-[32px]">
           <div className="flex items-center gap-4">
-             <h3 className="text-[15px] font-extrabold text-gray-800 flex items-center gap-2 leading-none">
+             <h3 className="text-[14px] font-extrabold text-gray-800 flex items-center gap-2.5 leading-none">
                 <Calculator size={18} className="text-green-600" />
                 <span>Data HPP Kalkulasi</span>
              </h3>
@@ -209,7 +209,7 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
                 </div>
              )}
           </div>
-          {loading && data.length > 0 && (
+          {loading && (data?.length || 0) > 0 && (
               <div className="text-[11px] font-bold text-green-600 flex items-center gap-2 bg-green-50 px-2.5 py-1 rounded-full border border-green-100 animate-pulse uppercase tracking-tighter leading-none">
                 <Loader2 size={12} className="animate-spin" />
                 <span>Memproses...</span>
@@ -229,8 +229,8 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
         </div>
       </div>
 
-      {/* Main Table */}
-      <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
+      {/* Main Table Context */}
+      <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden relative">
          {error ? (
            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-rose-50/10">
               <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mb-4">
@@ -245,48 +245,46 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
               </button>
            </div>
          ) : (
-           <DataTable
-             data={data}
-             columns={columns}
-             columnWidths={columnWidths}
-             onColumnWidthChange={handleResize}
-             isLoading={loading && page === 1}
-             selectedIds={selectedIds}
-             onRowClick={handleSelection} 
-             onScroll={handleScroll}
-           />
-         )}
-      </div>
+           <>
+              <DataTable
+                data={data || []}
+                columns={columns}
+                columnWidths={columnWidths}
+                onColumnWidthChange={handleResize}
+                isLoading={loading || data === null}
+                selectedIds={selectedIds}
+                onRowClick={handleRowClick} 
+                onScroll={handleScroll}
+                rowHeight="h-10"
+              />
 
-      {/* Footer Info Banner */}
-      <div className="flex items-center justify-between shrink-0 px-1 mt-1">
-          <span className="text-[12px] leading-none font-bold text-gray-400">
-             {totalCount === 0 ? 'Tidak ada data HPP' : `Menampilkan ${data.length} dari ${totalCount} Kalkulasi`}
-          </span>
-          
-          <div className="flex items-center gap-4">
-            {selectedIds.size > 0 && (
-                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                   <span className="text-[12px] leading-none font-bold text-gray-400">{selectedIds.size} dipilih</span>
-                   <button 
-                    onClick={() => setSelectedIds(new Set())}
-                    className="text-[12px] leading-none font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
-                   >
-                     BATAL
-                   </button>
-                </div>
-            )}
-            {loadTime !== null && (
-               <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
-                loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
-                'bg-red-50 text-red-600 border-red-100'
-              }`}>
-                  <span className="animate-pulse">⚡</span>
-                  <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
-               </span>
-            )}
-          </div>
+              {/* Footer Info Banner */}
+              <div className="flex items-center justify-between shrink-0 px-1 mt-1">
+                  <span className="text-[12px] leading-none font-bold text-gray-400">
+                    {totalCount === 0 ? 'Tidak ada data HPP' : `Menampilkan ${data?.length || 0} dari ${totalCount} Kalkulasi`}
+                  </span>
+                  
+                  <div className="flex items-center gap-4">
+                    {selectedIds.size > 0 && (
+                        <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
+                          <span className="text-[12px] leading-none font-bold text-gray-400">{selectedIds.size} dipilih</span>
+                          <button onClick={clearSelection} className="text-[12px] leading-none font-black text-rose-500 hover:text-rose-600 underline underline-offset-4">Batal</button>
+                        </div>
+                    )}
+                    {loadTime !== null && (
+                      <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
+                        loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                        loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+                        'bg-red-50 text-red-600 border-red-100'
+                      }`}>
+                          <span className="animate-pulse">⚡</span>
+                          <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
+                      </span>
+                    )}
+                  </div>
+              </div>
+           </>
+         )}
       </div>
     </div>
   );
