@@ -226,7 +226,7 @@ export default function RecordsForm({
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_data_updated') {
+      if (e.key === 'sintak_data_updated') {
         setRefreshSyncCount(prev => prev + 1);
         startTransition(() => {
           router.refresh();
@@ -596,7 +596,7 @@ export default function RecordsForm({
     try {
       const res = await fetch(endpoint, { method, headers, body });
       if (res.ok) {
-        localStorage.setItem('sikka_data_updated', Date.now().toString());
+        localStorage.setItem('sintak_data_updated', Date.now().toString());
         closeDialog();
         showDialog('success', 'Berhasil', isEdit ? 'Data diperbarui.' : 'Data dicatat.', () => {
           if (onSuccessEdit) onSuccessEdit();
@@ -971,3 +971,4 @@ export default function RecordsForm({
     </div>
   );
 }
+

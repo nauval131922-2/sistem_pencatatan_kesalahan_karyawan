@@ -1,10 +1,9 @@
 import { Metadata } from 'next';
 import SphInClient from './SphInClient';
 import PageHeader from '@/components/PageHeader';
-import HelpButton from '@/components/HelpButton';
 
 export const metadata: Metadata = {
-  title: 'SPH In | SINTAK',
+  title: 'SINTAK | SPH In',
   description: 'Halaman monitoring dan audit Surat Penawaran Harga Masuk (SPH In) dari sistem Digit.',
 };
 
@@ -18,7 +17,6 @@ export default function SphInPage() {
             Sinkronisasi daftar SPH In (Surat Penawaran Harga Masuk) secara langsung dari <a href="https://buyapercetakan.mdthoster.com/#cGIvdHJzcGhfaW4=" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-bold">Digit</a>
           </>
         }
-        rightElement={<HelpButton />}
       />
 
       <SphInClient />

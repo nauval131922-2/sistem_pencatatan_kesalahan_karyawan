@@ -1,21 +1,16 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Search, RefreshCw, Loader2, AlertCircle, Clock, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { Search, RefreshCw, Loader2, AlertCircle, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-
-function SortIcon({ config, sortKey }: { config: any, sortKey: string }) {
-  if (config.key !== sortKey || !config.direction) {
-    return <ArrowUpDown size={12} className="text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />;
-  }
-  return config.direction === 'asc'
-    ? <ArrowUp size={12} className="text-green-600" />
-    : <ArrowDown size={12} className="text-green-600" />;
-}
+import { ColumnDef } from '@tanstack/react-table';
 
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { formatLastUpdate } from '@/lib/date-utils';
+import { DataTable } from '@/components/ui/DataTable';
 import { splitDateRangeIntoMonths } from '@/lib/date-utils';
+import { useTableSelection } from '@/lib/hooks/useTableSelection';
 
 function formatDateToYYYYMMDD(date: Date) {
   const y = date.getFullYear();
@@ -42,11 +37,9 @@ export default function SphInClient() {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
 
-  // Initialize with fixed dates for SSR compatibility
   const [startDate, setStartDate] = useState<Date>(new Date(2026, 0, 1));
   const [endDate, setEndDate] = useState<Date>(new Date(2026, 0, 1));
 
-  // Sync with localStorage and current date after mount
   useEffect(() => {
     setIsMounted(true);
     const todayStr = new Date().toLocaleDateString('en-CA');
@@ -72,9 +65,6 @@ export default function SphInClient() {
     setEndDate(initialEnd);
   }, []);
 
-  // Save to localStorage when dates change
-  // DELETED intentionaly to follow "Scrape-First" requirement
-
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[] | null>(null);
   const [error, setError] = useState('');
@@ -86,68 +76,48 @@ export default function SphInClient() {
   const [totalCount, setTotalCount] = useState(0);
   const [loadTime, setLoadTime] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [lastSelectedId, setLastSelectedId] = useState<number | null>(null);
-  const [sortConfig, setSortConfig] = useState<{ key: string | null; direction: 'asc' | 'desc' | null }>({
-    key: null,
-    direction: null
+  const { selectedIds, setSelectedIds, handleRowClick, clearSelection } = useTableSelection(data || []);
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sphIn_columnWidths');
+      if (saved) return JSON.parse(saved);
+    }
+    return {
+      id: 80,
+      faktur: 220,
+      tgl: 120,
+      top_hari: 100,
+      faktur_spph: 200,
+      faktur_prd: 200,
+      kd_gudang: 200,
+      kd_cabang: 100,
+      kd_supplier: 250,
+      subtotal: 160,
+      persppn: 100,
+      ppn: 140,
+      total: 180,
+      status: 100,
+      create_at: 180,
+      updated_at: 180,
+      username: 120,
+      edited_at: 180,
+      username_edited: 120,
+      deleted_at: 180,
+      username_deleted: 120,
+      spph_edited_at: 180,
+      faktur_po: 220,
+      cmd: 200,
+      detil: 120,
+      recid: 80
+    };
   });
-
-  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({
-    tgl: 140,
-    faktur: 220,
-    kd_supplier: 300,
-    faktur_spph: 200,
-    total: 180,
-    faktur_po: 250
-  });
-
-  const totalTableWidth = useMemo(() => {
-    return Object.values(columnWidths).reduce((a, b) => a + b, 0);
-  }, [columnWidths]);
-
-  const resizerRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
-  const isLoadingMore = useRef(false);
-  const widthsRef = useRef(columnWidths);
 
   useEffect(() => {
-    widthsRef.current = columnWidths;
+    localStorage.setItem('sphIn_columnWidths', JSON.stringify(columnWidths));
   }, [columnWidths]);
 
-  const startResizing = useCallback((key: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    resizerRef.current = {
-      key,
-      startX: e.pageX,
-      startWidth: widthsRef.current[key] || 0
-    };
-    document.addEventListener('mousemove', onResizing);
-    document.addEventListener('mouseup', stopResizing);
-    document.body.style.cursor = 'col-resize';
-  }, []);
-
-  const onResizing = useCallback((e: MouseEvent) => {
-    if (!resizerRef.current) return;
-    const { key, startX, startWidth } = resizerRef.current;
-    const delta = e.pageX - startX;
-    setColumnWidths(prev => ({
-      ...prev,
-      [key]: Math.max(50, startWidth + delta)
-    }));
-  }, []);
-
-  const stopResizing = useCallback(() => {
-    resizerRef.current = null;
-    document.removeEventListener('mousemove', onResizing);
-    document.removeEventListener('mouseup', stopResizing);
-    document.body.style.cursor = 'default';
-  }, [onResizing]);
-
-  const [isBatching, setIsBatching] = useState(false);
-  const [batchProgress, setBatchProgress] = useState(0);
-  const [batchStatus, setBatchStatus] = useState('');
+  const isLoadingMore = useRef(false);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -160,7 +130,7 @@ export default function SphInClient() {
   useEffect(() => {
     let active = true;
     async function loadData() {
-      setLoading(true);
+      if (mountedRef.current) setLoading(page === 1);
       const startTimer = Date.now();
       try {
         const queryParams = new URLSearchParams({
@@ -172,57 +142,73 @@ export default function SphInClient() {
         });
 
         const res = await fetch(`/api/sph-in?${queryParams.toString()}`);
+        if (!res.ok) throw new Error('Gagal memuat data');
         const json = await res.json();
         
-        if (active) {
-          if (page === 1) {
-            setData(json.data || []);
-          } else {
-            setData(prev => [...(prev || []), ...(json.data || [])]);
-          }
+        if (active && mountedRef.current) {
+          setData(prev => {
+            const processData = (items: any[]) => items.map(item => {
+              let parsed = {};
+              if (item.raw_data) {
+                try { parsed = JSON.parse(item.raw_data); } catch(e){}
+              }
+              return { ...item, ...parsed };
+            });
+
+            if (page === 1) return processData(json.data || []);
+            const currentData = prev || [];
+            const newData = processData(json.data || []);
+            const existingIds = new Set(currentData.map((d: any) => d.id));
+            const filteredNew = newData.filter((d: any) => !existingIds.has(d.id));
+            return [...currentData, ...filteredNew];
+          });
           setTotalCount(json.total || 0);
           
           if (json.lastUpdated) {
             const latestDate = new Date(json.lastUpdated);
             if (!isNaN(latestDate.getTime())) {
-              setLastUpdated(latestDate.toLocaleString('id-ID', {
-                day: '2-digit', month: 'short', year: 'numeric',
-                hour: '2-digit', minute: '2-digit', second: '2-digit'
-              }));
+              setLastUpdated(formatLastUpdate(latestDate));
             }
           }
           setLoadTime(Date.now() - startTimer);
         }
       } catch (err: any) {
-        if (active) {
+        if (active && mountedRef.current) {
           setError(err.message || 'Gagal memuat data');
           setData([]);
         }
       } finally {
-        setLoading(false);
-        isLoadingMore.current = false;
+        if (active && mountedRef.current) {
+          setLoading(false);
+          isLoadingMore.current = false;
+        }
       }
     }
-    if (!isMounted) return;
     loadData();
     return () => { active = false; };
   }, [page, debouncedQuery, refreshKey, startDate, endDate, isMounted]);
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_data_updated') {
+      if (e.key === 'sintak_data_updated') {
         setRefreshKey(prev => prev + 1);
         router.refresh();
       }
     };
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    return () => {
+      mountedRef.current = false;
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [router]);
+
+  const [isBatching, setIsBatching] = useState(false);
+  const [batchProgress, setBatchProgress] = useState(0);
+  const [batchStatus, setBatchStatus] = useState('');
 
   const handleFetch = async () => {
     if (!startDate || !endDate) return;
 
-    // Save state to localStorage only when "Tarik Data" is clicked
     localStorage.setItem('sphInState', JSON.stringify({
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
@@ -230,7 +216,7 @@ export default function SphInClient() {
     }));
 
     setError('');
-    setData(null);
+    setData([]);
     setPage(1);
     setIsBatching(true);
     setLoading(true);
@@ -249,12 +235,6 @@ export default function SphInClient() {
           successCount++;
           const json = await res.json();
           totalScraped += (json.total || 0);
-          if (json.lastUpdated) {
-            setLastUpdated(new Date(json.lastUpdated).toLocaleString('id-ID', {
-              day: '2-digit', month: 'short', year: 'numeric',
-              hour: '2-digit', minute: '2-digit', second: '2-digit'
-            }));
-          }
         }
       } catch (err) {
         console.error("Chunk error:", err);
@@ -266,8 +246,9 @@ export default function SphInClient() {
     };
 
     try {
+      const concurrency = 15;
       const queue = [...chunks];
-      const workers = Array(Math.min(10, queue.length)).fill(null).map(async () => {
+      const workers = Array(Math.min(concurrency, queue.length)).fill(null).map(async () => {
         while (queue.length > 0) {
           const chunk = queue.shift();
           if (chunk) await processChunk(chunk);
@@ -278,7 +259,7 @@ export default function SphInClient() {
       if (successCount > 0) {
         setIsBatching(false);
         setRefreshKey(prev => prev + 1);
-        localStorage.setItem('sikka_data_updated', Date.now().toString());
+        localStorage.setItem('sintak_data_updated', Date.now().toString());
 
         await fetch('/api/activity-log', {
           method: 'POST',
@@ -308,65 +289,231 @@ export default function SphInClient() {
 
   const [dialog, setDialog] = useState({ isOpen: false, type: 'success', title: '', message: '' });
 
-  const toggleSelectRow = (id: number, e: React.MouseEvent) => {
-    const newSelected = new Set(selectedIds);
-    if (e.shiftKey && lastSelectedId !== null && data) {
-      const startIdx = data.findIndex(i => i.id === lastSelectedId);
-      const endIdx = data.findIndex(i => i.id === id);
-      if (startIdx !== -1 && endIdx !== -1) {
-        const [min, max] = [Math.min(startIdx, endIdx), Math.max(startIdx, endIdx)];
-        for (let i = min; i <= max; i++) newSelected.add(data[i].id);
-      }
-    } else if (e.ctrlKey || e.metaKey) {
-        if (newSelected.has(id)) newSelected.delete(id);
-        else newSelected.add(id);
-    } else {
-        newSelected.clear();
-        newSelected.add(id);
-    }
-    setSelectedIds(newSelected);
-    setLastSelectedId(id);
-  };
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop <= clientHeight + 150 && !loading && data && data.length < totalCount) {
-      isLoadingMore.current = true;
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight + 300 && !loading && (data?.length || 0) < totalCount) {
       setPage(prev => prev + 1);
     }
-  };
+  }, [loading, data, totalCount, setPage]);
 
-  const toggleSort = (key: string) => {
-    setSortConfig(prev => {
-      if (prev.key === key) {
-        if (prev.direction === 'asc') return { key, direction: 'desc' };
-        if (prev.direction === 'desc') return { key, direction: null };
+  const columns: ColumnDef<any>[] = useMemo(() => [
+    {
+      accessorKey: 'id',
+      header: 'ID',
+      size: columnWidths.id,
+      cell: ({ getValue, row }) => (
+        <span className={`font-medium tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-gray-400'}`}>
+          {getValue() as string}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'faktur',
+      header: 'Faktur',
+      size: columnWidths.faktur,
+      cell: ({ getValue, row }) => (
+        <span className={`font-medium transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-700'}`}>
+          {getValue() as string}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'tgl',
+      header: 'Tanggal',
+      size: columnWidths.tgl,
+      cell: ({ getValue, row }) => (
+        <span className={`font-medium tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>
+          {formatIndoDateStr(getValue() as string)}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'top_hari',
+      header: 'TOP (Hari)',
+      size: columnWidths.top_hari,
+      cell: ({ getValue }) => <span className="text-gray-500">{getValue() as string || '0'}</span>
+    },
+    {
+      accessorKey: 'faktur_spph',
+      header: 'Faktur SPPH',
+      size: columnWidths.faktur_spph,
+      cell: ({ getValue, row }) => (
+        <span className={`font-medium transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-600'}`}>
+          {getValue() as string || '-'}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'faktur_prd',
+      header: 'Faktur PRD',
+      size: columnWidths.faktur_prd,
+      cell: ({ getValue, row }) => (
+        <span className={`font-medium transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-400'}`}>
+          {getValue() as string || '-'}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'kd_gudang',
+      header: 'Gudang',
+      size: columnWidths.kd_gudang,
+      cell: ({ getValue }) => <span className="text-gray-500">{getValue() as string || '-'}</span>
+    },
+    {
+      accessorKey: 'kd_cabang',
+      header: 'Cabang',
+      size: columnWidths.kd_cabang,
+      cell: ({ getValue }) => <span className="text-gray-500">{getValue() as string || '-'}</span>
+    },
+    {
+      accessorKey: 'kd_supplier',
+      header: 'Supplier',
+      size: columnWidths.kd_supplier,
+      cell: ({ getValue, row }) => (
+        <span className={`font-medium transition-colors ${row.getIsSelected() ? 'text-green-800' : 'text-gray-700'}`}>
+          {getValue() as string}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'subtotal',
+      header: 'Subtotal',
+      size: columnWidths.subtotal,
+      meta: { align: 'right' },
+      cell: ({ getValue, row }) => (
+        <div className={`flex items-center justify-end font-medium tabular-nums transition-colors ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>
+          <span className={`text-[10px] font-bold mr-1 ${row.getIsSelected() ? 'text-green-400' : 'text-gray-300'}`}>Rp</span>
+          <span>{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        </div>
+      )
+    },
+    {
+      accessorKey: 'persppn',
+      header: '% PPN',
+      size: columnWidths.persppn,
+      meta: { align: 'right' },
+      cell: ({ getValue }) => <span className="text-gray-500">{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+    },
+    {
+      accessorKey: 'ppn',
+      header: 'PPN',
+      size: columnWidths.ppn,
+      meta: { align: 'right' },
+      cell: ({ getValue, row }) => (
+        <div className={`flex items-center justify-end font-medium tabular-nums transition-colors ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>
+          <span className={`text-[10px] font-bold mr-1 ${row.getIsSelected() ? 'text-green-400' : 'text-gray-300'}`}>Rp</span>
+          <span>{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        </div>
+      )
+    },
+    {
+      accessorKey: 'total',
+      header: 'Total',
+      size: columnWidths.total,
+      meta: { align: 'right' },
+      cell: ({ getValue, row }) => (
+        <div className={`flex items-center justify-end font-medium tabular-nums transition-colors ${row.getIsSelected() ? 'text-green-700' : 'text-gray-800'}`}>
+          <span className={`text-[10px] font-bold mr-1 ${row.getIsSelected() ? 'text-green-400' : 'text-gray-300'}`}>Rp</span>
+          <span>{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        </div>
+      )
+    },
+    {
+      accessorKey: 'status',
+      header: 'Status',
+      size: columnWidths.status,
+      cell: ({ getValue }) => {
+        const val = getValue() as string;
+        return (
+          <span className={`font-black text-[10px] px-2 py-0.5 rounded-full border ${val === '1' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+            {val === '1' ? 'ACTIVE' : 'INACTIVE'}
+          </span>
+        );
       }
-      return { key, direction: 'asc' };
-    });
-  };
-
-  const paginatedData = useMemo(() => {
-    let result = [...(data || [])];
-    if (sortConfig.key && sortConfig.direction) {
-      result.sort((a, b) => {
-        let aValue = a[sortConfig.key!];
-        let bValue = b[sortConfig.key!];
-        if (sortConfig.key === 'tgl') {
-          const pa = String(aValue).split('-');
-          const pb = String(bValue).split('-');
-          aValue = pa.length === 3 ? `${pa[2]}${pa[1]}${pa[0]}` : aValue;
-          bValue = pb.length === 3 ? `${pb[2]}${pb[1]}${pb[0]}` : bValue;
-        }
-        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      });
+    },
+    {
+      accessorKey: 'create_at',
+      header: 'Create At',
+      size: columnWidths.create_at,
+      cell: ({ getValue }) => <span className="text-[11px] text-gray-400 font-mono">{getValue() as string || '-'}</span>
+    },
+    {
+      accessorKey: 'updated_at',
+      header: 'Updated At',
+      size: columnWidths.updated_at,
+      cell: ({ getValue }) => <span className="text-[11px] text-gray-400 font-mono">{getValue() as string || '-'}</span>
+    },
+    {
+      accessorKey: 'username',
+      header: 'Username',
+      size: columnWidths.username,
+      cell: ({ getValue, row }) => (
+        <span className={`text-[11px] font-bold transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-400'}`}>
+          @{getValue() as string || '–'}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'edited_at',
+      header: 'Edited At',
+      size: columnWidths.edited_at,
+      cell: ({ getValue }) => <span className="text-[11px] text-gray-400 font-mono">{getValue() as string || '-'}</span>
+    },
+    {
+      accessorKey: 'username_edited',
+      header: 'User Edited',
+      size: columnWidths.username_edited,
+      cell: ({ getValue }) => <span className="text-[11px] text-gray-400">@{getValue() as string || '-'}</span>
+    },
+    {
+      accessorKey: 'deleted_at',
+      header: 'Deleted At',
+      size: columnWidths.deleted_at,
+      cell: ({ getValue }) => <span className="text-[11px] text-rose-300 font-mono">{getValue() as string || '-'}</span>
+    },
+    {
+      accessorKey: 'username_deleted',
+      header: 'User Deleted',
+      size: columnWidths.username_deleted,
+      cell: ({ getValue }) => <span className="text-[11px] text-rose-300">@{getValue() as string || '-'}</span>
+    },
+    {
+      accessorKey: 'spph_edited_at',
+      header: 'SPPH Edited At',
+      size: columnWidths.spph_edited_at,
+      cell: ({ getValue }) => <span className="text-[11px] text-gray-400 font-mono">{getValue() as string || '-'}</span>
+    },
+    {
+      accessorKey: 'faktur_po',
+      header: 'Faktur PO',
+      size: columnWidths.faktur_po,
+      cell: ({ getValue, row }) => (
+        <div className={`transition-colors truncate font-medium ${row.getIsSelected() ? 'text-green-600' : 'text-gray-400'}`} dangerouslySetInnerHTML={{ __html: getValue() as string || '-' }} />
+      )
+    },
+    {
+      accessorKey: 'cmd',
+      header: 'Aksi',
+      size: columnWidths.cmd,
+      cell: ({ getValue, row }) => (
+        <div className="flex justify-center" dangerouslySetInnerHTML={{ __html: getValue() as string || '-' }} />
+      )
+    },
+    {
+      accessorKey: 'detil',
+      header: 'Cetak',
+      size: columnWidths.detil,
+      cell: ({ getValue, row }) => (
+        <div className="flex justify-center" dangerouslySetInnerHTML={{ __html: getValue() as string || '-' }} />
+      )
+    },
+    {
+      accessorKey: 'recid',
+      header: 'RecId',
+      size: columnWidths.recid,
+      cell: ({ getValue }) => <span className="text-[11px] text-gray-300 font-mono">{getValue() as string}</span>
     }
-    return result;
-  }, [data, sortConfig]);
-
-  if (!isMounted) return null;
+  ], [columnWidths]);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
@@ -415,11 +562,12 @@ export default function SphInClient() {
         </div>
       )}
 
+      {/* Results View */}
       <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
         <div className="flex flex-col gap-4 shrink-0">
           <div className="flex items-center justify-between gap-4 min-h-[32px]">
             <div className="flex items-center gap-4">
-              <h3 className="text-15px font-extrabold text-gray-800 flex items-center gap-2 leading-none">
+              <h3 className="text-[14px] font-extrabold text-gray-800 flex items-center gap-2.5 leading-none">
                 <Clock size={18} className="text-green-600" />
                 <span>Hasil Scrapping</span>
               </h3>
@@ -431,7 +579,7 @@ export default function SphInClient() {
               )}
             </div>
 
-            {loading && data !== null && (
+            {loading && (data?.length || 0) > 0 && (
               <div className="flex items-center gap-2 text-[11px] font-bold text-green-600 animate-pulse bg-green-50 px-2.5 py-1 rounded-full border border-green-100 uppercase tracking-tighter leading-none">
                 <Loader2 size={12} className="animate-spin" />
                 <span>Memproses...</span>
@@ -450,167 +598,41 @@ export default function SphInClient() {
           </div>
         </div>
 
-        {/* Table & Footer Wrapper */}
-        <div className="flex-1 flex flex-col min-h-0 gap-2 overflow-hidden">
-          {data === null ? (
-            <div className="flex-1 bg-white border border-gray-200 rounded-[10px] shadow-sm overflow-hidden flex flex-col min-h-0">
-              <div className="border-b border-gray-200 bg-gray-50/50 px-5 py-3.5 flex items-center justify-between">
-                <div className="h-4 w-32 bg-gray-200 rounded-md animate-pulse"></div>
-                <div className="h-4 w-24 bg-gray-200 rounded-md animate-pulse"></div>
-              </div>
-              <div className="flex-1 p-5 space-y-4">
-                 {Array(10).fill(0).map((_, i) => (
-                    <div key={i} className="flex items-center gap-4 w-full h-9">
-                      <div className="h-4 w-32 bg-gray-100 rounded animate-pulse"></div>
-                      <div className="h-4 flex-1 bg-gray-50 rounded animate-pulse"></div>
-                      <div className="h-4 w-40 bg-gray-100 rounded animate-pulse"></div>
-                      <div className="h-4 w-24 bg-gray-100 rounded animate-pulse"></div>
-                    </div>
-                 ))}
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] flex-1 flex flex-col min-h-0 relative overflow-hidden">
-                <div className="overflow-auto custom-scrollbar flex-1 min-h-0" onScroll={handleScroll}>
-                  <table className="text-left relative border-collapse table-fixed" style={{ width: totalTableWidth, minWidth: '100%' }}>
-                    <thead className="sticky top-0 z-20 bg-white shadow-sm">
-                      <tr>
-                        <th className="px-6 py-3 border-b border-r border-gray-200 relative group cursor-pointer hover:bg-gray-50 transition-colors whitespace-nowrap overflow-hidden" style={{ width: columnWidths.tgl }} onClick={() => toggleSort('tgl')}>
-                          <div className="flex items-center gap-2 text-[12px] leading-none text-[#6b7280] font-bold tracking-wider overflow-hidden">
-                            <span className="truncate flex-1">Tanggal</span>
-                            <div className="shrink-0"><SortIcon config={sortConfig} sortKey="tgl" /></div>
-                          </div>
-                          <div className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer" onMouseDown={(e) => startResizing('tgl', e)} onClick={(e) => e.stopPropagation()}>
-                            <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
-                          </div>
-                        </th>
-                        <th className="px-6 py-3 border-b border-r border-gray-200 relative group cursor-pointer hover:bg-gray-50 transition-colors whitespace-nowrap overflow-hidden" style={{ width: columnWidths.faktur }} onClick={() => toggleSort('faktur')}>
-                          <div className="flex items-center gap-2 text-[12px] leading-none text-[#6b7280] font-bold tracking-wider overflow-hidden">
-                            <span className="truncate flex-1">Faktur SPH</span>
-                            <div className="shrink-0"><SortIcon config={sortConfig} sortKey="faktur" /></div>
-                          </div>
-                          <div className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer" onMouseDown={(e) => startResizing('faktur', e)} onClick={(e) => e.stopPropagation()}>
-                            <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
-                          </div>
-                        </th>
-                        <th className="px-6 py-3 border-b border-r border-gray-200 relative group cursor-pointer hover:bg-gray-50 transition-colors whitespace-nowrap overflow-hidden" style={{ width: columnWidths.kd_supplier }} onClick={() => toggleSort('kd_supplier')}>
-                          <div className="flex items-center gap-2 text-[12px] leading-none text-[#6b7280] font-bold tracking-wider overflow-hidden">
-                            <span className="truncate flex-1">Supplier</span>
-                            <div className="shrink-0"><SortIcon config={sortConfig} sortKey="kd_supplier" /></div>
-                          </div>
-                          <div className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer" onMouseDown={(e) => startResizing('kd_supplier', e)} onClick={(e) => e.stopPropagation()}>
-                            <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
-                          </div>
-                        </th>
-                        <th className="px-6 py-3 border-b border-r border-gray-200 relative group cursor-pointer hover:bg-gray-50 transition-colors whitespace-nowrap overflow-hidden" style={{ width: columnWidths.faktur_spph }} onClick={() => toggleSort('faktur_spph')}>
-                          <div className="flex items-center gap-2 text-[12px] leading-none text-[#6b7280] font-bold tracking-wider overflow-hidden">
-                            <span className="truncate flex-1">Ref. SPPH</span>
-                            <div className="shrink-0"><SortIcon config={sortConfig} sortKey="faktur_spph" /></div>
-                          </div>
-                          <div className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer" onMouseDown={(e) => startResizing('faktur_spph', e)} onClick={(e) => e.stopPropagation()}>
-                            <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
-                          </div>
-                        </th>
-                        <th className="px-6 py-3 border-b border-r border-gray-200 relative group cursor-pointer hover:bg-gray-50 transition-colors whitespace-nowrap overflow-hidden" style={{ width: columnWidths.total }} onClick={() => toggleSort('total')}>
-                          <div className="flex items-center gap-2 text-[12px] leading-none text-[#6b7280] font-bold tracking-wider overflow-hidden">
-                            <span className="truncate flex-1">Total</span>
-                            <div className="shrink-0"><SortIcon config={sortConfig} sortKey="total" /></div>
-                          </div>
-                          <div className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer" onMouseDown={(e) => startResizing('total', e)} onClick={(e) => e.stopPropagation()}>
-                            <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
-                          </div>
-                        </th>
-                        <th className="px-6 py-3 border-b border-gray-200 relative group cursor-pointer hover:bg-gray-50 transition-colors whitespace-nowrap overflow-hidden" style={{ width: columnWidths.faktur_po }} onClick={() => toggleSort('faktur_po')}>
-                          <div className="flex items-center gap-2 text-[12px] leading-none text-[#6b7280] font-bold tracking-wider overflow-hidden">
-                            <span className="truncate">Status PO</span>
-                            <SortIcon config={sortConfig} sortKey="faktur_po" />
-                          </div>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="">
-                      {paginatedData.map((row, idx) => {
-                        const isSelected = selectedIds.has(row.id);
-                        return (
-                        <tr 
-                          key={row.id || idx} 
-                          onClick={(e) => toggleSelectRow(row.id, e)}
-                          className={`transition-all duration-150 group h-9 cursor-pointer select-none border-b border-gray-200 ${
-                            isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : idx % 2 === 1 ? 'bg-slate-50/40' : 'bg-white'
-                          } hover:bg-green-50/20`}
-                        >
-                          <td className="p-0 border-b border-gray-200 whitespace-nowrap overflow-hidden">
-                             <div className={`px-6 py-1 border-r border-gray-200 h-fit flex items-center text-[12px] leading-none font-medium transition-colors ${isSelected ? 'text-green-700' : 'text-[#364153]'}`}>
-                               {formatIndoDateStr(row.tgl)}
-                             </div>
-                          </td>
-                          <td className="p-0 border-b border-gray-200 whitespace-nowrap overflow-hidden">
-                            <div className={`px-6 py-1 border-r border-gray-200 h-fit flex items-center text-[12px] leading-none font-medium transition-colors ${isSelected ? 'text-green-600' : 'text-[#364153]'}`}>
-                              {row.faktur}
-                            </div>
-                          </td>
-                          <td className="p-0 border-b border-gray-200 whitespace-nowrap overflow-hidden">
-                            <div className={`px-6 py-1 border-r border-gray-200 h-fit flex items-center text-[12px] leading-none font-medium truncate transition-colors ${isSelected ? 'text-green-800' : 'text-[#364153]'}`}>
-                              {row.kd_supplier}
-                            </div>
-                          </td>
-                          <td className="p-0 border-b border-gray-200 whitespace-nowrap overflow-hidden">
-                            <div className={`px-6 py-1 border-r border-gray-200 h-fit flex items-center text-[12px] leading-none font-medium transition-colors ${isSelected ? 'text-green-600' : 'text-[#364153]'}`}>
-                              {row.faktur_spph}
-                            </div>
-                          </td>
-                          <td className="p-0 border-b border-gray-200 whitespace-nowrap overflow-hidden">
-                            <div className={`px-6 py-1 border-r border-gray-200 h-fit flex items-center text-[12px] leading-none tabular-nums font-medium transition-colors ${isSelected ? 'text-green-700' : 'text-[#364153]'}`}>
-                              <div className="flex justify-between items-baseline gap-2 overflow-hidden w-full leading-none">
-                                <span className="shrink-0 text-gray-400 font-medium text-[10px]">Rp</span>
-                                <span className="truncate">{(row.total || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className={`px-6 text-[12px] leading-none font-medium whitespace-nowrap truncate border-b border-gray-200 ${isSelected ? 'text-green-600' : 'text-[#364153]'}`}>
-                             <span className="flex items-center gap-1.5 leading-none" dangerouslySetInnerHTML={{ __html: row.faktur_po || '-' }} />
-                          </td>
-                        </tr>
-                      )})}
-                    </tbody>
-                  </table>
-                  {data.length < totalCount && (
-                    <div className="p-4 flex justify-center border-t border-gray-100 bg-gray-50/30">
-                      <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 uppercase tracking-widest animate-pulse leading-none">
-                        <Loader2 size={12} className="animate-spin" />
-                        <span>Memuat data selanjutnya...</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+        <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
+          <DataTable
+            columns={columns}
+            data={data || []}
+            isLoading={loading || data === null}
+            totalCount={totalCount}
+            onScroll={handleScroll}
+            selectedIds={selectedIds}
+            onRowClick={handleRowClick}
+            columnWidths={columnWidths}
+            onColumnWidthChange={setColumnWidths}
+          />
 
-              {/* Footer Info Banner */}
-              <div className="flex items-center justify-between shrink-0 px-1 mt-1">
-                <span className="text-[12px] leading-none font-bold text-gray-400">
-                  {totalCount === 0 ? 'Tidak ada data SPH In' : `Menampilkan ${paginatedData.length} dari ${totalCount} data SPH In`}
-                </span>
-                <div className="flex items-center gap-4">
-                  {selectedIds.size > 0 && (
-                    <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                      <span className="text-[12px] leading-none font-bold text-gray-400">{selectedIds.size} dipilih</span>
-                      <button onClick={() => setSelectedIds(new Set())} className="text-[12px] leading-none font-black text-rose-500 hover:text-rose-600 underline underline-offset-4">Batal</button>
-                    </div>
-                  )}
-                  {loadTime !== null && (
-                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
-                      loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                      loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'
-                    }`}>
-                      <span className="animate-pulse">⚡</span>
-                      <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
-                    </span>
-                  )}
+          <div className="flex items-center justify-between shrink-0 px-1 mt-1">
+            <span className="text-[12px] leading-none font-bold text-gray-400">
+              {totalCount === 0 ? 'Tidak ada data SPH In' : `Menampilkan ${data?.length || 0} dari ${totalCount} data SPH In`}
+            </span>
+            <div className="flex items-center gap-4">
+              {selectedIds.size > 0 && (
+                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
+                  <span className="text-[12px] leading-none font-bold text-gray-400">{selectedIds.size} dipilih</span>
+                  <button onClick={clearSelection} className="text-[12px] leading-none font-black text-rose-500 hover:text-rose-600 underline underline-offset-4">Batal</button>
                 </div>
-              </div>
-            </>
-          )}
+              )}
+              {loadTime !== null && (
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
+                  loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                  loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'
+                }`}>
+                  <span className="animate-pulse">⚡</span>
+                  <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -624,3 +646,9 @@ export default function SphInClient() {
     </div>
   );
 }
+
+
+
+
+
+

@@ -93,7 +93,7 @@ export function useInfractionsData({
   // Listen for cross-tab data updates
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_data_updated') {
+      if (e.key === 'sintak_data_updated') {
         fetchFilteredData();
         startTransition(() => {
           router.refresh();
@@ -117,5 +117,6 @@ export function useInfractionsData({
     loadTime,
   };
 }
+
 
 

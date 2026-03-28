@@ -23,13 +23,25 @@ export default function MainContentWrapper({
   const router = useRouter();
   const pathname = usePathname();
 
+  // Sync initial state from localStorage after mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sidebar_expanded');
+      if (saved !== null) {
+        // localStorage stores 'sidebar_expanded', which is the opposite of 'isCollapsed'
+        setIsCollapsed(!JSON.parse(saved));
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const handleToggle = (e: any) => {
+      // Removed isMounted gating to ensure hydration match
       setIsCollapsed(e.detail.isCollapsed);
     };
 
     const handleRefresh = () => {
-      if (document.visibilityState === 'visible') {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
         router.refresh();
         isStaleRef.current = false;
       } else {
@@ -38,13 +50,13 @@ export default function MainContentWrapper({
     };
 
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_profile_updated' || e.key === 'sikka_data_updated') {
+      if (e.key === 'sintak_profile_updated' || e.key === 'sintak_data_updated') {
         handleRefresh();
       }
     };
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && isStaleRef.current) {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible' && isStaleRef.current) {
         handleRefresh();
       }
     };
@@ -60,11 +72,7 @@ export default function MainContentWrapper({
     };
   }, [router]);
 
-  // NO LONGER updating sikka_data_updated on every navigation.
-  // Data changes should be the only trigger to avoid heavy load across tabs.
-
-
-  // If pathname is not ready (on server), assume it's not login page by default
+  // Stable pathname-based check
   const isLoginPage = pathname ? pathname.startsWith('/login') : false;
 
   if (isLoginPage) {

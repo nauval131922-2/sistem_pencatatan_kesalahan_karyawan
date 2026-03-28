@@ -49,7 +49,7 @@ export default function RecordsTabs({ employees, orders, infractions: initialInf
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_data_updated') {
+      if (e.key === 'sintak_data_updated') {
         refreshInfractions();
         router.refresh();
       }
@@ -144,3 +144,4 @@ export default function RecordsTabs({ employees, orders, infractions: initialInf
     </div>
   );
 }
+

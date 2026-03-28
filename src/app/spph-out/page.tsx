@@ -4,7 +4,7 @@ import PageHeader from '@/components/PageHeader';
 import HelpButton from '@/components/HelpButton';
 
 export const metadata: Metadata = {
-  title: 'SPPH Out | SINTAK',
+  title: 'SINTAK | SPPH Out',
   description: 'Halaman monitoring dan audit Surat Permintaan Penawaran Harga Out (SPPH Out) dari sistem Digit.',
 };
 

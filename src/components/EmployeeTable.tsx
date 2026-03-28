@@ -29,7 +29,7 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
   // State
   const [isMounted, setIsMounted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<Employee[]>([]);
+  const [data, setData] = useState<Employee[] | null>(null);
   const [error, setError] = useState('');
   const [loadTime, setLoadTime] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -65,7 +65,7 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
   useEffect(() => {
     setIsMounted(true);
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_data_updated' || e.key === 'employee_data_updated') {
+      if (e.key === 'sintak_data_updated' || e.key === 'employee_data_updated') {
         setRefreshKey(prev => prev + 1);
         router.refresh();
       }
@@ -81,34 +81,33 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
   useEffect(() => {
     let active = true;
     async function loadData() {
-      if (mountedRef.current) setLoading(true);
+      setLoading(true);
       const startTime = performance.now();
       try {
         const res = await fetch(`/api/employees?page=${page}&limit=${PAGE_SIZE}&search=${encodeURIComponent(debouncedQuery)}&_t=${Date.now()}`);
         if (!active) return;
         if (res.ok) {
           const json = await res.json();
-          if (json.success && mountedRef.current) {
+          if (json.success) {
             setLoadTime(Math.round(performance.now() - startTime));
             if (page === 1) {
               setData(json.data || []);
             } else {
-              setData(prev => [...prev, ...(json.data || [])]);
+              setData(prev => [...(prev || []), ...(json.data || [])]);
             }
             setTotalCount(json.total || 0);
             setError('');
           }
         }
       } catch (err: any) {
-        if (mountedRef.current) setError(err.message || 'Gagal memuat data');
+        if (active) setError(err.message || 'Gagal memuat data');
       } finally {
-        if (mountedRef.current) setLoading(false);
+        if (active) setLoading(false);
       }
     }
-    if (!isMounted) return;
     loadData();
     return () => { active = false; };
-  }, [page, debouncedQuery, refreshKey, isMounted]);
+  }, [page, debouncedQuery, refreshKey]);
 
   // Columns definition (Removed Department as requested)
   const columns = useMemo(() => [
@@ -164,12 +163,10 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop <= clientHeight + 300 && !loading && data.length < totalCount) {
+    if (scrollHeight - scrollTop <= clientHeight + 300 && !loading && (data?.length || 0) < totalCount) {
        setPage(prev => prev + 1);
     }
   };
-
-  if (!isMounted) return null;
 
   return (
     <div className="h-full flex flex-col gap-4 overflow-hidden">
@@ -194,7 +191,7 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
                 </div>
              )}
           </div>
-          {loading && data.length > 0 && (
+          {loading && (data?.length || 0) > 0 && (
               <div className="text-[11px] font-bold text-emerald-600 flex items-center gap-2 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 animate-pulse uppercase tracking-tighter leading-none">
                 <Loader2 size={12} className="animate-spin" />
                 <span>Memproses...</span>
@@ -231,11 +228,11 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
            </div>
          ) : (
            <DataTable
-             data={data}
+             data={data || []}
              columns={columns}
              columnWidths={columnWidths}
              onColumnWidthChange={handleResize}
-             isLoading={loading && page === 1}
+             isLoading={loading || data === null}
              selectedIds={selectedIds}
              onRowClick={handleSelection} 
              onScroll={handleScroll}
@@ -246,7 +243,7 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
       {/* Footer info Banner - Updated to match Laporan Penjualan styles */}
       <div className="flex items-center justify-between shrink-0 px-1 mt-1">
           <span className="text-[12px] leading-none font-bold text-gray-400">
-             {totalCount === 0 ? 'Tidak ada data karyawan' : `Menampilkan ${data.length} dari ${totalCount} Karyawan`}
+             {totalCount === 0 ? 'Tidak ada data karyawan' : `Menampilkan ${data?.length || 0} dari ${totalCount} Karyawan`}
           </span>
           
           <div className="flex items-center gap-4">
@@ -276,3 +273,4 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
     </div>
   );
 }
+

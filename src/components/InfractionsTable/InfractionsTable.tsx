@@ -10,8 +10,9 @@ import DatePicker from '@/components/DatePicker';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-import { useInfractionsData, useInfractionsFilter, useInfractionsSelection } from './hooks';
+import { useInfractionsData, useInfractionsFilter } from './hooks';
 import type { Infraction } from './types';
+import { useTableSelection } from '@/lib/hooks/useTableSelection';
 import { formatDateToYYYYMMDD, formatIndoDateStr, parseLocalDate } from '@/lib/utils/date-formatters';
 import { DataTable } from '@/components/ui/DataTable';
 
@@ -66,9 +67,10 @@ export default function InfractionsTable({
 
   const {
     selectedIds,
-    toggleSelect,
+    setSelectedIds,
+    handleRowClick,
     clearSelection,
-  } = useInfractionsSelection(filtered);
+  } = useTableSelection(filtered);
 
   // Column Widths for DataTable
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
@@ -109,7 +111,7 @@ export default function InfractionsTable({
     };
 
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_data_updated') {
+      if (e.key === 'sintak_data_updated') {
         handleRefresh();
       }
     };
@@ -122,12 +124,12 @@ export default function InfractionsTable({
 
     window.addEventListener('storage', handleStorageChange);
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('sikka:data-updated', handleRefresh);
+    window.addEventListener('sintak:data-updated', handleRefresh);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('sikka:data-updated', handleRefresh);
+      window.removeEventListener('sintak:data-updated', handleRefresh);
     };
   }, [fetchFilteredData, router]);
 
@@ -151,7 +153,7 @@ export default function InfractionsTable({
     try {
       const res = await fetch(`/api/infractions/${id}`, { method: 'DELETE' });
       if (res.ok) {
-        window.dispatchEvent(new Event('sikka:data-updated'));
+        window.dispatchEvent(new Event('sintak:data-updated'));
         fetchFilteredData();
         startTransition(() => {
           router.refresh();
@@ -218,7 +220,7 @@ export default function InfractionsTable({
         cell: (info: any) => {
             const inf = info.row.original as Infraction;
             return (
-                <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 group-[.is-selected]:opacity-100 transition-opacity">
                     <button
                         onClick={(e) => { e.stopPropagation(); generateSinglePDF(inf); }}
                         className="flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-50 hover:bg-red-500 hover:text-white border border-red-100 px-2 py-1 rounded-lg transition-all leading-none"
@@ -274,12 +276,12 @@ export default function InfractionsTable({
         header: 'Karyawan',
         size: 200,
         cell: (info: any) => (
-            <div className="flex flex-col gap-0.5 leading-none overflow-hidden">
-                <span className="text-[14px] font-bold text-gray-800 truncate" title={info.getValue() as string}>
+            <div className="flex flex-col gap-0.5 leading-snug overflow-hidden">
+                <span className="text-[13px] font-bold text-gray-800 line-clamp-1" title={info.getValue() as string}>
                     {info.getValue() || 'Karyawan Dihapus'}
                 </span>
                 {info.row.original.employee_position && (
-                    <span className="text-[10px] font-bold text-gray-400 truncate uppercase tracking-tighter">
+                    <span className="text-[10px] font-bold text-gray-400 line-clamp-1 uppercase tracking-tighter">
                         {info.row.original.employee_position}
                     </span>
                 )}
@@ -291,7 +293,7 @@ export default function InfractionsTable({
         header: 'Deskripsi',
         size: 250,
         cell: (info: any) => (
-            <span className="text-[13px] text-gray-500 truncate block" title={info.getValue() as string}>
+            <span className="text-[12px] text-gray-500 line-clamp-2 block leading-snug whitespace-normal" title={info.getValue() as string}>
                 {info.getValue() || '---'}
             </span>
         )
@@ -303,11 +305,11 @@ export default function InfractionsTable({
         cell: (info: any) => {
             const inf = info.row.original as Infraction;
             return (
-                <div className="flex flex-col gap-1 leading-none overflow-hidden">
-                    <span className="text-[13px] font-bold text-gray-800 truncate">
+                <div className="flex flex-col gap-0.5 leading-snug overflow-hidden">
+                    <span className="text-[12px] font-bold text-gray-800 line-clamp-1" title={inf.nama_barang_display || inf.nama_barang || '---'}>
                         {inf.nama_barang_display || inf.nama_barang || '---'}
                     </span>
-                    <span className="text-[10px] font-extrabold text-green-600 bg-green-50 w-fit px-2 py-0.5 rounded border border-green-100 uppercase tracking-tighter">
+                    <span className="text-[9px] font-extrabold text-green-600 bg-green-50 w-fit px-1.5 py-0.5 rounded border border-green-100 uppercase tracking-tighter">
                         {inf.jenis_barang || 'UMUM'}
                     </span>
                 </div>
@@ -452,7 +454,12 @@ export default function InfractionsTable({
             onColumnWidthChange={handleResize}
             isLoading={isRefreshing && data.length === 0}
             selectedIds={selectedIds}
-            onRowClick={(id) => toggleSelect(id as number, {} as any)}
+            onRowClick={handleRowClick}
+            onRowDoubleClick={(id) => {
+                const inf = filtered.find(d => d.id === id);
+                if (inf && onEdit) onEdit(inf);
+            }}
+            rowHeight="h-12"
         />
 
         {/* Footer info Banner */}
@@ -509,3 +516,4 @@ export default function InfractionsTable({
     </div>
   );
 }
+

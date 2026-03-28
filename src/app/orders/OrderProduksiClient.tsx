@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Search, Loader2, RefreshCw, Clock, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { splitDateRangeIntoMonths } from '@/lib/date-utils';
 import { DataTable } from '@/components/ui/DataTable';
+import { useTableSelection } from '@/lib/hooks/useTableSelection';
+import { formatLastUpdate } from '@/lib/date-utils';
 
 // Helper to format Date to YYYY-MM-DD
 function formatDateToYYYYMMDD(date: Date) {
@@ -37,7 +39,7 @@ export default function OrderProduksiClient() {
   const [startDate, setStartDate] = useState<Date>(new Date(2025, 0, 1));
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<any[] | null>(null);
   const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
@@ -49,6 +51,7 @@ export default function OrderProduksiClient() {
   const [loadTime, setLoadTime] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const mountedRef = useRef(true);
+  const isLoadingMore = useRef(false);
 
   // Batch states
   const [isBatching, setIsBatching] = useState(false);
@@ -56,7 +59,7 @@ export default function OrderProduksiClient() {
   const [batchStatus, setBatchStatus] = useState('');
 
   // Table state
-  const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
+  const { selectedIds, setSelectedIds, handleRowClick, clearSelection } = useTableSelection(data || []);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('orders_columnWidths');
@@ -87,21 +90,25 @@ export default function OrderProduksiClient() {
 
   // Columns Definition
   const columns = useMemo(() => [
+    { accessorKey: 'id', header: 'ID', size: 80 },
+    { accessorKey: 'faktur', header: 'Faktur', size: 160 },
+    { accessorKey: 'faktur_bom', header: 'Faktur BOM', size: 160 },
+    { accessorKey: 'faktur_so', header: 'Faktur SO', size: 160 },
+    { accessorKey: 'faktur_pb', header: 'Faktur PB', size: 140 },
+    { accessorKey: 'kd_cabang', header: 'Cabang', size: 80 },
+    { accessorKey: 'kd_gudang', header: 'Gudang', size: 180 },
     { 
-      accessorKey: 'faktur', 
-      header: 'Faktur'
+      accessorKey: 'tgl', 
+      header: 'Tanggal',
+      cell: (info: any) => formatIndoDateStr(info.getValue())
     },
+    { accessorKey: 'kd_mtd', header: 'Metode', size: 140 },
     { 
-      accessorKey: 'nama_prd', 
-      header: 'Nama Produk',
-      size: 350
-    },
-    { 
-      accessorKey: 'nama_pelanggan', 
+      accessorKey: 'kd_pelanggan', 
       header: 'Pelanggan',
       size: 250,
       cell: (info: any) => {
-        const val = info.getValue() || info.row.original.kd_pelanggan;
+        const val = info.getValue();
         return (
           <div className="inline-block px-1.5 py-0.5 rounded-md bg-slate-100/60 text-gray-500 border border-gray-200/50">
             {val || '-'}
@@ -110,20 +117,148 @@ export default function OrderProduksiClient() {
       }
     },
     { 
-      accessorKey: 'tgl', 
-      header: 'Tanggal',
-      cell: (info: any) => formatIndoDateStr(info.getValue())
+      accessorKey: 'nama_prd', 
+      header: 'Nama Produk',
+      size: 450,
+      cell: (info: any) => (
+        <div className="max-w-[450px] truncate group-hover:whitespace-normal group-hover:overflow-visible group-hover:relative group-hover:z-10 group-hover:bg-white group-hover:shadow-lg group-hover:p-2 group-hover:rounded-md transition-all">
+          {info.getValue()}
+        </div>
+      )
+    },
+    { accessorKey: 'status', header: 'Sts', size: 60 },
+    { accessorKey: 'perbaikan', header: 'Perbaikan', size: 80 },
+    { 
+      accessorKey: 'regu', 
+      header: 'Regu', 
+      size: 150,
+      cell: (info: any) => {
+        const val = info.getValue();
+        if (!val) return '-';
+        try {
+          const parsed = typeof val === 'string' ? JSON.parse(val) : val;
+          return parsed.keterangan || '-';
+        } catch(e) { return '-'; }
+      }
     },
     { 
-      accessorKey: 'qty', 
-      header: 'QTY Order',
-      cell: (info: any) => Number(info.getValue()).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
+      accessorKey: 'bbb', 
+      header: 'BBB', 
+      size: 110,
+      cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
       meta: { align: 'right' }
     },
     { 
-      accessorKey: 'satuan', 
-      header: 'Satuan'
-    }
+      accessorKey: 'pers_btkl', 
+      header: '% BTKL', 
+      size: 110,
+      cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
+      meta: { align: 'right' }
+    },
+    { 
+      accessorKey: 'btkl', 
+      header: 'BTKL', 
+      size: 110,
+      cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
+      meta: { align: 'right' }
+    },
+    { 
+      accessorKey: 'pers_bop', 
+      header: '% BOP', 
+      size: 110,
+      cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
+      meta: { align: 'right' }
+    },
+    { 
+      accessorKey: 'bop', 
+      header: 'BOP', 
+      size: 110,
+      cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
+      meta: { align: 'right' }
+    },
+    { 
+      accessorKey: 'hp', 
+      header: 'Harga Pokok', 
+      size: 110,
+      cell: (info: any) => {
+        const val = info.getValue();
+        return (
+          <span className="font-extrabold text-green-700">
+            {Number(val || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })}
+          </span>
+        );
+      },
+      meta: { align: 'right' }
+    },
+    { accessorKey: 'datetime_mulai', header: 'Mulai', size: 160 },
+    { accessorKey: 'datetime_selesai', header: 'Selesai', size: 160 },
+    { accessorKey: 'fkt_selesai', header: 'Fkt Selesai', size: 160 },
+    { accessorKey: 'created_at', header: 'Created', size: 160 },
+    { accessorKey: 'username', header: 'User', size: 110 },
+    { accessorKey: 'edited_at', header: 'Edited At', size: 160 },
+    { accessorKey: 'username_edited', header: 'Edited By', size: 110 },
+    { accessorKey: 'kd_barang', header: 'Kode Barang', size: 110 },
+    { 
+      accessorKey: 'qty_order', 
+      header: 'Qty Order', 
+      size: 180,
+      cell: (info: any) => <div dangerouslySetInnerHTML={{ __html: info.getValue() || '-' }} />
+    },
+    { accessorKey: 'produk', header: 'Produk', size: 450 },
+    { 
+      accessorKey: 'progres', 
+      header: 'Progres', 
+      size: 120,
+      cell: (info: any) => <div dangerouslySetInnerHTML={{ __html: info.getValue() || '-' }} />,
+      meta: { align: 'center' }
+    },
+    { 
+      accessorKey: 'spesifikasi', 
+      header: 'Spesifikasi', 
+      size: 300,
+      cell: (info: any) => (
+        <div className="max-w-[300px] truncate" title={info.getValue() as string}>
+          {info.getValue()}
+        </div>
+      )
+    },
+    { accessorKey: 'qty_so', header: 'Qty SO', size: 180 },
+    { accessorKey: 'kd_satuan', header: 'Satuan', size: 100 },
+    { 
+      accessorKey: 'faktur_pr', 
+      header: 'Purchase Request', 
+      size: 180,
+      cell: (info: any) => <div dangerouslySetInnerHTML={{ __html: info.getValue() || '-' }} />
+    },
+    { 
+      accessorKey: 'prdk_wip', 
+      header: 'WIP', 
+      size: 100,
+      cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
+      meta: { align: 'right' }
+    },
+    { 
+      accessorKey: 'pers_hasil', 
+      header: 'Hasil %', 
+      size: 100,
+      cell: (info: any) => `${Number(info.getValue() || 0).toFixed(2)}%`,
+      meta: { align: 'right' }
+    },
+    { 
+      accessorKey: 'cmd', 
+      header: 'Status Komando', 
+      size: 140,
+      cell: (info: any) => <div dangerouslySetInnerHTML={{ __html: info.getValue() || '-' }} />,
+      meta: { align: 'center' }
+    },
+    { accessorKey: 'kd_regu', header: 'Kode Regu', size: 140 },
+    { 
+      accessorKey: 'detil', 
+      header: 'Opsi', 
+      size: 120,
+      cell: (info: any) => <div dangerouslySetInnerHTML={{ __html: info.getValue() || '-' }} />
+    },
+    { accessorKey: 'recid', header: 'RecID', size: 80 }
   ], []);
   // Restore state on mount with New Day Detection
   useEffect(() => {
@@ -152,29 +287,18 @@ export default function OrderProduksiClient() {
   }, []);
 
   useEffect(() => {
-    if (isMounted) {
-      localStorage.setItem('orderProduksiState', JSON.stringify({
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        sessionDate: new Date().toLocaleDateString('en-CA')
-      }));
-    }
-  }, [startDate, endDate, isMounted]);
-
-  useEffect(() => {
     mountedRef.current = true;
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_data_updated') {
+      if (e.key === 'sintak_data_updated') {
         setRefreshKey(prev => prev + 1);
-        router.refresh();
       }
     };
     window.addEventListener('storage', handleStorageChange);
-    return () => {
-      mountedRef.current = false;
-      window.removeEventListener('storage', handleStorageChange);
+    return () => { 
+        mountedRef.current = false;
+        window.removeEventListener('storage', handleStorageChange); 
     };
-  }, [router]);
+  }, []);
 
   const [dialog, setDialog] = useState<{isOpen: boolean, type: 'success' | 'alert' | 'error' | 'danger' | 'confirm', title: string, message: string}>({
     isOpen: false,
@@ -201,11 +325,23 @@ export default function OrderProduksiClient() {
             setLoadTime(Math.round(endTime - startTime));
             
             if (page === 1) {
-              setData(json.data || []);
+              setData((json.data || []).map((d: any) => {
+                let parsed = {};
+                if (d.raw_data) {
+                  try { parsed = JSON.parse(d.raw_data); } catch(e){}
+                }
+                return { ...d, ...parsed };
+              }));
             } else {
               setData(prev => {
                 const currentData = prev || [];
-                const newData = json.data || [];
+                const newData = (json.data || []).map((d: any) => {
+                  let parsed = {};
+                  if (d.raw_data) {
+                    try { parsed = JSON.parse(d.raw_data); } catch(e){}
+                  }
+                  return { ...d, ...parsed };
+                });
                 const existingIds = new Set(currentData.map((d: any) => d.id));
                 const filteredNew = newData.filter((d: any) => !existingIds.has(d.id));
                 return [...currentData, ...filteredNew];
@@ -216,12 +352,7 @@ export default function OrderProduksiClient() {
             if (json.lastUpdated) {
               const latestDate = new Date(json.lastUpdated);
               if (!isNaN(latestDate.getTime())) {
-                const timestamp = latestDate.toLocaleString('id-ID', {
-                  day: '2-digit', month: 'short', year: 'numeric',
-                  hour: '2-digit', minute: '2-digit', second: '2-digit',
-                  timeZone: 'Asia/Jakarta'
-                });
-                setLastUpdated(timestamp);
+                setLastUpdated(formatLastUpdate(latestDate));
               }
             } else {
               setLastUpdated(null);
@@ -231,7 +362,10 @@ export default function OrderProduksiClient() {
       } catch (err: any) {
         if (mountedRef.current) setError(err.message || 'Gagal memuat data');
       } finally {
-        if (mountedRef.current) setLoading(false);
+        if (mountedRef.current) {
+          setLoading(false);
+          isLoadingMore.current = false;
+        }
       }
     }
     if (!isMounted) return;
@@ -321,7 +455,7 @@ export default function OrderProduksiClient() {
           body: JSON.stringify({
             action_type: 'SCRAPE',
             table_name: 'orders',
-            message: `Tarik Data Order Produksi (${startStr} s/d ${endStr})`,
+            message: `Tarik Order Produksi Produksi (${startStr} s/d ${endStr})`,
             raw_data: JSON.stringify({ "Total Data Ditarik dari Digit": totalScraped, "Data Baru Ditambahkan": totalNewInserted })
           })
         });
@@ -334,11 +468,11 @@ export default function OrderProduksiClient() {
           type: failCount > 0 ? 'alert' : 'success',
           title: failCount > 0 ? 'Selesai Sebagian' : 'Berhasil',
           message: failCount > 0 
-            ? `Berhasil menarik ${totalScraped} data Order dari Digit. (${failCount} bulan gagal)`
-            : `Berhasil menarik ${totalScraped} data Order dari Digit.`
+            ? `Berhasil menarik ${totalScraped} Order Produksi dari Digit. (${failCount} bulan gagal)`
+            : `Berhasil menarik ${totalScraped} Order Produksi dari Digit.`
         });
 
-        localStorage.setItem('sikka_data_updated', Date.now().toString());
+        localStorage.setItem('sintak_data_updated', Date.now().toString());
 
         if (lastUpdatedFromScrape) {
           const latestDate = new Date(lastUpdatedFromScrape);
@@ -368,14 +502,13 @@ export default function OrderProduksiClient() {
     }
   };
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop <= clientHeight + 300 && !loading && data.length < totalCount) {
+    if (scrollHeight - scrollTop <= clientHeight + 300 && !loading && !isLoadingMore.current && (data?.length || 0) < totalCount) {
+      isLoadingMore.current = true;
       setPage(prev => prev + 1);
     }
-  };
-
-  if (!isMounted) return null;
+  }, [loading, data, totalCount]);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
@@ -427,7 +560,7 @@ export default function OrderProduksiClient() {
               {isBatching ? (
                 <Loader2 size={16} className="animate-spin" />
               ) : (
-                <RefreshCw size={16} className={loading && data.length === 0 ? "animate-spin" : ""} />
+                <RefreshCw size={16} className={loading && (data?.length || 0) === 0 ? "animate-spin" : ""} />
               )}
               <span>{isBatching ? `${batchProgress}%` : 'Tarik Data'}</span>
             </button>
@@ -446,7 +579,7 @@ export default function OrderProduksiClient() {
         <div className="flex flex-col gap-4 shrink-0">
           <div className="flex items-center justify-between gap-4 min-h-[32px]">
             <div className="flex items-center gap-4">
-              <h3 className="text-15px font-extrabold text-gray-800 flex items-center gap-2 leading-none">
+              <h3 className="text-[14px] font-extrabold text-gray-800 flex items-center gap-2.5 leading-none">
                 <Clock size={18} className="text-green-600" />
                 <span>Hasil Scrapping</span>
               </h3>
@@ -458,22 +591,13 @@ export default function OrderProduksiClient() {
               )}
             </div>
             
-            <div className="flex items-center gap-3">
-               {loadTime !== null && (
-                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
-                  loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                  loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'
-                }`}>
-                  <span className="animate-pulse">⚡</span>
-                  <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
-                </span>
-                )}
-                {loading && data.length > 0 && (
-                <div className="flex items-center gap-2 text-[11px] font-bold text-green-600 animate-pulse bg-green-50 px-2.5 py-1 rounded-full border border-green-100 uppercase tracking-tighter leading-none">
-                    <Loader2 size={12} className="animate-spin" />
-                    <span>Memproses...</span>
-                </div>
-                )}
+            <div className="flex items-center gap-4">
+                 {loading && (data?.length || 0) > 0 && (
+                 <div className="flex items-center gap-2 text-[11px] font-bold text-green-600 animate-pulse bg-green-50 px-2.5 py-1 rounded-full border border-green-100 uppercase tracking-tighter leading-none">
+                     <Loader2 size={12} className="animate-spin" />
+                     <span>Memproses...</span>
+                 </div>
+                 )}
             </div>
           </div>
 
@@ -489,33 +613,42 @@ export default function OrderProduksiClient() {
           </div>
         </div>
 
-        <DataTable
-          columns={columns}
-          data={data}
-          isLoading={loading}
-          totalCount={totalCount}
-          onScroll={handleScroll}
-          selectedIds={selectedIds}
-          onRowClick={(id) => {
-            const next = new Set(selectedIds);
-            if (next.has(id)) next.delete(id);
-            else next.add(id);
-            setSelectedIds(next);
-          }}
-          columnWidths={columnWidths}
-          onColumnWidthChange={setColumnWidths}
-        />
+        <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
+          <DataTable
+            columns={columns}
+            data={data || []}
+            isLoading={loading || data === null}
+            totalCount={totalCount}
+            onScroll={handleScroll}
+            selectedIds={selectedIds}
+            onRowClick={handleRowClick}
+            columnWidths={columnWidths}
+            onColumnWidthChange={setColumnWidths}
+          />
 
-        <div className="flex items-center justify-between shrink-0 px-1">
-          <span className="text-[12px] leading-none font-bold text-gray-400">
-            {totalCount === 0 ? 'Tidak ada data Order' : `Menampilkan ${data.length} dari ${totalCount} data Order`}
-          </span>
-          {selectedIds.size > 0 && (
-             <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                <span className="text-[12px] leading-none font-bold text-gray-400">{selectedIds.size} dipilih</span>
-                <button onClick={() => setSelectedIds(new Set())} className="text-[12px] leading-none font-black text-rose-500 hover:text-rose-600 underline underline-offset-4">Batal</button>
-             </div>
-          )}
+          <div className="flex items-center justify-between shrink-0 px-1 mt-1">
+            <span className="text-[12px] leading-none font-bold text-gray-400">
+              {totalCount === 0 ? 'Tidak ada Order Produksi' : `Menampilkan ${data?.length || 0} dari ${totalCount} Order Produksi`}
+            </span>
+            <div className="flex items-center gap-4">
+              {selectedIds.size > 0 && (
+                 <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
+                    <span className="text-[12px] leading-none font-bold text-gray-400">{selectedIds.size} dipilih</span>
+                    <button onClick={clearSelection} className="text-[12px] leading-none font-black text-rose-500 hover:text-rose-600 underline underline-offset-4">Batal</button>
+                 </div>
+              )}
+              {loadTime !== null && (
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
+                  loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                  loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
+                  'bg-red-50 text-red-600 border-red-100'
+                }`}>
+                  <span className="animate-pulse">⚡</span>
+                  <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -529,3 +662,8 @@ export default function OrderProduksiClient() {
     </div>
   );
 }
+
+
+
+
+

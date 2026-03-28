@@ -1,10 +1,9 @@
 import { Metadata } from 'next';
 import PRClient from './PRClient';
 import PageHeader from '@/components/PageHeader';
-import HelpButton from '@/components/HelpButton';
 
 export const metadata: Metadata = {
-  title: 'Purchase Request | SINTAK',
+  title: 'SINTAK | Purchase Request',
   description: 'Halaman monitoring dan audit Purchase Request dari sistem Digit.',
 };
 
@@ -18,7 +17,6 @@ export default function PRPage() {
             Sinkronisasi daftar Purchase Request secara langsung dari <a href="https://buyapercetakan.mdthoster.com/#cGIvdHJwcg==" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-bold">Digit</a>
           </>
         }
-        rightElement={<HelpButton />}
       />
 
       <PRClient />

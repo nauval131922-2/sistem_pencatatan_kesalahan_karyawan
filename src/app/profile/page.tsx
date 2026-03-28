@@ -101,7 +101,7 @@ export default function ProfilePage() {
           setPassword('');
           setConfirmPassword('');
           // Trigger cross-tab synchronization
-          localStorage.setItem('sikka_profile_updated', Date.now().toString());
+          localStorage.setItem('sintak_profile_updated', Date.now().toString());
           // Force a refresh to update the Layout header
           router.refresh();
         } else {
@@ -328,3 +328,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+

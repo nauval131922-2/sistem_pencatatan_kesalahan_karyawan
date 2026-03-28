@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
-import { HelpCircle, X, Home, Users, Package, Box, Star, BarChart3, Calculator, AlertCircle, Info, Search, Filter, Database, FileText, FileCheck, CheckCircle2, TrendingDown, Monitor, ShieldCheck, ShoppingCart, ClipboardList } from 'lucide-react';
+import { HelpCircle, X, Home, Users, Package, Box, Star, BarChart3, Calculator, AlertCircle, Info, Search, Filter, Database, FileText, FileCheck, CheckCircle2, TrendingDown, Monitor, ShieldCheck, ShoppingCart, ClipboardList, Truck, CreditCard, TrendingUp } from 'lucide-react';
 
 export default function ManualModal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -149,6 +149,66 @@ export default function ManualModal() {
         'Pantau progres pada indikator status hingga pesan **Berhasil** muncul.',
         'Gunakan **Kotak Pencarian** untuk memfilter data berdasarkan **Faktur PO**, **Supplier**, atau **Referensi PR/SPH**.',
         'Lihat kolom **Status Penerimaan** untuk memantau apakah PO sudah diproses menjadi Penerimaan Barang di Digit.'
+      ]
+    },
+    '/penerimaan-pembelian': {
+      title: 'Penerimaan Pembelian',
+      icon: Truck,
+      description: 'Sinkronisasi daftar Penerimaan Pembelian secara langsung dari sistem Digit.',
+      steps: [
+        'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel periode di bagian atas.',
+        'Klik tombol **Tarik Data** untuk memulai sinkronisasi.',
+        'Sistem akan melakukan penarikan data transaksi penerimaan barang dari supplier.',
+        'Gunakan **Kotak Pencarian** untuk memfilter data berdasarkan **Faktur**, **Supplier**, atau **Faktur PO**.',
+        'Lihat status **Lunas** pada kolom **Status** untuk memantau apakah dokumen sudah terbayar secara kas atau hutang.'
+      ]
+    },
+    '/rekap-pembelian-barang': {
+      title: 'Pembelian Barang',
+      icon: ShoppingCart,
+      description: 'Sinkronisasi daftar rekap pembelian barang secara langsung dari sistem Digit.',
+      steps: [
+        'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel periode di bagian atas.',
+        'Klik tombol **Tarik Data** untuk memulai sinkronisasi data rekap pembelian.',
+        'Sistem akan menarik data mendalam termasuk rincian barang, harga, diskon, dan PPN.',
+        'Gunakan **Kotak Pencarian** untuk memfilter data berdasarkan **Faktur**, **Supplier**, **Nama Barang**, atau **User**.',
+        'Lihat kolom **Total Item** untuk memantau nilai bersih pembelian setelah diskon dan pajak.'
+      ]
+    },
+    '/pelunasan-hutang': {
+      title: 'Pelunasan Hutang',
+      icon: CreditCard,
+      description: 'Sinkronisasi riwayat pelunasan hutang (pembayaran ke supplier) secara langsung dari sistem Digit.',
+      steps: [
+        'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel periode di bagian atas.',
+        'Klik tombol **Tarik Data** untuk memulai proses penarikan data transaksi pembayaran.',
+        'Tunggu hingga indikator **Persentase (%)** selesai diproses.',
+        'Gunakan **Kotak Pencarian** untuk memfilter hasil berdasarkan **Faktur PH**, **Supplier**, atau **Referensi PB**.',
+        'Pantau kolom **Bayar Kas** dan **Bayar Bank** untuk melihat moda pembayaran yang digunakan.'
+      ]
+    },
+    '/pelunasan-piutang': {
+      title: 'Pelunasan Piutang',
+      icon: TrendingUp,
+      description: 'Sinkronisasi riwayat pelunasan piutang (pembayaran dari pelanggan) secara langsung dari sistem Digit.',
+      steps: [
+        'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel periode di bagian atas.',
+        'Klik tombol **Tarik Data** untuk memulai proses sinkronisasi data pelunasan.',
+        'Sistem akan mencocokkan data pelunasan dengan invoice (faktur penjualan) terkait.',
+        'Gunakan **Kotak Pencarian** untuk memfilter berdasarkan **Faktur PP**, **Ref. Invoice**, atau **Pelanggan**.',
+        'Pantau kolom **Nilai Pelunasan** untuk melihat nominal yang telah dibayarkan oleh klien.'
+      ]
+    },
+    '/pengiriman': {
+      title: 'Pengiriman',
+      icon: Truck,
+      description: 'Sinkronisasi daftar pengiriman barang secara real-time dari sistem Digit.',
+      steps: [
+        'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel periode di bagian atas.',
+        'Klik tombol **Tarik Data** untuk menarik histori pengiriman.',
+        'Pantau kolom **Status** (Dikirim, Selesai, atau Batal) untuk mengetahui progres logistik.',
+        'Lihat detail **Sopir** dan **No. Resi** untuk keperluan pelacakan barang.',
+        'Gunakan **Kotak Pencarian** untuk memfilter berdasarkan **Faktur SJ**, **Pelanggan**, atau **Sopir**.'
       ]
     },
     '/bahan-baku': {

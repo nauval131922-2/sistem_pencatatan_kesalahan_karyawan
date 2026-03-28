@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 
-const secretKey = process.env.SESSION_SECRET || 'sikkasecretkey_change_in_production';
+const secretKey = process.env.SESSION_SECRET || 'sintaksecretkey_change_in_production';
 const key = new TextEncoder().encode(secretKey);
 
 interface SessionPayload {
@@ -36,7 +36,7 @@ export async function createSession(payload: SessionPayload) {
   const session = await encrypt(payload);
 
   const cookieStore = await cookies();
-  cookieStore.set('sikka_session', session, {
+  cookieStore.set('sintak_session', session, {
     expires,
     httpOnly: true,
     secure: false, // Set to false to allow local production testing without HTTPS
@@ -47,15 +47,16 @@ export async function createSession(payload: SessionPayload) {
 
 export async function getSession() {
   const cookieStore = await cookies();
-  const session = cookieStore.get('sikka_session')?.value;
+  const session = cookieStore.get('sintak_session')?.value;
   if (!session) return null;
   return await decrypt(session);
 }
 
 export async function destroySession() {
   const cookieStore = await cookies();
-  cookieStore.set('sikka_session', '', {
+  cookieStore.set('sintak_session', '', {
     expires: new Date(0),
     path: '/',
   });
 }
+

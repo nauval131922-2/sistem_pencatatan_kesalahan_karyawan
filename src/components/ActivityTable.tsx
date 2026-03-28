@@ -1,22 +1,13 @@
 'use client';
 
-import { useState, useMemo, useEffect, useTransition, useCallback, useRef } from 'react';
-import { Search, ChevronLeft, ChevronRight, X, ArrowUpDown, ArrowUp, ArrowDown, Loader2 } from 'lucide-react';
+import { useState, useMemo, useEffect, useTransition, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { Search, X, History, Loader2 } from 'lucide-react';
 import { getLiveRecord } from '@/lib/actions';
-import { Database, History, Cpu, User as UserIcon, Calendar as CalendarIcon, Info } from 'lucide-react';
+import { DataTable } from './ui/DataTable';
+import { Database, Cpu, User as UserIcon, Calendar as CalendarIcon, Info } from 'lucide-react';
 
 const PAGE_SIZE = 50;
-
-function SortIcon({ config, sortKey }: { config: any, sortKey: string }) {
-  if (config.key !== sortKey || !config.direction) {
-    return <ArrowUpDown size={12} className="text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />;
-  }
-  return config.direction === 'asc' 
-    ? <ArrowUp size={12} className="text-green-600" /> 
-    : <ArrowDown size={12} className="text-green-600" />;
-}
 
 const dateFormatter = new Intl.DateTimeFormat('id-ID', {
   day: '2-digit',
@@ -32,64 +23,22 @@ const dateFormatter = new Intl.DateTimeFormat('id-ID', {
 export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
   const [search, setSearch] = useState('');
   const [searchImmediate, setSearchImmediate] = useState('');
-  const parentRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [selectedLog, setSelectedLog] = useState<any | null>(null);
   const [liveData, setLiveData] = useState<any | null>(null);
   const [isLoadingLive, setIsLoadingLive] = useState(false);
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' | null }>({
-    key: 'created_at',
-    direction: null
-  });
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [lastSelectedId, setLastSelectedId] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
   const [loadTime, setLoadTime] = useState<number | null>(null);
 
-
-  // Column Resizing State
-  const [columnWidths, setColumnWidths] = useState({
-    datetime: 200,
-    menu: 170,
-    user: 130,
-    keterangan: 400, // starting width for flex column
+  // Column Widths for persistence
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({
+    created_at: 180,
+    menu: 180,
+    recorded_by: 140,
+    message: 400,
+    action: 100
   });
-
-  const resizingRef = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
-  const isResizingDone = useRef(false);
-
-  const startResizing = (key: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    resizingRef.current = {
-      key,
-      startX: e.clientX,
-      startWidth: (columnWidths as any)[key]
-    };
-
-    const handleMouseMove = (mouseEvent: MouseEvent) => {
-      if (!resizingRef.current) return;
-      const { key, startX, startWidth } = resizingRef.current;
-      const moveX = mouseEvent.clientX - startX;
-      const newWidth = Math.max(50, startWidth + moveX);
-      setColumnWidths(prev => ({ ...prev, [key]: newWidth }));
-    };
-
-    const handleMouseUp = () => {
-      resizingRef.current = null;
-      isResizingDone.current = true;
-      setTimeout(() => { isResizingDone.current = false; }, 100);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = 'default';
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    document.body.style.cursor = 'col-resize';
-  };
-
-  const isStaleRef = useRef(false);
 
   useEffect(() => {
     const handleRefresh = () => {
@@ -97,92 +46,59 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
         startTransition(() => {
           router.refresh();
         });
-        isStaleRef.current = false;
-      } else {
-        isStaleRef.current = true;
       }
     };
 
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sikka_data_updated') {
-        handleRefresh();
-      }
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && isStaleRef.current) {
-        handleRefresh();
-      }
+      if (e.key === 'sintak_data_updated') handleRefresh();
     };
 
     window.addEventListener('storage', handleStorageChange);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, [router]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearch(searchImmediate);
-    }, 300);
+    const timer = setTimeout(() => setSearch(searchImmediate), 300);
     return () => clearTimeout(timer);
   }, [searchImmediate]);
+
   useEffect(() => {
     if (selectedLog && selectedLog.table_name && selectedLog.record_id) {
       setIsLoadingLive(true);
       setLiveData(null);
       getLiveRecord(selectedLog.table_name, selectedLog.record_id)
-        .then(data => {
-          setLiveData(data);
-        })
-        .finally(() => {
-          setIsLoadingLive(false);
-        });
+        .then(data => setLiveData(data))
+        .finally(() => setIsLoadingLive(false));
     }
   }, [selectedLog]);
 
-
   useEffect(() => {
-    // Initial load time simulation / placeholder for consistency
     const start = performance.now();
-    setTimeout(() => {
-      setLoadTime(Math.round(performance.now() - start));
-    }, 50);
+    setTimeout(() => setLoadTime(Math.round(performance.now() - start)), 50);
   }, []);
-
 
   const fmtDateTime = (dt: string | null | undefined) => {
     if (!dt) return null;
     try {
       let validDt = dt;
-      if (!dt.includes('Z') && !dt.includes('+')) {
-        validDt = dt.replace(' ', 'T') + 'Z';
-      }
+      if (!dt.includes('Z') && !dt.includes('+')) validDt = dt.replace(' ', 'T') + 'Z';
       const parts = dateFormatter.formatToParts(new Date(validDt));
       const p: Record<string, string> = {};
       parts.forEach(part => { p[part.type] = part.value; });
       return `${p.day} ${p.month} ${p.year}, ${p.hour}:${p.minute}:${p.second}`;
-    } catch {
-      return dt;
-    }
+    } catch { return dt; }
   };
 
   const getChannelName = useCallback((log: any) => {
     if (!log) return 'Sistem';
     const tableName = log.table_name || '';
     const msg = log.message || '';
-    
-    // Explicit mapping for users to differentiate between Admin menu and Self-Profile
     if (tableName === 'users') {
       if (msg.includes('Profil diperbarui')) return 'Pengaturan Profil';
       return 'Kelola User';
     }
-
     switch (tableName) {
       case 'employees': return 'Data Karyawan';
-      case 'users': return 'Kelola User';
       case 'orders': return 'Order Produksi';
       case 'bahan_baku': return 'Bahan Baku (BBB)';
       case 'barang_jadi': return 'Barang Hasil Produksi';
@@ -193,142 +109,81 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
     }
   }, []);
 
-  const handleSort = (key: string) => {
-    if (isResizingDone.current) return;
-    setSortConfig((prev) => {
-      if (prev.key === key) {
-        if (prev.direction === 'asc') return { key, direction: 'desc' };
-        if (prev.direction === 'desc') return { key, direction: null };
-        return { key, direction: 'asc' };
-      }
-      return { key, direction: 'asc' };
-    });
-  };
-
   const sortedAndFiltered = useMemo(() => {
     let result = [...initialLogs];
-
-    // Search filter
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter((log) => {
         const menu = getChannelName(log).toLowerCase();
         const user = (log.recorded_by || '').toLowerCase();
         const keterangan = (log.message || '').toLowerCase();
-        const dbDate = (log.created_at || '').toLowerCase();
-        const raw = (log.raw_data || '').toLowerCase();
-        const tableName = (log.table_name || '').toLowerCase();
-        const recordId = String(log.record_id || '').toLowerCase();
-        const actionType = (log.action_type || '').toLowerCase();
-        
-        return (
-          menu.includes(q) || 
-          user.includes(q) || 
-          keterangan.includes(q) || 
-          dbDate.includes(q) || 
-          raw.includes(q) ||
-          tableName.includes(q) ||
-          recordId.includes(q) ||
-          actionType.includes(q)
-        );
+        return menu.includes(q) || user.includes(q) || keterangan.includes(q);
       });
     }
-
-    // Sort
-    if (sortConfig.key && sortConfig.direction) {
-      result.sort((a, b) => {
-        let aValue: any;
-        let bValue: any;
-
-        switch (sortConfig.key) {
-          case 'created_at':
-            aValue = new Date(a.created_at).getTime();
-            bValue = new Date(b.created_at).getTime();
-            break;
-          case 'menu':
-            aValue = getChannelName(a);
-            bValue = getChannelName(b);
-            break;
-          case 'user':
-            aValue = a.recorded_by || 'System';
-            bValue = b.recorded_by || 'System';
-            break;
-          case 'message':
-            aValue = a.message;
-            bValue = b.message;
-            break;
-          default:
-            aValue = a[sortConfig.key];
-            bValue = b[sortConfig.key];
-        }
-
-        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-    
     return result;
-  }, [initialLogs, search, sortConfig, getChannelName]);
+  }, [initialLogs, search, getChannelName]);
 
-  const virtualizer = useVirtualizer({
-    count: sortedAndFiltered.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 36,
-    overscan: 10,
-  });
-
-  const virtualItems = virtualizer.getVirtualItems();
-
-  // Scroll to top when search changes
-  useEffect(() => {
-    if (search) {
-      virtualizer.scrollToIndex(0);
+  const columns = useMemo(() => [
+    {
+      accessorKey: 'created_at',
+      header: 'Waktu',
+      size: 180,
+      cell: (info: any) => (
+        <span className="text-[12px] font-bold text-gray-400 font-mono tracking-tight leading-none">
+          {fmtDateTime(info.getValue())}
+        </span>
+      )
+    },
+    {
+      id: 'menu',
+      header: 'Menu',
+      size: 180,
+      cell: (info: any) => (
+        <span className="text-[12px] font-bold text-gray-800 leading-none">
+          {getChannelName(info.row.original)}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'recorded_by',
+      header: 'User',
+      size: 140,
+      cell: (info: any) => (
+        <span className="font-bold px-2 py-0.5 rounded-md text-[11px] bg-slate-100 text-slate-500 border border-gray-200/50 leading-none">
+          {info.getValue() || 'System'}
+        </span>
+      )
+    },
+    {
+      accessorKey: 'message',
+      header: 'Keterangan',
+      size: 400,
+      cell: (info: any) => (
+        <span className="text-[12px] text-gray-500 truncate block leading-none" title={info.getValue()}>
+          {info.getValue()}
+        </span>
+      )
+    },
+    {
+      id: 'action',
+      header: 'Aksi',
+      size: 100,
+      meta: { align: 'right' },
+      cell: (info: any) => (
+        <div className="flex items-center justify-end opacity-0 group-hover:opacity-100 group-[.is-selected]:opacity-100 transition-opacity">
+          <button
+            onClick={(e) => { e.stopPropagation(); setSelectedLog(info.row.original); }}
+            className="px-3 py-1 text-[11px] font-extrabold text-[#16a34a] border border-[#16a34a]/30 hover:bg-[#16a34a] hover:text-white rounded-lg transition-all active:scale-[0.95] leading-none"
+          >
+            Detail
+          </button>
+        </div>
+      )
     }
-  }, [search, virtualizer]);
-
-  const toggleSelectRow = (id: number, e: React.MouseEvent) => {
-    let next = new Set(selectedIds);
-
-    if (e.shiftKey && lastSelectedId !== null) {
-      const currentIndex = sortedAndFiltered.findIndex(item => item.id === id);
-      const lastIndex = sortedAndFiltered.findIndex(item => item.id === lastSelectedId);
-      
-      if (currentIndex !== -1 && lastIndex !== -1) {
-        const start = Math.min(currentIndex, lastIndex);
-        const end = Math.max(currentIndex, lastIndex);
-        
-        if (!e.ctrlKey && !e.metaKey) next = new Set();
-        for (let i = start; i <= end; i++) {
-          next.add(sortedAndFiltered[i].id);
-        }
-      }
-    } else if (e.ctrlKey || e.metaKey) {
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-    } else {
-      // Single click (no modifier)
-      if (next.has(id)) {
-        // Only deselect if it's a single click (not part of a double click)
-        if (e.detail === 1) {
-          next.clear();
-        }
-      } else {
-        next = new Set([id]);
-      }
-    }
-
-    setSelectedIds(next);
-    setLastSelectedId(id);
-  };
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchImmediate(e.target.value);
-  };
+  ], [getChannelName]);
 
   return (
     <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0">
-      {/* Heading & Search Container */}
       <div className="flex flex-col gap-4 shrink-0">
         <div className="flex items-center px-1">
           <div className="flex items-center gap-3">
@@ -351,218 +206,47 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
           <input
             type="text"
             value={searchImmediate}
-            onChange={handleSearch}
-            placeholder="Cari menu, user, keterangan, snapshot log, atau ID..."
+            onChange={(e) => setSearchImmediate(e.target.value)}
+            placeholder="Cari menu, user, atau keterangan..."
             className="w-full pl-12 pr-4 h-10 bg-white border border-gray-200 rounded-[14px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
           />
         </div>
       </div>
 
-      {/* Table & Footer Container */}
-      <div className="flex-1 flex flex-col min-h-0 gap-2 overflow-hidden">
-        {/* Table Content */}
-        <div className="bg-white border border-[#e5e7eb] shadow-sm rounded-[10px] flex-1 flex flex-col min-h-0 overflow-hidden relative">
-          <div 
-            ref={parentRef}
-            className="overflow-auto flex-1 min-h-0 custom-scrollbar" 
-          >
-            <div 
-              className="w-full min-w-[800px]"
-            >
-              {/* Fake Table Header for alignment */}
-              <div 
-                className="sticky top-0 z-20 bg-white border-b border-gray-200 shadow-sm w-full flex text-left shrink-0"
-                style={{ minWidth: `${columnWidths.datetime + columnWidths.menu + columnWidths.user + columnWidths.keterangan + 100}px` }}
-              >
-                <div 
-                  className="px-6 py-3 cursor-pointer hover:bg-gray-50 transition-colors group relative flex-shrink-0 border-r border-gray-200"
-                  style={{ width: columnWidths.datetime }}
-                  onClick={() => handleSort('created_at')}
-                >
-                  <div className="flex items-center gap-2 text-[12px] leading-none text-[#6b7280] font-bold uppercase tracking-wider">
-                    WAKTU <SortIcon config={sortConfig} sortKey="created_at" />
-                  </div>
-                  <div 
-                    className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
-                    onMouseDown={(e) => startResizing('datetime', e)}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
-                  </div>
-                </div>
+      <div className="flex-1 flex flex-col min-h-0 gap-4 overflow-hidden">
+        <DataTable
+          columns={columns}
+          data={sortedAndFiltered}
+          isLoading={isPending}
+          selectedIds={selectedIds}
+          onRowClick={(id) => {
+            const next = new Set(selectedIds);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            setSelectedIds(next);
+          }}
+          onRowDoubleClick={(id) => {
+            const log = sortedAndFiltered.find(l => l.id === id);
+            if (log) setSelectedLog(log);
+          }}
+          columnWidths={columnWidths}
+          onColumnWidthChange={setColumnWidths}
+        />
 
-                <div 
-                  className="px-6 py-3 cursor-pointer hover:bg-gray-50 transition-colors group relative flex-shrink-0 border-r border-gray-200"
-                  style={{ width: columnWidths.menu }}
-                  onClick={() => handleSort('table_name')}
-                >
-                  <div className="flex items-center gap-2 text-[12px] leading-none text-[#6b7280] font-bold uppercase tracking-wider">
-                    MENU <SortIcon config={sortConfig} sortKey="table_name" />
-                  </div>
-                  <div 
-                    className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
-                    onMouseDown={(e) => startResizing('menu', e)}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
-                  </div>
-                </div>
-
-                <div 
-                  className="px-6 py-3 cursor-pointer hover:bg-gray-50 transition-colors group flex-shrink-0 relative border-r border-gray-200"
-                  style={{ width: columnWidths.user }}
-                  onClick={() => handleSort('user')}
-                >
-                  <div className="flex items-center gap-2 text-[12px] leading-none text-[#6b7280] font-bold uppercase tracking-wider">
-                    USER <SortIcon config={sortConfig} sortKey="user" />
-                  </div>
-                  <div 
-                    className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
-                    onMouseDown={(e) => startResizing('user', e)}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
-                  </div>
-                </div>
-
-                <div 
-                  className="px-6 py-3 cursor-pointer hover:bg-gray-50 transition-colors group relative flex-shrink-0 border-r border-gray-200"
-                  style={{ width: columnWidths.keterangan }}
-                  onClick={() => handleSort('message')}
-                >
-                  <div className="flex items-center gap-2 text-[12px] leading-none text-[#6b7280] font-bold uppercase tracking-wider">
-                    KETERANGAN <SortIcon config={sortConfig} sortKey="message" />
-                  </div>
-                  <div 
-                    className="absolute -right-2 top-0 bottom-0 w-4 z-30 cursor-col-resize group/resizer"
-                    onMouseDown={(e) => startResizing('keterangan', e)}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div className="absolute inset-y-0 right-2 w-[2px] bg-transparent group-hover/resizer:bg-green-500/50 group-active/resizer:bg-green-600 transition-colors" />
-                  </div>
-                </div>
-
-                <div className="px-6 py-3 whitespace-nowrap w-[100px] text-right flex-shrink-0 text-[12px] leading-none text-[#6b7280] font-bold uppercase tracking-wider">
-                  AKSI
-                </div>
-              </div>
-
-              {/* Virtual Container for Rows */}
-              <div 
-                style={{ 
-                  height: `${virtualizer.getTotalSize()}px`,
-                  position: 'relative',
-                  width: '100%'
-                }}
-              >
-                {/* Virtual Rows */}
-                {sortedAndFiltered.length === 0 ? (
-                <div className="py-24 text-center">
-                  <p className="text-sm font-extrabold text-gray-800 mb-2 leading-none">
-                    {search ? 'Tidak ada hasil ditemukan' : 'Belum ada aktivitas'}
-                  </p>
-                  <p className="text-[12px] text-[#9ca3af] font-medium leading-none">
-                    {search ? 'Coba kata kunci lain.' : 'Aktivitas sistem akan muncul di sini.'}
-                  </p>
-                </div>
-              ) : (
-                virtualItems.map((virtualRow) => {
-                  const log = sortedAndFiltered[virtualRow.index];
-                  const isOdd = virtualRow.index % 2 === 1;
-                  const isSelected = selectedIds.has(log.id);
-                  return (
-                    <div
-                      key={virtualRow.key}
-                      data-index={virtualRow.index}
-                      ref={virtualizer.measureElement}
-                      onClick={(e) => toggleSelectRow(log.id, e)}
-                      onDoubleClick={() => setSelectedLog(log)}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        transform: `translateY(${virtualRow.start}px)`,
-                        minWidth: `${columnWidths.datetime + columnWidths.menu + columnWidths.user + columnWidths.keterangan + 100}px`
-                      }}
-                      className={`
-                        flex items-center border-b border-gray-200 transition-all duration-150 group h-9 cursor-pointer select-none
-                        ${isSelected ? 'bg-green-50 shadow-[inset_4px_0_0_0_#16a34a]' : isOdd ? 'bg-slate-50/20' : 'bg-white'} 
-                        hover:bg-green-50/40
-                      `}
-                    >
-                      <div 
-                        className={`px-6 py-1 text-[12px] leading-none whitespace-nowrap flex-shrink-0 overflow-hidden transition-colors border-r border-gray-200 ${isSelected ? 'text-green-600' : 'text-gray-700 group-hover:text-gray-500'}`}
-                        style={{ width: columnWidths.datetime }}
-                      >
-                        {fmtDateTime(log.created_at)}
-                      </div>
-                      <div 
-                        className={`px-6 py-1 whitespace-nowrap flex-shrink-0 overflow-hidden transition-colors border-r border-gray-200 ${isSelected ? 'text-green-800' : 'text-gray-700 group-hover:text-gray-900'}`}
-                        style={{ width: columnWidths.menu }}
-                      >
-                        <span className="text-[12px] leading-none font-bold block truncate">
-                          {getChannelName(log)}
-                        </span>
-                      </div>
-                      <div 
-                        className="px-6 py-1 whitespace-nowrap flex-shrink-0 overflow-hidden text-[12px] leading-none border-r border-gray-200"
-                        style={{ width: columnWidths.user }}
-                      >
-                        <span className={`font-bold px-2.5 py-1 rounded-md inline-block max-w-full truncate transition-colors leading-none ${isSelected ? 'bg-green-100 text-green-700' : 'bg-slate-100/60 text-gray-500 border border-gray-200/50 group-hover:bg-white'}`}>
-                          {log.recorded_by || 'System'}
-                        </span>
-                      </div>
-                      <div 
-                        className={`px-6 py-1 text-[12px] leading-none flex-shrink-0 truncate overflow-hidden transition-colors border-r border-gray-200 ${isSelected ? 'text-green-700 font-medium' : 'text-gray-500'}`}
-                        style={{ width: columnWidths.keterangan }}
-                      >
-                        {log.message}
-                      </div>
-                      <div className="px-6 py-1 text-right w-[100px] flex-shrink-0 overflow-hidden">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedLog(log);
-                          }}
-                          className="px-3 py-1 text-[12px] font-extrabold text-[#16a34a] border border-[#16a34a]/30 hover:bg-[#16a34a] hover:text-white rounded-md transition-all active:scale-[0.95] leading-none"
-                        >
-                          Detail
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-              </div>
-            </div>
-          </div>
-        </div>
-          
-        {/* Footer info Banner outside the card for consistency */}
         <div className="flex items-center justify-between shrink-0 px-1 mt-1">
           <span className="text-[12px] leading-none font-bold text-gray-400">
-            {initialLogs.length === 0
-              ? 'Belum ada aktivitas'
-              : `Menampilkan ${sortedAndFiltered.length} dari ${initialLogs.length} total aktivitas`}
+            {initialLogs.length === 0 ? 'Belum ada aktivitas' : `Menampilkan ${sortedAndFiltered.length} dari ${initialLogs.length} total aktivitas`}
           </span>
           <div className="flex items-center gap-4">
             {selectedIds.size > 0 && (
               <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
                 <span className="text-[12px] font-bold text-gray-400 leading-none">{selectedIds.size} dipilih</span>
-                <button 
-                  onClick={() => setSelectedIds(new Set())}
-                  className="text-[12px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4 leading-none"
-                >
-                  Batal
-                </button>
+                <button onClick={() => setSelectedIds(new Set())} className="text-[12px] font-black text-rose-500 hover:text-rose-600 underline underline-offset-4 leading-none">Batal</button>
               </div>
             )}
             {loadTime !== null && (
               <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
-                loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
-                'bg-red-50 text-red-600 border-red-100'
+                loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'
               }`}>
                 <span className="animate-pulse">⚡</span>
                 <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
@@ -734,3 +418,4 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
     </div>
   );
 }
+

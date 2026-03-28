@@ -3,7 +3,7 @@ import PurchaseOrderClient from './PurchaseOrderClient';
 import PageHeader from '@/components/PageHeader';
 
 export const metadata: Metadata = {
-  title: 'Purchase Order | SINTAK',
+  title: 'SINTAK | Purchase Order',
   description: 'Halaman monitoring dan audit Purchase Order (PO) dari sistem Digit.',
 };
 
@@ -17,7 +17,6 @@ export default function PurchaseOrderPage() {
             Sinkronisasi daftar Purchase Order secara langsung dari <a href="https://buyapercetakan.mdthoster.com/#cGIvdHJwbw==" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-bold">Digit</a>
           </>
         }
-        showHelp={true}
       />
 
       <PurchaseOrderClient />

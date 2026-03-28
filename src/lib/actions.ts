@@ -4,9 +4,27 @@ import { cache } from 'react';
 import db from '@/lib/db';
 import { getSession } from '@/lib/session';
 
+/**
+ * Deeply sanitizes data for Server Action returns.
+ * Next.js Server Actions cannot serialize BigInt, which libsql often returns for IDs or counts.
+ */
+function sanitizeData(data: any): any {
+  if (data === null || data === undefined) return data;
+  if (typeof data === 'bigint') return Number(data);
+  if (Array.isArray(data)) return data.map(sanitizeData);
+  if (typeof data === 'object') {
+    const sanitized: any = {};
+    for (const key in data) {
+      sanitized[key] = sanitizeData(data[key]);
+    }
+    return sanitized;
+  }
+  return data;
+}
+
 export const getEmployees = cache(async () => {
   const result = await db.execute('SELECT * FROM employees WHERE is_active = 1 ORDER BY id ASC');
-  return result.rows.map((row: any) => ({ ...row }));
+  return sanitizeData(result.rows.map((row: any) => ({ ...row })));
 });
 
 export const fetchProductionOrders = cache(async () => {
@@ -16,7 +34,7 @@ export const fetchProductionOrders = cache(async () => {
     ORDER BY id DESC
     LIMIT 2000
   `);
-  return result.rows.map((row: any) => ({ ...row }));
+  return sanitizeData(result.rows.map((row: any) => ({ ...row })));
 });
 
 export async function addEmployee(name: string, position: string, department: string) {
@@ -24,7 +42,7 @@ export async function addEmployee(name: string, position: string, department: st
     sql: 'INSERT INTO employees (name, position, department) VALUES (?, ?, ?)',
     args: [name, position, department]
   });
-  return result;
+  return sanitizeData(result);
 }
 
 export const getInfractions = cache(async (startDate?: string, endDate?: string) => {
@@ -58,23 +76,9 @@ export const getInfractions = cache(async (startDate?: string, endDate?: string)
     sql: query,
     args: params
   });
-  return result.rows.map((row: any) => ({ ...row }));
+  return sanitizeData(result.rows.map((row: any) => ({ ...row })));
 });
 
-export async function getActivityLogs(limit = 1000) {
-  const [recordsResult] = await db.batch([
-    {
-      sql: `
-        SELECT * FROM activity_logs
-        ORDER BY created_at DESC
-        LIMIT ?
-      `,
-      args: [limit]
-    }
-  ], "read");
-
-  return recordsResult.rows.map(row => ({ ...row }));
-}
 
 export async function addInfraction(employeeId: number, description: string, severity: string, date: string, recordedById: number|string, orderName?: string) {
   let fullDate = date;
@@ -112,7 +116,7 @@ export async function addInfraction(employeeId: number, description: string, sev
     ]
   }, "Catat Kesalahan");
 
-  return result;
+  return sanitizeData(result);
 }
 
 export const getStats = cache(async (year?: number) => {
@@ -133,12 +137,12 @@ export const getStats = cache(async (year?: number) => {
     'SELECT COUNT(*) as count FROM orders'
   ], "read");
 
-  return {
+  return sanitizeData({
     totalEmployees: Number(results[0].rows[0]?.count || 0),
     totalInfractions: Number(results[1].rows[0]?.total || 0),
     highSeverity: Number(results[1].rows[0]?.high || 0),
     totalOrders: Number(results[2].rows[0]?.count || 0)
-  };
+  });
 });
 
 export const getDashboardSummary = cache(async () => {
@@ -167,11 +171,11 @@ export const getDashboardSummary = cache(async () => {
     }
   ], "read");
 
-  return {
+  return sanitizeData({
     activeEmployees: Number(results[0].rows[0]?.count || 0),
     infractionsThisMonth: Number(results[1].rows[0]?.count || 0),
     infractionsToday: Number(results[2].rows[0]?.count || 0)
-  };
+  });
 });
 
 export const getDetailedStats = cache(async (year: number) => {
@@ -239,20 +243,20 @@ export const getDetailedStats = cache(async (year: number) => {
     };
   });
 
-  return {
+  return sanitizeData({
     monthlyData,
     topRepeaters: repeatersRes.rows.map((r: any) => ({ ...r, total: Number(r.total) })),
     severityData: severityRes.rows.reduce((acc: any, curr: any) => {
       acc[curr.severity] = Number(curr.count);
       return acc;
     }, { Low: 0, Medium: 0, High: 0 })
-  };
+  });
 });
 
 export async function getLastEmployeeImport() {
   try {
     const result = await db.execute(`SELECT * FROM activity_logs WHERE table_name = 'employees' AND action_type = 'IMPORT' ORDER BY id DESC LIMIT 1`);
-    return result.rows.length > 0 ? { ...result.rows[0] } : null;
+    return result.rows.length > 0 ? sanitizeData({ ...result.rows[0] }) : null;
   } catch (err) {
     console.error('Failed to get last employee import log', err);
     return null;
@@ -262,22 +266,42 @@ export async function getLastEmployeeImport() {
 export async function getLastHppImport() {
   try {
     const result = await db.execute(`SELECT * FROM activity_logs WHERE table_name = 'hpp_kalkulasi' AND action_type = 'UPLOAD' ORDER BY id DESC LIMIT 1`);
-    return result.rows.length > 0 ? { ...result.rows[0] } : null;
+    return result.rows.length > 0 ? sanitizeData({ ...result.rows[0] }) : null;
   } catch (err) {
     console.error('Failed to get last hpp kalkulasi import log', err);
     return null;
   }
 }
 
+
+export async function getActivityLogs(limit = 1000) {
+  const [recordsResult] = await db.batch([
+    {
+      sql: `
+        SELECT * FROM activity_logs
+        ORDER BY created_at DESC
+        LIMIT ?
+      `,
+      args: [limit]
+    }
+  ], "read");
+
+  return sanitizeData(recordsResult.rows.map(row => ({ ...row })));
+}
+
 export async function getLiveRecord(tableName: string, recordId: number | string) {
   try {
-    const allowedTables = ['users', 'employees', 'infractions', 'orders', 'bahan_baku', 'barang_jadi', 'hpp_kalkulasi', 'sales_reports'];
+    const allowedTables = [
+      'users', 'employees', 'infractions', 'orders', 'bahan_baku', 'barang_jadi', 'hpp_kalkulasi', 
+      'sales_reports', 'sph_out', 'sales_orders', 'bill_of_materials', 'purchase_requests', 
+      'spph_out', 'sph_in', 'purchase_orders'
+    ];
     if (!allowedTables.includes(tableName)) throw new Error('Table not allowed');
     const result = await db.execute({
       sql: `SELECT * FROM ${tableName} WHERE id = ?`,
       args: [recordId]
     });
-    return result.rows.length > 0 ? { ...result.rows[0] } : null;
+    return result.rows.length > 0 ? sanitizeData({ ...result.rows[0] }) : null;
   } catch (err) {
     console.error('Failed to get live record', err);
     return null;

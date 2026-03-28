@@ -26,7 +26,9 @@ import {
   FileText,
   FileCheck,
   ClipboardList,
-  Truck
+  Truck,
+  CreditCard,
+  TrendingUp
 } from 'lucide-react';
 import Image from 'next/image';
 import logoPic from '../../public/icon.png';
@@ -55,6 +57,7 @@ export default function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
   const profileRef = useRef<HTMLDivElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   const isExpanded = !isCollapsed || isHovered;
   const currentWidth = isExpanded ? expandedWidth : COLLAPSED_WIDTH;
@@ -124,6 +127,20 @@ export default function Sidebar({ user }: SidebarProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Auto-scroll to active item
+  useEffect(() => {
+    if (isMounted) {
+      // Small timeout to ensure the DOM has updated classes
+      const timer = setTimeout(() => {
+        const activeItem = navRef.current?.querySelector('.bg-green-600.text-white');
+        if (activeItem) {
+          activeItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [pathname, isMounted]);
+
   const handleLogout = async () => {
     const { logout } = await import('@/lib/auth');
     await logout();
@@ -155,6 +172,9 @@ export default function Sidebar({ user }: SidebarProps) {
       </h2>
     );
   };
+
+  // Removed isMounted skeleton gating to fix hydration mismatch
+  // The sidebar will render in its expanded state by default on server and first client pass
 
   return (
     <aside 
@@ -214,7 +234,7 @@ export default function Sidebar({ user }: SidebarProps) {
         {isCollapsed ? <ChevronRight size={10} /> : <ChevronLeft size={10} />}
       </button>
 
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 custom-scrollbar">
+      <nav ref={navRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 custom-scrollbar">
         {/* DASHBOARD SECTION */}
         <SectionLabel label="Dashboard" />
         <div className="space-y-1">
@@ -231,17 +251,13 @@ export default function Sidebar({ user }: SidebarProps) {
         {/* DATA DIGIT */}
         <SectionLabel label="Data Digit" />
         <div className="space-y-1">
+          <Link href="/bom" className={navItemClasses('/bom')} title={!isExpanded ? "Bill of Material" : ""}>
+            <Calculator size={18} />
+            {isExpanded && <span className="truncate">Bill of Material</span>}
+          </Link>
           <Link href="/sph-out" className={navItemClasses('/sph-out')} title={!isExpanded ? "SPH Out" : ""}>
             <FileText size={18} />
             {isExpanded && <span className="truncate">SPH Out</span>}
-          </Link>
-          <Link href="/sph-in" className={navItemClasses('/sph-in')} title={!isExpanded ? "SPH In" : ""}>
-            <FileText size={18} />
-            {isExpanded && <span className="truncate">SPH In</span>}
-          </Link>
-          <Link href="/spph-out" className={navItemClasses('/spph-out')} title={!isExpanded ? "SPPH Out" : ""}>
-            <FileText size={18} />
-            {isExpanded && <span className="truncate">SPPH Out</span>}
           </Link>
           <Link href="/sales-orders" className={navItemClasses('/sales-orders')} title={!isExpanded ? "Sales Order" : ""}>
             <FileCheck size={18} />
@@ -251,17 +267,33 @@ export default function Sidebar({ user }: SidebarProps) {
             <ClipboardList size={18} />
             {isExpanded && <span className="truncate">Order Produksi</span>}
           </Link>
+          <Link href="/pr" className={navItemClasses('/pr')} title={!isExpanded ? "Purchase Request" : ""}>
+            <FileText size={18} />
+            {isExpanded && <span className="truncate">Purchase Request</span>}
+          </Link>
+          <Link href="/spph-out" className={navItemClasses('/spph-out')} title={!isExpanded ? "SPPH Out" : ""}>
+            <FileText size={18} />
+            {isExpanded && <span className="truncate">SPPH Out</span>}
+          </Link>
+          <Link href="/sph-in" className={navItemClasses('/sph-in')} title={!isExpanded ? "SPH In" : ""}>
+            <FileText size={18} />
+            {isExpanded && <span className="truncate">SPH In</span>}
+          </Link>
           <Link href="/purchase-orders" className={navItemClasses('/purchase-orders')} title={!isExpanded ? "Purchase Order" : ""}>
             <ShoppingCart size={18} />
             {isExpanded && <span className="truncate">Purchase Order</span>}
           </Link>
-          <Link href="/bom" className={navItemClasses('/bom')} title={!isExpanded ? "Bill of Material" : ""}>
-            <Calculator size={18} />
-            {isExpanded && <span className="truncate">Bill of Material</span>}
+          <Link href="/penerimaan-pembelian" className={navItemClasses('/penerimaan-pembelian')} title={!isExpanded ? "Penerimaan Pembelian" : ""}>
+            <Truck size={18} />
+            {isExpanded && <span className="truncate">Penerimaan Pembelian</span>}
           </Link>
-          <Link href="/pr" className={navItemClasses('/pr')} title={!isExpanded ? "Purchase Request" : ""}>
-            <FileText size={18} />
-            {isExpanded && <span className="truncate">Purchase Request</span>}
+          <Link href="/rekap-pembelian-barang" className={navItemClasses('/rekap-pembelian-barang')} title={!isExpanded ? "Pembelian Barang" : ""}>
+            <ShoppingCart size={18} />
+            {isExpanded && <span className="truncate">Pembelian Barang</span>}
+          </Link>
+          <Link href="/pelunasan-hutang" className={navItemClasses('/pelunasan-hutang')} title={!isExpanded ? "Pelunasan Hutang" : ""}>
+            <CreditCard size={18} />
+            {isExpanded && <span className="truncate">Pelunasan Hutang</span>}
           </Link>
           <Link href="/bahan-baku" className={navItemClasses('/bahan-baku')} title={!isExpanded ? "Bahan Baku" : ""}>
             <Package size={18} />
@@ -274,6 +306,14 @@ export default function Sidebar({ user }: SidebarProps) {
           <Link href="/sales" className={navItemClasses('/sales')} title={!isExpanded ? "Laporan Penjualan" : ""}>
             <BarChart3 size={18} />
             {isExpanded && <span className="truncate">Laporan Penjualan</span>}
+          </Link>
+          <Link href="/pengiriman" className={navItemClasses('/pengiriman')} title={!isExpanded ? "Pengiriman" : ""}>
+            <Truck size={18} />
+            {isExpanded && <span className="truncate">Pengiriman</span>}
+          </Link>
+          <Link href="/pelunasan-piutang" className={navItemClasses('/pelunasan-piutang')} title={!isExpanded ? "Pelunasan Piutang" : ""}>
+            <TrendingUp size={18} />
+            {isExpanded && <span className="truncate">Pelunasan Piutang</span>}
           </Link>
         </div>
 

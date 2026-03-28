@@ -160,10 +160,11 @@ export default function ExcelUpload() {
         message={dialog.message}
         onConfirm={() => {
           setDialog(prev => ({ ...prev, isOpen: false }));
-          localStorage.setItem('sikka_data_updated', Date.now().toString());
+          localStorage.setItem('sintak_data_updated', Date.now().toString());
           router.refresh();
         }}
       />
     </div>
   );
 }
+
