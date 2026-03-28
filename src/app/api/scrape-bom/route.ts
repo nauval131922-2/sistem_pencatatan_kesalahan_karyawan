@@ -96,6 +96,14 @@ export async function GET(request: NextRequest) {
         String(r.faktur || "").toLowerCase().trim() !== "total"
     );
 
+    const parseDigitVal = (val: any) => {
+      if (!val) return 0;
+      if (typeof val === 'number') return val;
+      const str = String(val).replace(/,/g, ''); 
+      const match = str.match(/^-?\d+(\.\d+)?/); 
+      return match ? parseFloat(match[0]) : 0;
+    };
+
     const batchOps: any[] = [];
     for (const record of allRecords) {
       batchOps.push({
@@ -129,13 +137,13 @@ export async function GET(request: NextRequest) {
           record.kd_mtd || '',
           record.nama_prd || '',
           record.kd_pelanggan || '',
-          parseFloat(record.bbb || "0") || 0,
-          parseFloat(record.btkl || "0") || 0,
-          parseFloat(record.bop || "0") || 0,
-          parseFloat(record.hp || "0") || 0,
+          parseDigitVal(record.bbb),
+          parseDigitVal(record.btkl),
+          parseDigitVal(record.bop),
+          parseDigitVal(record.hp),
           record.spesifikasi || '',
           record.kd_barang || '',
-          parseFloat(record.qty_order || "0") || 0,
+          parseDigitVal(record.qty_order),
           record.faktur_sph || '',
           record.faktur_prd || '',
           JSON.stringify(record)

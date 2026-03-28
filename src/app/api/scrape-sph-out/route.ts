@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
         kd_pelanggan: r.kd_pelanggan || '',
         barang: r.barang || '',
         total: parseDigitVal(r.total),
-        status: r.status === "1" ? "Aktif" : (r.status === "0" ? "Draft" : String(r.status || "")),
+        status: String(r.status || "1"), // Preserve original string status for client logic
         faktur_so: r.faktur_so ? r.faktur_so.replace(/<[^>]*>?/gm, '').trim() : '', // Strip HTML from SO indicator
         raw_data: JSON.stringify(r)
       };

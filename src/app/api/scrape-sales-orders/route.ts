@@ -155,10 +155,20 @@ export async function GET(req: NextRequest) {
       await db.batch(queries.slice(i, i + chunkSize));
     }
 
+    const lastUpdated = new Date().toISOString();
+    await db.execute({
+      sql: `
+        INSERT INTO system_settings (key, value, updated_at)
+        VALUES (?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+      `,
+      args: ['last_scrape_sales_orders', lastUpdated]
+    });
+
     return NextResponse.json({ 
       success: true, 
       total: finalRecords.length,
-      lastUpdated: new Date().toISOString()
+      lastUpdated
     });
 
   } catch (error: any) {
