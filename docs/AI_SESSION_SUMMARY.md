@@ -14,9 +14,9 @@
 - **Penyempurnaan UI**: Sinkronisasi tipografi *Plus Jakarta Sans* 11px-12px dan penghapusan elemen yang tidak diperlukan (seperti badge aktif yang redundan).
 
 ## 2. Optimasi & Perbaikan Sistem
+- **Fix Build Vercel**: Mengecualikan folder `scripts/` dari kompilasi TypeScript di `tsconfig.json` untuk mencegah kegagalan build produksi akibat skrip pembantu.
+- **Fix Database Schema**: Menambahkan migrasi `ALTER TABLE` untuk kolom `kd_pelanggan` pada tabel `sales_reports`, `sph_out`, dan `sales_orders` guna memperbaiki kegagalan sinkronisasi FTS5 di Turso (Produksi).
 - **Fix Auto-Load BOM**: Mengatasi masalah hidrasi di `BOMClient.tsx` yang sebelumnya mengharuskan refresh manual. Pengambilan state `localStorage` sekarang dilakukan di sisi klien.
-- **Database Indexing**: Mengoptimalkan kueri pencarian faktur dan relasi antar modul menggunakan pengindeksan SQLite yang lebih baik.
-- **Standardisasi API**: Melakukan pembersihan pada berbagai rute API (`src/app/api/*`) untuk mendukung data yang lebih konsisten tanpa gating hidrasi yang rapuh.
 
 ## 3. Modul Baru & Skrip
 - Menambahkan modul Scraper dan API untuk:
