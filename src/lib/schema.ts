@@ -521,7 +521,22 @@ export async function initSchema(db: any) {
     "ALTER TABLE bill_of_materials ADD COLUMN kd_pelanggan TEXT;",
     "ALTER TABLE sph_out ADD COLUMN kd_pelanggan TEXT;",
     "ALTER TABLE sales_orders ADD COLUMN kd_pelanggan TEXT;",
-    "ALTER TABLE sales_reports ADD COLUMN kd_pelanggan TEXT;"
+    "ALTER TABLE sales_reports ADD COLUMN kd_pelanggan TEXT;",
+    "ALTER TABLE sales_reports ADD COLUMN faktur_so TEXT;",
+    "ALTER TABLE sales_reports ADD COLUMN jthtmp TEXT;",
+    "ALTER TABLE sales_reports ADD COLUMN harga REAL;",
+    "ALTER TABLE sales_reports ADD COLUMN qty REAL;",
+    "ALTER TABLE sales_reports ADD COLUMN jumlah REAL;",
+    "ALTER TABLE sales_reports ADD COLUMN ppn REAL;",
+    "ALTER TABLE sales_reports ADD COLUMN faktur_prd TEXT;",
+    "ALTER TABLE sales_reports ADD COLUMN nama_prd TEXT;",
+    "ALTER TABLE sales_reports ADD COLUMN no_ref_pelanggan TEXT;",
+    "ALTER TABLE sales_reports ADD COLUMN nama_pelanggan TEXT;",
+    "ALTER TABLE sales_reports ADD COLUMN dati_2 TEXT;",
+    "ALTER TABLE sales_reports ADD COLUMN gol_barang TEXT;",
+    "ALTER TABLE sales_reports ADD COLUMN keterangan_so TEXT;",
+    "ALTER TABLE sales_reports ADD COLUMN recid TEXT;",
+    "ALTER TABLE sales_reports ADD COLUMN raw_data TEXT;"
   ];
 
   const executor = db.client || db;
