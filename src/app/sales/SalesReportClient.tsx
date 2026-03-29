@@ -5,10 +5,8 @@ import { Search, Loader2, AlertCircle, Clock, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
-import { splitDateRangeIntoMonths } from '@/lib/date-utils';
+import { splitDateRangeIntoMonths, formatLastUpdate } from '@/lib/date-utils';
 import { DataTable } from '@/components/ui/DataTable';
-import { useTableSelection } from '@/lib/hooks/useTableSelection';
-import { formatLastUpdate } from '@/lib/date-utils';
 
 // Helper to format Date to YYYY-MM-DD
 function formatDateToYYYYMMDD(date: Date) {
@@ -41,7 +39,7 @@ export default function SalesReportClient() {
   
   // State
   const [isMounted, setIsMounted] = useState(false);
-  const [startDate, setStartDate] = useState<Date>(new Date(2025, 0, 1));
+  const [startDate, setStartDate] = useState<Date>(new Date(2026, 0, 1));
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
@@ -62,14 +60,8 @@ export default function SalesReportClient() {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('salesReport_columnWidths');
       return saved ? JSON.parse(saved) : {
-        tgl: 140,
-        faktur: 180,
-        nama_prd: 350,
-        nama_pelanggan: 280,
-        kd_barang: 200,
-        qty: 110,
-        harga: 160,
-        jumlah: 180
+        tgl: 140, faktur: 180, nama_prd: 350, nama_pelanggan: 280, kd_barang: 200, 
+        qty: 110, harga: 160, jumlah: 180, faktur_so: 180
       };
     }
     return {};
@@ -84,69 +76,63 @@ export default function SalesReportClient() {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
       setPage(1);
-    }, 100);
+    }, 150);
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
   // Columns Definition
   const columns = useMemo(() => [
-    { accessorKey: 'id', header: 'ID', size: 80 },
-    { accessorKey: 'faktur', header: 'Faktur', size: 180 },
-    { accessorKey: 'kd_pelanggan', header: 'Kode Pel.', size: 120 },
+    { accessorKey: 'id', header: 'ID' },
+    { accessorKey: 'faktur', header: 'Faktur' },
+    { accessorKey: 'kd_pelanggan', header: 'Kode Pel.' },
     { 
         accessorKey: 'tgl', 
         header: 'Tanggal', 
-        cell: (info: any) => formatIndoDateStr(info.getValue()),
-        size: 130
+        cell: (info: any) => formatIndoDateStr(info.getValue() as string)
     },
-    { accessorKey: 'kd_barang', header: 'Kode Barang', size: 220 },
-    { accessorKey: 'faktur_so', header: 'Faktur SO', size: 180 },
+    { accessorKey: 'kd_barang', header: 'Kode Barang' },
+    { accessorKey: 'faktur_so', header: 'Faktur SO' },
     { 
         accessorKey: 'jthtmp', 
         header: 'Jatuh Tempo', 
-        cell: (info: any) => formatIndoDateStr(info.getValue()),
-        size: 130 
+        cell: (info: any) => formatIndoDateStr(info.getValue() as string)
     },
     { 
         accessorKey: 'harga', 
         header: 'Harga', 
         cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
-        meta: { align: 'right' },
-        size: 140
+        meta: { align: 'right' }
     },
     { 
         accessorKey: 'qty', 
         header: 'Qty', 
         cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
-        meta: { align: 'right' },
-        size: 100
+        meta: { align: 'right' }
     },
     { 
         accessorKey: 'jumlah', 
         header: 'Jumlah', 
         cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
-        meta: { align: 'right' },
-        size: 160
+        meta: { align: 'right' }
     },
     { 
         accessorKey: 'ppn', 
         header: 'PPN', 
         cell: (info: any) => Number(info.getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 }),
-        meta: { align: 'right' },
-        size: 120
+        meta: { align: 'right' }
     },
-    { accessorKey: 'faktur_prd', header: 'Faktur Prd', size: 180 },
-    { accessorKey: 'nama_prd', header: 'Produk (Nama)', size: 300 },
-    { accessorKey: 'no_ref_pelanggan', header: 'No Ref Pel.', size: 160 },
-    { accessorKey: 'nama_pelanggan', header: 'Pelanggan', size: 280 },
-    { accessorKey: 'dati_2', header: 'Kota/Kab', size: 150 },
-    { accessorKey: 'gol_barang', header: 'Gol. Barang', size: 180 },
-    { accessorKey: 'keterangan_so', header: 'Ket. SO', size: 300 },
-    { accessorKey: 'recid', header: 'RecID', size: 100 }
+    { accessorKey: 'faktur_prd', header: 'Faktur Prd' },
+    { accessorKey: 'nama_prd', header: 'Produk (Nama)' },
+    { accessorKey: 'no_ref_pelanggan', header: 'No Ref Pel.' },
+    { accessorKey: 'nama_pelanggan', header: 'Pelanggan' },
+    { accessorKey: 'dati_2', header: 'Kota/Kab' },
+    { accessorKey: 'gol_barang', header: 'Gol. Barang' },
+    { accessorKey: 'keterangan_so', header: 'Ket. SO' },
+    { accessorKey: 'recid', header: 'RecID' }
   ], []);
 
-  // Sync with other tabs
   useEffect(() => {
+    setIsMounted(true);
     mountedRef.current = true;
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'sintak_data_updated') {
@@ -160,34 +146,6 @@ export default function SalesReportClient() {
         window.removeEventListener('storage', handleStorageChange); 
     };
   }, [router]);
-
-  // Persistence
-  useEffect(() => {
-    setIsMounted(true);
-    const todayStr = new Date().toLocaleDateString('en-CA');
-    const defaultStartDate = new Date(2026, 0, 1); // Reset to 1/1/26 on new day as per request
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-
-    let initialStart = defaultStartDate;
-    let initialEnd = today;
-
-    const saved = localStorage.getItem('salesReportState');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const savedDate = parsed.sessionDate || '';
-        if (savedDate === todayStr) {
-          initialStart = new Date(parsed.startDate);
-          initialEnd = new Date(parsed.endDate);
-        }
-      } catch (e) {}
-    }
-    setStartDate(initialStart);
-    setEndDate(initialEnd);
-  }, []);
-
-  // Note: Date persistence moved to handleFetchDigit to follow "Scrape-First" requirement
 
   // Main fetch data
   useEffect(() => {
@@ -205,7 +163,7 @@ export default function SalesReportClient() {
             setLoadTime(Math.round(performance.now() - startTime));
             setData(prev => {
               if (page === 1) return json.data || [];
-              const currentData = prev || [];
+              const currentData = prev;
               const newData = json.data || [];
               const existingIds = new Set(currentData.map((d: any) => d.id));
               const filteredNew = newData.filter((d: any) => !existingIds.has(d.id));
@@ -225,10 +183,7 @@ export default function SalesReportClient() {
         }
       }
     }
-
-    if (typeof window !== 'undefined') {
-      loadData();
-    }
+    loadData();
     return () => { active = false; };
   }, [page, debouncedQuery, refreshKey, startDate, endDate]);
 
@@ -237,24 +192,12 @@ export default function SalesReportClient() {
   const [batchProgress, setBatchProgress] = useState(0);
   const [batchStatus, setBatchStatus] = useState('');
   const [dialog, setDialog] = useState<{isOpen: boolean, type: 'success' | 'alert', title: string, message: string}>({
-    isOpen: false,
-    type: 'success',
-    title: '',
-    message: ''
+    isOpen: false, type: 'success', title: '', message: ''
   });
 
   const handleFetchDigit = async () => {
     if (!startDate || !endDate) return;
-
-    // Save state ONLY when Tarik Data is clicked
-    localStorage.setItem('salesReportState', JSON.stringify({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      sessionDate: new Date().toLocaleDateString('en-CA')
-    }));
-
-    setError(''); setData([]); setPage(1); setSearchQuery('');
-    
+    setError('');
     const startStr = formatDateToYYYYMMDD(startDate);
     const endStr = formatDateToYYYYMMDD(endDate);
     const chunks = splitDateRangeIntoMonths(startStr, endStr);
@@ -262,6 +205,7 @@ export default function SalesReportClient() {
     
     let successCount = 0;
     let totalScraped = 0;
+    let lastUpdatedFromScrape: string | null = null;
     let completedChunks = 0;
 
     const processChunk = async (chunk: any) => {
@@ -271,6 +215,7 @@ export default function SalesReportClient() {
           successCount++;
           const json = await res.json();
           totalScraped += (json.total || 0);
+          if (json.lastUpdated) lastUpdatedFromScrape = json.lastUpdated;
         }
       } catch (err) {
         console.error("Chunk Error:", err);
@@ -282,7 +227,7 @@ export default function SalesReportClient() {
     };
 
     try {
-      const concurrency = 15;
+      const concurrency = 10;
       const queue = [...chunks];
       const workers = Array(Math.min(concurrency, queue.length)).fill(null).map(async () => {
         while (queue.length > 0) {
@@ -293,14 +238,18 @@ export default function SalesReportClient() {
       await Promise.all(workers);
 
       if (successCount > 0) {
+        if (lastUpdatedFromScrape) {
+          setLastUpdated(formatLastUpdate(new Date(lastUpdatedFromScrape)));
+        }
+        localStorage.setItem('sintak_data_updated', Date.now().toString());
+        setRefreshKey(prev => prev + 1);
+        
         setDialog({
           isOpen: true,
           type: (chunks.length - successCount) > 0 ? 'alert' : 'success',
           title: (chunks.length - successCount) > 0 ? 'Selesai Sebagian' : 'Berhasil',
           message: `Berhasil menarik ${totalScraped} Laporan Penjualan dari Digit.`
         });
-        localStorage.setItem('sintak_data_updated', Date.now().toString());
-        setRefreshKey(prev => prev + 1);
       } else {
         setError("Gagal menarik data. Cek koneksi.");
       }
@@ -321,7 +270,6 @@ export default function SalesReportClient() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
-      {/* Top Filter Bar */}
       <div className="bg-white rounded-[16px] border border-gray-200 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative z-50">
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex flex-wrap items-center gap-6">
@@ -361,7 +309,6 @@ export default function SalesReportClient() {
         </div>
       )}
 
-      {/* Results View */}
       <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
         <div className="flex flex-col gap-4 shrink-0">
           <div className="flex items-center justify-between gap-4 min-h-[32px]">
@@ -372,46 +319,31 @@ export default function SalesReportClient() {
               </h3>
               {lastUpdated && (
                 <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none" style={{ color: '#99a1af' }}>
-                  <span className="opacity-40">|</span>
-                  <span>Diperbarui: {lastUpdated}</span>
+                  <span className="opacity-40">|</span><span>Diperbarui: {lastUpdated}</span>
                 </div>
               )}
             </div>
-            {loading && data.length > 0 && (
-              <div className="text-[11px] font-bold text-green-600 flex items-center gap-2 bg-green-50 px-2.5 py-1 rounded-full border border-green-100 animate-pulse uppercase tracking-tighter leading-none">
-                <Loader2 size={12} className="animate-spin" />
-                <span>Memproses...</span>
-              </div>
-            )}
           </div>
           <div className="relative w-full group">
             <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-green-500 transition-colors" />
             <input 
-              type="text" 
-              placeholder="Cari faktur, pelanggan, atau barang..." 
+              type="text" placeholder="Cari faktur, pelanggan, atau barang..." 
               className="w-full pl-12 pr-4 h-10 bg-white border border-gray-200 rounded-[14px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm" 
-              value={searchQuery} 
-              onChange={(e) => setSearchQuery(e.target.value)} 
+              value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} 
             />
           </div>
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
           <DataTable
-            columns={columns}
-            data={data}
-            isLoading={loading}
-            totalCount={totalCount}
-            onScroll={handleScroll}
-            selectedIds={selectedIds}
-            onRowClick={(id: any) => {
+            columns={columns} data={data} isLoading={loading} totalCount={totalCount} onScroll={handleScroll}
+            selectedIds={selectedIds} onRowClick={(id) => {
               const next = new Set(selectedIds);
               if (next.has(id)) next.delete(id);
               else next.add(id);
               setSelectedIds(next);
             }}
-            columnWidths={columnWidths}
-            onColumnWidthChange={setColumnWidths}
+            columnWidths={columnWidths} onColumnWidthChange={setColumnWidths}
           />
 
           <div className="flex items-center justify-between shrink-0 px-1 mt-1">
@@ -419,20 +351,9 @@ export default function SalesReportClient() {
               {totalCount === 0 ? 'Tidak ada Laporan Penjualan' : `Menampilkan ${data.length} dari ${totalCount} Laporan Penjualan`}
             </span>
             <div className="flex items-center gap-4">
-              {selectedIds.size > 0 && (
-                  <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                      <span className="text-[12px] leading-none font-bold text-gray-400">{selectedIds.size} dipilih</span>
-                      <button onClick={() => setSelectedIds(new Set())} className="text-[12px] leading-none font-black text-rose-500 hover:text-rose-600 underline underline-offset-4">Batal</button>
-                  </div>
-              )}
               {loadTime !== null && (
-                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
-                  loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                  loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
-                  'bg-red-50 text-red-600 border-red-100'
-                }`}>
-                  <span className="animate-pulse">⚡</span>
-                  <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                  <span className="animate-pulse">⚡</span><span>{(loadTime / 1000).toFixed(2)}s</span>
                 </span>
               )}
             </div>
@@ -444,9 +365,3 @@ export default function SalesReportClient() {
     </div>
   );
 }
-
-
-
-
-
-

@@ -437,11 +437,9 @@ export default function BarangJadiClient() {
         localStorage.setItem('sintak_data_updated', Date.now().toString());
 
         if (lastUpdatedFromScrape) {
-          const latestDate = new Date(lastUpdatedFromScrape);
-          if (!isNaN(latestDate.getTime())) {
-            const timestamp = formatLastUpdate(latestDate);
-            setLastUpdated(timestamp);
-          }
+          const timestamp = formatLastUpdate(new Date(lastUpdatedFromScrape));
+          setLastUpdated(timestamp);
+          setRefreshKey(prev => prev + 1);
         }
       } else {
         setError("Gagal menarik data. Periksa koneksi atau log sistem.");
