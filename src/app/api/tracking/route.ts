@@ -7,23 +7,28 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const fakturBom = searchParams.get("faktur");
+    const targetFaktur = searchParams.get("target_faktur") || fakturBom;
 
-    if (!fakturBom) {
-      return NextResponse.json({ error: "Faktur BOM wajib diisi" }, { status: 400 });
+    if (!targetFaktur) {
+      return NextResponse.json({ error: "Faktur wajib diisi" }, { status: 400 });
     }
 
     // 1. Get BOM Details
+    // Try find by direct faktur, then by faktur_prd (if targetFaktur is an OP number)
     const bomRes = await db.execute({
-      sql: `SELECT * FROM bill_of_materials WHERE faktur = ?`,
-      args: [fakturBom]
+      sql: `SELECT * FROM bill_of_materials WHERE faktur = ? OR faktur_prd = ? OR raw_data LIKE ? LIMIT 1`,
+      args: [targetFaktur, targetFaktur, `%${targetFaktur}%`]
     });
 
-    if (bomRes.rows.length === 0) {
-      return NextResponse.json({ error: "Data BOM tidak ditemukan" }, { status: 404 });
+    let bom = null;
+    if (bomRes.rows.length > 0) {
+      bom = bomRes.rows[0];
+    } else {
+        // If BOM not found, but we have an OP, let's at least try to get the OP first
+        // But the system is designed to start from BOM for full chain.
+        // We'll proceed with bom=null and try other things if available.
     }
-
-    const bom = bomRes.rows[0];
-    const fakturSph = bom.faktur_sph;
+    const fakturSph = bom?.faktur_sph;
 
     let sphOut = null;
     
@@ -39,10 +44,10 @@ export async function GET(request: NextRequest) {
     }
 
     // 3. Fallback: Search SPH if not found yet (Sometimes link is not in BOM record directly)
-    if (!sphOut) {
+    if (!sphOut && bom?.faktur) {
       const sphFallbackRes = await db.execute({
         sql: `SELECT * FROM sph_out WHERE (barang LIKE ? OR raw_data LIKE ?) LIMIT 1`,
-        args: [`%${fakturBom}%`, `%${fakturBom}%`]
+        args: [`%${bom.faktur}%`, `%${bom.faktur}%`]
       });
       if (sphFallbackRes.rows.length > 0) {
         sphOut = sphFallbackRes.rows[0] as any;
@@ -119,10 +124,28 @@ export async function GET(request: NextRequest) {
     let purchaseRequests: any[] = [];
     if (productionOrder?.faktur) {
       const prRes = await db.execute({
-        sql: `SELECT faktur, tgl, status, keterangan FROM purchase_requests WHERE faktur_prd = ?`,
-        args: [productionOrder.faktur]
+        sql: `SELECT * FROM purchase_requests WHERE faktur_prd = ? OR raw_data LIKE ?`,
+        args: [productionOrder.faktur, `%${productionOrder.faktur}%`]
       });
       purchaseRequests = prRes.rows;
+    }
+
+    // 8. Get Delivery Details (Pengiriman)
+    // Link via sales_reports.faktur_so = salesOrder.faktur
+    // and then pengiriman.faktur = sales_reports.faktur
+    let delivery: any[] = [];
+    if (salesOrder?.faktur) {
+      const dlRes = await db.execute({
+        sql: `
+          SELECT p.* 
+          FROM pengiriman p
+          JOIN sales_reports sr ON p.faktur = sr.faktur
+          WHERE sr.faktur_so = ?
+          GROUP BY p.faktur
+        `,
+        args: [salesOrder.faktur]
+      });
+      delivery = dlRes.rows;
     }
 
     const processRaw = (item: any) => {
@@ -145,7 +168,8 @@ export async function GET(request: NextRequest) {
            ...processRaw(productionOrder), 
            status: productionStatus 
         } : null,
-        purchaseRequests: purchaseRequests.map(pr => processRaw(pr))
+        purchaseRequests: purchaseRequests.map(pr => processRaw(pr)),
+        delivery: delivery.map(d => processRaw(d))
       }
     });
 

@@ -25,7 +25,15 @@ export default function TrackingClient() {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState('');
-  const [trackingData, setTrackingData] = useState<{ bom: any; sphOut: any; salesOrder?: any; productionOrder?: any; purchaseRequests: any[] } | null>(null);
+  const [trackingData, setTrackingData] = useState<{ 
+    bom: any; 
+    sphOut: any; 
+    salesOrder?: any; 
+    productionOrder?: any; 
+    purchaseRequests: any[];
+    delivery: any[];
+    id?: string;
+  } | null>(null);
   const [suggestionPage, setSuggestionPage] = useState(1);
   const [hasMoreSuggestions, setHasMoreSuggestions] = useState(true);
   const [loadTime, setLoadTime] = useState<number | null>(null);
@@ -33,14 +41,64 @@ export default function TrackingClient() {
   const suggestionRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
 
-  // Column Widths for Resizing
-  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({
-    bom: 280,
-    sph: 220,
-    so: 220,
-    production: 220,
-    pr: 320
+  // Column Widths for Resizing - Persisted in localStorage
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('tracking_columnWidths');
+      return saved ? JSON.parse(saved) : {
+        bom: 280,
+        sph: 220,
+        so: 220,
+        production: 220,
+        pr: 320,
+        delivery: 220
+      };
+    }
+    return {
+        bom: 280,
+        sph: 220,
+        so: 220,
+        production: 220,
+        pr: 320,
+        delivery: 220
+    };
   });
+
+  useEffect(() => {
+    localStorage.setItem('tracking_columnWidths', JSON.stringify(columnWidths));
+  }, [columnWidths]);
+
+  // Helper to render all fields that are not explicitly handled
+  const RenderAllFields = ({ data, excludeKeys = [] }: { data: any, excludeKeys?: string[] }) => {
+    if (!data) return null;
+    const handledKeys = new Set([...excludeKeys, 'raw_data', 'created_at', 'updated_at', 'id', 'faktur']);
+    const entries = Object.entries(data).filter(([key]) => !handledKeys.has(key));
+    
+    if (entries.length === 0) return null;
+
+    return (
+      <div className="mt-3 pt-3 border-t border-dashed border-gray-100 grid grid-cols-1 gap-1.5 overflow-hidden">
+        {entries.map(([key, val]) => {
+          if (val === null || val === undefined || val === '') return null;
+          // Format based on type
+          let displayVal = String(val);
+          if (typeof val === 'number') {
+             displayVal = val.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+             if (key.toLowerCase().includes('total') || key.toLowerCase().includes('harga') || key.toLowerCase().includes('jumlah') || key.toLowerCase().includes('hp') || key.toLowerCase().includes('biaya') || key.toLowerCase().includes('bbb') || key.toLowerCase().includes('btkl') || key.toLowerCase().includes('bop')) {
+                displayVal = 'Rp ' + displayVal;
+             }
+          }
+          
+          return (
+            <div key={key} className="flex items-start justify-between gap-4 text-[10px] leading-tight">
+              <span className="text-gray-400 font-bold uppercase shrink-0">{key.replace(/_/g, ' ')}</span>
+              <span className="text-gray-600 font-medium text-right break-words">{displayVal}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   // Table Columns Definition
   const columns = useMemo<ColumnDef<any>[]>(() => [
@@ -115,8 +173,8 @@ export default function TrackingClient() {
                    <div className="mt-2 pt-2 border-t border-gray-100 space-y-1">
                       {(data.faktur_prd || data.faktur_sph) && (
                          <div className="flex flex-col gap-1 mb-1.5 text-[11px]">
-                            {data.faktur_prd && <p className="text-gray-400">Ref. Prod: <span className="text-blue-600 font-bold" dangerouslySetInnerHTML={{ __html: data.faktur_prd }} /></p>}
-                            {data.faktur_sph && <p className="text-gray-400">Ref. SPH: <span className="text-blue-600 font-bold" dangerouslySetInnerHTML={{ __html: data.faktur_sph }} /></p>}
+                            {data.faktur_prd && <p className="text-gray-400">Ref. Prod: <span className="text-blue-600 font-bold">{String(data.faktur_prd).replace(/<[^>]*>?/gm, '')}</span></p>}
+                            {data.faktur_sph && <p className="text-gray-400">Ref. SPH: <span className="text-blue-600 font-bold">{String(data.faktur_sph).replace(/<[^>]*>?/gm, '')}</span></p>}
                          </div>
                       )}
                       <div className="flex flex-col gap-0.5 text-[11px] text-gray-400 italic">
@@ -125,6 +183,7 @@ export default function TrackingClient() {
                       </div>
                    </div>
                 </div>
+                <RenderAllFields data={data} excludeKeys={['tgl', 'kd_mtd', 'faktur_tplt', 'kd_pelanggan', 'nama_prd', 'qty_order', 'satuan', 'kd_cabang', 'kd_gudang', 'bbb', 'hp', 'btkl', 'bop', 'pers_btkl', 'pers_bop', 'spesifikasi', 'faktur_prd', 'faktur_sph', 'username', 'username_edited', 'edited_at']} />
              </div>
           </div>
         );
@@ -194,7 +253,7 @@ export default function TrackingClient() {
                          {data.faktur_so && (
                             <div className="flex items-center gap-1.5">
                                <span className="text-gray-400 font-bold uppercase min-w-[60px]">Ref SO:</span>
-                               <span className="text-green-600 font-medium truncate" dangerouslySetInnerHTML={{ __html: data.faktur_so }} />
+                               <span className="text-green-600 font-medium truncate">{String(data.faktur_so).replace(/<[^>]*>?/gm, '')}</span>
                             </div>
                          )}
                       </div>
@@ -203,6 +262,7 @@ export default function TrackingClient() {
                       </div>
                    </div>
                 </div>
+                <RenderAllFields data={data} excludeKeys={['tgl', 'kd_pelanggan', 'pelanggan', 'kd_cabang', 'kd_gudang', 'barang', 'subtotal', 'total', 'persppn', 'pers_ppn', 'ppn', 'total_akhir', 'qty_total', 'satuan_total', 'top_hari', 'faktur_bom', 'faktur_so', 'username', 'create_at']} />
              </div>
           </div>
         );
@@ -271,6 +331,7 @@ export default function TrackingClient() {
                           {data.keterangan && <div className="flex flex-col gap-0.5 border-t border-amber-100/30 pt-1"><span className="text-[11px] text-amber-600 font-bold uppercase tracking-tight">Keterangan</span><p className="text-[11px] text-slate-600 leading-snug italic">{data.keterangan}</p></div>}
                        </div>
                     )}
+                    <RenderAllFields data={data} excludeKeys={['tgl', 'nama_prd', 'kd_barang', 'gol_barang', 'qty', 'satuan', 'harga', 'subtotal', 'jumlah', 'pers_ppn', 'ppn', 'ppn_rp', 'total_akhir', 'total', 'nama_pelanggan', 'pelanggan', 'kd_pelanggan', 'dati_2', 'top_hari', 'faktur_sph', 'faktur_prd', 'spesifikasi', 'keterangan']} />
                   </div>
               </div>
           </div>
@@ -342,6 +403,16 @@ export default function TrackingClient() {
                          <div className="flex flex-col gap-0.5"><span className="text-gray-400 font-bold uppercase">BBB</span><span className="font-bold text-slate-700">Rp {Number(data.bbb || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</span></div>
                          <div className="flex flex-col gap-0.5 text-right"><span className="text-amber-600 font-bold uppercase">HP Unit</span><span className="font-bold text-amber-700">Rp {Number(data.hp || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</span></div>
                       </div>
+                      <div className="grid grid-cols-2 gap-2 text-[11px] bg-amber-50/20 p-1.5 rounded border border-amber-100/30 mt-0.5">
+                          <div className="flex flex-col gap-0.5">
+                             <span className="text-gray-400 font-bold uppercase text-[9px]">BTKL</span>
+                             <span className="font-bold text-slate-600">Rp {Number(data.btkl || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</span>
+                          </div>
+                          <div className="flex flex-col gap-0.5 text-right">
+                             <span className="text-gray-400 font-bold uppercase text-[9px]">BOP</span>
+                             <span className="font-bold text-slate-600">Rp {Number(data.bop || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</span>
+                          </div>
+                       </div>
                    </div>
                    {data.spesifikasi && (
                       <div className="bg-gray-50/50 p-2 rounded border border-gray-100 text-[11px]">
@@ -353,6 +424,7 @@ export default function TrackingClient() {
                       <p>Pelanggan: <span className="text-slate-700 font-bold not-italic truncate inline-block max-w-[200px]">{data.nama_pelanggan || data.pelanggan || data.kd_pelanggan || '-'}</span></p>
                       <div className="flex items-center justify-between"><p>User: @{data.username || '-'} ({data.created_at || '-'})</p><p className="font-mono text-gray-300 text-[10px]">Tgl: {data.tgl || '-'}</p></div>
                    </div>
+                   <RenderAllFields data={data} excludeKeys={['tgl', 'perbaikan', 'status', 'nama_prd', 'faktur_bom', 'faktur_so', 'faktur_pb', 'datetime_mulai', 'datetime_selesai', 'kd_regu', 'regu', 'pers_hasil', 'prdk_wip', 'kd_mtd', 'bbb', 'hp', 'btkl', 'bop', 'spesifikasi', 'nama_pelanggan', 'pelanggan', 'kd_pelanggan', 'username', 'created_at']} />
                 </div>
              </div>
           </div>
@@ -381,10 +453,65 @@ export default function TrackingClient() {
                       <div className="flex items-center gap-2.5"><span className="text-[11px] text-gray-400 font-medium">[{pr.kd_brg}]</span><span className="text-[11px] font-bold text-slate-800">Qty: {Number(pr.qty || 0).toLocaleString('id-ID')} {pr.satuan}</span></div>
                    </div>
                    {pr.keterangan && <div className="bg-slate-50 p-2 rounded border border-slate-100 mt-1"><p className="text-[11px] text-gray-500 italic leading-snug">"{pr.keterangan}"</p></div>}
+                   <RenderAllFields data={pr} excludeKeys={['tgl', 'tgl_dibutuhkan', 'faktur_prd', 'kd_gudang', 'kd_cabang', 'status', 'username', 'keterangan', 'faktur_spph', 'faktur_po', 'nama_prd', 'kd_brg', 'qty', 'satuan']} />
                 </div>
              ))}
           </div>
         );
+      }
+    },
+    {
+      id: 'delivery',
+      header: 'Pengiriman',
+      accessorKey: 'delivery',
+      size: columnWidths.delivery,
+      meta: { wrap: true, valign: 'top' },
+      cell: ({ row }) => {
+         const items = row.original.delivery;
+         if (!items || items.length === 0) return <div className="py-2 text-[11px] font-bold uppercase tracking-widest text-gray-300 italic">No Delivery Data</div>;
+         return (
+            <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+               {items.map((dl: any, idx: number) => (
+                  <div key={idx} className="bg-white border border-rose-100 rounded-lg p-3 shadow-sm flex flex-col gap-2.5 w-full max-w-full">
+                     <div className="flex items-center justify-between gap-2.5">
+                        <span className="text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 pb-1.5 pt-1 rounded border border-rose-100 block w-fit ml-0 text-left truncate" title={dl.faktur}>{dl.faktur}</span>
+                        <span className="text-[10px] text-gray-400 italic shrink-0">{formatMdtDate(dl.tgl)}</span>
+                     </div>
+                     <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between text-[11px]">
+                           <span className="text-gray-400 font-bold uppercase">Status</span>
+                           <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${dl.status_faktur?.toLowerCase()?.includes('selesai') ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                              {dl.status_faktur || dl.status || '-'}
+                           </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mt-1">
+                           <div className="bg-slate-50 p-2 rounded border border-gray-100">
+                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Driver</p>
+                              <p className="text-[11px] text-slate-700 font-bold truncate">{dl.kd_supir || '-'}</p>
+                           </div>
+                           <div className="bg-slate-50 p-2 rounded border border-gray-100">
+                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Armada</p>
+                              <p className="text-[11px] text-slate-700 font-bold truncate">{dl.kd_armada || '-'}</p>
+                           </div>
+                        </div>
+                        {dl.no_resi && (
+                           <div className="bg-rose-50/30 p-2 rounded border border-rose-100/50">
+                              <p className="text-[10px] text-rose-400 font-bold uppercase tracking-tight">Resi / Ekspedisi</p>
+                              <p className="text-[11px] text-slate-700 font-black">{dl.no_resi} <span className="text-rose-600 italic">({dl.kd_eks || '-'})</span></p>
+                           </div>
+                        )}
+                        <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-gray-400 mt-1">
+                           <span>Mulai: {dl.waktu_kirim || '-'}</span>
+                           <span className="text-gray-200">|</span>
+                           <span>Sampai: {dl.waktu_selesai || '-'}</span>
+                        </div>
+                        {dl.keterangan && <p className="text-[11px] text-gray-500 italic mt-1 border-t border-dashed border-gray-100 pt-1">"{dl.keterangan}"</p>}
+                        <RenderAllFields data={dl} excludeKeys={['tgl', 'kd_supir', 'kd_armada', 'kd_eks', 'no_resi', 'status', 'status_faktur', 'keterangan', 'username', 'waktu_kirim', 'waktu_selesai', 'total_faktur', 'recid']} />
+                     </div>
+                  </div>
+               ))}
+            </div>
+         );
       }
     }
   ], [columnWidths]);
@@ -392,10 +519,10 @@ export default function TrackingClient() {
   // Search logic for dropdown
   useEffect(() => {
     let active = true;
-    const fetchBoms = async (query: string, pageNum: number) => {
+    const fetchNames = async (query: string, pageNum: number) => {
       if (pageNum === 1) setLoadingSuggestions(true);
       try {
-        const res = await fetch(`/api/tracking/bom?q=${encodeURIComponent(query)}&page=${pageNum}&pageSize=20`);
+        const res = await fetch(`/api/tracking/names?q=${encodeURIComponent(query)}&page=${pageNum}&pageSize=20`);
         const json = await res.json();
         if (json.success && active) {
           if (pageNum === 1) { setSuggestions(json.data); } 
@@ -408,9 +535,9 @@ export default function TrackingClient() {
     };
 
     if (open) {
-      if (q.trim().length === 0) { fetchBoms('', 1); } 
+      if (q.trim().length === 0) { fetchNames('', 1); } 
       else if (q.trim().length >= 2) {
-        const handler = setTimeout(() => fetchBoms(q, 1), 300);
+        const handler = setTimeout(() => fetchNames(q, 1), 300);
         return () => { active = false; clearTimeout(handler); };
       }
     }
@@ -428,7 +555,7 @@ export default function TrackingClient() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSelect = async (bom: any) => {
+  const handleSelect = async (selected: any) => {
     setOpen(false);
     setQ('');
     setLoadingData(true);
@@ -436,10 +563,10 @@ export default function TrackingClient() {
     setError('');
     const start = Date.now();
     try {
-      const res = await fetch(`/api/tracking?faktur=${encodeURIComponent(bom.faktur)}`);
+      const res = await fetch(`/api/tracking?target_faktur=${encodeURIComponent(selected.faktur)}`);
       const json = await res.json();
       if (json.success) {
-        setTrackingData({ ...json.data, id: json.data.bom.faktur });
+        setTrackingData({ ...json.data, id: json.data.productionOrder?.faktur || json.data.bom?.faktur || 'N/A' });
         setLoadTime(Date.now() - start);
       } else {
         setError(json.error || 'Gagal memuat data tracking');
@@ -461,7 +588,7 @@ export default function TrackingClient() {
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex-1">
             <div className="flex flex-col gap-2.5 mb-2">
-              <span className="text-[11px] font-bold text-gray-700 uppercase tracking-widest ml-1">Pilih Faktur Bill of Material (BOM)</span>
+              <span className="text-[11px] font-bold text-gray-700 uppercase tracking-widest ml-1">Pilih Nama Order (Pencarian Order Produksi)</span>
             </div>
             <div className="relative" ref={suggestionRef}>
               <div
@@ -471,7 +598,7 @@ export default function TrackingClient() {
                 <div className="flex items-center gap-3 truncate">
                    <Calculator size={16} className={trackingData ? 'text-green-600' : 'text-gray-400'} />
                    <span className={trackingData ? 'text-gray-700 truncate font-bold text-[12px]' : 'text-gray-400 font-medium truncate text-[12px]'}>
-                    {trackingData ? `[${trackingData?.bom?.faktur}] ${trackingData?.bom?.nama_prd}` : 'Cari nomor order BOM...'}
+                    {trackingData ? `[${trackingData?.productionOrder?.faktur || trackingData?.bom?.faktur}] ${trackingData?.productionOrder?.nama_prd || trackingData?.bom?.nama_prd}` : 'Cari nama order...'}
                   </span>
                 </div>
                 <ChevronDown size={14} className={`text-gray-400 transition-transform duration-300 ${open ? 'rotate-180 text-green-500' : ''}`} />
@@ -488,10 +615,10 @@ export default function TrackingClient() {
                   </div>
                   <div className="max-h-[320px] overflow-y-auto custom-scrollbar p-2" onScroll={handleListScroll}>
                     {suggestions.length > 0 ? suggestions.map((s: any, idx: number) => (
-                      <button key={`${s.faktur}-${idx}`} onClick={() => handleSelect(s)} className={`w-full px-4 py-3 text-left rounded-xl transition-all flex items-center justify-between group/item mb-1 last:mb-0 ${trackingData?.bom?.faktur === s.faktur ? 'bg-green-50 text-green-700 font-black' : 'hover:bg-green-500 hover:text-white group/item'}`}>
+                      <button key={`${s.faktur}-${idx}`} onClick={() => handleSelect(s)} className={`w-full px-4 py-3 text-left rounded-xl transition-all flex items-center justify-between group/item mb-1 last:mb-0 ${trackingData?.id === s.faktur ? 'bg-green-50 text-green-700 font-black' : 'hover:bg-green-500 hover:text-white group/item'}`}>
                         <div className="flex flex-col min-w-0">
-                          <span className={`text-[11px] font-black truncate ${trackingData?.bom?.faktur === s.faktur ? 'text-green-700' : 'text-gray-800 group-hover/item:text-white'}`}>{s.faktur}</span>
-                          <span className={`text-[11px] font-bold truncate ${trackingData?.bom?.faktur === s.faktur ? 'text-green-600/70' : 'text-gray-400 group-hover/item:text-green-100'}`}>{s.nama_prd}</span>
+                          <span className={`text-[11px] font-black truncate ${trackingData?.id === s.faktur ? 'text-green-700' : 'text-gray-800 group-hover/item:text-white'}`}>{s.faktur}</span>
+                          <span className={`text-[11px] font-bold truncate ${trackingData?.id === s.faktur ? 'text-green-600/70' : 'text-gray-400 group-hover/item:text-green-100'}`}>{s.nama_prd}</span>
                         </div>
                         <ArrowRight size={14} className="shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity translate-x-1" />
                       </button>
@@ -529,7 +656,7 @@ export default function TrackingClient() {
           />
           <div className="flex items-center justify-between shrink-0 px-1 mt-1">
             <span className="text-[12px] leading-snug font-bold text-gray-400">
-              {trackingData ? 'Data Pelacakan: 1 Siklus Manufaktur Ditemukan' : 'Silakan pilih faktur BOM di atas untuk melihat pelacakan'}
+              {trackingData ? 'Data Pelacakan: 1 Siklus Manufaktur Ditemukan' : 'Silakan pilih nama order di atas untuk melihat pelacakan'}
             </span>
             {loadTime !== null && trackingData && (
               <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-2.5 shadow-sm border ${loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
