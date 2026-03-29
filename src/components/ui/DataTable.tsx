@@ -138,7 +138,7 @@ export function DataTable<TData extends { id: number | string }>({
 
   return (
     <div className={`bg-white border border-gray-200 shadow-[0_4px_20px_-3px_rgba(0,0,0,0.06),0_10px_20px_-2px_rgba(0,0,0,0.02)] rounded-xl overflow-hidden flex flex-col min-h-0 relative ${height} ${className} ${isResizingColumn ? 'is-resizing' : ''}`}>
-      <style jsx global>{`.is-resizing * { user-select: none !important; transition: none !important; cursor: col-resize !important; } .is-resizing th > div { cursor: col-resize !important; }`}</style>
+      <style dangerouslySetInnerHTML={{ __html: `.is-resizing * { user-select: none !important; transition: none !important; cursor: col-resize !important; } .is-resizing th > div { cursor: col-resize !important; }` }} />
       <div 
         ref={parentRef}
         className={`overflow-auto custom-scrollbar flex-1 min-h-0 relative bg-white select-none ${isDragging ? 'cursor-grabbing' : ''}`} 
@@ -154,14 +154,9 @@ export function DataTable<TData extends { id: number | string }>({
             style={{ tableLayout: 'fixed', width: totalWidth }}
           >
             <colgroup>
-                {headers.map((header) => (<col key={`col-${header.id}`} style={{ width: columnSizing[header.id] || (header.column.columnDef as any).size || 150 }} />))}
-                <col style={{ width: 'auto' }} />
+                {headers.map((header) => (<col key={header.id} style={{ width: columnSizing[header.id] || (header.column.columnDef as any).size || 150 }} />))}
             </colgroup>
             <thead className="sticky top-0 z-20 bg-gray-50/95 backdrop-blur-sm shadow-[0_1px_2px_rgba(0,0,0,0.08)]">
-              <tr className="h-0 border-none pointer-events-none">
-                {headers.map((h) => (<th key={`anchor-${h.id}`} className="p-0 border-none h-0"></th>))}
-                <th key="anchor-end" className="p-0 border-none h-0"></th>
-              </tr>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
@@ -190,14 +185,13 @@ export function DataTable<TData extends { id: number | string }>({
                         )}
                       </th>);
                   })}
-                  <th key="header-end" className="p-0 border-b border-gray-200 w-0 pointer-events-none" />
                 </tr>
               ))}
             </thead>
             <tbody>
               {rows.length === 0 ? (
                 <tr key="empty-row">
-                  <td key="empty-cell" colSpan={headers.length + 1} className="p-0">
+                  <td key="empty-cell" colSpan={headers.length} className="p-0 border-none">
                     <div className="flex flex-col items-center justify-center py-24 text-center">
                        <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4 ring-1 ring-gray-100 shadow-sm">
                           <AlertCircle className="text-gray-200" size={32} />
@@ -212,8 +206,7 @@ export function DataTable<TData extends { id: number | string }>({
               ) : (
                 <>
                   <tr key="top-spacer" style={{ height: `${virtualizer.getVirtualItems()[0]?.start ?? 0}px` }} className="border-none">
-                    {headers.map((h) => (<td key={`top-${h.id}`} className="p-0 border-none"></td>))}
-                    <td key="top-end" className="p-0 border-none"></td>
+                    <td key="top-td" colSpan={headers.length} className="p-0 border-none"></td>
                   </tr>
                   {virtualizer.getVirtualItems().map((virtualRow) => {
                     const row = rows[virtualRow.index];
@@ -233,9 +226,8 @@ export function DataTable<TData extends { id: number | string }>({
                       />
                     );
                   })}
-                  <tr key="bottom-spacer" style={{ height: `${virtualizer.getTotalSize() - (virtualizer.getVirtualItems().at(-1)?.end ?? 0)}px` }} className="border-none">
-                    {headers.map((h) => (<td key={`bottom-${h.id}`} className="p-0 border-none"></td>))}
-                    <td key="bottom-end" className="p-0 border-none"></td>
+                  <tr key="bottom-spacer" style={{ height: `${Math.max(0, virtualizer.getTotalSize() - (virtualizer.getVirtualItems().at(-1)?.end ?? 0))}px` }} className="border-none">
+                    <td key="bottom-td" colSpan={headers.length} className="p-0 border-none"></td>
                   </tr>
                 </>
               )}
@@ -277,7 +269,7 @@ const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick, onRowDoubleCl
             </div>
           </td>
         );
-      })}<td className="p-0 border-none w-0 pointer-events-none"></td></tr>
+      })}</tr>
   );
 });
 
