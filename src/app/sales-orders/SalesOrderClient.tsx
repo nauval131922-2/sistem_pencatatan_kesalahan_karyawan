@@ -48,6 +48,8 @@ export default function SalesOrderClient() {
   const [data, setData] = useState<any[] | null>(null);
   const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [scrapedPeriod, setScrapedPeriod] = useState<{start: string, end: string} | null>(null);
+
   const [loadTime, setLoadTime] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -192,13 +194,23 @@ export default function SalesOrderClient() {
   // Persistence
   useEffect(() => {
     setIsMounted(true);
+    
     const todayStr = new Date().toLocaleDateString('en-CA');
-    const defaultStartDate = new Date(2026, 0, 1);
+    const defaultStartDate = new Date(2025, 0, 1);
     const today = new Date();
     today.setHours(23, 59, 59, 999);
 
     let initialStart = defaultStartDate;
     let initialEnd = today;
+
+    const savedPeriod = localStorage.getItem('SalesOrderClient_scrapedPeriod');
+    if (savedPeriod) {
+      try {
+        const parsed = JSON.parse(savedPeriod);
+        setScrapedPeriod(parsed); if (parsed.startRaw) initialStart = new Date(parsed.startRaw);
+        if (parsed.endRaw) initialEnd = new Date(parsed.endRaw);
+      } catch(e) {}
+    }
 
     const saved = localStorage.getItem('salesOrderState');
     if (saved) {
@@ -352,6 +364,14 @@ export default function SalesOrderClient() {
       await Promise.all(workers);
 
       if (successCount > 0) {
+        const periodStr = { 
+          start: startDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '', 
+          end: endDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '',
+          startRaw: startDate?.toISOString() || '',
+          endRaw: endDate?.toISOString() || ''
+        };
+        setScrapedPeriod(periodStr);
+        localStorage.setItem('SalesOrderClient_scrapedPeriod', JSON.stringify(periodStr));
         setDialog({
           isOpen: true,
           type: (chunks.length - successCount) > 0 ? 'alert' : 'success',
@@ -442,7 +462,7 @@ export default function SalesOrderClient() {
               {lastUpdated && (
                 <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none" style={{ color: '#99a1af' }}>
                   <span className="opacity-40">|</span>
-                  <span>Diperbarui: {lastUpdated}</span>
+                  <span>Diperbarui: {lastUpdated} {scrapedPeriod ? `(Periode: ${scrapedPeriod.start} - ${scrapedPeriod.end})` : ''}</span>
                 </div>
               )}
             </div>

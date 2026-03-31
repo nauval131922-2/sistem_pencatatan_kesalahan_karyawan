@@ -1,0 +1,79 @@
+{
+  "total_boms": 4303,
+  "belum_proses_op_count": 2777,
+  "belum_terscrape_op_count": 7,
+  "contoh_belum_proses": [
+    {
+      "faktur": "BM00125043000005",
+      "faktur_prd": "<i class=\"fa fa-exclamation-circle text-warning\"></i> Belum proses Order Produksi",
+      "nama_prd": "Jasa Finishing potong Bp. Rohmat",
+      "tgl": "30-04-2025",
+      "reason": "Tidak ada string PR di faktur_prd"
+    },
+    {
+      "faktur": "BM00125042900006",
+      "faktur_prd": "<i class=\"fa fa-exclamation-circle text-warning\"></i> Belum proses Order Produksi",
+      "nama_prd": "Buku Soft Cover Norma A5",
+      "tgl": "29-04-2025",
+      "reason": "Tidak ada string PR di faktur_prd"
+    },
+    {
+      "faktur": "BM00125042900005",
+      "faktur_prd": "<i class=\"fa fa-exclamation-circle text-warning\"></i> Belum proses Order Produksi",
+      "nama_prd": "Buku Soft Cover Norma A4",
+      "tgl": "29-04-2025",
+      "reason": "Tidak ada string PR di faktur_prd"
+    },
+    {
+      "faktur": "BM00125042900004",
+      "faktur_prd": "<i class=\"fa fa-exclamation-circle text-warning\"></i> Belum proses Order Produksi",
+      "nama_prd": "Buku Manasik Haji & Umrah Haromain",
+      "tgl": "29-04-2025",
+      "reason": "Tidak ada string PR di faktur_prd"
+    },
+    {
+      "faktur": "BM00125042900003",
+      "faktur_prd": "<i class=\"fa fa-exclamation-circle text-warning\"></i> Belum proses Order Produksi",
+      "nama_prd": "Buku Manasik Haji & Umrah Haromain",
+      "tgl": "29-04-2025",
+      "reason": "Tidak ada string PR di faktur_prd"
+    }
+  ],
+  "contoh_belum_terscrape": [
+    {
+      "faktur": "BM00125021000010",
+      "faktur_prd": "<i class=\"fa fa-check-circle text-success\"></i> PR00124103100441",
+      "nama_prd": "OP.052.SOPD.I.2024-Al-Quddus B1.a Tgg HVS 1W Arab [1 Jld] HC Hijau",
+      "tgl": "10-02-2025",
+      "pr_faktur": "PR00124103100441"
+    },
+    {
+      "faktur": "BM00125012300006",
+      "faktur_prd": "<i class=\"fa fa-check-circle text-success\"></i> PR00124103100422",
+      "nama_prd": "OP.819.SOPD.X.2024-Buku Terjemah Qashidah Burdah",
+      "tgl": "23-01-2025",
+      "pr_faktur": "PR00124103100422"
+    },
+    {
+      "faktur": "BM00125012100001",
+      "faktur_prd": "<i class=\"fa fa-check-circle text-success\"></i> PR00124103100386",
+      "nama_prd": "OP.882.SOPD.XI.2023-Yanbu`a Jilid Materi Kecil",
+      "tgl": "21-01-2025",
+      "pr_faktur": "PR00124103100386"
+    },
+    {
+      "faktur": "BM00125011200008",
+      "faktur_prd": "<i class=\"fa fa-check-circle text-success\"></i> PR00124103100380",
+      "nama_prd": "OP.842.SOPD.XI.2023-Yanbu`a Jilid 1",
+      "tgl": "12-01-2025",
+      "pr_faktur": "PR00124103100380"
+    },
+    {
+      "faktur": "BM00125010600018",
+      "faktur_prd": "<i class=\"fa fa-check-circle text-success\"></i> PR00124103100399",
+      "nama_prd": "OP.131.SOPD.II.2024-Yanbu`a Jilid 6",
+      "tgl": "06-01-2025",
+      "pr_faktur": "PR00124103100399"
+    }
+  ]
+}

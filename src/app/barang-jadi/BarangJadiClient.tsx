@@ -34,12 +34,14 @@ const PAGE_SIZE = 50;
 export default function BarangJadiClient() {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
-  const [startDate, setStartDate] = useState<Date>(new Date(2026, 0, 1));
+  const [startDate, setStartDate] = useState<Date>(new Date(2025, 0, 1));
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [scrapedPeriod, setScrapedPeriod] = useState<{start: string, end: string} | null>(null);
+
 
   // Search & Pagination state
   const [searchQuery, setSearchQuery] = useState('');
@@ -113,23 +115,12 @@ export default function BarangJadiClient() {
 
   useEffect(() => {
     setIsMounted(true);
-    const todayStr = new Date().toLocaleDateString('en-CA');
     
     mountedRef.current = true;
-    
-    // Sync with other tabs
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'sintak_data_updated') {
-        setRefreshKey(prev => prev + 1);
-        router.refresh();
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
     return () => {
       mountedRef.current = false;
-      window.removeEventListener('storage', handleStorageChange);
     };
-  }, [router]);
+  }, []);
 
 
   // Columns Definition (ORDERED EXACTLY AS JSON)
@@ -231,18 +222,28 @@ export default function BarangJadiClient() {
   useEffect(() => {
     setIsMounted(true);
     const todayStr = new Date().toLocaleDateString('en-CA');
-    const defaultStartDate = new Date(2026, 0, 1);
+    const defaultStartDate = new Date(2025, 0, 1);
     const today = new Date();
     today.setHours(23, 59, 59, 999);
 
     let initialStart = defaultStartDate;
     let initialEnd = today;
 
+    const savedPeriod = localStorage.getItem('BarangJadiClient_scrapedPeriod');
+    if (savedPeriod) {
+      try {
+        const parsed = JSON.parse(savedPeriod);
+        setScrapedPeriod(parsed); if (parsed.startRaw) initialStart = new Date(parsed.startRaw);
+        if (parsed.endRaw) initialEnd = new Date(parsed.endRaw);
+      } catch(e) {}
+    }
+
     const saved = localStorage.getItem('barangJadiState');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         const savedDate = parsed.sessionDate || '';
+        // Only restore if saved on the same day (fresh session)
         if (savedDate === todayStr) {
           initialStart = new Date(parsed.startDate);
           initialEnd = new Date(parsed.endDate);
@@ -254,7 +255,6 @@ export default function BarangJadiClient() {
   }, []);
 
   useEffect(() => {
-    mountedRef.current = true;
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'sintak_data_updated') {
         setRefreshKey(prev => prev + 1);
@@ -263,7 +263,6 @@ export default function BarangJadiClient() {
     };
     window.addEventListener('storage', handleStorageChange);
     return () => {
-      mountedRef.current = false;
       window.removeEventListener('storage', handleStorageChange);
     };
   }, [router]);
@@ -322,30 +321,7 @@ export default function BarangJadiClient() {
   }, [page, debouncedQuery, refreshKey, startDate, endDate]);
 
 
-  useEffect(() => {
-    setIsMounted(true);
-    const todayStr = new Date().toLocaleDateString('en-CA');
-    const defaultStartDate = new Date(2025, 0, 1);
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
 
-    let initialStart = defaultStartDate;
-    let initialEnd = today;
-
-    const saved = localStorage.getItem('barangJadiState');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const savedDate = parsed.sessionDate || '';
-        if (savedDate === todayStr) {
-          initialStart = new Date(parsed.startDate);
-          initialEnd = new Date(parsed.endDate);
-        }
-      } catch(e) {}
-    }
-    setStartDate(initialStart);
-    setEndDate(initialEnd);
-  }, []);
 
   const handleFetch = async () => {
     if (!startDate || !endDate) {
@@ -418,6 +394,14 @@ export default function BarangJadiClient() {
       await Promise.all(workers);
 
       if (successCount > 0) {
+        const periodStr = { 
+          start: startDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '', 
+          end: endDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '',
+          startRaw: startDate?.toISOString() || '',
+          endRaw: endDate?.toISOString() || ''
+        };
+        setScrapedPeriod(periodStr);
+        localStorage.setItem('BarangJadiClient_scrapedPeriod', JSON.stringify(periodStr));
         setIsBatching(false);
         setBatchStatus('');
         setBatchProgress(0);
@@ -549,7 +533,7 @@ export default function BarangJadiClient() {
               {lastUpdated && (
                 <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none" style={{ color: '#99a1af' }}>
                   <span className="opacity-40">|</span>
-                  <span>Diperbarui: {lastUpdated}</span>
+                  <span>Diperbarui: {lastUpdated} {scrapedPeriod ? `(Periode: ${scrapedPeriod.start} - ${scrapedPeriod.end})` : ''}</span>
                 </div>
               )}
             </div>

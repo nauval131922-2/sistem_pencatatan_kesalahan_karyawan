@@ -35,12 +35,14 @@ const PAGE_SIZE = 50;
 export default function PembelianBarangClient() {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
-  const [startDate, setStartDate] = useState<Date>(new Date(2026, 0, 1));
-  const [endDate, setEndDate] = useState<Date>(new Date(2026, 0, 1));
+  const [startDate, setStartDate] = useState<Date>(new Date(2025, 0, 1));
+  const [endDate, setEndDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[] | null>(null);
   const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [scrapedPeriod, setScrapedPeriod] = useState<{start: string, end: string} | null>(null);
+
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -98,13 +100,23 @@ export default function PembelianBarangClient() {
 
   useEffect(() => {
     setIsMounted(true);
+    
     const todayStr = new Date().toLocaleDateString('en-CA');
-    const defaultStartDate = new Date(2026, 0, 1);
+    const defaultStartDate = new Date(2025, 0, 1);
     const today = new Date();
     today.setHours(23, 59, 59, 999);
 
     let initialStart = defaultStartDate;
     let initialEnd = today;
+
+    const savedPeriod = localStorage.getItem('PembelianBarangClient_scrapedPeriod');
+    if (savedPeriod) {
+      try {
+        const parsed = JSON.parse(savedPeriod);
+        setScrapedPeriod(parsed); if (parsed.startRaw) initialStart = new Date(parsed.startRaw);
+        if (parsed.endRaw) initialEnd = new Date(parsed.endRaw);
+      } catch(e) {}
+    }
 
     const saved = localStorage.getItem('rbpState');
     if (saved) {
@@ -239,6 +251,14 @@ export default function PembelianBarangClient() {
       await Promise.all(workers);
 
       if (successCount > 0) {
+        const periodStr = { 
+          start: startDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '', 
+          end: endDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '',
+          startRaw: startDate?.toISOString() || '',
+          endRaw: endDate?.toISOString() || ''
+        };
+        setScrapedPeriod(periodStr);
+        localStorage.setItem('PembelianBarangClient_scrapedPeriod', JSON.stringify(periodStr));
         setRefreshKey(prev => prev + 1);
         localStorage.setItem('sintak_data_updated', Date.now().toString());
 
@@ -495,7 +515,7 @@ export default function PembelianBarangClient() {
               {lastUpdated && (
                 <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none" style={{ color: '#99a1af' }}>
                   <span className="opacity-40">|</span>
-                  <span>Diperbarui: {lastUpdated}</span>
+                  <span>Diperbarui: {lastUpdated} {scrapedPeriod ? `(Periode: ${scrapedPeriod.start} - ${scrapedPeriod.end})` : ''}</span>
                 </div>
               )}
             </div>

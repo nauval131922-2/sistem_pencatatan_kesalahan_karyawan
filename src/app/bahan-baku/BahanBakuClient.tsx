@@ -36,12 +36,14 @@ const PAGE_SIZE = 50;
 export default function BahanBakuClient() {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
-  const [startDate, setStartDate] = useState<Date>(new Date(2026, 0, 1));
+  const [startDate, setStartDate] = useState<Date>(new Date(2025, 0, 1));
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[] | null>(null);
   const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [scrapedPeriod, setScrapedPeriod] = useState<{start: string, end: string} | null>(null);
+
   const [loadTime, setLoadTime] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -87,8 +89,14 @@ export default function BahanBakuClient() {
 
   useEffect(() => {
     setIsMounted(true);
-    mountedRef.current = true;
     
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'sintak_data_updated') {
         setRefreshKey(prev => prev + 1);
@@ -97,10 +105,44 @@ export default function BahanBakuClient() {
     };
     window.addEventListener('storage', handleStorageChange);
     return () => {
-      mountedRef.current = false;
       window.removeEventListener('storage', handleStorageChange);
     };
   }, [router]);
+
+  // Initial Date Range logic (like Pengiriman)
+  useEffect(() => {
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    const defaultStartDate = new Date(2025, 0, 1);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+
+    let initialStart = defaultStartDate;
+    let initialEnd = today;
+
+    const savedPeriod = localStorage.getItem('BahanBakuClient_scrapedPeriod');
+    if (savedPeriod) {
+      try {
+        const parsed = JSON.parse(savedPeriod);
+        setScrapedPeriod(parsed); if (parsed.startRaw) initialStart = new Date(parsed.startRaw);
+        if (parsed.endRaw) initialEnd = new Date(parsed.endRaw);
+      } catch(e) {}
+    }
+
+    const saved = localStorage.getItem('bahanBakuState');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const savedDate = parsed.sessionDate || '';
+        // Only restore if saved on the same day (fresh session)
+        if (savedDate === todayStr) {
+          initialStart = new Date(parsed.startDate);
+          initialEnd = new Date(parsed.endDate);
+        }
+      } catch(e) {}
+    }
+    setStartDate(initialStart);
+    setEndDate(initialEnd);
+  }, []);
 
   // Fetch data
   useEffect(() => {
@@ -159,6 +201,13 @@ export default function BahanBakuClient() {
       return;
     }
 
+    // Save state to localStorage only when "Tarik Data" is clicked
+    localStorage.setItem('bahanBakuState', JSON.stringify({
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      sessionDate: new Date().toLocaleDateString('en-CA')
+    }));
+
     const startStr = formatDateToYYYYMMDD(startDate);
     const endStr = formatDateToYYYYMMDD(endDate);
     const chunks = splitDateRangeIntoMonths(startStr, endStr);
@@ -204,6 +253,14 @@ export default function BahanBakuClient() {
       await Promise.all(workers);
 
       if (successCount > 0) {
+        const periodStr = { 
+          start: startDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '', 
+          end: endDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '',
+          startRaw: startDate?.toISOString() || '',
+          endRaw: endDate?.toISOString() || ''
+        };
+        setScrapedPeriod(periodStr);
+        localStorage.setItem('BahanBakuClient_scrapedPeriod', JSON.stringify(periodStr));
         setRefreshKey(prev => prev + 1);
         setDialog({
           isOpen: true,
@@ -333,7 +390,7 @@ export default function BahanBakuClient() {
               </h3>
               {lastUpdated && (
                 <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none" style={{ color: '#99a1af' }}>
-                  <span className="opacity-40">|</span><span>Diperbarui: {lastUpdated}</span>
+                  <span className="opacity-40">|</span><span>Diperbarui: {lastUpdated} {scrapedPeriod ? `(Periode: ${scrapedPeriod.start} - ${scrapedPeriod.end})` : ''}</span>
                 </div>
               )}
             </div>

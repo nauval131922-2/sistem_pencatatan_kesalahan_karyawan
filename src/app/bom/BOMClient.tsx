@@ -50,6 +50,7 @@ export default function BOMClient() {
   const [data, setData] = useState<any[] | null>(null);
   const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [scrapedPeriod, setScrapedPeriod] = useState<{start: string, end: string} | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -209,6 +210,7 @@ export default function BOMClient() {
 
     mountedRef.current = true;
     setIsMounted(true);
+    
 
     return () => {
       mountedRef.current = false;
@@ -270,6 +272,14 @@ export default function BOMClient() {
       await Promise.all(workers);
 
       if (successCount > 0) {
+        const periodStr = { 
+          start: startDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '', 
+          end: endDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '',
+          startRaw: startDate?.toISOString() || '',
+          endRaw: endDate?.toISOString() || ''
+        };
+        setScrapedPeriod(periodStr);
+        localStorage.setItem('BOMClient_scrapedPeriod', JSON.stringify(periodStr));
         setIsBatching(false);
         await fetch('/api/activity-log', {
           method: 'POST',
@@ -614,7 +624,7 @@ export default function BOMClient() {
               {lastUpdated && (
                 <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none" style={{ color: '#99a1af' }}>
                   <span className="opacity-40">|</span>
-                  <span>Diperbarui: {lastUpdated}</span>
+                  <span>Diperbarui: {lastUpdated} {scrapedPeriod ? `(Periode: ${scrapedPeriod.start} - ${scrapedPeriod.end})` : ''}</span>
                 </div>
               )}
             </div>

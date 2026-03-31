@@ -39,12 +39,14 @@ export default function SalesReportClient() {
   
   // State
   const [isMounted, setIsMounted] = useState(false);
-  const [startDate, setStartDate] = useState<Date>(new Date(2026, 0, 1));
+  const [startDate, setStartDate] = useState<Date>(new Date(2025, 0, 1));
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [scrapedPeriod, setScrapedPeriod] = useState<{start: string, end: string} | null>(null);
+
   const [loadTime, setLoadTime] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -133,7 +135,14 @@ export default function SalesReportClient() {
 
   useEffect(() => {
     setIsMounted(true);
+    
     mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'sintak_data_updated') {
         setRefreshKey(prev => prev + 1);
@@ -141,11 +150,45 @@ export default function SalesReportClient() {
       }
     };
     window.addEventListener('storage', handleStorageChange);
-    return () => { 
-        mountedRef.current = false;
-        window.removeEventListener('storage', handleStorageChange); 
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, [router]);
+
+  // Initial Date Range logic (like Pengiriman)
+  useEffect(() => {
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    const defaultStartDate = new Date(2025, 0, 1);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+
+    let initialStart = defaultStartDate;
+    let initialEnd = today;
+
+    const savedPeriod = localStorage.getItem('SalesReportClient_scrapedPeriod');
+    if (savedPeriod) {
+      try {
+        const parsed = JSON.parse(savedPeriod);
+        setScrapedPeriod(parsed); if (parsed.startRaw) initialStart = new Date(parsed.startRaw);
+        if (parsed.endRaw) initialEnd = new Date(parsed.endRaw);
+      } catch(e) {}
+    }
+
+    const saved = localStorage.getItem('salesReportState');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        const savedDate = parsed.sessionDate || '';
+        // Only restore if saved on the same day (fresh session)
+        if (savedDate === todayStr) {
+          initialStart = new Date(parsed.startDate);
+          initialEnd = new Date(parsed.endDate);
+        }
+      } catch(e) {}
+    }
+    setStartDate(initialStart);
+    setEndDate(initialEnd);
+  }, []);
 
   // Main fetch data
   useEffect(() => {
@@ -197,6 +240,18 @@ export default function SalesReportClient() {
 
   const handleFetchDigit = async () => {
     if (!startDate || !endDate) return;
+    if (startDate > endDate) {
+      setError('Tanggal mulai tidak boleh lebih dari tanggal akhir.');
+      return;
+    }
+
+    // Save state to localStorage only when "Tarik Data" is clicked
+    localStorage.setItem('salesReportState', JSON.stringify({
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      sessionDate: new Date().toLocaleDateString('en-CA')
+    }));
+
     setError('');
     const startStr = formatDateToYYYYMMDD(startDate);
     const endStr = formatDateToYYYYMMDD(endDate);
@@ -238,6 +293,14 @@ export default function SalesReportClient() {
       await Promise.all(workers);
 
       if (successCount > 0) {
+        const periodStr = { 
+          start: startDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '', 
+          end: endDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '',
+          startRaw: startDate?.toISOString() || '',
+          endRaw: endDate?.toISOString() || ''
+        };
+        setScrapedPeriod(periodStr);
+        localStorage.setItem('SalesReportClient_scrapedPeriod', JSON.stringify(periodStr));
         if (lastUpdatedFromScrape) {
           setLastUpdated(formatLastUpdate(new Date(lastUpdatedFromScrape)));
         }
@@ -319,7 +382,7 @@ export default function SalesReportClient() {
               </h3>
               {lastUpdated && (
                 <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none" style={{ color: '#99a1af' }}>
-                  <span className="opacity-40">|</span><span>Diperbarui: {lastUpdated}</span>
+                  <span className="opacity-40">|</span><span>Diperbarui: {lastUpdated} {scrapedPeriod ? `(Periode: ${scrapedPeriod.start} - ${scrapedPeriod.end})` : ''}</span>
                 </div>
               )}
             </div>

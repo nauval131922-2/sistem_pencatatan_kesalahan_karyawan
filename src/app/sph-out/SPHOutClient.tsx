@@ -41,6 +41,8 @@ export default function SphOutClient() {
   const [data, setData] = useState<any[] | null>(null);
   const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [scrapedPeriod, setScrapedPeriod] = useState<{start: string, end: string} | null>(null);
+
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -176,15 +178,25 @@ export default function SphOutClient() {
 
   useEffect(() => {
     mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
+    setIsMounted(true);
+    
+    
     const todayStr = new Date().toLocaleDateString('en-CA');
+    const defaultStartDate = new Date(2025, 0, 1);
     const today = new Date();
     today.setHours(23, 59, 59, 999);
+
+    let initialStart = defaultStartDate;
+    let initialEnd = today;
+
+    const savedPeriod = localStorage.getItem('SPHOutClient_scrapedPeriod');
+    if (savedPeriod) {
+      try {
+        const parsed = JSON.parse(savedPeriod);
+        setScrapedPeriod(parsed); if (parsed.startRaw) initialStart = new Date(parsed.startRaw);
+        if (parsed.endRaw) initialEnd = new Date(parsed.endRaw);
+      } catch(e) {}
+    }
 
     const saved = localStorage.getItem('sphOutState');
     if (saved) {
@@ -192,11 +204,17 @@ export default function SphOutClient() {
         const parsed = JSON.parse(saved);
         const savedDate = parsed.sessionDate || '';
         if (savedDate === todayStr) {
-          setStartDate(new Date(parsed.startDate));
-          setEndDate(new Date(parsed.endDate));
+          initialStart = new Date(parsed.startDate);
+          initialEnd = new Date(parsed.endDate);
         }
       } catch(e) {}
     }
+    setStartDate(initialStart);
+    setEndDate(initialEnd);
+
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   const [isBatching, setIsBatching] = useState(false);
@@ -254,6 +272,14 @@ export default function SphOutClient() {
       await Promise.all(workers);
 
       if (successCount > 0) {
+        const periodStr = { 
+          start: startDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '', 
+          end: endDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '',
+          startRaw: startDate?.toISOString() || '',
+          endRaw: endDate?.toISOString() || ''
+        };
+        setScrapedPeriod(periodStr);
+        localStorage.setItem('SphOutClient_scrapedPeriod', JSON.stringify(periodStr));
         setIsBatching(false);
         setRefreshKey(prev => prev + 1);
         localStorage.setItem('sintak_data_updated', Date.now().toString());
@@ -575,7 +601,7 @@ export default function SphOutClient() {
               {lastUpdated && (
                 <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none" style={{ color: '#99a1af' }}>
                   <span className="opacity-40">|</span>
-                  <span>Diperbarui: {lastUpdated}</span>
+                  <span>Diperbarui: {lastUpdated} {scrapedPeriod ? `(Periode: ${scrapedPeriod.start} - ${scrapedPeriod.end})` : ''}</span>
                 </div>
               )}
             </div>
