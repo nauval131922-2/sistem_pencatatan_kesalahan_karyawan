@@ -8,6 +8,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatLastUpdate } from '@/lib/date-utils';
+import { getDefaultScraperDateRange, hydrateScraperPeriod, persistScraperPeriod } from '@/lib/scraper-period';
 import { DataTable } from '@/components/ui/DataTable';
 import { splitDateRangeIntoMonths } from '@/lib/date-utils';
 import { useTableSelection } from '@/lib/hooks/useTableSelection';
@@ -35,17 +36,8 @@ const PAGE_SIZE = 50;
 
 export default function BOMClient() {
   const router = useRouter();
-  const [startDate, setStartDate] = useState<Date>(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() - 1);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  });
-  const [endDate, setEndDate] = useState<Date>(() => {
-    const d = new Date();
-    d.setHours(23, 59, 59, 999);
-    return d;
-  });
+  const [startDate, setStartDate] = useState<Date>(() => getDefaultScraperDateRange().startDate);
+  const [endDate, setEndDate] = useState<Date>(() => getDefaultScraperDateRange().endDate);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any[] | null>(null);
   const [error, setError] = useState('');
@@ -195,21 +187,13 @@ export default function BOMClient() {
   }, [router]);
 
   useEffect(() => {
-    // Restore state from localStorage on mount (Client-side only)
-    const todayStr = new Date().toLocaleDateString('en-CA');
-    const saved = localStorage.getItem('bomReportState');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.sessionDate === todayStr) {
-          setStartDate(new Date(parsed.startDate));
-          setEndDate(new Date(parsed.endDate));
-        }
-      } catch(e) {}
-    }
-
     mountedRef.current = true;
     setIsMounted(true);
+
+    const hydratedPeriod = hydrateScraperPeriod({ stateKey: 'bomReportState', periodKey: 'BOMClient_scrapedPeriod' });
+    setScrapedPeriod(hydratedPeriod.scrapedPeriod);
+    setStartDate(hydratedPeriod.startDate);
+    setEndDate(hydratedPeriod.endDate);
     
 
     return () => {
@@ -272,14 +256,8 @@ export default function BOMClient() {
       await Promise.all(workers);
 
       if (successCount > 0) {
-        const periodStr = { 
-          start: startDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '', 
-          end: endDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '',
-          startRaw: startDate?.toISOString() || '',
-          endRaw: endDate?.toISOString() || ''
-        };
+        const periodStr = persistScraperPeriod({ stateKey: 'bomReportState', periodKey: 'BOMClient_scrapedPeriod' }, startDate, endDate);
         setScrapedPeriod(periodStr);
-        localStorage.setItem('BOMClient_scrapedPeriod', JSON.stringify(periodStr));
         setIsBatching(false);
         await fetch('/api/activity-log', {
           method: 'POST',

@@ -11,6 +11,7 @@ import { splitDateRangeIntoMonths } from '@/lib/date-utils';
 import { DataTable } from '@/components/ui/DataTable';
 import { useTableSelection } from '@/lib/hooks/useTableSelection';
 import { formatLastUpdate } from '@/lib/date-utils';
+import { getDefaultScraperDateRange, hydrateScraperPeriod, persistScraperPeriod } from '@/lib/scraper-period';
 
 // Helper to format Date to YYYY-MM-DD
 function formatDateToYYYYMMDD(date: Date) {
@@ -42,8 +43,8 @@ export default function SalesOrderClient() {
   
   // State
   const [isMounted, setIsMounted] = useState(false);
-  const [startDate, setStartDate] = useState<Date>(new Date(2025, 0, 1));
-  const [endDate, setEndDate] = useState<Date>(new Date());
+  const [startDate, setStartDate] = useState<Date>(() => getDefaultScraperDateRange().startDate);
+  const [endDate, setEndDate] = useState<Date>(() => getDefaultScraperDateRange().endDate);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[] | null>(null);
   const [error, setError] = useState('');
@@ -194,37 +195,11 @@ export default function SalesOrderClient() {
   // Persistence
   useEffect(() => {
     setIsMounted(true);
-    
-    const todayStr = new Date().toLocaleDateString('en-CA');
-    const defaultStartDate = new Date(2025, 0, 1);
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
 
-    let initialStart = defaultStartDate;
-    let initialEnd = today;
-
-    const savedPeriod = localStorage.getItem('SalesOrderClient_scrapedPeriod');
-    if (savedPeriod) {
-      try {
-        const parsed = JSON.parse(savedPeriod);
-        setScrapedPeriod(parsed); if (parsed.startRaw) initialStart = new Date(parsed.startRaw);
-        if (parsed.endRaw) initialEnd = new Date(parsed.endRaw);
-      } catch(e) {}
-    }
-
-    const saved = localStorage.getItem('salesOrderState');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const savedDate = parsed.sessionDate || '';
-        if (savedDate === todayStr) {
-          initialStart = new Date(parsed.startDate);
-          initialEnd = new Date(parsed.endDate);
-        }
-      } catch (e) {}
-    }
-    setStartDate(initialStart);
-    setEndDate(initialEnd);
+    const hydratedPeriod = hydrateScraperPeriod({ stateKey: 'salesOrderState', periodKey: 'SalesOrderClient_scrapedPeriod' });
+    setScrapedPeriod(hydratedPeriod.scrapedPeriod);
+    setStartDate(hydratedPeriod.startDate);
+    setEndDate(hydratedPeriod.endDate);
   }, []);
 
   // Note: Date persistence moved to handleFetchDigit to follow "Scrape-First" requirement
@@ -364,14 +339,8 @@ export default function SalesOrderClient() {
       await Promise.all(workers);
 
       if (successCount > 0) {
-        const periodStr = { 
-          start: startDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '', 
-          end: endDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '',
-          startRaw: startDate?.toISOString() || '',
-          endRaw: endDate?.toISOString() || ''
-        };
+        const periodStr = persistScraperPeriod({ stateKey: 'salesOrderState', periodKey: 'SalesOrderClient_scrapedPeriod' }, startDate, endDate);
         setScrapedPeriod(periodStr);
-        localStorage.setItem('SalesOrderClient_scrapedPeriod', JSON.stringify(periodStr));
         setDialog({
           isOpen: true,
           type: (chunks.length - successCount) > 0 ? 'alert' : 'success',

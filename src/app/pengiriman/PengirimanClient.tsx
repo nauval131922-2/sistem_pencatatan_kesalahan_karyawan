@@ -8,6 +8,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatLastUpdate } from '@/lib/date-utils';
+import { getDefaultScraperDateRange, hydrateScraperPeriod, persistScraperPeriod } from '@/lib/scraper-period';
 import { DataTable } from '@/components/ui/DataTable';
 import { splitDateRangeIntoMonths } from '@/lib/date-utils';
 import { useTableSelection } from '@/lib/hooks/useTableSelection';
@@ -36,8 +37,8 @@ const PAGE_SIZE = 50;
 export default function PengirimanClient() {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
-  const [startDate, setStartDate] = useState<Date>(new Date(2025, 0, 1));
-  const [endDate, setEndDate] = useState<Date>(new Date());
+  const [startDate, setStartDate] = useState<Date>(() => getDefaultScraperDateRange().startDate);
+  const [endDate, setEndDate] = useState<Date>(() => getDefaultScraperDateRange().endDate);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[] | null>(null);
   const [error, setError] = useState('');
@@ -92,41 +93,16 @@ export default function PengirimanClient() {
 
   useEffect(() => {
     setIsMounted(true);
+
+    const hydratedPeriod = hydrateScraperPeriod({ stateKey: 'shState', periodKey: 'PengirimanClient_scrapedPeriod' });
+    setScrapedPeriod(hydratedPeriod.scrapedPeriod);
+    setStartDate(hydratedPeriod.startDate);
+    setEndDate(hydratedPeriod.endDate);
     
   }, []);
 
   useEffect(() => {
-    if (!isMounted) return;
-    const todayStr = new Date().toLocaleDateString('en-CA');
-    const defaultStartDate = new Date(2025, 0, 1);
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-
-    let initialStart = defaultStartDate;
-    let initialEnd = today;
-
-    const savedPeriod = localStorage.getItem('PengirimanClient_scrapedPeriod');
-    if (savedPeriod) {
-      try {
-        const parsed = JSON.parse(savedPeriod);
-        setScrapedPeriod(parsed); if (parsed.startRaw) initialStart = new Date(parsed.startRaw);
-        if (parsed.endRaw) initialEnd = new Date(parsed.endRaw);
-      } catch(e) {}
-    }
-
-    const saved = localStorage.getItem('shState');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        const savedDate = parsed.sessionDate || '';
-        if (savedDate === todayStr) {
-          initialStart = new Date(parsed.startDate);
-          initialEnd = new Date(parsed.endDate);
-        }
-      } catch(e) {}
-    }
-    setStartDate(initialStart);
-    setEndDate(initialEnd);
+    if (!isMounted) return;
   }, [isMounted]);
 
   // Fetch Data
@@ -248,14 +224,8 @@ export default function PengirimanClient() {
       await Promise.all(workers);
 
       if (successCount > 0) {
-        const periodStr = { 
-          start: startDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '', 
-          end: endDate?.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) || '',
-          startRaw: startDate?.toISOString() || '',
-          endRaw: endDate?.toISOString() || ''
-        };
+        const periodStr = persistScraperPeriod({ stateKey: 'shState', periodKey: 'PengirimanClient_scrapedPeriod' }, startDate, endDate);
         setScrapedPeriod(periodStr);
-        localStorage.setItem('PengirimanClient_scrapedPeriod', JSON.stringify(periodStr));
         setRefreshKey(prev => prev + 1);
         localStorage.setItem('sintak_data_updated', Date.now().toString());
 
