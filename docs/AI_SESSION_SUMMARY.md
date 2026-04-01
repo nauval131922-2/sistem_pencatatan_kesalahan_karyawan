@@ -1,29 +1,38 @@
-# Ringkasan Sesi AI - Sinkronisasi Dashboard Manufaktur & Scraper Reactivity
-**Tanggal**: 2026-03-29
-**ID Konsep**: Scraper-UI-Sync-And-Tracking-Overhaul
+# Ringkasan Sesi AI
 
-## 1. Modul Pelacakan Manufaktur (Overhaul)
-- **Cari Nama Order**: Mengubah fungsi "Cari BOM" menjadi "Cari Nama Order" dengan sumber data dari tabel `orders` yang lebih relevan untuk pelacakan alur kerja aktif.
-- **RenderAllFields**: Implementasi fungsi untuk menampilkan semua kolom dari tabel database (BOM, SPH, SO, OP, PR, Pengiriman) secara dinamis, memastikan tidak ada data mentah yang tersembunyi.
-- **Integrasi Pengiriman**: Menambahkan kolom Pengiriman (Delivery) ke dalam siklus pelacakan untuk memantau status logistik terakhir.
-- **Data OP**: Menampilkan rincian biaya BTKL dan BOP pada kartu Order Produksi.
-- **Sizing & Persistence**: Menambahkan fitur penyimpanan lebar kolom ke `localStorage` agar kustomisasi tampilan pengguna tidak hilang saat reload.
+## Ringkas
+Perubahan utama di sesi ini adalah penyatuan logika periode default untuk semua halaman scraper, dengan aturan:
+1) Jika sudah ganti hari, default periode menjadi `01/01/2026` s/d hari ini.
+2) Jika sudah tarik data di hari itu, periode otomatis memakai start/end saat tarik data dilakukan.
 
-## 2. Standardisasi Scraper
-- **Rentang Tanggal**: Menyeragamkan logika periode pencarian (Default: 01-01-2026) di semua modul: Bahan Baku, Barang Jadi, dan Laporan Penjualan.
-- **Update Real-time**: Memperbaiki reaktivitas UI sehingga indikator "Diperbarui" dan data tabel langsung sinkron setelah proses scraping selesai (menggunakan mekanisme `refreshKey`).
-- **Fix SQL Error**: Mengatasi error `SQLITE_UNKNOWN` pada `sales_reports` dengan menambahkan kolom `faktur_so` dan kolom pendukung lainnya ke dalam skema migrasi otomatis di `src/lib/schema.ts`.
+## Perubahan Utama
+- Tambah helper periode scraper terpusat: `src/lib/scraper-period.ts`.
+- Terapkan helper ke semua halaman scraper Data Digit:
+  - `src/app/bom/BOMClient.tsx`
+  - `src/app/orders/OrderProduksiClient.tsx`
+  - `src/app/sales-orders/SalesOrderClient.tsx`
+  - `src/app/sales/SalesReportClient.tsx`
+  - `src/app/bahan-baku/BahanBakuClient.tsx`
+  - `src/app/barang-jadi/BarangJadiClient.tsx`
+  - `src/app/pelunasan-hutang/PelunasanHutangClient.tsx`
+  - `src/app/pelunasan-piutang/PelunasanPiutangClient.tsx`
+  - `src/app/penerimaan-pembelian/PenerimaanPembelianClient.tsx`
+  - `src/app/pengiriman/PengirimanClient.tsx`
+  - `src/app/pr/PRClient.tsx`
+  - `src/app/purchase-orders/PurchaseOrderClient.tsx`
+  - `src/app/rekap-pembelian-barang/PembelianBarangClient.tsx`
+  - `src/app/sph-in/SphInClient.tsx`
+  - `src/app/sph-out/SPHOutClient.tsx`
+  - `src/app/spph-out/SpphOutClient.tsx`
 
-## 3. Perbaikan Bug UI & Build
-- **NotFoundError Re-fix**: Menghapus penggunaan `dangerouslySetInnerHTML` di `TrackingClient.tsx` dan menstabilkan struktur DOM di `DataTable.tsx` untuk mencegah crash `removeChild` pada React.
-- **Build Vercel**: Menginstal paket `@vercel/analytics` dan `@vercel/speed-insights` yang sebelumnya hilang di `node_modules` lokal sehingga menyebabkan kegagalan build.
+## Cara Cek Singkat
+1) Buka salah satu halaman scraper (mis. BOM).
+2) Jika hari baru, periode otomatis `01/01/2026` s/d hari ini.
+3) Klik "Tarik Data", refresh halaman, periode harus mengikuti tanggal saat tarik data tadi.
 
-## 4. Status Terakhir
-Seluruh alur pelacakan manufaktur dari hulu ke hilir (BOM -> SPH -> SO -> OP -> PR -> Pengiriman) kini sudah terintegrasi dan siap digunakan. Standarisasi scraper telah selesai untuk ketiga modul utama.
+## Catatan Teknis
+- Periode sekarang disimpan dengan penanda harian `fetchedOn` agar hanya berlaku untuk hari yang sama.
 
-**Fokus Berikutnya**: 
-1. Validasi data duplikat pada scraping Laporan Penjualan jika terjadi interupsi jaringan.
-2. Penambahan filter kategori barang yang lebih mendalam pada dashboard manufaktur.
+## Testing
+- `npm run lint` dijalankan tetapi gagal karena error lint yang sudah ada di repo (bukan dari perubahan ini).
 
----
-*Dibuat oleh Antigravity pada Sesi 2026-03-29. Sesi ini berfokus pada stabilitas UI dashboard dan kemudahan pengelolaan data scraper.*
