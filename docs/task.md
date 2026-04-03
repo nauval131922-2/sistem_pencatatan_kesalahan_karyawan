@@ -49,5 +49,7 @@
 
 - [ ] **Next Steps**
     - [x] Optimasi Performa Database (FTS5 Advanced Search)
+    - [x] Pure raw_data - Simpan data MDT tanpa transformasi
+    - [x] RenderAllFields untuk Tracking Manufaktur
     - [ ] Penambahan fitur ekspor data ke format JSON (Arsip Digital)
     - [ ] Implementasi PWA untuk akses cepat di perangkat mobile

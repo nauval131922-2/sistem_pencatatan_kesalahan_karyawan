@@ -4,9 +4,9 @@
 Sesi ini fokus pada:
 1. **Standardisasi API routes** - Penambahan `export const dynamic = 'force-dynamic'` di semua endpoint API
 2. **Standardisasi UI Client components** - Penambahan cache-buster `_t` di semua fetch client-side
-3. **Improvement Tracking Manufaktur** - Refactor UI BOM card, helper `toTitleCase`, formatting number, debug tools
-4. **Utility baru** - FTS query helper, scraper period helper, debug endpoint
-5. **Schema database** - Penambahan kolom dan index baru
+3. **Improvement Tracking Manufaktur** - Refactor UI, helper `toTitleCase`, formatting number
+4. **Pure raw_data** - Pastikan raw_data menyimpan data murni dari API MDT tanpa transformasi
+5. **RenderAllFields** - Simplifikasi display Tracking Manufaktur dengan RenderAllFields
 
 ## Perubahan Utama
 
@@ -18,36 +18,37 @@ Sesi ini fokus pada:
 - Tambah cache-buster `_t` di fetch client-side
 - Komponen: BahanBakuClient, BarangJadiClient, BOMClient, OrderProduksiClient, PelunasanHutangClient, PelunasanPiutangClient, PenerimaanPembelianClient, PengirimanClient, PRClient, PurchaseOrderClient, PembelianBarangClient, SalesOrderClient, SalesReportClient, SphInClient, SPHOutClient, SpphOutClient
 
-### 3. Tracking Manufaktur (TrackingClient.tsx)
-- Refactor layout BOM card dengan section yang lebih rapi
-- Tambah helper `toTitleCase` untuk formatting field names
-- Fix formatting number: ID field tanpa separator ribuan, currency field dengan prefix Rp
-- Tambah debug endpoint `/api/debug-raw-data`
+### 3. Pure raw_data dari API MDT
+- `src/app/api/scrape-orders/route.ts`: Simpan data mentah MDT ke raw_data tanpa transformasi
+- `src/app/api/tracking/route.ts`: Semua section (BOM, SPH, SO, Produksi, PR) pakai raw_data murni
 
-### 4. Utility Baru
+### 4. Tracking Manufaktur Display (TrackingClient.tsx)
+- helper `toTitleCase` untuk formatting field names
+- Fix formatting number dengan separator ribuan Indonesia
+- `RenderAllFields` untuk semua section (BOM, SPH Out, Sales Order, Order Produksi, Purchase Request)
+- Code berkurang 200+ baris karena display menjadi generik dari raw_data
+
+### 5. Utility Baru
 - `src/lib/fts.ts` - Helper query FTS terpusat
 - `src/lib/server-scraped-period.ts` - Helper scraper period
 - `src/app/api/bom/scrape-period/` - Endpoint scrape period
 
-### 5. Schema Database
-- Penambahan kolom dan index di `src/lib/schema.ts`
-- Update scraper period di `src/lib/scraper-period.ts`
-
 ## Dampak
 - Semua API endpoint sekarang force-dynamic, tidak ada caching di server
 - Client-side fetch menggunakan cache-buster untuk data fresh
-- UI Tracking lebih terstruktur dan mudah di-maintain
-- FTS query konsisten antar endpoint
+- raw_data sekarang murni dari API MDT (tanpa transformasi)
+- Tracking Manufaktur lebih sederhana dan konsisten
+- Performa halaman scraper (list view) tetap bagus karena pakai definisi kolom manual
 
 ## Cara Cek Singkat
-1. Uji pencarian di halaman Tracking Manufaktur
-2. Cek format angka di RenderAllFields (ID tanpa separator, currency dengan Rp)
-3. Uji scraping data dan pastikan cache-buster bekerja
+1. Uji scraping Order Produksi - cek raw_data apakah murni dari MDT
+2. Uji Tracking Manufaktur - semua section tampil dari raw_data
+3. Cek format angka di RenderAllFields (separator ribuan Indonesia)
 4. Test FTS search di Orders, Bahan Baku, dll
 
 ## Testing
 - `npm.cmd run init-db` berhasil
-- `npm.cmd run lint` masih gagal karena backlog lint repo yang sudah ada sejak sebelumnya
+- `npm.cmd run lint` masih gagal karena backlog lint repo
 
 ## Lokasi untuk Sinkronisasi
 - **Rumah**: Pull dari origin/master
