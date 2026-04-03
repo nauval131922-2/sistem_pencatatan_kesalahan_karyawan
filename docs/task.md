@@ -48,6 +48,6 @@
     - [x] Penyeleksian tanggal otomatis (Default ke 2026-01-01 pada hari baru)
 
 - [ ] **Next Steps**
-    - [ ] Optimasi Performa Database (FTS5 Advanced Search)
+    - [x] Optimasi Performa Database (FTS5 Advanced Search)
     - [ ] Penambahan fitur ekspor data ke format JSON (Arsip Digital)
     - [ ] Implementasi PWA untuk akses cepat di perangkat mobile

@@ -35,6 +35,25 @@ function isSameDayPeriod(dateTag?: string) {
   return dateTag === getTodayStorageDate();
 }
 
+export function formatScrapedPeriodDate(value?: string) {
+  if (!value) return '';
+
+  if (/^\d{2}-\d{2}-\d{4}$/.test(value)) {
+    const [day, month, year] = value.split('-');
+    const date = new Date(`${year}-${month}-${day}T12:00:00Z`);
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+  }
+
+  const parsed = new Date(value);
+  if (!isNaN(parsed.getTime())) {
+    return parsed.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  return value;
+}
+
 export function getDefaultScraperDateRange() {
   const startDate = new Date(2026, 0, 1);
   startDate.setHours(0, 0, 0, 0);

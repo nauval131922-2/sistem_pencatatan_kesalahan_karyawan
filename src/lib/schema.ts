@@ -598,6 +598,7 @@ export async function initSchema(db: any) {
       await db.execute(`DROP TABLE IF EXISTS sales_reports_fts`);
       await db.execute(`DROP TABLE IF EXISTS employees_fts`);
       await db.execute(`DROP TABLE IF EXISTS sph_out_fts`);
+      await db.execute(`DROP TABLE IF EXISTS hpp_kalkulasi_fts`);
 
       // --- FTS5 FOR BAHAN BAKU ---
       await db.execute(`
@@ -640,6 +641,12 @@ export async function initSchema(db: any) {
       await db.execute(`
          CREATE VIRTUAL TABLE employees_fts USING fts5(
            id, name, position, department, employee_no,
+           tokenize='unicode61 remove_diacritics 1'
+         );
+      `);
+      await db.execute(`
+         CREATE VIRTUAL TABLE hpp_kalkulasi_fts USING fts5(
+           id, nama_order, keterangan,
            tokenize='unicode61 remove_diacritics 1'
          );
       `);
@@ -713,6 +720,17 @@ export async function initSchema(db: any) {
               "DELETE FROM employees_fts",
               `INSERT INTO employees_fts(id, rowid, name, position, department, employee_no)
                SELECT id, id, name, position, department, employee_no FROM employees WHERE is_active = 1`
+           ], "write");
+        }
+
+        // Sync HPP Kalkulasi
+        const ftsCountHPP = await db.execute("SELECT COUNT(*) as count FROM hpp_kalkulasi_fts");
+        const hppCount = await db.execute("SELECT COUNT(*) as count FROM hpp_kalkulasi");
+        if (Number(ftsCountHPP.rows[0].count) < Number(hppCount.rows[0].count)) {
+           await db.batch([
+              "DELETE FROM hpp_kalkulasi_fts",
+              `INSERT INTO hpp_kalkulasi_fts(id, rowid, nama_order, keterangan)
+               SELECT id, id, nama_order, keterangan FROM hpp_kalkulasi`
            ], "write");
         }
 
@@ -792,6 +810,76 @@ export async function initSchema(db: any) {
           `DROP TRIGGER IF EXISTS trg_orders_fts_delete;`,
           `CREATE TRIGGER trg_orders_fts_delete AFTER DELETE ON orders BEGIN
             DELETE FROM orders_fts WHERE rowid = OLD.id;
+          END;`,
+
+          // Employees
+          `DROP TRIGGER IF EXISTS trg_employees_fts_insert;`,
+          `CREATE TRIGGER trg_employees_fts_insert AFTER INSERT ON employees
+            WHEN NEW.is_active = 1 BEGIN
+            INSERT INTO employees_fts(id, rowid, name, position, department, employee_no)
+            VALUES (NEW.id, NEW.id, NEW.name, NEW.position, NEW.department, NEW.employee_no);
+          END;`,
+          `DROP TRIGGER IF EXISTS trg_employees_fts_update;`,
+          `CREATE TRIGGER trg_employees_fts_update AFTER UPDATE ON employees BEGIN
+            DELETE FROM employees_fts WHERE rowid = OLD.id;
+            INSERT INTO employees_fts(id, rowid, name, position, department, employee_no)
+            SELECT NEW.id, NEW.id, NEW.name, NEW.position, NEW.department, NEW.employee_no
+            WHERE NEW.is_active = 1;
+          END;`,
+          `DROP TRIGGER IF EXISTS trg_employees_fts_delete;`,
+          `CREATE TRIGGER trg_employees_fts_delete AFTER DELETE ON employees BEGIN
+            DELETE FROM employees_fts WHERE rowid = OLD.id;
+          END;`,
+
+          // HPP Kalkulasi
+          `DROP TRIGGER IF EXISTS trg_hpp_kalkulasi_fts_insert;`,
+          `CREATE TRIGGER trg_hpp_kalkulasi_fts_insert AFTER INSERT ON hpp_kalkulasi BEGIN
+            INSERT INTO hpp_kalkulasi_fts(id, rowid, nama_order, keterangan)
+            VALUES (NEW.id, NEW.id, NEW.nama_order, NEW.keterangan);
+          END;`,
+          `DROP TRIGGER IF EXISTS trg_hpp_kalkulasi_fts_update;`,
+          `CREATE TRIGGER trg_hpp_kalkulasi_fts_update AFTER UPDATE ON hpp_kalkulasi BEGIN
+            DELETE FROM hpp_kalkulasi_fts WHERE rowid = OLD.id;
+            INSERT INTO hpp_kalkulasi_fts(id, rowid, nama_order, keterangan)
+            VALUES (NEW.id, NEW.id, NEW.nama_order, NEW.keterangan);
+          END;`,
+          `DROP TRIGGER IF EXISTS trg_hpp_kalkulasi_fts_delete;`,
+          `CREATE TRIGGER trg_hpp_kalkulasi_fts_delete AFTER DELETE ON hpp_kalkulasi BEGIN
+            DELETE FROM hpp_kalkulasi_fts WHERE rowid = OLD.id;
+          END;`,
+
+          // Sales Orders
+          `DROP TRIGGER IF EXISTS trg_sales_orders_fts_insert;`,
+          `CREATE TRIGGER trg_sales_orders_fts_insert AFTER INSERT ON sales_orders BEGIN
+            INSERT INTO sales_orders_fts(id, rowid, faktur, nama_pelanggan, kd_pelanggan, nama_prd, kd_barang, faktur_sph, faktur_prd, keterangan)
+            VALUES (NEW.id, NEW.id, NEW.faktur, NEW.nama_pelanggan, NEW.kd_pelanggan, NEW.nama_prd, NEW.kd_barang, NEW.faktur_sph, NEW.faktur_prd, NEW.keterangan);
+          END;`,
+          `DROP TRIGGER IF EXISTS trg_sales_orders_fts_update;`,
+          `CREATE TRIGGER trg_sales_orders_fts_update AFTER UPDATE ON sales_orders BEGIN
+            DELETE FROM sales_orders_fts WHERE rowid = OLD.id;
+            INSERT INTO sales_orders_fts(id, rowid, faktur, nama_pelanggan, kd_pelanggan, nama_prd, kd_barang, faktur_sph, faktur_prd, keterangan)
+            VALUES (NEW.id, NEW.id, NEW.faktur, NEW.nama_pelanggan, NEW.kd_pelanggan, NEW.nama_prd, NEW.kd_barang, NEW.faktur_sph, NEW.faktur_prd, NEW.keterangan);
+          END;`,
+          `DROP TRIGGER IF EXISTS trg_sales_orders_fts_delete;`,
+          `CREATE TRIGGER trg_sales_orders_fts_delete AFTER DELETE ON sales_orders BEGIN
+            DELETE FROM sales_orders_fts WHERE rowid = OLD.id;
+          END;`,
+
+          // Sales Reports
+          `DROP TRIGGER IF EXISTS trg_sales_reports_fts_insert;`,
+          `CREATE TRIGGER trg_sales_reports_fts_insert AFTER INSERT ON sales_reports BEGIN
+            INSERT INTO sales_reports_fts(id, rowid, faktur, kd_pelanggan, kd_barang, faktur_so, faktur_prd, nama_prd, nama_pelanggan, dati_2, gol_barang, keterangan_so, recid)
+            VALUES (NEW.id, NEW.id, NEW.faktur, NEW.kd_pelanggan, NEW.kd_barang, NEW.faktur_so, NEW.faktur_prd, NEW.nama_prd, NEW.nama_pelanggan, NEW.dati_2, NEW.gol_barang, NEW.keterangan_so, NEW.recid);
+          END;`,
+          `DROP TRIGGER IF EXISTS trg_sales_reports_fts_update;`,
+          `CREATE TRIGGER trg_sales_reports_fts_update AFTER UPDATE ON sales_reports BEGIN
+            DELETE FROM sales_reports_fts WHERE rowid = OLD.id;
+            INSERT INTO sales_reports_fts(id, rowid, faktur, kd_pelanggan, kd_barang, faktur_so, faktur_prd, nama_prd, nama_pelanggan, dati_2, gol_barang, keterangan_so, recid)
+            VALUES (NEW.id, NEW.id, NEW.faktur, NEW.kd_pelanggan, NEW.kd_barang, NEW.faktur_so, NEW.faktur_prd, NEW.nama_prd, NEW.nama_pelanggan, NEW.dati_2, NEW.gol_barang, NEW.keterangan_so, NEW.recid);
+          END;`,
+          `DROP TRIGGER IF EXISTS trg_sales_reports_fts_delete;`,
+          `CREATE TRIGGER trg_sales_reports_fts_delete AFTER DELETE ON sales_reports BEGIN
+            DELETE FROM sales_reports_fts WHERE rowid = OLD.id;
           END;`,
 
           // SPH Out

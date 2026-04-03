@@ -1,38 +1,55 @@
-# Ringkasan Sesi AI
+# Ringkasan Sesi AI - 03 April 2026
 
 ## Ringkas
-Perubahan utama di sesi ini adalah penyatuan logika periode default untuk semua halaman scraper, dengan aturan:
-1) Jika sudah ganti hari, default periode menjadi `01/01/2026` s/d hari ini.
-2) Jika sudah tarik data di hari itu, periode otomatis memakai start/end saat tarik data dilakukan.
+Sesi ini fokus pada:
+1. **Standardisasi API routes** - Penambahan `export const dynamic = 'force-dynamic'` di semua endpoint API
+2. **Standardisasi UI Client components** - Penambahan cache-buster `_t` di semua fetch client-side
+3. **Improvement Tracking Manufaktur** - Refactor UI BOM card, helper `toTitleCase`, formatting number, debug tools
+4. **Utility baru** - FTS query helper, scraper period helper, debug endpoint
+5. **Schema database** - Penambahan kolom dan index baru
 
 ## Perubahan Utama
-- Tambah helper periode scraper terpusat: `src/lib/scraper-period.ts`.
-- Terapkan helper ke semua halaman scraper Data Digit:
-  - `src/app/bom/BOMClient.tsx`
-  - `src/app/orders/OrderProduksiClient.tsx`
-  - `src/app/sales-orders/SalesOrderClient.tsx`
-  - `src/app/sales/SalesReportClient.tsx`
-  - `src/app/bahan-baku/BahanBakuClient.tsx`
-  - `src/app/barang-jadi/BarangJadiClient.tsx`
-  - `src/app/pelunasan-hutang/PelunasanHutangClient.tsx`
-  - `src/app/pelunasan-piutang/PelunasanPiutangClient.tsx`
-  - `src/app/penerimaan-pembelian/PenerimaanPembelianClient.tsx`
-  - `src/app/pengiriman/PengirimanClient.tsx`
-  - `src/app/pr/PRClient.tsx`
-  - `src/app/purchase-orders/PurchaseOrderClient.tsx`
-  - `src/app/rekap-pembelian-barang/PembelianBarangClient.tsx`
-  - `src/app/sph-in/SphInClient.tsx`
-  - `src/app/sph-out/SPHOutClient.tsx`
-  - `src/app/spph-out/SpphOutClient.tsx`
+
+### 1. Standardisasi API Routes (33 files)
+- Tambah `export const dynamic = 'force-dynamic'` di semua route.ts
+- Endpoint: bahan-baku, barang-jadi, bom, employees, hpp-kalkulasi, orders, pelunasan-hutang, pelunasan-piutang, penerimaan-pembelian, pengiriman, pr, purchase-orders, rekap-pembelian-barang, sales-orders, sales, sph-in, sph-out, spph-out, tracking
+
+### 2. Standardisasi UI Client Components (16 files)
+- Tambah cache-buster `_t` di fetch client-side
+- Komponen: BahanBakuClient, BarangJadiClient, BOMClient, OrderProduksiClient, PelunasanHutangClient, PelunasanPiutangClient, PenerimaanPembelianClient, PengirimanClient, PRClient, PurchaseOrderClient, PembelianBarangClient, SalesOrderClient, SalesReportClient, SphInClient, SPHOutClient, SpphOutClient
+
+### 3. Tracking Manufaktur (TrackingClient.tsx)
+- Refactor layout BOM card dengan section yang lebih rapi
+- Tambah helper `toTitleCase` untuk formatting field names
+- Fix formatting number: ID field tanpa separator ribuan, currency field dengan prefix Rp
+- Tambah debug endpoint `/api/debug-raw-data`
+
+### 4. Utility Baru
+- `src/lib/fts.ts` - Helper query FTS terpusat
+- `src/lib/server-scraped-period.ts` - Helper scraper period
+- `src/app/api/bom/scrape-period/` - Endpoint scrape period
+
+### 5. Schema Database
+- Penambahan kolom dan index di `src/lib/schema.ts`
+- Update scraper period di `src/lib/scraper-period.ts`
+
+## Dampak
+- Semua API endpoint sekarang force-dynamic, tidak ada caching di server
+- Client-side fetch menggunakan cache-buster untuk data fresh
+- UI Tracking lebih terstruktur dan mudah di-maintain
+- FTS query konsisten antar endpoint
 
 ## Cara Cek Singkat
-1) Buka salah satu halaman scraper (mis. BOM).
-2) Jika hari baru, periode otomatis `01/01/2026` s/d hari ini.
-3) Klik "Tarik Data", refresh halaman, periode harus mengikuti tanggal saat tarik data tadi.
-
-## Catatan Teknis
-- Periode sekarang disimpan dengan penanda harian `fetchedOn` agar hanya berlaku untuk hari yang sama.
+1. Uji pencarian di halaman Tracking Manufaktur
+2. Cek format angka di RenderAllFields (ID tanpa separator, currency dengan Rp)
+3. Uji scraping data dan pastikan cache-buster bekerja
+4. Test FTS search di Orders, Bahan Baku, dll
 
 ## Testing
-- `npm run lint` dijalankan tetapi gagal karena error lint yang sudah ada di repo (bukan dari perubahan ini).
+- `npm.cmd run init-db` berhasil
+- `npm.cmd run lint` masih gagal karena backlog lint repo yang sudah ada sejak sebelumnya
 
+## Lokasi untuk Sinkronisasi
+- **Rumah**: Pull dari origin/master
+- **Kantor**: Pull dari origin/master
+- Pastikan `.env` dan database tidak ikut ter-push (sudah di .gitignore)
