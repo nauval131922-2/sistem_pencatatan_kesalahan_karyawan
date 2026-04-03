@@ -59,10 +59,12 @@ export function DataTable<TData extends { id: number | string }>({
   // To avoid hydration mismatch
   const [isMounted, setIsMounted] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
+  const [isPointerDown, setIsPointerDown] = React.useState(false);
   const startX = React.useRef(0);
   const startY = React.useRef(0);
   const scrollLeft = React.useRef(0);
   const scrollTop = React.useRef(0);
+  const dragThreshold = 8;
 
   React.useEffect(() => {
     setIsMounted(true);
@@ -72,8 +74,8 @@ export function DataTable<TData extends { id: number | string }>({
     if (!parentRef.current) return;
     // Only drag if it's the left mouse button
     if (e.button !== 0) return;
-    
-    setIsDragging(true);
+
+    setIsPointerDown(true);
     startX.current = e.pageX - parentRef.current.offsetLeft;
     startY.current = e.pageY - parentRef.current.offsetTop;
     scrollLeft.current = parentRef.current.scrollLeft;
@@ -81,18 +83,28 @@ export function DataTable<TData extends { id: number | string }>({
   };
 
   const onMouseLeave = () => {
+    setIsPointerDown(false);
     setIsDragging(false);
   };
 
   const onMouseUp = () => {
+    setIsPointerDown(false);
     setIsDragging(false);
   };
 
   const onMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !parentRef.current) return;
-    e.preventDefault();
+    if (!isPointerDown || !parentRef.current) return;
     const x = e.pageX - parentRef.current.offsetLeft;
     const y = e.pageY - parentRef.current.offsetTop;
+
+    if (!isDragging) {
+      const movedX = Math.abs(x - startX.current);
+      const movedY = Math.abs(y - startY.current);
+      if (movedX < dragThreshold && movedY < dragThreshold) return;
+      setIsDragging(true);
+    }
+
+    e.preventDefault();
     const walkX = (x - startX.current) * 1.5; // Multiplier for speed
     const walkY = (y - startY.current) * 1.5;
     parentRef.current.scrollLeft = scrollLeft.current - walkX;
@@ -141,7 +153,7 @@ export function DataTable<TData extends { id: number | string }>({
       <style dangerouslySetInnerHTML={{ __html: `.is-resizing * { user-select: none !important; transition: none !important; cursor: col-resize !important; } .is-resizing th > div { cursor: col-resize !important; }` }} />
       <div 
         ref={parentRef}
-        className={`overflow-auto custom-scrollbar flex-1 min-h-0 relative bg-white select-none ${isDragging ? 'cursor-grabbing' : ''}`} 
+        className={`overflow-auto custom-scrollbar flex-1 min-h-0 relative bg-white ${isDragging ? 'cursor-grabbing' : ''}`} 
         onScroll={onScroll}
         onMouseDown={onMouseDown}
         onMouseLeave={onMouseLeave}
@@ -250,7 +262,7 @@ const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick, onRowDoubleCl
     <tr
       onClick={(e) => onRowClick && onRowClick(row.original.id, e)}
       onDoubleClick={(e) => onRowDoubleClick && onRowDoubleClick(row.original.id, e)}
-      className={`${rowHeight} ${rowCursor} select-none group border-b border-gray-200 transition-colors ${
+      className={`${rowHeight} ${rowCursor} group border-b border-gray-200 transition-colors ${
         isSelected ? 'bg-green-50 is-selected shadow-[inset_4px_0_0_0_#16a34a]' : isOdd ? 'bg-slate-50/30' : 'bg-white'
       } ${!disableHover ? 'hover:bg-green-50/50' : ''} text-[13px]`}
     >{row.getVisibleCells().map((cell: any) => {
@@ -264,7 +276,7 @@ const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick, onRowDoubleCl
             className="p-0 border-r border-gray-200"
             style={meta?.valign === 'top' ? { verticalAlign: 'top' } : {}}
           >
-            <div className={`px-4 ${meta?.valign === 'top' ? '' : rowHeight} flex ${vAlignClass} text-[12px] leading-snug font-medium ${wrapClass} ${alignClass} ${isSelected ? 'text-green-700 font-bold' : 'text-[#364153]'}`}>
+            <div className={`px-4 ${meta?.valign === 'top' ? '' : rowHeight} flex ${vAlignClass} text-[12px] leading-snug font-medium ${wrapClass} ${alignClass} ${isSelected ? 'text-green-700 font-bold' : 'text-[#364153]'} select-text`}>
               {flexRender(cell.column.columnDef.cell, cell.getContext())}
             </div>
           </td>
