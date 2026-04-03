@@ -125,40 +125,15 @@ export default function TrackingClient() {
       if (entries.length === 0) return null;
 
       return (
-         <div className="grid grid-cols-1 gap-1.5 overflow-hidden">
-            {entries.map(([key, val]) => {
-               // if (val === null || val === undefined || val === '') return null;
-               // Format based on type
-               let displayVal = String(val);
-               if (typeof val === 'number') {
-                   const normalizedKey = key.toLowerCase();
-                   const isIdField = normalizedKey === 'id' || normalizedKey === 'recid';
-                   const isCurrencyField =
-                      !normalizedKey.includes('pers') &&
-                      !normalizedKey.includes('berat') &&
-                      !normalizedKey.includes('qty') &&
-                      !normalizedKey.includes('kg') &&
-                      (
-                         normalizedKey.includes('total') ||
-                         normalizedKey.includes('harga') ||
-                         normalizedKey.includes('jumlah') ||
-                         normalizedKey.includes('hp') ||
-                         normalizedKey.includes('biaya') ||
-                         normalizedKey.includes('bbb') ||
-                         normalizedKey.includes('btkl') ||
-                         normalizedKey.includes('bop')
-                      );
-
-                   if (isIdField) {
-                      displayVal = String(val);
-                   } else if (isCurrencyField) {
-                      displayVal = 'Rp ' + val.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                   } else {
-                      displayVal = val.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                   }
+          <div className="grid grid-cols-1 gap-1.5 overflow-hidden">
+             {entries.map(([key, val]) => {
+                let displayVal = String(val);
+                const numVal = parseFloat(String(val).replace(/,/g, ''));
+                if (!isNaN(numVal)) {
+                    displayVal = numVal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 }
 
-               return (
+                return (
                   <div key={key} className="flex items-start justify-between gap-4 text-[10px] leading-tight">
                      <span className="text-gray-400 font-bold shrink-0">{toTitleCase(key)}</span>
                      <span className="text-gray-600 font-medium text-right break-words">{displayVal}</span>
@@ -218,70 +193,8 @@ export default function TrackingClient() {
             if (!data) return <div className={emptyStateClass}>Tidak Ada Data Sales Order</div>;
             return (
                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                  <div className={`${cardClass} border border-indigo-100`}>
-                     <div className="flex items-start justify-between gap-2">
-                        <span className="text-[11px] font-bold text-indigo-700 bg-indigo-50 px-2.5 pb-1.5 pt-1 rounded-lg border border-indigo-100 block w-fit ml-0 text-left truncate">{data.faktur}</span>
-                        <span className={headerDateClass}>{data.tgl ? formatMdtDate(data.tgl) : '-'}</span>
-                     </div>
-                     <div className="space-y-2 px-0.5">
-                        <div className="flex items-center justify-between gap-4">
-                           <p className={`${customerTextClass} text-indigo-700`}>{data.nama_pelanggan || data.pelanggan || data.kd_pelanggan}</p>
-                        </div>
-                        <div className={infoCardClass}>
-                           <p className={infoLabelClass}>Produk / Barang</p>
-                           <p className={productTitleClass}>{data.nama_prd || '-'}</p>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                           <div className="flex items-center gap-2.5">
-                              <p className="text-[11px] text-gray-700 font-bold">Qty: {Number(data.qty || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {data.satuan || 'Unit'}</p>
-                              <span className="text-gray-300">|</span>
-                              <p className="text-[11px] text-gray-500 font-medium">@ Rp {Number(data.harga || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                           </div>
-                           <div className={`${infoCardClass} flex flex-col gap-1`}>
-                              <div className="flex items-center justify-between text-[11px]">
-                                 <span className="text-gray-400 font-bold uppercase">Subtotal</span>
-                                 <span className="font-bold text-slate-600">Rp {Number(data.subtotal || data.jumlah || (Number(data.qty || 0) * Number(data.harga || 0))).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                              </div>
-                              <div className="flex items-center justify-between text-[11px]">
-                                 <span className="text-emerald-600 font-bold uppercase">PPN ({data.pers_ppn || '11'}%)</span>
-                                 <span className="font-bold text-emerald-600">Rp {Number(data.ppn || data.ppn_rp || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                              </div>
-                              <div className="pt-1 mt-1 border-t border-dashed border-indigo-100 flex items-center justify-between text-[11px]">
-                                 <span className="text-gray-800 font-bold uppercase">Total</span>
-                                 <span className="text-[12px] font-bold text-slate-900">Rp {(
-                                    Number(data.total_akhir || data.total || 0) ||
-                                    (Number(data.subtotal || data.jumlah || 0) + Number(data.ppn || data.ppn_rp || 0))
-                                 ).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                              </div>
-                           </div>
-                        </div>
-                        <div className="flex flex-col gap-1 py-1">
-                           <div className="flex items-center gap-2">
-                              <span className={`${chipClass} text-indigo-600 bg-indigo-50 border-indigo-100 shrink-0`}>TOP: {data.top_hari || 0} Hari</span>
-                           </div>
-                        </div>
-                        <div className="flex flex-col gap-1.5 border-t border-indigo-50 pt-1.5">
-                           {data.faktur_sph && <div className={refRowClass}><span className={refLabelClass}>Ref SPH:</span><span className="truncate">{data.faktur_sph}</span></div>}
-                           {data.faktur_prd && <div className={refRowClass}><span className={refLabelClass}>Ref Prd:</span><span className="truncate">{data.faktur_prd}</span></div>}
-                           {data.kd_barang && <div className={refRowClass}><span className={refLabelClass}>Kd Brg:</span><span className="truncate">{data.kd_barang}</span></div>}
-                           {data.gol_barang && <div className={refRowClass}><span className={refLabelClass}>Gol:</span><span className="truncate">{data.gol_barang}</span></div>}
-                           {data.dati_2 && <div className={refRowClass}><span className={refLabelClass}>Kota:</span><span className="truncate">{data.dati_2}</span></div>}
-                        </div>
-                        {(data.spesifikasi || data.keterangan) && (
-                           <div className="bg-amber-50/10 p-2 rounded border border-amber-100/50 mt-1 space-y-1">
-                              {data.spesifikasi && <div className="flex flex-col gap-0.5"><span className="text-[11px] text-amber-600 font-bold uppercase tracking-tight">Spesifikasi</span><p className="text-[11px] text-slate-600 leading-snug">{data.spesifikasi}</p></div>}
-                              {data.keterangan && <div className="flex flex-col gap-0.5 border-t border-amber-100/30 pt-1"><span className="text-[11px] text-amber-600 font-bold uppercase tracking-tight">Keterangan</span><p className="text-[11px] text-slate-600 leading-snug italic">{data.keterangan}</p></div>}
-                           </div>
-                        )}
-                        {(data.username || data.created_at || data.updated_at || data.username_edited || data.edited_at) && (
-                           <div className={auditSectionClass}>
-                              <p>Created: @{data.username || '-'} ({data.created_at || '-'})</p>
-                              {data.updated_at && <p>Updated: {data.updated_at}</p>}
-                              {data.username_edited && <p>Edited: @{data.username_edited} ({data.edited_at || '-'})</p>}
-                           </div>
-                        )}
-                        <RenderAllFields data={data} excludeKeys={['id', 'tgl', 'nama_prd', 'kd_barang', 'gol_barang', 'qty', 'satuan', 'harga', 'subtotal', 'jumlah', 'pers_ppn', 'ppn', 'ppn_rp', 'total_akhir', 'total', 'nama_pelanggan', 'pelanggan', 'kd_pelanggan', 'dati_2', 'top_hari', 'faktur_sph', 'faktur_prd', 'spesifikasi', 'keterangan', 'username', 'created_at', 'updated_at', 'edited_at', 'username_edited', 'recid', 'mydata', 'my_data', 'mydataso', 'myDataSo', 'my_data_so', 'my data', 'my data so']} />
-                     </div>
+                  <div className={`${cardClass} border border-slate-100`}>
+                     <RenderAllFields data={data} excludeKeys={['raw_data']} />
                   </div>
                </div>
             );
@@ -298,99 +211,8 @@ export default function TrackingClient() {
             if (!data) return <div className={emptyStateClass}>Tidak Ada Data Order Produksi</div>;
             return (
                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                  <div className={`${cardClass} border border-amber-100`}>
-                     <div className="flex items-start justify-between gap-2">
-                        <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 pb-1.5 pt-1 rounded-lg border border-amber-100 block w-fit ml-0 text-left truncate">{data.faktur}</span>
-                        <span className={headerDateClass}>{data.tgl ? formatMdtDate(data.tgl) : '-'}</span>
-                     </div>
-                     <div className="space-y-2 px-0.5">
-                        <div className="flex items-center justify-between gap-4">
-                           <p className={`${customerTextClass} text-amber-700`}>{data.nama_pelanggan || data.pelanggan || data.kd_pelanggan || '-'}</p>
-                           <span className={locationBadgeClass}>{data.kd_cabang || '-'} / {data.kd_gudang || '-'}</span>
-                        </div>
-                        <div className={infoCardClass}>
-                           <p className={infoLabelClass}>Produk / Barang</p>
-                           <p className={productTitleClass}>{data.nama_prd || '-'}</p>
-                           <div className={productMetaClass}>
-                              <span className="bg-white px-1.5 py-0.5 rounded border border-gray-200 truncate max-w-[140px]">{data.kd_barang || '-'}</span>
-                              <span className="bg-white px-1.5 py-0.5 rounded border border-gray-200">{data.kd_mtd || 'Reguler'}</span>
-                           </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-[11px]">
-                           <div className={`${infoCardClass} flex flex-col gap-1`}>
-                              <span className="text-gray-400 font-bold uppercase tracking-tight">Kuantitas</span>
-                              <p className="text-slate-700 font-bold">Qty Produksi: {parseLooseNumber(data.qty).toLocaleString('id-ID', { minimumFractionDigits: 2 })} {data.satuan || data.kd_satuan || ''}</p>
-                              <p className="text-slate-600">Qty Order: {parseLooseNumber(data.qty_order).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</p>
-                              <p className="text-slate-600">Qty SO: {parseLooseNumber(data.qty_so).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</p>
-                           </div>
-                           <div className="flex flex-col gap-0.5 bg-amber-50/30 p-2 rounded border border-amber-100/30">
-                              <span className="text-amber-600 font-bold uppercase tracking-tight">Tim / Regu</span>
-                              <p className="text-slate-700 font-bold truncate">{data.kd_regu || '-'}</p>
-                              <p className="text-gray-500 italic text-[10px] truncate">{(() => {
-                                 try {
-                                    const parsed = typeof data.regu === 'string' ? JSON.parse(data.regu) : data.regu;
-                                    return parsed?.keterangan || '-';
-                                 } catch (e) { return '-'; }
-                              })()}</p>
-                           </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-[11px]">
-                           <div className={`${infoCardClass} space-y-1.5`}>
-                              <div className="flex items-center justify-between text-[11px]">
-                                 <span className="text-gray-500 font-bold uppercase">Progres Produksi</span>
-                                 <span className="text-amber-600 font-bold">Hasil: {Number(data.pers_hasil || 0).toFixed(2)}%</span>
-                              </div>
-                              <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden border border-gray-200/50">
-                                 <div className="h-full bg-amber-500" style={{ width: `${Math.min(100, Number(data.pers_hasil || 0))}%` }} />
-                              </div>
-                              <div className="flex items-center justify-between text-[11px] font-medium text-gray-500">
-                                 <span>WIP: {Number(data.prdk_wip || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</span>
-                                 <span>Fkt Selesai: {data.fkt_selesai || '-'}</span>
-                              </div>
-                           </div>
-                           <div className={`${infoCardClass} flex flex-col gap-0.5`}>
-                              <span className="text-gray-400 font-bold uppercase tracking-tight">Timeline</span>
-                              <p className="text-slate-600 font-medium whitespace-nowrap">Mulai: {data.datetime_mulai || '-'}</p>
-                              <p className="text-slate-600 font-medium whitespace-nowrap">Selesai: {data.datetime_selesai || '-'}</p>
-                              <p className="text-slate-500 text-[10px] font-mono">Tgl OP: {data.tgl || '-'}</p>
-                           </div>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-dashed border-gray-100">
-                           {data.perbaikan === '1' && <span className={`${chipClass} bg-rose-50 text-rose-500 border-rose-100 uppercase`}>Perbaikan</span>}
-                           {data.status && <span className={`${chipClass} bg-amber-50 text-amber-600 border-amber-100 uppercase`}>Sts: {data.status}</span>}
-                           {data.faktur_bom && <span className={`${chipClass} bg-slate-50 text-gray-500 border-gray-100 break-all`}>BOM: {data.faktur_bom}</span>}
-                           {data.faktur_so && <span className={`${chipClass} bg-indigo-50 text-indigo-600 border-indigo-100 break-all`}>SO: {data.faktur_so}</span>}
-                           {data.faktur_pb && <span className={`${chipClass} bg-emerald-50 text-emerald-600 border-emerald-100 break-all`}>PB: {data.faktur_pb}</span>}
-                           {data.faktur_pr && <span className={`${chipClass} bg-sky-50 text-sky-600 border-sky-100 break-all`}>PR: {String(data.faktur_pr).replace(/<[^>]*>?/gm, '')}</span>}
-                        </div>
-                        <div className="flex flex-col gap-1.5 pt-1 border-t border-dashed border-gray-100">
-                           <div className="grid grid-cols-2 gap-2 text-[11px]">
-                              <div className="flex flex-col gap-0.5"><span className="text-gray-400 font-bold uppercase">BBB</span><span className="font-bold text-slate-700">Rp {Number(data.bbb || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</span></div>
-                              <div className="flex flex-col gap-0.5 text-right"><span className="text-amber-600 font-bold uppercase">HP Unit</span><span className="font-bold text-amber-700">Rp {Number(data.hp || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</span></div>
-                           </div>
-                           <div className="grid grid-cols-2 gap-2 text-[11px] bg-amber-50/20 p-1.5 rounded border border-amber-100/30 mt-0.5">
-                              <div className="flex flex-col gap-0.5">
-                                 <span className="text-gray-400 font-bold uppercase text-[9px]">BTKL ({data.pers_btkl || '0'}%)</span>
-                                 <span className="font-bold text-slate-600">Rp {Number(data.btkl || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</span>
-                              </div>
-                              <div className="flex flex-col gap-0.5 text-right">
-                                 <span className="text-gray-400 font-bold uppercase text-[9px]">BOP ({data.pers_bop || '0'}%)</span>
-                                 <span className="font-bold text-slate-600">Rp {Number(data.bop || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</span>
-                              </div>
-                           </div>
-                        </div>
-                        {data.spesifikasi && (
-                           <div className="bg-gray-50/50 p-2 rounded border border-gray-100 text-[11px]">
-                              <p className="text-gray-400 font-bold uppercase mb-0.5 tracking-tight">Spesifikasi</p>
-                              <p className="text-gray-600 italic leading-snug">{data.spesifikasi}</p>
-                           </div>
-                        )}
-                        <div className={auditSectionClass}>
-                           <div className="flex items-center justify-between"><p>Created: @{data.username || '-'} ({data.created_at || '-'})</p><p className="font-mono text-gray-300 text-[10px]">Tgl: {data.tgl || '-'}</p></div>
-                           {data.username_edited && <p>Edited: @{data.username_edited} ({data.edited_at || '-'})</p>}
-                        </div>
-                        <RenderAllFields data={data} excludeKeys={['id', 'tgl', 'perbaikan', 'status', 'nama_prd', 'faktur_bom', 'faktur_so', 'faktur_pb', 'faktur_pr', 'faktur_prd', 'datetime_mulai', 'datetime_selesai', 'kd_regu', 'regu', 'pers_hasil', 'prdk_wip', 'kd_mtd', 'kd_barang', 'kd_cabang', 'kd_gudang', 'qty', 'satuan', 'kd_satuan', 'qty_order', 'qty_so', 'qty_wip_awal', 'qty_wip_akhir', 'fkt_selesai', 'selesai', 'bbb', 'hp', 'hp_detil', 'hp_total', 'btkl', 'bop', 'pers_btkl', 'pers_bop', 'spesifikasi', 'produk', 'progres', 'nama_barang', 'nama_pelanggan', 'pelanggan', 'kd_pelanggan', 'username', 'created_at', 'edited_at', 'username_edited', 'harga', 'jumlah', 'jmlhp', 'mtd_alokasi_hp', 'tgl_expired', 'cmd', 'cmd2', 'detil', 'recid']} />
-                     </div>
+                  <div className={`${cardClass} border border-slate-100`}>
+                     <RenderAllFields data={data} excludeKeys={['raw_data']} />
                   </div>
                </div>
             );
@@ -403,53 +225,15 @@ export default function TrackingClient() {
          size: columnWidths.pr,
          meta: { wrap: true, valign: 'top' },
          cell: ({ row }) => {
-            const items = row.original.purchaseRequests;
-            if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data PR</div>;
-            return (
-               <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                  {items.map((pr: any, idx: number) => (
-                     <div key={idx} className={`${cardClass} border border-sky-100`}>
-                        <div className="flex items-start justify-between gap-2.5">
-                           <span className="text-[11px] font-bold text-sky-700 bg-sky-50 px-2.5 pb-1.5 pt-1 rounded border border-sky-100 block w-fit ml-0 text-left truncate" title={pr.faktur}>{pr.faktur}</span>
-                           <span className={headerDateClass}>{formatMdtDate(pr.tgl)}</span>
-                        </div>
-                        <div className="space-y-1.5 px-0.5">
-                           <div className={infoCardClass}>
-                              <p className={infoLabelClass}>Produk / Barang</p>
-                              <p className={productTitleClass}>{pr.nama_prd || '-'}</p>
-                              <div className={productMetaClass}>
-                                 <span className="bg-white px-1.5 py-0.5 rounded border border-gray-200">{pr.kd_brg || '-'}</span>
-                                 <span className="bg-white px-1.5 py-0.5 rounded border border-gray-200">{pr.kd_cabang || '-'} / {pr.kd_gudang || '-'}</span>
-                                 {pr.status && <span className="bg-sky-50 px-1.5 py-0.5 rounded border border-sky-100 text-sky-600 uppercase">Sts: {pr.status}</span>}
-                              </div>
-                           </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-[11px]">
-                           <div className="flex flex-col gap-0.5 bg-slate-50 p-2 rounded border border-gray-100/50">
-                              <span className="text-gray-400 font-bold uppercase tracking-tight">Kuantitas</span>
-                              <span className="font-bold text-slate-800">Qty: {Number(pr.qty || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {pr.satuan || '-'}</span>
-                           </div>
-                           <div className="flex flex-col gap-0.5 bg-slate-50 p-2 rounded border border-gray-100/50">
-                              <span className="text-gray-400 font-bold uppercase tracking-tight">Dibutuhkan</span>
-                              <span className="font-medium text-slate-700">{formatMdtDate(pr.tgl_dibutuhkan || '-')}</span>
-                           </div>
-                        </div>
-                        {(pr.faktur_prd || pr.faktur_spph || pr.faktur_po) && (
-                           <div className="pt-1 border-t border-sky-100 flex flex-col gap-1 text-[11px]">
-                              {pr.faktur_prd && <div className={refRowClass}><span className={refLabelClass}>Ref OP:</span><span className="text-sky-700 font-medium truncate">{String(pr.faktur_prd).replace(/<[^>]*>?/gm, '')}</span></div>}
-                              {pr.faktur_spph && <div className={refRowClass}><span className={refLabelClass}>Ref SPPH:</span><span className="text-sky-700 font-medium truncate">{String(pr.faktur_spph).replace(/<[^>]*>?/gm, '')}</span></div>}
-                              {pr.faktur_po && <div className={refRowClass}><span className={refLabelClass}>Ref PO:</span><span className="text-sky-700 font-medium truncate">{String(pr.faktur_po).replace(/<[^>]*>?/gm, '')}</span></div>}
-                           </div>
-                        )}
-                        {pr.keterangan && <div className="bg-slate-50 p-2 rounded border border-slate-100"><p className="text-[11px] text-gray-500 italic leading-snug">"{pr.keterangan}"</p></div>}
-                        <div className={auditSectionClass}>
-                           <p>Created: @{pr.username || '-'} ({pr.created_at || '-'})</p>
-                           {pr.updated_at && <p>Updated: {pr.updated_at}</p>}
-                           {pr.username_edited && <p>Edited: @{pr.username_edited} ({pr.edited_at || '-'})</p>}
-                        </div>
-                        <RenderAllFields data={pr} excludeKeys={['id', 'tgl', 'tgl_dibutuhkan', 'faktur_prd', 'kd_gudang', 'kd_cabang', 'status', 'username', 'created_at', 'updated_at', 'edited_at', 'username_edited', 'keterangan', 'faktur_spph', 'faktur_po', 'nama_prd', 'kd_brg', 'qty', 'satuan', 'recid']} />
-                     </div>
-                  ))}
+             const items = row.original.purchaseRequests;
+             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data PR</div>;
+             return (
+                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                   {items.map((pr: any, idx: number) => (
+                      <div key={idx} className={`${cardClass} border border-slate-100`}>
+                         <RenderAllFields data={pr} excludeKeys={['raw_data']} />
+                      </div>
+                   ))}
                </div>
             );
          }
