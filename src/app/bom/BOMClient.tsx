@@ -8,7 +8,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatLastUpdate } from '@/lib/date-utils';
-import { getDefaultScraperDateRange, hydrateScraperPeriod, persistScraperPeriod } from '@/lib/scraper-period';
+import { formatScrapedPeriodDate, getDefaultScraperDateRange, hydrateScraperPeriod, persistScraperPeriod } from '@/lib/scraper-period';
 import { DataTable } from '@/components/ui/DataTable';
 import { splitDateRangeIntoMonths } from '@/lib/date-utils';
 import { useTableSelection } from '@/lib/hooks/useTableSelection';
@@ -126,6 +126,10 @@ export default function BOMClient() {
       const json = await res.json();
       
       if (mountedRef.current) {
+        if (json.scrapedPeriod?.start && json.scrapedPeriod?.end) {
+          setScrapedPeriod(json.scrapedPeriod);
+        }
+
         setData(prev => {
           const items = json.data || [];
           const processed = items.map((item: any) => {
@@ -226,6 +230,7 @@ export default function BOMClient() {
     let successCount = 0;
     let totalScraped = 0;
     let completedChunks = 0;
+    let lastUpdatedFromScrape: string | null = null;
 
     const processChunk = async (chunk: any) => {
       try {
@@ -234,6 +239,9 @@ export default function BOMClient() {
           successCount++;
           const json = await res.json();
           totalScraped += (json.total || 0);
+          if (json.lastUpdated) {
+            lastUpdatedFromScrape = json.lastUpdated;
+          }
         }
       } catch (err) {
         console.error("Chunk error:", err);
@@ -258,6 +266,17 @@ export default function BOMClient() {
       if (successCount > 0) {
         const periodStr = persistScraperPeriod({ stateKey: 'bomReportState', periodKey: 'BOMClient_scrapedPeriod' }, startDate, endDate);
         setScrapedPeriod(periodStr);
+        await fetch('/api/bom/scrape-period', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            start: formatDateToYYYYMMDD(startDate).split('-').reverse().join('-'),
+            end: formatDateToYYYYMMDD(endDate).split('-').reverse().join('-'),
+          })
+        });
+        if (lastUpdatedFromScrape) {
+          setLastUpdated(formatLastUpdate(new Date(lastUpdatedFromScrape)));
+        }
         setIsBatching(false);
         await fetch('/api/activity-log', {
           method: 'POST',
@@ -602,7 +621,7 @@ export default function BOMClient() {
               {lastUpdated && (
                 <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none" style={{ color: '#99a1af' }}>
                   <span className="opacity-40">|</span>
-                  <span>Diperbarui: {lastUpdated} {scrapedPeriod ? `(Periode: ${scrapedPeriod.start} - ${scrapedPeriod.end})` : ''}</span>
+                  <span>Diperbarui: {lastUpdated}{scrapedPeriod ? ` (Periode: ${formatScrapedPeriodDate(scrapedPeriod.start)} s.d. ${formatScrapedPeriodDate(scrapedPeriod.end)})` : ''}</span>
                 </div>
               )}
             </div>

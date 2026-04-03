@@ -8,7 +8,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatLastUpdate } from '@/lib/date-utils';
-import { getDefaultScraperDateRange, hydrateScraperPeriod, persistScraperPeriod } from '@/lib/scraper-period';
+import { formatScrapedPeriodDate, getDefaultScraperDateRange, hydrateScraperPeriod, persistScraperPeriod } from '@/lib/scraper-period';
 import { DataTable } from '@/components/ui/DataTable';
 import { splitDateRangeIntoMonths } from '@/lib/date-utils';
 import { useTableSelection } from '@/lib/hooks/useTableSelection';
@@ -38,7 +38,7 @@ export default function PRClient() {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
   const [startDate, setStartDate] = useState<Date>(() => getDefaultScraperDateRange().startDate);
-  const [endDate, setEndDate] = useState<Date>(() => getDefaultScraperDateRange().startDate);
+  const [endDate, setEndDate] = useState<Date>(() => getDefaultScraperDateRange().endDate);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[] | null>(null);
   const [error, setError] = useState('');
@@ -96,6 +96,8 @@ export default function PRClient() {
   }, [searchQuery]);
 
   useEffect(() => {
+    if (!isMounted) return;
+
     let active = true;
     async function loadData() {
       if (mountedRef.current) setLoading(page === 1);
@@ -178,6 +180,7 @@ export default function PRClient() {
 
   useEffect(() => {
     setIsMounted(true);
+    mountedRef.current = true;
 
     const hydratedPeriod = hydrateScraperPeriod({ stateKey: 'prReportState', periodKey: 'PRClient_scrapedPeriod' });
     setScrapedPeriod(hydratedPeriod.scrapedPeriod);
@@ -502,7 +505,7 @@ export default function PRClient() {
               {lastUpdated && (
                 <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none" style={{ color: '#99a1af' }}>
                   <span className="opacity-40">|</span>
-                  <span>Diperbarui: {lastUpdated} {scrapedPeriod ? `(Periode: ${scrapedPeriod.start} - ${scrapedPeriod.end})` : ''}</span>
+                  <span>Diperbarui: {lastUpdated}{scrapedPeriod ? ` (Periode: ${formatScrapedPeriodDate(scrapedPeriod.start)} s.d. ${formatScrapedPeriodDate(scrapedPeriod.end)})` : ''}</span>
                 </div>
               )}
             </div>
