@@ -40,23 +40,34 @@ export async function GET(request: NextRequest) {
         orderBy = `ORDER BY substr(tgl, 7, 4) ${sortOrder}, substr(tgl, 4, 2) ${sortOrder}, substr(tgl, 1, 2) ${sortOrder}`;
     }
 
-    const [totalRes, dataRes, lastScrapeRes, lastUpdatedRawRes] = await db.batch([
+    const [totalRes, dataRes, lastScrapeRes, scrapedPeriodRes, lastUpdatedRawRes] = await db.batch([
       { sql: `SELECT COUNT(*) as count FROM bill_of_materials ${whereClause}`, args },
       { sql: `SELECT * FROM bill_of_materials ${whereClause} ${orderBy} LIMIT ? OFFSET ?`, args: [...args, pageSize, offset] },
       { sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_bom'`, args: [] },
+      { sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_bom_period'`, args: [] },
       { sql: `SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM bill_of_materials`, args: [] }
     ], "read");
 
-    console.log("DEBUG BOM RAW:", (dataRes.rows[0] as any)?.raw_data);
     const lastScrape = lastScrapeRes.rows[0] as any;
+    const rawScrapedPeriod = scrapedPeriodRes.rows[0] as any;
     const lastUpdatedRaw = (lastUpdatedRawRes.rows[0] as any)?.lastUpdated;
     const lastUpdated = lastScrape?.value || lastUpdatedRaw;
+    let scrapedPeriod: { start: string; end: string } | null = null;
+
+    if (rawScrapedPeriod?.value) {
+      try {
+        scrapedPeriod = JSON.parse(rawScrapedPeriod.value);
+      } catch {
+        scrapedPeriod = null;
+      }
+    }
 
     return NextResponse.json({
       success: true,
       data: dataRes.rows,
       total: Number(totalRes.rows[0].count),
-      lastUpdated
+      lastUpdated,
+      scrapedPeriod
     });
 
   } catch (error: any) {

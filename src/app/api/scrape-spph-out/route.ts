@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const dynamic = 'force-dynamic';
 import db from "@/lib/db";
 import { clearCachedSession, getSession as getScraperSession } from "@/lib/session-cache";
+import { encodeScrapedPeriod, getScrapedPeriodSettingKey } from "@/lib/server-scraped-period";
 
 const API_EMAIL = process.env.SCRAPER_EMAIL || "nauval"; 
 const API_PASSWORD = process.env.SCRAPER_PASSWORD || "312admin2";
@@ -141,16 +142,26 @@ export async function GET(request: NextRequest) {
     }
 
     const lastUpdated = new Date().toISOString();
-    await db.execute({
-      sql: `
-        INSERT INTO system_settings (key, value, updated_at)
-        VALUES (?, ?, CURRENT_TIMESTAMP)
-        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
-      `,
-      args: ['last_scrape_spph_out', lastUpdated]
-    });
+    await db.batch([
+      {
+        sql: `
+          INSERT INTO system_settings (key, value, updated_at)
+          VALUES (?, ?, CURRENT_TIMESTAMP)
+          ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+        `,
+        args: ['last_scrape_spph_out', lastUpdated]
+      },
+      {
+        sql: `
+          INSERT INTO system_settings (key, value, updated_at)
+          VALUES (?, ?, CURRENT_TIMESTAMP)
+          ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+        `,
+        args: [getScrapedPeriodSettingKey('last_scrape_spph_out'), encodeScrapedPeriod({ start: startStr, end: endStr })]
+      }
+    ], "write");
 
-    return NextResponse.json({ success: true, total: allRecords.length, lastUpdated });
+    return NextResponse.json({ success: true, total: allRecords.length, lastUpdated, scrapedPeriod: { start: startStr, end: endStr } });
 
   } catch (error: any) {
     console.error("Scrape SPPH Out Error:", error);

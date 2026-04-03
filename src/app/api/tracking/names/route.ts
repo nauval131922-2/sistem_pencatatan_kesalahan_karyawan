@@ -11,14 +11,10 @@ export async function GET(request: NextRequest) {
     const pageSize = parseInt(searchParams.get("pageSize") || "20");
     const offset = (page - 1) * pageSize;
 
-    // Search from 'orders' table (which stores Order Produksi)
-    // and link it back to BOM if possible, but the user wants to pick the 'Nama Order'
-    // in the suggestions. We will return the 'faktur' and 'nama_prd' from orders table.
-    
     const res = await db.execute({
       sql: `
-        SELECT faktur, nama_prd, tgl, nama_pelanggan as kd_pelanggan
-        FROM orders
+        SELECT faktur, nama_prd, tgl, kd_pelanggan
+        FROM bill_of_materials
         WHERE faktur LIKE ? OR nama_prd LIKE ?
         ORDER BY 
           substr(tgl, 7, 4) DESC, 

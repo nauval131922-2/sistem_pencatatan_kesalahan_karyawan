@@ -68,7 +68,6 @@ export async function GET(request: NextRequest) {
 
     // 5. Get Production Order Details
     let productionOrder = null;
-    let productionStatus = "DALAM PROSES"; // Default
     let fakturPrd = bom?.faktur_prd || salesOrder?.faktur_prd;
     
     // First try: Direct link via faktur_prd
@@ -104,19 +103,6 @@ export async function GET(request: NextRequest) {
         if (fuzzyRes.rows.length > 0) {
           productionOrder = fuzzyRes.rows[0];
         }
-      }
-    }
-
-    // 6. Check Completion Data (from barang_jadi table)
-    let completionData = null;
-    if (productionOrder?.faktur) {
-      const finishRes = await db.execute({
-        sql: `SELECT * FROM barang_jadi WHERE faktur_prd = ? OR faktur = ? LIMIT 1`,
-        args: [productionOrder.faktur, productionOrder.faktur]
-      });
-      if (finishRes.rows.length > 0) {
-        productionStatus = "SELESAI";
-        completionData = finishRes.rows[0];
       }
     }
 
@@ -157,6 +143,14 @@ export async function GET(request: NextRequest) {
       return { ...parsed, ...item };
     };
 
+    const processedProductionOrder = processRaw(productionOrder);
+    const isProductionCompleted = Boolean(
+      processedProductionOrder?.datetime_selesai &&
+      String(processedProductionOrder.datetime_selesai).trim() &&
+      processedProductionOrder?.fkt_selesai &&
+      String(processedProductionOrder.fkt_selesai).trim()
+    );
+
     return NextResponse.json({
       success: true,
       data: {
@@ -164,9 +158,8 @@ export async function GET(request: NextRequest) {
         sphOut: processRaw(sphOut),
         salesOrder: processRaw(salesOrder),
         productionOrder: productionOrder ? { 
-           ...(completionData ? processRaw(completionData) : {}),
-           ...processRaw(productionOrder), 
-           status: productionStatus 
+           ...processedProductionOrder,
+           status: isProductionCompleted ? "SELESAI" : "DALAM PROSES"
         } : null,
         purchaseRequests: purchaseRequests.map(pr => processRaw(pr)),
         delivery: delivery.map(d => processRaw(d))

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { logActivity } from "@/lib/activity";
+import { buildFtsQuery } from "@/lib/fts";
 
 export const dynamic = 'force-dynamic';
 
@@ -19,29 +19,31 @@ export async function GET(request: NextRequest) {
     let argsTotal: any[] = [];
 
     if (search) {
-      const queryValue = `${search}*`;
+      const queryValue = buildFtsQuery(search);
       try {
-          // Attempt FTS matching
-          const ftsMatch = await db.execute({ 
-            sql: "SELECT id FROM hpp_kalkulasi_fts WHERE hpp_kalkulasi_fts MATCH ?", 
-            args: [queryValue] 
-          });
-          
-          if (ftsMatch.rows.length > 0) {
-              const ids = ftsMatch.rows.map(r => r.id).join(',');
-              sqlData = `SELECT * FROM hpp_kalkulasi WHERE id IN (${ids}) ORDER BY id ASC LIMIT ? OFFSET ?`;
-              sqlTotal = `SELECT COUNT(*) as count FROM hpp_kalkulasi WHERE id IN (${ids})`;
-              argsData = [limit, offset];
-              argsTotal = [];
-          } else {
-              // Fallback to LIKE
-              const qPattern = `%${search}%`;
-              sqlData = `SELECT * FROM hpp_kalkulasi WHERE (nama_order LIKE ? OR keterangan LIKE ?) ORDER BY id ASC LIMIT ? OFFSET ?`;
-              sqlTotal = `SELECT COUNT(*) as count FROM hpp_kalkulasi WHERE (nama_order LIKE ? OR keterangan LIKE ?)`;
-              argsData = [qPattern, qPattern, limit, offset];
-              argsTotal = [qPattern, qPattern];
+          if (queryValue) {
+            const ftsMatch = await db.execute({
+              sql: "SELECT id FROM hpp_kalkulasi_fts WHERE hpp_kalkulasi_fts MATCH ?",
+              args: [queryValue]
+            });
+
+            if (ftsMatch.rows.length > 0) {
+                const ids = ftsMatch.rows.map(r => r.id).join(',');
+                sqlData = `SELECT * FROM hpp_kalkulasi WHERE id IN (${ids}) ORDER BY id ASC LIMIT ? OFFSET ?`;
+                sqlTotal = `SELECT COUNT(*) as count FROM hpp_kalkulasi WHERE id IN (${ids})`;
+                argsData = [limit, offset];
+                argsTotal = [];
+            }
           }
-      } catch (e) {
+
+          if (!sqlData) {
+            const qPattern = `%${search}%`;
+            sqlData = `SELECT * FROM hpp_kalkulasi WHERE (nama_order LIKE ? OR keterangan LIKE ?) ORDER BY id ASC LIMIT ? OFFSET ?`;
+            sqlTotal = `SELECT COUNT(*) as count FROM hpp_kalkulasi WHERE (nama_order LIKE ? OR keterangan LIKE ?)`;
+            argsData = [qPattern, qPattern, limit, offset];
+            argsTotal = [qPattern, qPattern];
+          }
+      } catch {
           // Safe fallback
           const qPattern = `%${search}%`;
           sqlData = `SELECT * FROM hpp_kalkulasi WHERE (nama_order LIKE ? OR keterangan LIKE ?) ORDER BY id ASC LIMIT ? OFFSET ?`;

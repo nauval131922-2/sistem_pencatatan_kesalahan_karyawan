@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
-import { logActivity } from "@/lib/activity";
+import { buildFtsQuery } from "@/lib/fts";
+import { getScrapedPeriodSettingKey, parseScrapedPeriod } from "@/lib/server-scraped-period";
 
 
 export const dynamic = 'force-dynamic';
@@ -21,45 +22,42 @@ export async function GET(request: Request) {
 
     console.log(`[API] Fetching bahan-baku: page=${page}, limit=${limit}, search="${search}", from="${fromDate}", to="${toDate}"`);
 
-    let sqlRecords = "";
-    let sqlTotal = "";
-    let argsRecords: any[] = [];
-    let argsTotal: any[] = [];
-
     if (search) {
-      // Split by space and clean each word for FTS
-      const words = search.trim().split(/\s+/).filter(w => w.length > 0);
-      const ftsQuery = words.map(w => `${w.replace(/"/g, '""')}*`).join(' AND ');
-      
-      const baseArgs = [ftsQuery];
-      if (fromDate && toDate) { baseArgs.push(fromDate, toDate); }
-      
-      const sqlFtsRecords = `
-        SELECT 
-          id, tgl, nama_barang, kd_barang, faktur, faktur_prd, 
-          faktur_aktifitas, kd_cabang, kd_gudang, qty, satuan, 
-          status, hp, hp_total, keterangan, fkt_hasil, 
-          nama_prd, aktifitas, username, kd_pelanggan, recid, 
-          created_at 
-        FROM bahan_baku 
-        WHERE id IN (SELECT rowid FROM bahan_baku_fts WHERE bahan_baku_fts MATCH ?) ${dateFilterSQL}
-        ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC 
-        LIMIT ? OFFSET ?
-      `;
-      
-      const sqlFtsTotal = `
-        SELECT COUNT(*) as count FROM bahan_baku 
-        WHERE id IN (SELECT rowid FROM bahan_baku_fts WHERE bahan_baku_fts MATCH ?) ${dateFilterSQL}
-      `;
+      const ftsQuery = buildFtsQuery(search);
 
-      // 1. Try FTS5 First (Fast)
-      let results = await db.batch([
-        { sql: sqlFtsRecords, args: [...baseArgs, limit, offset] },
-        { sql: sqlFtsTotal, args: baseArgs }
-      ], "read");
+      let records: any[] = [];
+      let total = 0;
 
-      let records = results[0].rows;
-      let total = Number((results[1].rows[0] as any).count);
+      if (ftsQuery) {
+        const baseArgs = [ftsQuery];
+        if (fromDate && toDate) { baseArgs.push(fromDate, toDate); }
+
+        const sqlFtsRecords = `
+          SELECT
+            id, tgl, nama_barang, kd_barang, faktur, faktur_prd,
+            faktur_aktifitas, kd_cabang, kd_gudang, qty, satuan,
+            status, hp, hp_total, keterangan, fkt_hasil,
+            nama_prd, aktifitas, username, kd_pelanggan, recid,
+            created_at
+          FROM bahan_baku
+          WHERE id IN (SELECT rowid FROM bahan_baku_fts WHERE bahan_baku_fts MATCH ?) ${dateFilterSQL}
+          ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC, id DESC
+          LIMIT ? OFFSET ?
+        `;
+
+        const sqlFtsTotal = `
+          SELECT COUNT(*) as count FROM bahan_baku
+          WHERE id IN (SELECT rowid FROM bahan_baku_fts WHERE bahan_baku_fts MATCH ?) ${dateFilterSQL}
+        `;
+
+        const results = await db.batch([
+          { sql: sqlFtsRecords, args: [...baseArgs, limit, offset] },
+          { sql: sqlFtsTotal, args: baseArgs }
+        ], "read");
+
+        records = results[0].rows;
+        total = Number((results[1].rows[0] as any).count);
+      }
 
       // 2. Fallback to LIKE if FTS fails to find anything (Robustness)
       if (total === 0) {
@@ -118,6 +116,7 @@ export async function GET(request: Request) {
 
       const extraResults = await db.batch([
         { sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_bahan_baku'`, args: [] },
+        { sql: `SELECT value FROM system_settings WHERE key = ?`, args: [getScrapedPeriodSettingKey('last_scrape_bahan_baku')] },
         { sql: `SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM bahan_baku`, args: [] }
       ], "read");
 
@@ -125,7 +124,8 @@ export async function GET(request: Request) {
         success: true,
         data: records,
         total,
-        lastUpdated: extraResults[0].rows[0]?.value || extraResults[1].rows[0]?.lastUpdated,
+        lastUpdated: extraResults[0].rows[0]?.value || extraResults[2].rows[0]?.lastUpdated,
+        scrapedPeriod: parseScrapedPeriod((extraResults[1].rows[0] as any)?.value),
         page,
         limit
       });
@@ -145,6 +145,7 @@ export async function GET(request: Request) {
           args: baseArgs
         },
         { sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_bahan_baku'`, args: [] },
+        { sql: `SELECT value FROM system_settings WHERE key = ?`, args: [getScrapedPeriodSettingKey('last_scrape_bahan_baku')] },
         { sql: `SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM bahan_baku`, args: [] }
       ], "read");
 
@@ -152,7 +153,8 @@ export async function GET(request: Request) {
         success: true,
         data: results[0].rows,
         total: Number((results[1].rows[0] as any).count),
-        lastUpdated: results[2].rows[0]?.value || results[3].rows[0]?.lastUpdated,
+        lastUpdated: results[2].rows[0]?.value || results[4].rows[0]?.lastUpdated,
+        scrapedPeriod: parseScrapedPeriod((results[3].rows[0] as any)?.value),
         page,
         limit
       });

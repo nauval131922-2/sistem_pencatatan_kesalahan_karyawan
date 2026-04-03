@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import db from "@/lib/db";
 import { getCachedSession, setCachedSession, clearCachedSession, getSession as getScraperSession } from "@/lib/session-cache";
 import { getSession } from "@/lib/session";
+import { encodeScrapedPeriod, getScrapedPeriodSettingKey } from "@/lib/server-scraped-period";
 
 const API_EMAIL = process.env.SCRAPER_EMAIL || "nauval";
 const API_PASSWORD = process.env.SCRAPER_PASSWORD || "312admin2";
@@ -185,20 +186,31 @@ export async function GET(request: NextRequest) {
 
     const lastUpdated = new Date().toISOString();
     
-    await db.execute({
-      sql: `
-        INSERT INTO system_settings (key, value, updated_at)
-        VALUES (?, ?, CURRENT_TIMESTAMP)
-        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
-      `,
-      args: ['last_scrape_sph_out', lastUpdated]
-    });
+    await db.batch([
+      {
+        sql: `
+          INSERT INTO system_settings (key, value, updated_at)
+          VALUES (?, ?, CURRENT_TIMESTAMP)
+          ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+        `,
+        args: ['last_scrape_sph_out', lastUpdated]
+      },
+      {
+        sql: `
+          INSERT INTO system_settings (key, value, updated_at)
+          VALUES (?, ?, CURRENT_TIMESTAMP)
+          ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+        `,
+        args: [getScrapedPeriodSettingKey('last_scrape_sph_out'), encodeScrapedPeriod({ start: startStr, end: endStr })]
+      }
+    ], "write");
 
     return NextResponse.json({
       success: true,
       total: finalRecords.length,
       newly_inserted: newInsertedCount,
-      lastUpdated
+      lastUpdated,
+      scrapedPeriod: { start: startStr, end: endStr }
     }, {
       headers: { "Cache-Control": "no-store, max-age=0" }
     });

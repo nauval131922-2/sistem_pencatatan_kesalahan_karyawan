@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
-import { logActivity } from "@/lib/activity";
+import { buildFtsQuery } from "@/lib/fts";
+import { getScrapedPeriodSettingKey, parseScrapedPeriod } from "@/lib/server-scraped-period";
 
 
 export const dynamic = 'force-dynamic';
@@ -23,24 +24,27 @@ export async function GET(request: Request) {
     let total = 0;
 
     if (search) {
-      // 1. Try FTS5 First (High Performance)
-      const ftsResults = await db.batch([
-        {
-          sql: `SELECT bj.* FROM barang_jadi bj JOIN barang_jadi_fts fts ON bj.id = fts.rowid 
-                WHERE barang_jadi_fts MATCH ? ${dateFilterSQL}
-                ORDER BY substr(bj.tgl, 7, 4) DESC, substr(bj.tgl, 4, 2) DESC, substr(bj.tgl, 1, 2) DESC, bj.id DESC 
-                LIMIT ? OFFSET ?`,
-          args: [search, ...(fromDate && toDate ? [fromDate, toDate] : []), limit, offset]
-        },
-        {
-          sql: `SELECT COUNT(*) as count FROM barang_jadi bj JOIN barang_jadi_fts fts ON bj.id = fts.rowid 
-                WHERE barang_jadi_fts MATCH ? ${dateFilterSQL}`,
-          args: [search, ...(fromDate && toDate ? [fromDate, toDate] : [])]
-        }
-      ], "read");
+      const ftsQuery = buildFtsQuery(search);
 
-      records = ftsResults[0].rows;
-      total = Number((ftsResults[1].rows[0] as any).count);
+      if (ftsQuery) {
+        const ftsResults = await db.batch([
+          {
+            sql: `SELECT bj.* FROM barang_jadi bj JOIN barang_jadi_fts fts ON bj.id = fts.rowid
+                  WHERE barang_jadi_fts MATCH ? ${dateFilterSQL}
+                  ORDER BY substr(bj.tgl, 7, 4) DESC, substr(bj.tgl, 4, 2) DESC, substr(bj.tgl, 1, 2) DESC, bj.id DESC
+                  LIMIT ? OFFSET ?`,
+            args: [ftsQuery, ...(fromDate && toDate ? [fromDate, toDate] : []), limit, offset]
+          },
+          {
+            sql: `SELECT COUNT(*) as count FROM barang_jadi bj JOIN barang_jadi_fts fts ON bj.id = fts.rowid
+                  WHERE barang_jadi_fts MATCH ? ${dateFilterSQL}`,
+            args: [ftsQuery, ...(fromDate && toDate ? [fromDate, toDate] : [])]
+          }
+        ], "read");
+
+        records = ftsResults[0].rows;
+        total = Number((ftsResults[1].rows[0] as any).count);
+      }
 
       // 2. Fallback to LIKE if FTS fails (Robustness)
       if (total === 0) {
@@ -93,11 +97,12 @@ export async function GET(request: Request) {
     // Execute metadata queries separately for clarity
     const metadataResults = await db.batch([
       { sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_barang_jadi'`, args: [] },
+      { sql: `SELECT value FROM system_settings WHERE key = ?`, args: [getScrapedPeriodSettingKey('last_scrape_barang_jadi')] },
       { sql: `SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM barang_jadi`, args: [] }
     ], "read");
 
     const lastScrape = metadataResults[0].rows[0] as any;
-    const lastUpdatedRaw = (metadataResults[1].rows[0] as any).lastUpdated;
+    const lastUpdatedRaw = (metadataResults[2].rows[0] as any).lastUpdated;
     const lastUpdated = lastScrape ? lastScrape.value : lastUpdatedRaw;
 
     return NextResponse.json({
@@ -105,6 +110,7 @@ export async function GET(request: Request) {
       data: records,
       total,
       lastUpdated,
+      scrapedPeriod: parseScrapedPeriod((metadataResults[1].rows[0] as any)?.value),
       page,
       limit
     });

@@ -166,7 +166,15 @@ export async function GET(request: NextRequest) {
       args: ['last_scrape_bom', lastUpdated]
     });
 
-    return NextResponse.json({ success: true, total: allRecords.length, lastUpdated });
+    return NextResponse.json({
+      success: true,
+      total: allRecords.length,
+      lastUpdated,
+      scrapedPeriod: {
+        start: startStr,
+        end: endStr,
+      }
+    });
 
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { getCachedSession, clearCachedSession, getSession as getScraperSession } from "@/lib/session-cache";
 import { getSession } from "@/lib/session";
+import { encodeScrapedPeriod, getScrapedPeriodSettingKey } from "@/lib/server-scraped-period";
 
 export const dynamic = 'force-dynamic';
 
@@ -156,19 +157,30 @@ export async function GET(req: NextRequest) {
     }
 
     const lastUpdated = new Date().toISOString();
-    await db.execute({
-      sql: `
-        INSERT INTO system_settings (key, value, updated_at)
-        VALUES (?, ?, CURRENT_TIMESTAMP)
-        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
-      `,
-      args: ['last_scrape_sales_orders', lastUpdated]
-    });
+    await db.batch([
+      {
+        sql: `
+          INSERT INTO system_settings (key, value, updated_at)
+          VALUES (?, ?, CURRENT_TIMESTAMP)
+          ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+        `,
+        args: ['last_scrape_sales_orders', lastUpdated]
+      },
+      {
+        sql: `
+          INSERT INTO system_settings (key, value, updated_at)
+          VALUES (?, ?, CURRENT_TIMESTAMP)
+          ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+        `,
+        args: [getScrapedPeriodSettingKey('last_scrape_sales_orders'), encodeScrapedPeriod({ start: startStr, end: endStr })]
+      }
+    ], "write");
 
     return NextResponse.json({ 
       success: true, 
       total: finalRecords.length,
-      lastUpdated
+      lastUpdated,
+      scrapedPeriod: { start: startStr, end: endStr }
     });
 
   } catch (error: any) {

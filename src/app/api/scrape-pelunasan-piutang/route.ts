@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import db from '@/lib/db';
 import { getSession as getScraperSession, clearCachedSession } from '@/lib/session-cache';
+import { encodeScrapedPeriod, getScrapedPeriodSettingKey } from '@/lib/server-scraped-period';
 
 const API_EMAIL = process.env.SCRAPER_EMAIL || "nauval"; 
 const API_PASSWORD = process.env.SCRAPER_PASSWORD || "312admin2";
@@ -120,15 +121,22 @@ export async function GET(req: NextRequest) {
     }
 
     const lastUpdated = new Date().toISOString();
-    await db.execute({
-      sql: "INSERT INTO system_settings (key, value, updated_at) VALUES ('last_scrape_pelunasan_piutang', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP",
-      args: [lastUpdated]
-    });
+    await db.batch([
+      {
+        sql: "INSERT INTO system_settings (key, value, updated_at) VALUES ('last_scrape_pelunasan_piutang', ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP",
+        args: [lastUpdated]
+      },
+      {
+        sql: "INSERT INTO system_settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP",
+        args: [getScrapedPeriodSettingKey('last_scrape_pelunasan_piutang'), encodeScrapedPeriod({ start: startIndo, end: endIndo })]
+      }
+    ], "write");
 
     return NextResponse.json({
       success: true,
       total: filteredRows.length,
-      lastUpdated
+      lastUpdated,
+      scrapedPeriod: { start: startIndo, end: endIndo }
     });
   } catch (err: any) {
     console.error("Scrape Pelunasan Piutang Error:", err);

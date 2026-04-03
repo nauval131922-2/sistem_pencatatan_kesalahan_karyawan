@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getScrapedPeriodSettingKey, parseScrapedPeriod } from '@/lib/server-scraped-period';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,18 +47,20 @@ export async function GET(req: NextRequest) {
     // Get metadata
     const metadataResults = await db.batch([
       { sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_pelunasan_piutang'`, args: [] },
+      { sql: `SELECT value FROM system_settings WHERE key = ?`, args: [getScrapedPeriodSettingKey('last_scrape_pelunasan_piutang')] },
       { sql: `SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM pelunasan_piutang`, args: [] }
     ], "read");
 
     const lastScrape = metadataResults[0].rows[0] as any;
-    const lastUpdatedRaw = (metadataResults[1].rows[0] as any).lastUpdated;
+    const lastUpdatedRaw = (metadataResults[2].rows[0] as any).lastUpdated;
     const lastUpdated = lastScrape?.value || lastUpdatedRaw;
 
     return NextResponse.json({
       success: true,
       data: dataResults.rows,
       total,
-      lastUpdated
+      lastUpdated,
+      scrapedPeriod: parseScrapedPeriod((metadataResults[1].rows[0] as any)?.value)
     });
 
   } catch (error: any) {

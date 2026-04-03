@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getScrapedPeriodSettingKey, parseScrapedPeriod } from '@/lib/server-scraped-period';
 
 export async function GET(req: NextRequest) {
   try {
@@ -39,10 +40,11 @@ export async function GET(req: NextRequest) {
     
     const countQuery = `SELECT COUNT(*) as total FROM purchase_orders ${whereClause}`;
     
-    const [recordsRes, totalRes, lastScrapeRes, lastUpdatedRawRes] = await db.batch([
+    const [recordsRes, totalRes, lastScrapeRes, scrapedPeriodRes, lastUpdatedRawRes] = await db.batch([
       { sql: dataQuery, args: [...args, pageSize, offset] },
       { sql: countQuery, args: args },
       { sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_purchase_orders'`, args: [] },
+      { sql: `SELECT value FROM system_settings WHERE key = ?`, args: [getScrapedPeriodSettingKey('last_scrape_purchase_orders')] },
       { sql: `SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM purchase_orders`, args: [] }
     ], "read");
 
@@ -55,6 +57,7 @@ export async function GET(req: NextRequest) {
       data: recordsRes.rows,
       total: Number((totalRes.rows[0] as any).total || 0),
       lastUpdated,
+      scrapedPeriod: parseScrapedPeriod((scrapedPeriodRes.rows[0] as any)?.value),
       page,
       pageSize
     });

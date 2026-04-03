@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { buildFtsQuery } from '@/lib/fts';
+import { getScrapedPeriodSettingKey, parseScrapedPeriod } from '@/lib/server-scraped-period';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,24 +21,27 @@ export async function GET(req: NextRequest) {
 
     if (search) {
       // Use FTS5 for better performance
-      const ftsQuery = `SELECT id FROM sales_orders_fts WHERE sales_orders_fts MATCH ?`;
-      const ftsParams = [`${search}*`];
+      const ftsSql = `SELECT id FROM sales_orders_fts WHERE sales_orders_fts MATCH ?`;
+      const ftsQuery = buildFtsQuery(search);
       
       try {
-        const ftsResult = await db.execute({ sql: ftsQuery, args: ftsParams });
-        if (ftsResult.rows.length > 0) {
-          const ids = ftsResult.rows.map(r => r.id).join(',');
-          query += ` AND id IN (${ids})`;
-          countQuery += ` AND id IN (${ids})`;
-        } else {
-          // Fallback if FTS5 is empty or not matching well
+        if (ftsQuery) {
+          const ftsResult = await db.execute({ sql: ftsSql, args: [ftsQuery] });
+          if (ftsResult.rows.length > 0) {
+            const ids = ftsResult.rows.map(r => r.id).join(',');
+            query += ` AND id IN (${ids})`;
+            countQuery += ` AND id IN (${ids})`;
+          }
+        }
+
+        if (query === `SELECT * FROM sales_orders WHERE 1=1`) {
           const searchPattern = `%${search}%`;
           const searchSql = ` AND (faktur LIKE ? OR kd_pelanggan LIKE ? OR nama_pelanggan LIKE ? OR nama_prd LIKE ? OR kd_barang LIKE ?)`;
           query += searchSql;
           countQuery += searchSql;
           params.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
         }
-      } catch (e) {
+      } catch {
         // Fallback
         const searchPattern = `%${search}%`;
         const searchSql = ` AND (faktur LIKE ? OR kd_pelanggan LIKE ? OR nama_pelanggan LIKE ? OR nama_prd LIKE ? OR kd_barang LIKE ?)`;
@@ -72,18 +77,20 @@ export async function GET(req: NextRequest) {
     
     const metadataResults = await db.batch([
       { sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_sales_orders'`, args: [] },
+      { sql: `SELECT value FROM system_settings WHERE key = ?`, args: [getScrapedPeriodSettingKey('last_scrape_sales_orders')] },
       { sql: `SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM sales_orders`, args: [] }
     ], "read");
 
     const lastScrape = metadataResults[0].rows[0] as any;
-    const lastUpdatedRaw = (metadataResults[1].rows[0] as any).lastUpdated;
+    const lastUpdatedRaw = (metadataResults[2].rows[0] as any).lastUpdated;
     const lastUpdated = lastScrape?.value || lastUpdatedRaw;
 
     return NextResponse.json({
       success: true,
       data: dataResults.rows,
       total,
-      lastUpdated
+      lastUpdated,
+      scrapedPeriod: parseScrapedPeriod((metadataResults[1].rows[0] as any)?.value)
     });
 
   } catch (error: any) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
-import { logActivity } from "@/lib/activity";
+import { buildFtsQuery } from "@/lib/fts";
+import { getScrapedPeriodSettingKey, parseScrapedPeriod } from "@/lib/server-scraped-period";
 
 
 export const dynamic = 'force-dynamic';
@@ -31,24 +32,27 @@ export async function GET(request: NextRequest) {
       sqlTotal = "SELECT COUNT(*) as count FROM sales_reports WHERE nama_prd = ?";
       argsTotal = [orderName];
     } else if (search) {
-      const queryValue = `${search}*`;
+      const queryValue = buildFtsQuery(search);
       try {
-          const ftsMatch = await db.execute({ sql: "SELECT id FROM sales_reports_fts WHERE sales_reports_fts MATCH ?", args: [queryValue] });
-          if (ftsMatch.rows.length > 0) {
-              const ids = ftsMatch.rows.map(r => r.id).join(',');
-              sqlData = `SELECT * FROM sales_reports WHERE id IN (${ids}) ${dateFilterSQL} ORDER BY substr(tgl,7,4) DESC, substr(tgl,4,2) DESC, substr(tgl,1,2) DESC, id DESC LIMIT ? OFFSET ?`;
-              sqlTotal = `SELECT COUNT(*) as count FROM sales_reports WHERE id IN (${ids}) ${dateFilterSQL}`;
-              argsData = [...(fromDate && toDate ? [fromDate, toDate] : []), limit, offset];
-              argsTotal = (fromDate && toDate ? [fromDate, toDate] : []);
-          } else {
-              // Fallback to LIKE
-              const qPattern = `%${search}%`;
-              sqlData = `SELECT * FROM sales_reports WHERE (nama_prd LIKE ? OR nama_pelanggan LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL} ORDER BY substr(tgl,7,4) DESC, substr(tgl,4,2) DESC, substr(tgl,1,2) DESC, id DESC LIMIT ? OFFSET ?`;
-              sqlTotal = `SELECT COUNT(*) as count FROM sales_reports WHERE (nama_prd LIKE ? OR nama_pelanggan LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}`;
-              argsData = [qPattern, qPattern, qPattern, qPattern, ...(fromDate && toDate ? [fromDate, toDate] : []), limit, offset];
-              argsTotal = [qPattern, qPattern, qPattern, qPattern, ...(fromDate && toDate ? [fromDate, toDate] : [])];
+          if (queryValue) {
+            const ftsMatch = await db.execute({ sql: "SELECT id FROM sales_reports_fts WHERE sales_reports_fts MATCH ?", args: [queryValue] });
+            if (ftsMatch.rows.length > 0) {
+                const ids = ftsMatch.rows.map(r => r.id).join(',');
+                sqlData = `SELECT * FROM sales_reports WHERE id IN (${ids}) ${dateFilterSQL} ORDER BY substr(tgl,7,4) DESC, substr(tgl,4,2) DESC, substr(tgl,1,2) DESC, id DESC LIMIT ? OFFSET ?`;
+                sqlTotal = `SELECT COUNT(*) as count FROM sales_reports WHERE id IN (${ids}) ${dateFilterSQL}`;
+                argsData = [...(fromDate && toDate ? [fromDate, toDate] : []), limit, offset];
+                argsTotal = (fromDate && toDate ? [fromDate, toDate] : []);
+            }
           }
-      } catch (e) {
+
+          if (!sqlData) {
+            const qPattern = `%${search}%`;
+            sqlData = `SELECT * FROM sales_reports WHERE (nama_prd LIKE ? OR nama_pelanggan LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL} ORDER BY substr(tgl,7,4) DESC, substr(tgl,4,2) DESC, substr(tgl,1,2) DESC, id DESC LIMIT ? OFFSET ?`;
+            sqlTotal = `SELECT COUNT(*) as count FROM sales_reports WHERE (nama_prd LIKE ? OR nama_pelanggan LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL}`;
+            argsData = [qPattern, qPattern, qPattern, qPattern, ...(fromDate && toDate ? [fromDate, toDate] : []), limit, offset];
+            argsTotal = [qPattern, qPattern, qPattern, qPattern, ...(fromDate && toDate ? [fromDate, toDate] : [])];
+          }
+      } catch {
           // Fallback
           const qPattern = `%${search}%`;
           sqlData = `SELECT * FROM sales_reports WHERE (nama_prd LIKE ? OR nama_pelanggan LIKE ? OR kd_barang LIKE ? OR faktur LIKE ?) ${dateFilterSQL} ORDER BY substr(tgl,7,4) DESC, substr(tgl,4,2) DESC, substr(tgl,1,2) DESC, id DESC LIMIT ? OFFSET ?`;
@@ -81,16 +85,17 @@ export async function GET(request: NextRequest) {
       { sql: sqlData, args: argsData },
       { sql: sqlTotal, args: argsTotal },
       { sql: "SELECT value FROM system_settings WHERE key = 'last_scrape_sales'", args: [] },
+      { sql: "SELECT value FROM system_settings WHERE key = ?", args: [getScrapedPeriodSettingKey('last_scrape_sales')] },
       { sql: "SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM sales_reports", args: [] }
     ], "read");
 
     const data = batchResults[0].rows;
     const total = Number((batchResults[1].rows[0] as any).count);
     const lastScrape = batchResults[2].rows[0] as any;
-    const lastUpdatedRaw = (batchResults[3].rows[0] as any).lastUpdated;
+    const lastUpdatedRaw = (batchResults[4].rows[0] as any).lastUpdated;
     const lastUpdated = lastScrape ? lastScrape.value : lastUpdatedRaw;
 
-    return NextResponse.json({ success: true, data, total, lastUpdated, page, limit });
+    return NextResponse.json({ success: true, data, total, lastUpdated, scrapedPeriod: parseScrapedPeriod((batchResults[3].rows[0] as any)?.value), page, limit });
 
 
 

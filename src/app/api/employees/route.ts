@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
+import { buildFtsQuery } from "@/lib/fts";
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,29 +16,31 @@ export async function GET(request: NextRequest) {
     let argsTotal: any[] = [];
 
     if (search) {
-      const queryValue = `${search}*`;
+      const queryValue = buildFtsQuery(search);
       try {
-          // Attempt FTS matching
-          const ftsMatch = await db.execute({ 
-            sql: "SELECT id FROM employees_fts WHERE employees_fts MATCH ?", 
-            args: [queryValue] 
-          });
-          
-          if (ftsMatch.rows.length > 0) {
-              const ids = ftsMatch.rows.map(r => r.id).join(',');
-              sqlData = `SELECT * FROM employees WHERE id IN (${ids}) AND is_active = 1 ORDER BY id ASC LIMIT ? OFFSET ?`;
-              sqlTotal = `SELECT COUNT(*) as count FROM employees WHERE id IN (${ids}) AND is_active = 1`;
-              argsData = [limit, offset];
-              argsTotal = [];
-          } else {
-              // Fallback to LIKE
-              const qPattern = `%${search}%`;
-              sqlData = `SELECT * FROM employees WHERE is_active = 1 AND (name LIKE ? OR position LIKE ? OR employee_no LIKE ? OR department LIKE ?) ORDER BY id ASC LIMIT ? OFFSET ?`;
-              sqlTotal = `SELECT COUNT(*) as count FROM employees WHERE is_active = 1 AND (name LIKE ? OR position LIKE ? OR employee_no LIKE ? OR department LIKE ?)`;
-              argsData = [qPattern, qPattern, qPattern, qPattern, limit, offset];
-              argsTotal = [qPattern, qPattern, qPattern, qPattern];
+          if (queryValue) {
+            const ftsMatch = await db.execute({
+              sql: "SELECT id FROM employees_fts WHERE employees_fts MATCH ?",
+              args: [queryValue]
+            });
+
+            if (ftsMatch.rows.length > 0) {
+                const ids = ftsMatch.rows.map(r => r.id).join(',');
+                sqlData = `SELECT * FROM employees WHERE id IN (${ids}) AND is_active = 1 ORDER BY id ASC LIMIT ? OFFSET ?`;
+                sqlTotal = `SELECT COUNT(*) as count FROM employees WHERE id IN (${ids}) AND is_active = 1`;
+                argsData = [limit, offset];
+                argsTotal = [];
+            }
           }
-      } catch (e) {
+
+          if (!sqlData) {
+            const qPattern = `%${search}%`;
+            sqlData = `SELECT * FROM employees WHERE is_active = 1 AND (name LIKE ? OR position LIKE ? OR employee_no LIKE ? OR department LIKE ?) ORDER BY id ASC LIMIT ? OFFSET ?`;
+            sqlTotal = `SELECT COUNT(*) as count FROM employees WHERE is_active = 1 AND (name LIKE ? OR position LIKE ? OR employee_no LIKE ? OR department LIKE ?)`;
+            argsData = [qPattern, qPattern, qPattern, qPattern, limit, offset];
+            argsTotal = [qPattern, qPattern, qPattern, qPattern];
+          }
+      } catch {
           // Fallback if FTS table not ready
           const qPattern = `%${search}%`;
           sqlData = `SELECT * FROM employees WHERE is_active = 1 AND (name LIKE ? OR position LIKE ? OR employee_no LIKE ? OR department LIKE ?) ORDER BY id ASC LIMIT ? OFFSET ?`;

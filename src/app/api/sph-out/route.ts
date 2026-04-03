@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { apiError } from "@/lib/api-utils";
+import { buildFtsQuery } from "@/lib/fts";
+import { getScrapedPeriodSettingKey, parseScrapedPeriod } from "@/lib/server-scraped-period";
 
 export const dynamic = 'force-dynamic';
 
@@ -22,33 +24,27 @@ export async function GET(request: NextRequest) {
     let total = 0;
 
     if (search) {
-      const finalized = search.endsWith('.') || search.endsWith(' ');
-      const tokens = search.replace(/[^\w\s]/g, ' ').trim().split(/\s+/).filter(Boolean);
-      
-      // Better precision: Use Phrase-Prefix for multi-token inputs
-      const ftsQuery = finalized 
-        ? `"${tokens.join(' ')}"` 
-        : tokens.length > 1 
-          ? `"${tokens.join(' ')}"*` 
-          : `${tokens[0]}*`;
-      
-      const ftsResults = await db.batch([
-        {
-          sql: `SELECT s.* FROM sph_out s JOIN sph_out_fts fts ON s.id = fts.rowid 
-                WHERE sph_out_fts MATCH ? ${dateFilterSQL}
-                ORDER BY substr(s.tgl, 7, 4) DESC, substr(s.tgl, 4, 2) DESC, substr(s.tgl, 1, 2) DESC, s.id DESC 
-                LIMIT ? OFFSET ?`,
-          args: [ftsQuery, ...(fromDate && toDate ? [fromDate, toDate] : []), limit, offset]
-        },
-        {
-          sql: `SELECT COUNT(*) as count FROM sph_out s JOIN sph_out_fts fts ON s.id = fts.rowid 
-                WHERE sph_out_fts MATCH ? ${dateFilterSQL}`,
-          args: [ftsQuery, ...(fromDate && toDate ? [fromDate, toDate] : [])]
-        }
-      ], "read");
- 
-      records = ftsResults[0].rows as any[];
-      total = Number((ftsResults[1].rows[0] as any).count);
+      const ftsQuery = buildFtsQuery(search);
+
+      if (ftsQuery) {
+        const ftsResults = await db.batch([
+          {
+            sql: `SELECT s.* FROM sph_out s JOIN sph_out_fts fts ON s.id = fts.rowid
+                  WHERE sph_out_fts MATCH ? ${dateFilterSQL}
+                  ORDER BY substr(s.tgl, 7, 4) DESC, substr(s.tgl, 4, 2) DESC, substr(s.tgl, 1, 2) DESC, s.id DESC
+                  LIMIT ? OFFSET ?`,
+            args: [ftsQuery, ...(fromDate && toDate ? [fromDate, toDate] : []), limit, offset]
+          },
+          {
+            sql: `SELECT COUNT(*) as count FROM sph_out s JOIN sph_out_fts fts ON s.id = fts.rowid
+                  WHERE sph_out_fts MATCH ? ${dateFilterSQL}`,
+            args: [ftsQuery, ...(fromDate && toDate ? [fromDate, toDate] : [])]
+          }
+        ], "read");
+
+        records = ftsResults[0].rows as any[];
+        total = Number((ftsResults[1].rows[0] as any).count);
+      }
  
       // 2. Fallback to LIKE if FTS fails
       if (total === 0) {
@@ -100,11 +96,12 @@ export async function GET(request: NextRequest) {
 
     const metadataResults = await db.batch([
       { sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_sph_out'`, args: [] },
+      { sql: `SELECT value FROM system_settings WHERE key = ?`, args: [getScrapedPeriodSettingKey('last_scrape_sph_out')] },
       { sql: `SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(created_at)) as lastUpdated FROM sph_out`, args: [] }
     ], "read");
 
     const lastScrape = metadataResults[0].rows[0] as any;
-    const lastUpdatedRaw = (metadataResults[1].rows[0] as any)?.lastUpdated;
+    const lastUpdatedRaw = (metadataResults[2].rows[0] as any)?.lastUpdated;
     const lastUpdated = lastScrape?.value || lastUpdatedRaw;
 
     return NextResponse.json({
@@ -112,6 +109,7 @@ export async function GET(request: NextRequest) {
       data: records,
       total,
       lastUpdated,
+      scrapedPeriod: parseScrapedPeriod((metadataResults[1].rows[0] as any)?.value),
       page,
       limit
     });
