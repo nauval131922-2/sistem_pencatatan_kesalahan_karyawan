@@ -117,15 +117,16 @@ export async function GET(request: NextRequest) {
       return match ? parseFloat(match[0]) : 0;
     };
 
+    // Map faktur -> raw record untuk raw_data murni dari MDT
+    const rawRecordMap = new Map(filteredRecords.map((r: any) => [r.faktur, r]));
+
     const finalRecords = filteredRecords.map((r: any) => {
-      const parsedQty = parseDigitQty(r.qty_so || r.qty_order || r.qty);
-      const parsedHarga = parseFloat(r.hp || r.bbb || r.harga || "0") || 0;
       return {
         ...r,
-        qty: parsedQty,
+        qty: parseDigitQty(r.qty_so || r.qty_order || r.qty),
         satuan: r.kd_satuan || r.satuan || r.sat || '',
-        harga: parsedHarga,
-        jumlah: parsedQty * parsedHarga
+        harga: parseFloat(r.hp || r.bbb || r.harga || "0") || 0,
+        jumlah: parseDigitQty(r.qty_so || r.qty_order || r.qty) * (parseFloat(r.hp || r.bbb || r.harga || "0") || 0)
       };
     });
 
@@ -174,7 +175,7 @@ export async function GET(request: NextRequest) {
               record.satuan || '',
               record.harga || 0,
               record.jumlah || 0,
-              JSON.stringify(record)
+              JSON.stringify(rawRecordMap.get(record.faktur) || record)
             ]
         });
     }
