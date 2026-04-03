@@ -134,35 +134,36 @@ export async function GET(request: NextRequest) {
       delivery = dlRes.rows;
     }
 
-    const processRaw = (item: any) => {
+    const parseRawData = (item: any) => {
       if (!item) return null;
-      let parsed = {};
       if (item.raw_data) {
-        try { parsed = JSON.parse(item.raw_data); } catch(e){}
+        try { return JSON.parse(item.raw_data); } catch(e){}
       }
-      return { ...parsed, ...item };
+      return { ...item };
     };
 
-    const processedProductionOrder = processRaw(productionOrder);
-    const isProductionCompleted = Boolean(
-      processedProductionOrder?.datetime_selesai &&
-      String(processedProductionOrder.datetime_selesai).trim() &&
-      processedProductionOrder?.fkt_selesai &&
-      String(processedProductionOrder.fkt_selesai).trim()
-    );
+    const getProductionStatus = (item: any) => {
+      if (!item) return null;
+      const raw = parseRawData(item);
+      const isCompleted = Boolean(
+        raw?.datetime_selesai && String(raw.datetime_selesai).trim() &&
+        raw?.fkt_selesai && String(raw.fkt_selesai).trim()
+      );
+      return isCompleted ? "SELESAI" : "DALAM PROSES";
+    };
 
     return NextResponse.json({
       success: true,
       data: {
-        bom: processRaw(bom),
-        sphOut: processRaw(sphOut),
-        salesOrder: processRaw(salesOrder),
+        bom: parseRawData(bom),
+        sphOut: parseRawData(sphOut),
+        salesOrder: parseRawData(salesOrder),
         productionOrder: productionOrder ? { 
-           ...processedProductionOrder,
-           status: isProductionCompleted ? "SELESAI" : "DALAM PROSES"
+           ...parseRawData(productionOrder),
+           status: getProductionStatus(productionOrder)
         } : null,
-        purchaseRequests: purchaseRequests.map(pr => processRaw(pr)),
-        delivery: delivery.map(d => processRaw(d))
+        purchaseRequests: purchaseRequests.map(pr => parseRawData(pr)),
+        delivery: delivery.map(d => parseRawData(d))
       }
     });
 
