@@ -125,22 +125,25 @@ export default function TrackingClient() {
       if (entries.length === 0) return null;
 
       return (
-          <div className="grid grid-cols-1 gap-1.5 overflow-hidden">
-             {entries.map(([key, val]) => {
-                let displayVal = String(val);
-                const numVal = parseFloat(String(val).replace(/,/g, ''));
-                if (!isNaN(numVal)) {
-                    displayVal = numVal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                }
+           <div className="grid grid-cols-1 gap-1.5 overflow-hidden">
+              {entries.map(([key, val]) => {
+                 let displayVal = String(val);
+                 const isRawField = key.toLowerCase() === 'id' || key.toLowerCase() === 'kode_cabang' || key.toLowerCase() === 'kd_cabang' || key.toLowerCase() === 'tgl' || key.toLowerCase() === 'status' || key.toLowerCase() === 'created_at' || key.toLowerCase() === 'edited_at' || key.toLowerCase() === 'kd_barang' || key.toLowerCase() === 'recid';
+                 if (!isRawField) {
+                    const numVal = parseFloat(String(val).replace(/,/g, ''));
+                    if (!isNaN(numVal)) {
+                        displayVal = numVal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    }
+                 }
 
-                return (
-                  <div key={key} className="flex items-start justify-between gap-4 text-[10px] leading-tight">
-                     <span className="text-gray-400 font-bold shrink-0">{toTitleCase(key)}</span>
-                     <span className="text-gray-600 font-medium text-right break-words">{displayVal}</span>
-                  </div>
-               );
-            })}
-         </div>
+                 return (
+                   <div key={key} className="flex items-start justify-between gap-4 text-[12px] leading-tight">
+                      <span className="text-gray-400 font-bold shrink-0">{key}</span>
+                      <span className="text-gray-600 font-medium text-right break-words">{displayVal}</span>
+                   </div>
+                );
+             })}
+          </div>
       );
    };
 
@@ -341,8 +344,8 @@ export default function TrackingClient() {
                               {suggestions.length > 0 ? suggestions.map((s: any, idx: number) => (
                                  <button key={`${s.faktur}-${idx}`} onClick={() => handleSelect(s)} className={`w-full px-4 py-3 text-left rounded-xl transition-all flex items-center justify-between group/item mb-1 last:mb-0 ${trackingData?.id === s.faktur ? 'bg-green-50 text-green-700 font-black' : 'hover:bg-green-600 hover:text-white group/item'}`}>
                                     <div className="flex flex-col min-w-0">
-                                       <span className={`text-[11px] font-black truncate ${trackingData?.id === s.faktur ? 'text-green-700' : 'text-gray-800 group-hover/item:text-white'}`}>{s.faktur}</span>
-                                       <span className={`text-[11px] font-bold truncate ${trackingData?.id === s.faktur ? 'text-green-600/70' : 'text-gray-400 group-hover/item:text-white/85'}`}>{s.nama_prd}</span>
+                                       <span className={`text-[12px] font-black truncate ${trackingData?.id === s.faktur ? 'text-green-700' : 'text-gray-800 group-hover/item:text-white'}`}>{s.faktur}</span>
+                                       <span className={`text-[12px] font-bold truncate ${trackingData?.id === s.faktur ? 'text-green-600/70' : 'text-gray-400 group-hover/item:text-white/85'}`}>{s.nama_prd}</span>
                                     </div>
                                     <ArrowRight size={14} className="shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity translate-x-1" />
                                  </button>
