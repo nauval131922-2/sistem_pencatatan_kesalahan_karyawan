@@ -82,10 +82,15 @@ export function hydrateScraperPeriod({ stateKey, periodKey }: HydrateScraperPeri
 
   if (periodKey) {
     const savedPeriod = safeParse<ScrapedPeriod>(localStorage.getItem(periodKey));
-    if (savedPeriod && isSameDayPeriod(savedPeriod.fetchedOn)) {
+    if (savedPeriod) {
+      // Always hydrate the period for display purposes
       scrapedPeriod = savedPeriod;
-      if (savedPeriod.startRaw) startDate = new Date(savedPeriod.startRaw);
-      if (savedPeriod.endRaw) endDate = new Date(savedPeriod.endRaw);
+      
+      // Only use the period's dates if it was fetched today
+      if (isSameDayPeriod(savedPeriod.fetchedOn)) {
+        if (savedPeriod.startRaw) startDate = new Date(savedPeriod.startRaw);
+        if (savedPeriod.endRaw) endDate = new Date(savedPeriod.endRaw);
+      }
     }
   }
 
