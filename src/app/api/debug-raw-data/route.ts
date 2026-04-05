@@ -21,13 +21,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Data tidak ditemukan" }, { status: 404 });
     }
 
-    const rawData = res.rows[0].raw_data;
+    const rawData = res.rows[0].raw_data as string | null;
     let parsed = {};
     
-    try {
-      parsed = JSON.parse(rawData);
-    } catch (e) {
-      parsed = { error: "Gagal parse JSON", raw: rawData };
+    if (!rawData) {
+      parsed = { error: "raw_data is null" };
+    } else {
+      try {
+        parsed = JSON.parse(rawData);
+      } catch (e) {
+        parsed = { error: "Gagal parse JSON", raw: rawData };
+      }
     }
 
     return NextResponse.json({
