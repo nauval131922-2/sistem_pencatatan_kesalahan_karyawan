@@ -8,49 +8,56 @@ Sesi ini fokus pada:
 4. **Pure raw_data** - Pastikan raw_data menyimpan data murni dari API MDT tanpa transformasi
 5. **RenderAllFields** - Simplifikasi display Tracking Manufaktur dengan RenderAllFields
 
+---
+
+# Ringkasan Sesi AI - 05 April 2026
+
+## Ringkas
+Sesi ini fokus pada perbaikan logika `scrapedPeriod` di semua halaman scraper dan improvement UI Tracking Manufaktur.
+
 ## Perubahan Utama
 
-### 1. Standardisasi API Routes (33 files)
-- Tambah `export const dynamic = 'force-dynamic'` di semua route.ts
-- Endpoint: bahan-baku, barang-jadi, bom, employees, hpp-kalkulasi, orders, pelunasan-hutang, pelunasan-piutang, penerimaan-pembelian, pengiriman, pr, purchase-orders, rekap-pembelian-barang, sales-orders, sales, sph-in, sph-out, spph-out, tracking
+### 1. Fix Logika scrapedPeriod (BOM Pattern)
+**Masalah**: Keterangan periode berubah saat user ganti date picker (sebelum Tarik Data), padahal seharusnya menunjukkan periode data yang sudah di-scrape.
 
-### 2. Standardisasi UI Client Components (16 files)
-- Tambah cache-buster `_t` di fetch client-side
-- Komponen: BahanBakuClient, BarangJadiClient, BOMClient, OrderProduksiClient, PelunasanHutangClient, PelunasanPiutangClient, PenerimaanPembelianClient, PengirimanClient, PRClient, PurchaseOrderClient, PembelianBarangClient, SalesOrderClient, SalesReportClient, SphInClient, SPHOutClient, SpphOutClient
+**Solusi**: 
+- Hapus `setScrapedPeriod` dari `loadData()` di semua client
+- `scrapedPeriod` hanya di-set saat `Tarik Data` via `persistScraperPeriod`
+- API routes baca `scrapedPeriod` dari `system_settings` (periode scrape terakhir)
 
-### 3. Pure raw_data dari API MDT
-- `src/app/api/scrape-orders/route.ts`: Simpan data mentah MDT ke raw_data tanpa transformasi
-- `src/app/api/tracking/route.ts`: Semua section (BOM, SPH, SO, Produksi, PR) pakai raw_data murni
+**File yang diubah**:
+- Client: `SalesOrderClient.tsx`, `OrderProduksiClient.tsx`, `PengirimanClient.tsx`, `BahanBakuClient.tsx`, `BarangJadiClient.tsx`, `SalesReportClient.tsx`
+- Lib: `src/lib/scraper-period.ts` - Fix hydrateScrapedPeriod agar selalu hydrate period untuk display
 
-### 4. Tracking Manufaktur Display (TrackingClient.tsx)
-- helper `toTitleCase` untuk formatting field names
-- Fix formatting number dengan separator ribuan Indonesia
-- `RenderAllFields` untuk semua section (BOM, SPH Out, Sales Order, Order Produksi, Purchase Request)
-- Code berkurang 200+ baris karena display menjadi generik dari raw_data
+### 2. Fix scrapedPeriod API SPH Out
+**Masalah**: SPH Out API baca `scrapedPeriod` dari `system_settings` per-chunk (overwrite tiap chunk), menyebabkan periode tidak akurat.
 
-### 5. Utility Baru
-- `src/lib/fts.ts` - Helper query FTS terpusat
-- `src/lib/server-scraped-period.ts` - Helper scraper period
-- `src/app/api/bom/scrape-period/` - Endpoint scrape period
+**Solusi Awal (di-cancel)**: Pakai query params langsung.
+**Solusi Final**: Kembalikan ke baca dari `system_settings`, tapi perbaiki logic client-side (poin 1).
+
+### 3. UI Tracking Manufaktur
+**File**: `src/app/tracking-manufaktur/TrackingClient.tsx`
+
+- Ubah font size dropdown BOM: 11px → 12px
+- Ubah font size isi tabel: 10px → 12px
+- Field yang tampil apa adanya dari raw_data (tanpa formatting angka):
+  - `id`, `kode_cabang`, `kd_cabang`, `tgl`, `status`, `created_at`, `edited_at`, `kd_barang`, `recid`
+- Label key tampil sesuai raw_data (tanpa `toTitleCase`)
+
+## Commit Summary
+- `5cccfc6` - fix: scrapedPeriod tetap tampil untuk display meskipun scrape bukan hari ini
+- `609add3` - ui: tracking manufaktur - ukuran font, tampilkan field sesuai raw data
 
 ## Dampak
-- Semua API endpoint sekarang force-dynamic, tidak ada caching di server
-- Client-side fetch menggunakan cache-buster untuk data fresh
-- raw_data sekarang murni dari API MDT (tanpa transformasi)
-- Tracking Manufaktur lebih sederhana dan konsisten
-- Performa halaman scraper (list view) tetap bagus karena pakai definisi kolom manual
+- Keterangan periode sekarang stabil, hanya berubah setelah Tarik Data berhasil
+- Tracking Manufaktur lebih mudah dibaca dengan font size yang lebih besar
+- Field numeric ID/cabang tampil sesuai raw data tanpa decimals
 
 ## Cara Cek Singkat
-1. Uji scraping Order Produksi - cek raw_data apakah murni dari MDT
-2. Uji Tracking Manufaktur - semua section tampil dari raw_data
-3. Cek format angka di RenderAllFields (separator ribuan Indonesia)
-4. Test FTS search di Orders, Bahan Baku, dll
-
-## Testing
-- `npm.cmd run init-db` berhasil
-- `npm.cmd run lint` masih gagal karena backlog lint repo
+1. Buka halaman scraper (Sales Order, dll) → Ganti date picker → Periode TIDAK berubah sampai Tarik Data
+2. Buka Tracking Manufaktur → Pilih BOM → Cek field ID/cabang tanpa .00 di belakang
 
 ## Lokasi untuk Sinkronisasi
-- **Rumah**: Pull dari origin/master
-- **Kantor**: Pull dari origin/master
+- **Rumah**: `git pull origin master`
+- **Kantor**: `git pull origin master`
 - Pastikan `.env` dan database tidak ikut ter-push (sudah di .gitignore)
