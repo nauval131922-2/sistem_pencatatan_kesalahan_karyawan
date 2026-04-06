@@ -3,17 +3,37 @@ import db from "@/lib/db";
 
 export const dynamic = 'force-dynamic';
 
+const TABLE_MAP: Record<string, string> = {
+  bom: 'bill_of_materials',
+  sph_out: 'sph_out',
+  sph_in: 'sph_in',
+  spph_out: 'spph_out',
+  purchase_orders: 'purchase_orders',
+  sales_orders: 'sales_orders',
+  orders: 'orders',
+  purchase_requests: 'purchase_requests',
+  pengiriman: 'pengiriman',
+};
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
+    const table = searchParams.get("table") || "bom";
     const faktur = searchParams.get("faktur");
 
     if (!faktur) {
       return NextResponse.json({ error: "Parameter 'faktur' wajib diisi" }, { status: 400 });
     }
 
+    const tableName = TABLE_MAP[table];
+    if (!tableName) {
+      return NextResponse.json({ 
+        error: `Table '${table}' tidak valid. Available: ${Object.keys(TABLE_MAP).join(', ')}` 
+      }, { status: 400 });
+    }
+
     const res = await db.execute({
-      sql: `SELECT raw_data FROM bill_of_materials WHERE faktur = ?`,
+      sql: `SELECT raw_data FROM ${tableName} WHERE faktur = ?`,
       args: [faktur]
     });
 
@@ -36,6 +56,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      table: tableName,
       faktur,
       raw_data: parsed,
       keys: Object.keys(parsed)

@@ -116,6 +116,18 @@ export async function GET(request: NextRequest) {
       purchaseRequests = prRes.rows;
     }
 
+    // 7.5. Get SPPH Out (linked via faktur_pr from PRs)
+    let spphOutList: any[] = [];
+    const prFakturs = purchaseRequests.map((pr: any) => pr.faktur).filter(Boolean);
+    if (prFakturs.length > 0) {
+      const placeholders = prFakturs.map(() => '?').join(',');
+      const spphRes = await db.execute({
+        sql: `SELECT * FROM spph_out WHERE faktur_pr IN (${placeholders})`,
+        args: prFakturs
+      });
+      spphOutList = spphRes.rows;
+    }
+
     // 8. Get Delivery Details (Pengiriman)
     // Link via sales_reports.faktur_so = salesOrder.faktur
     // and then pengiriman.faktur = sales_reports.faktur
@@ -134,6 +146,30 @@ export async function GET(request: NextRequest) {
       delivery = dlRes.rows;
     }
 
+    // 9. Get SPH In (linked via faktur_spph from SPPH Out)
+    let sphInList: any[] = [];
+    const spphFakturs = spphOutList.map((spph: any) => spph.faktur).filter(Boolean);
+    if (spphFakturs.length > 0) {
+      const placeholders = spphFakturs.map(() => '?').join(',');
+      const sphInRes = await db.execute({
+        sql: `SELECT * FROM sph_in WHERE faktur_spph IN (${placeholders})`,
+        args: spphFakturs
+      });
+      sphInList = sphInRes.rows;
+    }
+
+    // 10. Get Purchase Orders (linked via sph_in.faktur = purchase_orders.faktur_sph)
+    let purchaseOrders: any[] = [];
+    const sphFakturs = sphInList.map((sph: any) => sph.faktur).filter(Boolean);
+    if (sphFakturs.length > 0) {
+      const placeholders = sphFakturs.map(() => '?').join(',');
+      const poRes = await db.execute({
+        sql: `SELECT * FROM purchase_orders WHERE faktur_sph IN (${placeholders})`,
+        args: sphFakturs
+      });
+      purchaseOrders = poRes.rows;
+    }
+
     const parseRawData = (item: any) => {
       if (!item) return null;
       if (item.raw_data) {
@@ -142,26 +178,16 @@ export async function GET(request: NextRequest) {
       return { ...item };
     };
 
-    const getProductionStatus = (item: any) => {
-      if (!item) return null;
-      const raw = parseRawData(item);
-      const isCompleted = Boolean(
-        raw?.datetime_selesai && String(raw.datetime_selesai).trim() &&
-        raw?.fkt_selesai && String(raw.fkt_selesai).trim()
-      );
-      return isCompleted ? "SELESAI" : "DALAM PROSES";
-    };
-
     return NextResponse.json({
       success: true,
       data: {
         bom: parseRawData(bom),
         sphOut: parseRawData(sphOut),
+        spphOut: spphOutList.map(spph => parseRawData(spph)),
+        sphIn: sphInList.map(sph => parseRawData(sph)),
+        purchaseOrders: purchaseOrders.map(po => parseRawData(po)),
         salesOrder: parseRawData(salesOrder),
-        productionOrder: productionOrder ? { 
-           ...parseRawData(productionOrder),
-           status: getProductionStatus(productionOrder)
-        } : null,
+        productionOrder: productionOrder ? parseRawData(productionOrder) : null,
         purchaseRequests: purchaseRequests.map(pr => parseRawData(pr)),
         delivery: delivery.map(d => parseRawData(d))
       }

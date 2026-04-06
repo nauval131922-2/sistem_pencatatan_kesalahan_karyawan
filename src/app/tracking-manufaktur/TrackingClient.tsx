@@ -75,14 +75,17 @@ export default function TrackingClient() {
    const [loadingData, setLoadingData] = useState(false);
    const [error, setError] = useState('');
    const [trackingData, setTrackingData] = useState<{
-      bom: any;
-      sphOut: any;
-      salesOrder?: any;
-      productionOrder?: any;
-      purchaseRequests: any[];
-      delivery: any[];
-      id?: string;
-   } | null>(null);
+       bom: any;
+       sphOut: any;
+       spphOut: any[];
+       sphIn: any[];
+       purchaseOrders: any[];
+       salesOrder?: any;
+       productionOrder?: any;
+       purchaseRequests: any[];
+       delivery: any[];
+       id?: string;
+    } | null>(null);
    const [suggestionPage, setSuggestionPage] = useState(1);
    const [hasMoreSuggestions, setHasMoreSuggestions] = useState(true);
    const [loadTime, setLoadTime] = useState<number | null>(null);
@@ -91,25 +94,31 @@ export default function TrackingClient() {
    const [open, setOpen] = useState(false);
 
    // Column Widths for Resizing - Persisted in localStorage
-   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
-      if (typeof window !== 'undefined') {
-         const saved = localStorage.getItem('tracking_columnWidths');
-         return saved ? JSON.parse(saved) : {
-            bom: 280,
-            sph: 220,
-            so: 220,
-            production: 220,
-            pr: 320
+    const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
+       if (typeof window !== 'undefined') {
+          const saved = localStorage.getItem('tracking_columnWidths');
+            return saved ? JSON.parse(saved) : {
+               bom: 500,
+               sph: 500,
+               spph: 500,
+               sph_in: 500,
+               purchase_orders: 500,
+               so: 500,
+               production: 500,
+               pr: 500
+            };
+         }
+         return {
+            bom: 500,
+            sph: 500,
+            spph: 500,
+            sph_in: 500,
+            purchase_orders: 500,
+            so: 500,
+            production: 500,
+            pr: 500
          };
-      }
-      return {
-         bom: 280,
-         sph: 220,
-         so: 220,
-         production: 220,
-         pr: 320
-      };
-   });
+    });
 
    useEffect(() => {
       localStorage.setItem('tracking_columnWidths', JSON.stringify(columnWidths));
@@ -128,7 +137,7 @@ export default function TrackingClient() {
            <div className="grid grid-cols-1 gap-1.5 overflow-hidden">
               {entries.map(([key, val]) => {
                  let displayVal = String(val);
-                 const isRawField = key.toLowerCase() === 'id' || key.toLowerCase() === 'kode_cabang' || key.toLowerCase() === 'kd_cabang' || key.toLowerCase() === 'tgl' || key.toLowerCase() === 'status' || key.toLowerCase() === 'created_at' || key.toLowerCase() === 'edited_at' || key.toLowerCase() === 'kd_barang' || key.toLowerCase() === 'recid';
+                 const isRawField = key.toLowerCase() === 'id' || key.toLowerCase() === 'kode_cabang' || key.toLowerCase() === 'kd_cabang' || key.toLowerCase() === 'tgl' || key.toLowerCase() === 'status' || key.toLowerCase() === 'created_at' || key.toLowerCase() === 'edited_at' || key.toLowerCase() === 'kd_barang' || key.toLowerCase() === 'recid' || key.toLowerCase() === 'top_hari' || key.toLowerCase() === 'kd_gudang' || key.toLowerCase() === 'create_at' || key.toLowerCase() === 'updated_at' || key.toLowerCase() === 'kd_pelanggan' || key.toLowerCase() === 'datetime_mulai' || key.toLowerCase() === 'datetime_selesai' || key.toLowerCase() === 'qty_order' || key.toLowerCase() === 'qty_so' || key.toLowerCase() === 'tgl_dibutuhkan' || key.toLowerCase() === 'tgl_close' || key.toLowerCase() === 'status_close';
                  if (!isRawField) {
                     const numVal = parseFloat(String(val).replace(/,/g, ''));
                     if (!isNaN(numVal)) {
@@ -238,10 +247,70 @@ export default function TrackingClient() {
                       </div>
                    ))}
                </div>
+              );
+           }
+       },
+      {
+         id: 'spph',
+         header: 'SPPH Out',
+         accessorKey: 'spphOut',
+         size: columnWidths.spph,
+         meta: { wrap: true, valign: 'top' },
+         cell: ({ row }) => {
+            const items = row.original.spphOut;
+            if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data SPPH Out</div>;
+            return (
+               <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                  {items.map((spph: any, idx: number) => (
+                     <div key={idx} className={`${cardClass} border border-slate-100`}>
+                        <RenderAllFields data={spph} excludeKeys={['raw_data']} />
+                     </div>
+                  ))}
+               </div>
+             );
+          }
+       },
+      {
+         id: 'sph_in',
+         header: 'SPH In',
+         accessorKey: 'sphIn',
+         size: columnWidths.sph_in,
+         meta: { wrap: true, valign: 'top' },
+         cell: ({ row }) => {
+            const items = row.original.sphIn;
+            if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data SPH In</div>;
+            return (
+               <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                  {items.map((sph: any, idx: number) => (
+                     <div key={idx} className={`${cardClass} border border-slate-100`}>
+                        <RenderAllFields data={sph} excludeKeys={['raw_data']} />
+                     </div>
+                  ))}
+               </div>
+             );
+          }
+       },
+      {
+         id: 'purchase_orders',
+         header: 'Purchase Order',
+         accessorKey: 'purchaseOrders',
+         size: columnWidths.purchase_orders,
+         meta: { wrap: true, valign: 'top' },
+         cell: ({ row }) => {
+            const items = row.original.purchaseOrders;
+            if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Purchase Order</div>;
+            return (
+               <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                  {items.map((po: any, idx: number) => (
+                     <div key={idx} className={`${cardClass} border border-slate-100`}>
+                        <RenderAllFields data={po} excludeKeys={['raw_data']} />
+                     </div>
+                  ))}
+               </div>
             );
          }
-      }
-   ], [columnWidths]);
+       }
+    ], [columnWidths]);
 
    // Search logic for dropdown
    useEffect(() => {
