@@ -83,3 +83,38 @@ Sesi ini fokus pada perbaikan logika `scrapedPeriod` di semua halaman scraper da
 - **Rumah**: `git pull origin master`
 - **Kantor**: `git pull origin master`
 - Pastikan `.env` dan database tidak ikut ter-push (sudah di .gitignore)
+
+---
+
+# Ringkasan Sesi AI - 07 April 2026
+
+## Ringkasan
+Sesi ini berfokus pada penyempurnaan UI Tracking Manufaktur dengan melengkapi alur Supply Chain secara keseluruhan (end-to-end dari hulu ke hilir pelunasan) serta pembuatan instruksi/tutorial mandiri.
+
+## Perubahan Utama
+
+### 1. Tracking Manufaktur - Kolom Baru & Logika Pemasangan
+**File**: `src/app/api/tracking/route.ts`, `TrackingClient.tsx`
+- Penambahan tipe state, default lebar 500px, dan layout tabel secara berurutan.
+- **Pembelian Barang**: via `Purchase Order.faktur` = `Pembelian Barang.faktur_po`
+- **Pelunasan Hutang**: via `Pembelian Barang.faktur` = `Pelunasan Hutang.faktur_pb`
+- **Bahan Baku**: via `Order Produksi.faktur` = `Bahan Baku.faktur_prd`
+- **Barang Jadi**: via `Order Produksi.faktur` = `Barang Jadi.faktur_prd`
+- **Laporan Penjualan**: via `Sales Order.faktur` = `Laporan Penjualan.faktur_so`
+- **Pengiriman**: Menggunakan *LIKE query* pada `pengiriman.faktur` dikarenakan nilainya berupa tag HTML (`<a>...</a>`), direlasikan berdasarkan string ID dari faktur `Laporan Penjualan`. (Step lama menggunakan JOIN strict equality dihapus karena gagal).
+- **Pelunasan Piutang**: via `Laporan Penjualan.faktur` = `Pelunasan Piutang.fkt`
+
+### 2. Pengecualian Formatting Numerik pada UI
+**File**: `TrackingClient.tsx`
+- Memperpendek baris if-condition pengecekan variabel dengan pattern Array `includes()`.
+- Variabel string tipe ID seperti `kd_porsekot` dan `kd_bank` tidak lagi dirender sebagai angka desimal berkoma, melainkan apa adanya (*raw strings*).
+
+### 3. Pemutakhiran Prosedur Prompt & Dokumentasi
+- Menambahkan **TUTORIAL_TAMBAH_KOLOM_TRACKING.md** ke folder `docs/` yang mengajarkan *step-by-step* ekstensi tabel.
+- Menambahkan instruksi prompt di **COMMIT_INSTRUCTION.md** (Rule #6) untuk memaksa trigger pembuatan tutorial fitur untuk edukasi (*self-learning*).
+
+## Dampak
+- UI tabel Tracking Manufaktur sekarang menampilkan visual supply chain utuh di satu layar (dari BOM - Pembelian/Hutang - Produksi - Penjualan - Pengiriman - Piutang).
+
+## Lokasi untuk Sinkronisasi Lanjut
+- Setelah ditarik asalkan DB terupdate, UI dapat dicoba dan digunakan. Fokus selanjutnya bisa diarahkan ke fungsionalitas Unduh CSV/PDF dari tabel raksasa ini atau PWA.
