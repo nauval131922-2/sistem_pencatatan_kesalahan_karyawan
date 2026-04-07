@@ -83,8 +83,14 @@ export default function TrackingClient() {
        salesOrder?: any;
        productionOrder?: any;
        purchaseRequests: any[];
-       delivery: any[];
+       pengiriman: any[];
+       pelunasanPiutang: any[];
        penerimaanPembelian: any[];
+       pembelianBarang: any[];
+       pelunasanHutang: any[];
+       bahanBaku: any[];
+       barangJadi: any[];
+       laporanPenjualan: any[];
        id?: string;
     } | null>(null);
    const [suggestionPage, setSuggestionPage] = useState(1);
@@ -107,7 +113,14 @@ export default function TrackingClient() {
                so: 500,
                production: 500,
                pr: 500,
-               penerimaan_pembelian: 500
+               penerimaan_pembelian: 500,
+               pembelian_barang: 500,
+               pelunasan_hutang: 500,
+               bahan_baku: 500,
+               barang_jadi: 500,
+               laporan_penjualan: 500,
+               pengiriman: 500,
+               pelunasan_piutang: 500
             };
          }
          return {
@@ -119,7 +132,14 @@ export default function TrackingClient() {
             so: 500,
             production: 500,
             pr: 500,
-            penerimaan_pembelian: 500
+            penerimaan_pembelian: 500,
+            pembelian_barang: 500,
+            pelunasan_hutang: 500,
+            bahan_baku: 500,
+            barang_jadi: 500,
+            laporan_penjualan: 500,
+            pengiriman: 500,
+            pelunasan_piutang: 500
          };
     });
 
@@ -140,7 +160,8 @@ export default function TrackingClient() {
            <div className="grid grid-cols-1 gap-1.5 overflow-hidden">
               {entries.map(([key, val]) => {
                  let displayVal = String(val);
-                 const isRawField = key.toLowerCase() === 'id' || key.toLowerCase() === 'kode_cabang' || key.toLowerCase() === 'kd_cabang' || key.toLowerCase() === 'tgl' || key.toLowerCase() === 'status' || key.toLowerCase() === 'created_at' || key.toLowerCase() === 'edited_at' || key.toLowerCase() === 'kd_barang' || key.toLowerCase() === 'recid' || key.toLowerCase() === 'top_hari' || key.toLowerCase() === 'kd_gudang' || key.toLowerCase() === 'create_at' || key.toLowerCase() === 'updated_at' || key.toLowerCase() === 'kd_pelanggan' || key.toLowerCase() === 'datetime_mulai' || key.toLowerCase() === 'datetime_selesai' || key.toLowerCase() === 'qty_order' || key.toLowerCase() === 'qty_so' || key.toLowerCase() === 'tgl_dibutuhkan' || key.toLowerCase() === 'tgl_close' || key.toLowerCase() === 'status_close' || key.toLowerCase() === 'jthtmp' || key.toLowerCase() === 'faktur_supplier' || key.toLowerCase() === 'tgl_lunas';
+                 const rawFields = ['id', 'kode_cabang', 'kd_cabang', 'tgl', 'status', 'created_at', 'edited_at', 'kd_barang', 'recid', 'top_hari', 'kd_gudang', 'create_at', 'updated_at', 'kd_pelanggan', 'datetime_mulai', 'datetime_selesai', 'qty_order', 'qty_so', 'tgl_dibutuhkan', 'tgl_close', 'status_close', 'jthtmp', 'faktur_supplier', 'tgl_lunas', 'kd_porsekot', 'kd_bank'];
+                 const isRawField = rawFields.includes(key.toLowerCase());
                  if (!isRawField) {
                     const numVal = parseFloat(String(val).replace(/,/g, ''));
                     if (!isNaN(numVal)) {
@@ -191,7 +212,7 @@ export default function TrackingClient() {
               if (!data) return <div className={emptyStateClass}>Tidak Ada Data SPH Out</div>;
               return (
                  <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                    <div className="text-[10px] text-gray-400 mb-1">1 Data SPH Out <span className="text-gray-500">(via faktur_sph dari BOM)</span></div>
+                    <div className="text-[10px] text-gray-400 mb-1">1 Data SPH Out <span className="text-gray-500">(via BOM.faktur = SPH Out.faktur_bom)</span></div>
                     <div className={`${cardClass} border border-slate-100`}>
                        <RenderAllFields data={data} excludeKeys={['raw_data']} />
                     </div>
@@ -210,7 +231,7 @@ export default function TrackingClient() {
               if (!data) return <div className={emptyStateClass}>Tidak Ada Data Sales Order</div>;
               return (
                  <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                    <div className="text-[10px] text-gray-400 mb-1">1 Data Sales Order <span className="text-gray-500">(via faktur_so dari SPH)</span></div>
+                     <div className="text-[10px] text-gray-400 mb-1">1 Data Sales Order <span className="text-gray-500">(via SPH Out.faktur = Sales Order.faktur_sph)</span></div>
                     <div className={`${cardClass} border border-slate-100`}>
                        <RenderAllFields data={data} excludeKeys={['raw_data']} />
                     </div>
@@ -229,7 +250,7 @@ export default function TrackingClient() {
               if (!data) return <div className={emptyStateClass}>Tidak Ada Data Order Produksi</div>;
               return (
                  <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                    <div className="text-[10px] text-gray-400 mb-1">1 Data Order Produksi <span className="text-gray-500">(via kd_barang/nopol dari SO)</span></div>
+                     <div className="text-[10px] text-gray-400 mb-1">1 Data Order Produksi <span className="text-gray-500">(via Sales Order.faktur = Order Produksi.faktur_so AND BOM.faktur = Order Produksi.faktur_bom)</span></div>
                     <div className={`${cardClass} border border-slate-100`}>
                        <RenderAllFields data={data} excludeKeys={['raw_data']} />
                     </div>
@@ -248,7 +269,7 @@ export default function TrackingClient() {
              if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data PR</div>;
              return (
                 <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Purchase Request <span className="text-gray-500">(via faktur_prd dari Order)</span></div>
+                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Purchase Request <span className="text-gray-500">(via Order Produksi.faktur = Purchase Request.faktur_prd)</span></div>
                    {items.map((pr: any, idx: number) => (
                       <div key={idx} className={`${cardClass} border border-slate-100`}>
                          <RenderAllFields data={pr} excludeKeys={['raw_data']} />
@@ -269,7 +290,7 @@ export default function TrackingClient() {
              if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data SPPH Out</div>;
              return (
                 <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data SPPH Out <span className="text-gray-500">(via faktur_pr dari PR)</span></div>
+                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data SPPH Out <span className="text-gray-500">(via Purchase Request.faktur = SPPH Out.faktur_pr)</span></div>
                    {items.map((spph: any, idx: number) => (
                       <div key={idx} className={`${cardClass} border border-slate-100`}>
                          <RenderAllFields data={spph} excludeKeys={['raw_data']} />
@@ -290,7 +311,7 @@ export default function TrackingClient() {
              if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data SPH In</div>;
              return (
                 <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data SPH In <span className="text-gray-500">(via faktur_spph dari SPPH)</span></div>
+                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data SPH In <span className="text-gray-500">(via SPPH Out.faktur = SPH In.faktur_spph)</span></div>
                    {items.map((sph: any, idx: number) => (
                       <div key={idx} className={`${cardClass} border border-slate-100`}>
                          <RenderAllFields data={sph} excludeKeys={['raw_data']} />
@@ -332,7 +353,7 @@ export default function TrackingClient() {
             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Penerimaan Pembelian</div>;
             return (
                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                  <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Penerimaan Pembelian <span className="text-gray-500">(via order.faktur = PB.faktur_prd)</span></div>
+                  <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Penerimaan Pembelian <span className="text-gray-500">(via PO.faktur = PB.faktur_po)</span></div>
                   {items.map((pb: any, idx: number) => (
                      <div key={idx} className={`${cardClass} border border-slate-100`}>
                         <RenderAllFields data={pb} excludeKeys={['raw_data']} />
@@ -341,6 +362,153 @@ export default function TrackingClient() {
                </div>
             );
          }
+       },
+       {
+          id: 'pembelian_barang',
+          header: 'Pembelian Barang',
+          accessorKey: 'pembelianBarang',
+          size: columnWidths.pembelian_barang,
+          meta: { wrap: true, valign: 'top' },
+          cell: ({ row }) => {
+             const items = row.original.pembelianBarang;
+             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Pembelian Barang</div>;
+             return (
+                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Pembelian Barang <span className="text-gray-500">(via Purchase Order.faktur = Pembelian Barang.faktur_po)</span></div>
+                   {items.map((pb: any, idx: number) => (
+                      <div key={idx} className={`${cardClass} border border-slate-100`}>
+                         <RenderAllFields data={pb} excludeKeys={['raw_data']} />
+                      </div>
+                   ))}
+                </div>
+             );
+          }
+       },
+       {
+          id: 'pelunasan_hutang',
+          header: 'Pelunasan Hutang',
+          accessorKey: 'pelunasanHutang',
+          size: columnWidths.pelunasan_hutang,
+          meta: { wrap: true, valign: 'top' },
+          cell: ({ row }) => {
+             const items = row.original.pelunasanHutang;
+             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Pelunasan Hutang</div>;
+             return (
+                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Pelunasan Hutang <span className="text-gray-500">(via Pembelian Barang.faktur = Pelunasan Hutang.faktur_pb)</span></div>
+                   {items.map((ph: any, idx: number) => (
+                      <div key={idx} className={`${cardClass} border border-slate-100`}>
+                         <RenderAllFields data={ph} excludeKeys={['raw_data']} />
+                      </div>
+                   ))}
+                </div>
+             );
+          }
+       },
+       {
+          id: 'bahan_baku',
+          header: 'Bahan Baku',
+          accessorKey: 'bahanBaku',
+          size: columnWidths.bahan_baku,
+          meta: { wrap: true, valign: 'top' },
+          cell: ({ row }) => {
+             const items = row.original.bahanBaku;
+             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Bahan Baku</div>;
+             return (
+                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Bahan Baku <span className="text-gray-500">(via Order Produksi.faktur = Bahan Baku.faktur_prd)</span></div>
+                   {items.map((bb: any, idx: number) => (
+                      <div key={idx} className={`${cardClass} border border-slate-100`}>
+                         <RenderAllFields data={bb} excludeKeys={['raw_data']} />
+                      </div>
+                   ))}
+                </div>
+             );
+          }
+       },
+       {
+          id: 'barang_jadi',
+          header: 'Barang Jadi',
+          accessorKey: 'barangJadi',
+          size: columnWidths.barang_jadi,
+          meta: { wrap: true, valign: 'top' },
+          cell: ({ row }) => {
+             const items = row.original.barangJadi;
+             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Barang Jadi</div>;
+             return (
+                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Barang Jadi <span className="text-gray-500">(via Order Produksi.faktur = Barang Jadi.faktur_prd)</span></div>
+                   {items.map((bj: any, idx: number) => (
+                      <div key={idx} className={`${cardClass} border border-slate-100`}>
+                         <RenderAllFields data={bj} excludeKeys={['raw_data']} />
+                      </div>
+                   ))}
+                </div>
+             );
+          }
+       },
+       {
+          id: 'laporan_penjualan',
+          header: 'Laporan Penjualan',
+          accessorKey: 'laporanPenjualan',
+          size: columnWidths.laporan_penjualan,
+          meta: { wrap: true, valign: 'top' },
+          cell: ({ row }) => {
+             const items = row.original.laporanPenjualan;
+             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Laporan Penjualan</div>;
+             return (
+                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Laporan Penjualan <span className="text-gray-500">(via Sales Order.faktur = Laporan Penjualan.faktur_so)</span></div>
+                   {items.map((lp: any, idx: number) => (
+                      <div key={idx} className={`${cardClass} border border-slate-100`}>
+                         <RenderAllFields data={lp} excludeKeys={['raw_data']} />
+                      </div>
+                   ))}
+                </div>
+             );
+          }
+       },
+       {
+          id: 'pengiriman',
+          header: 'Pengiriman',
+          accessorKey: 'pengiriman',
+          size: columnWidths.pengiriman,
+          meta: { wrap: true, valign: 'top' },
+          cell: ({ row }) => {
+             const items = row.original.pengiriman;
+             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Pengiriman</div>;
+             return (
+                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Pengiriman <span className="text-gray-500">(via Laporan Penjualan.faktur = Pengiriman.faktur)</span></div>
+                   {items.map((pg: any, idx: number) => (
+                      <div key={idx} className={`${cardClass} border border-slate-100`}>
+                         <RenderAllFields data={pg} excludeKeys={['raw_data']} />
+                      </div>
+                   ))}
+                </div>
+             );
+          }
+       },
+       {
+          id: 'pelunasan_piutang',
+          header: 'Pelunasan Piutang',
+          accessorKey: 'pelunasanPiutang',
+          size: columnWidths.pelunasan_piutang,
+          meta: { wrap: true, valign: 'top' },
+          cell: ({ row }) => {
+             const items = row.original.pelunasanPiutang;
+             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Pelunasan Piutang</div>;
+             return (
+                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Pelunasan Piutang <span className="text-gray-500">(via Laporan Penjualan.faktur = Pelunasan Piutang.fkt)</span></div>
+                   {items.map((pp: any, idx: number) => (
+                      <div key={idx} className={`${cardClass} border border-slate-100`}>
+                         <RenderAllFields data={pp} excludeKeys={['raw_data']} />
+                      </div>
+                   ))}
+                </div>
+             );
+          }
        }
     ], [columnWidths]);
 

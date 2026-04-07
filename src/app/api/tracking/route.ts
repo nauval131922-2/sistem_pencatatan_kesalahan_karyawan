@@ -32,34 +32,23 @@ export async function GET(request: NextRequest) {
 
     let sphOut = null;
     
-    // 2. Get SPH Details (Try by explicit faktur_sph first)
-    if (fakturSph) {
+    // 2. Get SPH Details (linked via bom.faktur = sph out.faktur_bom)
+    if (bom?.faktur) {
       const sphRes = await db.execute({
-        sql: `SELECT * FROM sph_out WHERE faktur = ?`,
-        args: [fakturSph]
+        sql: `SELECT * FROM sph_out WHERE json_extract(raw_data, '$.faktur_bom') = ? LIMIT 1`,
+        args: [bom.faktur]
       });
       if (sphRes.rows.length > 0) {
         sphOut = sphRes.rows[0] as any;
       }
     }
 
-    // 3. Fallback: Search SPH if not found yet (Sometimes link is not in BOM record directly)
-    if (!sphOut && bom?.faktur) {
-      const sphFallbackRes = await db.execute({
-        sql: `SELECT * FROM sph_out WHERE (barang LIKE ? OR raw_data LIKE ?) LIMIT 1`,
-        args: [`%${bom.faktur}%`, `%${bom.faktur}%`]
-      });
-      if (sphFallbackRes.rows.length > 0) {
-        sphOut = sphFallbackRes.rows[0] as any;
-      }
-    }
-
-    // 4. Get Sales Order Details (If SPH has a linked SO)
+    // 4. Get Sales Order Details (linked via sph out.faktur = sales order.faktur_sph)
     let salesOrder = null;
-    if (sphOut?.faktur_so) {
+    if (sphOut?.faktur) {
       const soRes = await db.execute({
-        sql: `SELECT * FROM sales_orders WHERE faktur = ? LIMIT 1`,
-        args: [sphOut.faktur_so]
+        sql: `SELECT * FROM sales_orders WHERE faktur_sph = ? LIMIT 1`,
+        args: [sphOut.faktur]
       });
       if (soRes.rows.length > 0) {
         salesOrder = soRes.rows[0];
@@ -81,28 +70,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Second try: Fuzzy search by SO Number or BOM Number in raw_data if still not found
-    if (!productionOrder) {
-      const criteria = [];
-      const args = [];
-      
-      if (salesOrder?.faktur) {
-        criteria.push("raw_data LIKE ?");
-        args.push(`%${salesOrder.faktur}%`);
-      }
-      if (bom?.faktur) {
-        criteria.push("raw_data LIKE ?");
-        args.push(`%${bom.faktur}%`);
-      }
-
-      if (criteria.length > 0) {
-        const fuzzyRes = await db.execute({
-          sql: `SELECT * FROM orders WHERE ${criteria.join(" OR ")} ORDER BY tgl DESC LIMIT 1`,
-          args: args
-        });
-        if (fuzzyRes.rows.length > 0) {
-          productionOrder = fuzzyRes.rows[0];
-        }
+    // Second try: Exact search by SO Number AND BOM Number in raw_data if still not found
+    if (!productionOrder && salesOrder?.faktur && bom?.faktur) {
+      const fuzzyRes = await db.execute({
+        sql: `SELECT * FROM orders WHERE json_extract(raw_data, '$.faktur_so') = ? AND json_extract(raw_data, '$.faktur_bom') = ? LIMIT 1`,
+        args: [salesOrder.faktur, bom.faktur]
+      });
+      if (fuzzyRes.rows.length > 0) {
+        productionOrder = fuzzyRes.rows[0];
       }
     }
 
@@ -128,23 +103,7 @@ export async function GET(request: NextRequest) {
       spphOutList = spphRes.rows;
     }
 
-    // 8. Get Delivery Details (Pengiriman)
-    // Link via sales_reports.faktur_so = salesOrder.faktur
-    // and then pengiriman.faktur = sales_reports.faktur
-    let delivery: any[] = [];
-    if (salesOrder?.faktur) {
-      const dlRes = await db.execute({
-        sql: `
-          SELECT p.* 
-          FROM pengiriman p
-          JOIN sales_reports sr ON p.faktur = sr.faktur
-          WHERE sr.faktur_so = ?
-          GROUP BY p.faktur
-        `,
-        args: [salesOrder.faktur]
-      });
-      delivery = dlRes.rows;
-    }
+    // 8. (Pengiriman now fetched iteratively in Step 17 to handle HTML faktur tags)
 
     // 9. Get SPH In (linked via faktur_spph from SPPH Out)
     let sphInList: any[] = [];
@@ -170,14 +129,93 @@ export async function GET(request: NextRequest) {
       purchaseOrders = poRes.rows;
     }
 
-    // 11. Get Penerimaan Pembelian (linked via order.faktur = penerimaan_pembelian.faktur_prd)
+    // 11. Get Penerimaan Pembelian (linked via purchase_orders.faktur = penerimaan_pembelian.faktur_po)
     let penerimaanPembelian: any[] = [];
-    if (productionOrder?.faktur) {
+    const poFakturs = purchaseOrders.map((po: any) => po.faktur).filter(Boolean);
+    if (poFakturs.length > 0) {
+      const placeholders = poFakturs.map(() => '?').join(',');
       const pbRes = await db.execute({
-        sql: `SELECT * FROM penerimaan_pembelian WHERE faktur_prd = ?`,
-        args: [productionOrder.faktur]
+        sql: `SELECT * FROM penerimaan_pembelian WHERE faktur_po IN (${placeholders})`,
+        args: poFakturs
       });
       penerimaanPembelian = pbRes.rows;
+    }
+
+    // 12. Get Pembelian Barang (linked via purchase_orders.faktur = rekap_pembelian_barang.faktur_po)
+    let pembelianBarang: any[] = [];
+    if (poFakturs.length > 0) {
+      const placeholders = poFakturs.map(() => '?').join(',');
+      const pbRes2 = await db.execute({
+        sql: `SELECT * FROM rekap_pembelian_barang WHERE faktur_po IN (${placeholders})`,
+        args: poFakturs
+      });
+      pembelianBarang = pbRes2.rows;
+    }
+
+    // 13. Get Pelunasan Hutang (linked via pembelian_barang.faktur = pelunasan_hutang.faktur_pb)
+    let pelunasanHutang: any[] = [];
+    const pbFakturs = pembelianBarang.map((pb: any) => pb.faktur).filter(Boolean);
+    if (pbFakturs.length > 0) {
+      const placeholders = pbFakturs.map(() => '?').join(',');
+      const phRes = await db.execute({
+        sql: `SELECT * FROM pelunasan_hutang WHERE faktur_pb IN (${placeholders})`,
+        args: pbFakturs
+      });
+      pelunasanHutang = phRes.rows;
+    }
+
+    // 14. Get Bahan Baku (linked via productionOrder.faktur = bahan_baku.faktur_prd)
+    let bahanBaku: any[] = [];
+    if (productionOrder?.faktur) {
+      const bbRes = await db.execute({
+        sql: `SELECT * FROM bahan_baku WHERE faktur_prd = ?`,
+        args: [productionOrder.faktur]
+      });
+      bahanBaku = bbRes.rows;
+    }
+
+    // 15. Get Barang Jadi (linked via productionOrder.faktur = barang_jadi.faktur_prd)
+    let barangJadi: any[] = [];
+    if (productionOrder?.faktur) {
+      const bjRes = await db.execute({
+        sql: `SELECT * FROM barang_jadi WHERE faktur_prd = ?`,
+        args: [productionOrder.faktur]
+      });
+      barangJadi = bjRes.rows;
+    }
+
+    // 16. Get Laporan Penjualan (linked via salesOrder.faktur = sales_reports.faktur_so)
+    let laporanPenjualan: any[] = [];
+    if (salesOrder?.faktur) {
+      const lpRes = await db.execute({
+        sql: `SELECT * FROM sales_reports WHERE faktur_so = ?`,
+        args: [salesOrder.faktur]
+      });
+      laporanPenjualan = lpRes.rows;
+    }
+
+    // 17. Get Pengiriman (linked via pengiriman.faktur containing laporanPenjualan.faktur)
+    let pengiriman: any[] = [];
+    const lpFakturs = laporanPenjualan.map(lp => lp.faktur).filter(Boolean);
+    if (lpFakturs.length > 0) {
+      const criteria = lpFakturs.map(() => `faktur LIKE ?`).join(" OR ");
+      const args = lpFakturs.map(f => `%${f}%`);
+      const pgRes = await db.execute({
+        sql: `SELECT * FROM pengiriman WHERE ${criteria}`,
+        args: args
+      });
+      pengiriman = pgRes.rows;
+    }
+
+    // 18. Get Pelunasan Piutang (linked via laporanPenjualan.faktur = pelunasan_piutang.fkt)
+    let pelunasanPiutang: any[] = [];
+    if (lpFakturs.length > 0) {
+      const placeholders = lpFakturs.map(() => '?').join(',');
+      const ppRes = await db.execute({
+        sql: `SELECT * FROM pelunasan_piutang WHERE fkt IN (${placeholders})`,
+        args: lpFakturs
+      });
+      pelunasanPiutang = ppRes.rows;
     }
 
     const parseRawData = (item: any) => {
@@ -199,8 +237,14 @@ export async function GET(request: NextRequest) {
         salesOrder: parseRawData(salesOrder),
         productionOrder: productionOrder ? parseRawData(productionOrder) : null,
         purchaseRequests: purchaseRequests.map(pr => parseRawData(pr)),
-        delivery: delivery.map(d => parseRawData(d)),
-        penerimaanPembelian: penerimaanPembelian.map(pb => parseRawData(pb))
+        penerimaanPembelian: penerimaanPembelian.map(pb => parseRawData(pb)),
+        pembelianBarang: pembelianBarang.map(pb => parseRawData(pb)),
+        pelunasanHutang: pelunasanHutang.map(ph => parseRawData(ph)),
+        bahanBaku: bahanBaku.map(bb => parseRawData(bb)),
+        barangJadi: barangJadi.map(bj => parseRawData(bj)),
+        laporanPenjualan: laporanPenjualan.map(lp => parseRawData(lp)),
+        pengiriman: pengiriman.map(pg => parseRawData(pg)),
+        pelunasanPiutang: pelunasanPiutang.map(pp => parseRawData(pp))
       }
     });
 
