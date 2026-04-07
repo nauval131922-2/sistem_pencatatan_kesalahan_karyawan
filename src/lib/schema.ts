@@ -198,7 +198,6 @@ export async function initSchema(db: any) {
       total REAL,
       status TEXT,
       faktur_so TEXT,
-      faktur_bom TEXT,
       raw_data TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`,
@@ -521,8 +520,6 @@ export async function initSchema(db: any) {
     "ALTER TABLE bill_of_materials ADD COLUMN satuan TEXT;",
     "ALTER TABLE bill_of_materials ADD COLUMN kd_pelanggan TEXT;",
     "ALTER TABLE sph_out ADD COLUMN kd_pelanggan TEXT;",
-    "ALTER TABLE sph_out ADD COLUMN faktur_so TEXT;",
-    "ALTER TABLE sph_out ADD COLUMN faktur_bom TEXT;",
     "ALTER TABLE sales_orders ADD COLUMN kd_pelanggan TEXT;",
     "ALTER TABLE sales_reports ADD COLUMN kd_pelanggan TEXT;",
     "ALTER TABLE sales_reports ADD COLUMN faktur_so TEXT;",
