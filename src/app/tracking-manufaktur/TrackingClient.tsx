@@ -84,6 +84,7 @@ export default function TrackingClient() {
        productionOrder?: any;
        purchaseRequests: any[];
        delivery: any[];
+       penerimaanPembelian: any[];
        id?: string;
     } | null>(null);
    const [suggestionPage, setSuggestionPage] = useState(1);
@@ -97,7 +98,7 @@ export default function TrackingClient() {
     const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
        if (typeof window !== 'undefined') {
           const saved = localStorage.getItem('tracking_columnWidths');
-            return saved ? JSON.parse(saved) : {
+             return saved ? JSON.parse(saved) : {
                bom: 500,
                sph: 500,
                spph: 500,
@@ -105,7 +106,8 @@ export default function TrackingClient() {
                purchase_orders: 500,
                so: 500,
                production: 500,
-               pr: 500
+               pr: 500,
+               penerimaan_pembelian: 500
             };
          }
          return {
@@ -116,7 +118,8 @@ export default function TrackingClient() {
             purchase_orders: 500,
             so: 500,
             production: 500,
-            pr: 500
+            pr: 500,
+            penerimaan_pembelian: 500
          };
     });
 
@@ -137,7 +140,7 @@ export default function TrackingClient() {
            <div className="grid grid-cols-1 gap-1.5 overflow-hidden">
               {entries.map(([key, val]) => {
                  let displayVal = String(val);
-                 const isRawField = key.toLowerCase() === 'id' || key.toLowerCase() === 'kode_cabang' || key.toLowerCase() === 'kd_cabang' || key.toLowerCase() === 'tgl' || key.toLowerCase() === 'status' || key.toLowerCase() === 'created_at' || key.toLowerCase() === 'edited_at' || key.toLowerCase() === 'kd_barang' || key.toLowerCase() === 'recid' || key.toLowerCase() === 'top_hari' || key.toLowerCase() === 'kd_gudang' || key.toLowerCase() === 'create_at' || key.toLowerCase() === 'updated_at' || key.toLowerCase() === 'kd_pelanggan' || key.toLowerCase() === 'datetime_mulai' || key.toLowerCase() === 'datetime_selesai' || key.toLowerCase() === 'qty_order' || key.toLowerCase() === 'qty_so' || key.toLowerCase() === 'tgl_dibutuhkan' || key.toLowerCase() === 'tgl_close' || key.toLowerCase() === 'status_close';
+                 const isRawField = key.toLowerCase() === 'id' || key.toLowerCase() === 'kode_cabang' || key.toLowerCase() === 'kd_cabang' || key.toLowerCase() === 'tgl' || key.toLowerCase() === 'status' || key.toLowerCase() === 'created_at' || key.toLowerCase() === 'edited_at' || key.toLowerCase() === 'kd_barang' || key.toLowerCase() === 'recid' || key.toLowerCase() === 'top_hari' || key.toLowerCase() === 'kd_gudang' || key.toLowerCase() === 'create_at' || key.toLowerCase() === 'updated_at' || key.toLowerCase() === 'kd_pelanggan' || key.toLowerCase() === 'datetime_mulai' || key.toLowerCase() === 'datetime_selesai' || key.toLowerCase() === 'qty_order' || key.toLowerCase() === 'qty_so' || key.toLowerCase() === 'tgl_dibutuhkan' || key.toLowerCase() === 'tgl_close' || key.toLowerCase() === 'status_close' || key.toLowerCase() === 'jthtmp' || key.toLowerCase() === 'faktur_supplier' || key.toLowerCase() === 'tgl_lunas';
                  if (!isRawField) {
                     const numVal = parseFloat(String(val).replace(/,/g, ''));
                     if (!isNaN(numVal)) {
@@ -158,78 +161,82 @@ export default function TrackingClient() {
 
    // Table Columns Definition
    const columns = useMemo<ColumnDef<any>[]>(() => [
-      {
-         id: 'bom',
-         header: 'Bill of Material',
-         accessorKey: 'bom',
-         size: columnWidths.bom,
-         meta: { wrap: true, valign: 'top' },
-         cell: ({ row }) => {
-            const data = row.original.bom;
-            if (!data) return <div className={emptyStateClass}>Tidak Ada Data BOM</div>;
-            return (
-               <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                  <div className={`${cardClass} border border-slate-100`}>
-                     <RenderAllFields data={data} excludeKeys={['raw_data']} />
-                  </div>
-               </div>
-            );
-         }
-      },
-      {
-         id: 'sph',
-         header: 'SPH Out',
-         accessorKey: 'sphOut',
-         size: columnWidths.sph,
-         meta: { wrap: true, valign: 'top' },
-         cell: ({ row }) => {
-            const data = row.original.sphOut;
-            if (!data) return <div className={emptyStateClass}>Tidak Ada Data SPH Out</div>;
-            return (
-               <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                  <div className={`${cardClass} border border-slate-100`}>
-                     <RenderAllFields data={data} excludeKeys={['raw_data']} />
-                  </div>
-               </div>
-            );
-         }
-      },
-      {
-         id: 'so',
-         header: 'Sales Order',
-         accessorKey: 'salesOrder',
-         size: columnWidths.so,
-         meta: { wrap: true, valign: 'top' },
-         cell: ({ row }) => {
-            const data = row.original.salesOrder;
-            if (!data) return <div className={emptyStateClass}>Tidak Ada Data Sales Order</div>;
-            return (
-               <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                  <div className={`${cardClass} border border-slate-100`}>
-                     <RenderAllFields data={data} excludeKeys={['raw_data']} />
-                  </div>
-               </div>
-            );
-         }
-      },
-      {
-         id: 'production',
-         header: 'Order Produksi',
-         accessorKey: 'productionOrder',
-         size: columnWidths.production,
-         meta: { wrap: true, valign: 'top' },
-         cell: ({ row }) => {
-            const data = row.original.productionOrder;
-            if (!data) return <div className={emptyStateClass}>Tidak Ada Data Order Produksi</div>;
-            return (
-               <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                  <div className={`${cardClass} border border-slate-100`}>
-                     <RenderAllFields data={data} excludeKeys={['raw_data']} />
-                  </div>
-               </div>
-            );
-         }
-      },
+       {
+          id: 'bom',
+          header: 'Bill of Material',
+          accessorKey: 'bom',
+          size: columnWidths.bom,
+          meta: { wrap: true, valign: 'top' },
+          cell: ({ row }) => {
+             const data = row.original.bom;
+             if (!data) return <div className={emptyStateClass}>Tidak Ada Data BOM</div>;
+             return (
+                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                   <div className="text-[10px] font-bold text-gray-400 mb-1">1 Data Bill of Material</div>
+                   <div className={`${cardClass} border border-slate-100`}>
+                      <RenderAllFields data={data} excludeKeys={['raw_data']} />
+                   </div>
+                </div>
+             );
+          }
+       },
+       {
+          id: 'sph',
+          header: 'SPH Out',
+          accessorKey: 'sphOut',
+          size: columnWidths.sph,
+          meta: { wrap: true, valign: 'top' },
+          cell: ({ row }) => {
+             const data = row.original.sphOut;
+             if (!data) return <div className={emptyStateClass}>Tidak Ada Data SPH Out</div>;
+             return (
+                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                   <div className="text-[10px] font-bold text-gray-400 mb-1">1 Data SPH Out</div>
+                   <div className={`${cardClass} border border-slate-100`}>
+                      <RenderAllFields data={data} excludeKeys={['raw_data']} />
+                   </div>
+                </div>
+             );
+          }
+       },
+       {
+          id: 'so',
+          header: 'Sales Order',
+          accessorKey: 'salesOrder',
+          size: columnWidths.so,
+          meta: { wrap: true, valign: 'top' },
+          cell: ({ row }) => {
+             const data = row.original.salesOrder;
+             if (!data) return <div className={emptyStateClass}>Tidak Ada Data Sales Order</div>;
+             return (
+                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                   <div className="text-[10px] font-bold text-gray-400 mb-1">1 Data Sales Order</div>
+                   <div className={`${cardClass} border border-slate-100`}>
+                      <RenderAllFields data={data} excludeKeys={['raw_data']} />
+                   </div>
+                </div>
+             );
+          }
+       },
+       {
+          id: 'production',
+          header: 'Order Produksi',
+          accessorKey: 'productionOrder',
+          size: columnWidths.production,
+          meta: { wrap: true, valign: 'top' },
+          cell: ({ row }) => {
+             const data = row.original.productionOrder;
+             if (!data) return <div className={emptyStateClass}>Tidak Ada Data Order Produksi</div>;
+             return (
+                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                   <div className="text-[10px] font-bold text-gray-400 mb-1">1 Data Order Produksi</div>
+                   <div className={`${cardClass} border border-slate-100`}>
+                      <RenderAllFields data={data} excludeKeys={['raw_data']} />
+                   </div>
+                </div>
+             );
+          }
+       },
       {
          id: 'pr',
          header: 'Purchase Request',
@@ -241,15 +248,16 @@ export default function TrackingClient() {
              if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data PR</div>;
              return (
                 <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                   <div className="text-[10px] font-bold text-gray-400 mb-1">{items.length} Data Purchase Request</div>
                    {items.map((pr: any, idx: number) => (
                       <div key={idx} className={`${cardClass} border border-slate-100`}>
                          <RenderAllFields data={pr} excludeKeys={['raw_data']} />
                       </div>
                    ))}
-               </div>
+                </div>
               );
            }
-       },
+        },
       {
          id: 'spph',
          header: 'SPPH Out',
@@ -261,6 +269,7 @@ export default function TrackingClient() {
             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data SPPH Out</div>;
             return (
                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                  <div className="text-[10px] font-bold text-gray-400 mb-1">{items.length} Data SPPH Out</div>
                   {items.map((spph: any, idx: number) => (
                      <div key={idx} className={`${cardClass} border border-slate-100`}>
                         <RenderAllFields data={spph} excludeKeys={['raw_data']} />
@@ -281,6 +290,7 @@ export default function TrackingClient() {
             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data SPH In</div>;
             return (
                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                  <div className="text-[10px] font-bold text-gray-400 mb-1">{items.length} Data SPH In</div>
                   {items.map((sph: any, idx: number) => (
                      <div key={idx} className={`${cardClass} border border-slate-100`}>
                         <RenderAllFields data={sph} excludeKeys={['raw_data']} />
@@ -301,9 +311,31 @@ export default function TrackingClient() {
             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Purchase Order</div>;
             return (
                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                  <div className="text-[10px] font-bold text-gray-400 mb-1">{items.length} Data Purchase Order</div>
                   {items.map((po: any, idx: number) => (
                      <div key={idx} className={`${cardClass} border border-slate-100`}>
                         <RenderAllFields data={po} excludeKeys={['raw_data']} />
+                     </div>
+                  ))}
+               </div>
+            );
+         }
+       },
+      {
+         id: 'penerimaan_pembelian',
+         header: 'Penerimaan Pembelian',
+         accessorKey: 'penerimaanPembelian',
+         size: columnWidths.penerimaan_pembelian,
+         meta: { wrap: true, valign: 'top' },
+         cell: ({ row }) => {
+            const items = row.original.penerimaanPembelian;
+            if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Penerimaan Pembelian</div>;
+            return (
+               <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+                  <div className="text-[10px] font-bold text-gray-400 mb-1">{items.length} Data Penerimaan Pembelian</div>
+                  {items.map((pb: any, idx: number) => (
+                     <div key={idx} className={`${cardClass} border border-slate-100`}>
+                        <RenderAllFields data={pb} excludeKeys={['raw_data']} />
                      </div>
                   ))}
                </div>
