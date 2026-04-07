@@ -45,31 +45,13 @@ Sesi ini fokus pada perbaikan logika `scrapedPeriod` di semua halaman scraper da
 **File**: `src/app/api/tracking/route.ts`, `TrackingClient.tsx`
 
 **Kolom yang ditambahkan** (urutan):
-1. **SPPH Out** - via `productionOrder.faktur` = `spph_out.faktur_prd`
-2. **SPH In** - via `productionOrder.faktur` = `sph_in.faktur_prd`
-3. **Purchase Order** - via `productionOrder.faktur` = `purchase_orders.faktur_prd`
-4. **Penerimaan Pembelian** - via `productionOrder.faktur` = `penerimaan_pembelian.faktur_prd`
+1. **SPPH Out** - via `faktur_pr` dari Purchase Request
+2. **SPH In** - via `faktur_spph` dari SPPH Out
+3. **Purchase Order** - via `sph_in.faktur` = `purchase_orders.faktur_sph`
 
 **Lebar kolom default**: Semua kolom 500px
 
-### 4. Field isRawField Extension
-**File**: `TrackingClient.tsx`
-
-Tambah field yang tampil apa adanya (tanpa formatting angka):
-- `jthtmp`, `faktur_supplier`, `tgl_lunas`
-
-### 5. Counter Badge di Semua Kolom
-**File**: `TrackingClient.tsx`
-
-Setiap kolom menampilkan counter badge: `"X Data [Nama Kolom]"` sebelum card pertama.
-
-### 6. Schema & Scrape Update - faktur_bom
-**File**: `src/lib/schema.ts`, `src/app/api/scrape-sph-out/route.ts`
-
-- Tambah kolom `faktur_bom` di tabel `sph_out` (schema + migration)
-- Update scrape API `sph_out` untuk menyimpan `faktur_bom` dari API MDT
-
-### 7. Debug API Enhancement
+### 4. Debug API Enhancement
 **File**: `src/app/api/debug-raw-data/route.ts`
 
 - Support parameter `table` untuk debug raw_data dari berbagai tabel
@@ -80,35 +62,21 @@ Setiap kolom menampilkan counter badge: `"X Data [Nama Kolom]"` sebelum card per
 - `609add3` - ui: tracking manufaktur - ukuran font, tampilkan field sesuai raw data
 - `8fc6dc4` - fix: handle null raw_data in debug-raw-data API
 - `eabbf39` - feat: tracking manufaktur - tambah kolom SPPH Out, SPH In, Purchase Order
-- `919232b` - feat: add faktur_bom column to sph_out and Penerimaan Pembelian tracking
 
-## Relasi Tracking Manufaktur (per user specification)
-1. BOM → SPH Out: `bom.faktur` → `sph_out.faktur_bom`
-2. SPH Out → Sales Order: `sph_out.faktur` → `sales_orders.faktur_sph`
-3. Sales Order → Order Produksi: `sales_order.faktur` → `orders.faktur_so`
-4. Order Produksi → Purchase Request: `orders.faktur` → `purchase_requests.faktur_prd`
-5. Order Produksi → SPPH Out: `orders.faktur` → `spph_out.faktur_prd`
-6. Order Produksi → SPH In: `orders.faktur` → `sph_in.faktur_prd`
-7. Order Produksi → Purchase Order: `orders.faktur` → `purchase_orders.faktur_prd`
-8. Order Produksi → Penerimaan Pembelian: `orders.faktur` → `penerimaan_pembelian.faktur_prd`
-
-## Flow Tracking Manufaktur (Display Order)
-1. Bill of Material (BOM) - awal
-2. SPH Out
-3. Sales Order
-4. Order Produksi
-5. Purchase Request
-6. SPPH Out
-7. SPH In
-8. Purchase Order
-9. Penerimaan Pembelian
-10. Delivery
+## Flow Tracking Manufaktur
+1. BOM (awal)
+2. SPH Out (via `faktur_sph` dari BOM)
+3. SPPH Out (via `faktur_sph` dari SPH Out)
+4. SPH In (via `faktur_spph` dari SPPH Out)
+5. Purchase Order (via `sph_in.faktur` = `purchase_orders.faktur_sph`)
+6. Sales Order (via `faktur_so` dari SPH Out)
+7. Order Produksi
+8. Purchase Request
+9. Delivery
 
 ## Dampak
 - Keterangan periode stabil, hanya berubah setelah Tarik Data berhasil
-- Tracking Manufaktur lebih lengkap dengan kolom SPPH, SPH In, PO, dan Penerimaan Pembelian
-- Counter badge untuk setiap kolom memudahkan tracking jumlah data
-- Relasi antar tabel sesuai dengan user specification
+- Tracking Manufaktur lebih lengkap dengan kolom SPPH, SPH In, dan PO
 - Debug API untuk cek raw_data semua tabel
 
 ## Lokasi untuk Sinkronisasi
