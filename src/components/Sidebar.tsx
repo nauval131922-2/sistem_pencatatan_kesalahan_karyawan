@@ -28,7 +28,8 @@ import {
   ClipboardList,
   Truck,
   CreditCard,
-  TrendingUp
+  TrendingUp,
+  RefreshCw
 } from 'lucide-react';
 import Image from 'next/image';
 import logoPic from '../../public/icon.png';
@@ -156,7 +157,7 @@ export default function Sidebar({ user }: SidebarProps) {
   const navItemClasses = (href: string) => {
     const isActive = checkIsActive(href);
     return `
-      group flex items-center gap-3 px-3 h-9 rounded-lg transition-all text-[12.5px] font-semibold
+      group flex items-center gap-3 px-3 h-9 rounded-[8px] transition-all text-[12.5px] font-semibold
       ${!isExpanded ? 'justify-center px-0 w-9 mx-auto' : 'w-full'}
       ${isActive 
         ? 'bg-green-600 text-white shadow-md' 
@@ -202,7 +203,7 @@ export default function Sidebar({ user }: SidebarProps) {
           {isExpanded ? (
             <div className="flex flex-col w-full">
               <div className="flex items-center gap-3 overflow-hidden">
-                <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 bg-[#16a34a]">
+                <div className="w-8 h-8 rounded-[8px] overflow-hidden shrink-0 bg-[#16a34a]">
                   <Image src={logoPic} alt="SINTAK" className="w-full h-full object-contain" />
                 </div>
                 <div className="min-w-0 flex flex-col">
@@ -215,7 +216,7 @@ export default function Sidebar({ user }: SidebarProps) {
               </div>
             </div>
           ) : (
-            <div className="w-8 h-8 rounded-lg overflow-hidden mx-auto bg-[#16a34a]">
+            <div className="w-8 h-8 rounded-[8px] overflow-hidden mx-auto bg-[#16a34a]">
                <Image src={logoPic} alt="SINTAK" className="w-full h-full object-contain" />
             </div>
           )}
@@ -251,6 +252,15 @@ export default function Sidebar({ user }: SidebarProps) {
         {/* DATA DIGIT */}
         <SectionLabel label="Data Digit" />
         <div className="space-y-1">
+          {user?.role === 'Super Admin' && (
+            <>
+              <Link href="/sync" className={navItemClasses('/sync')} title={!isExpanded ? "Sinkronisasi All Data" : ""}>
+                <RefreshCw size={18} />
+                {isExpanded && <span className="truncate">Sinkronisasi All Data</span>}
+              </Link>
+              <div className={`h-px bg-gray-100 my-2 ${!isExpanded ? 'mx-1' : 'mx-3'}`} />
+            </>
+          )}
           <Link href="/bom" className={navItemClasses('/bom')} title={!isExpanded ? "Bill of Material" : ""}>
             <Calculator size={18} />
             {isExpanded && <span className="truncate">Bill of Material</span>}
@@ -381,11 +391,11 @@ export default function Sidebar({ user }: SidebarProps) {
           <div className="relative">
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all hover:bg-white hover:shadow-sm ${
+              className={`w-full flex items-center gap-3 p-2 rounded-[8px] transition-all hover:bg-white hover:shadow-sm ${
                 isProfileOpen ? 'bg-white shadow-sm ring-1 ring-black/5' : ''
               } ${!isExpanded ? 'justify-center p-1' : ''}`}
             >
-              <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center overflow-hidden shrink-0 border border-green-200">
+              <div className="w-8 h-8 rounded-[8px] bg-green-100 flex items-center justify-center overflow-hidden shrink-0 border border-green-200">
                 {user.photo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
@@ -402,12 +412,12 @@ export default function Sidebar({ user }: SidebarProps) {
             </button>
 
             {isProfileOpen && (
-              <div className="absolute left-0 bottom-full mb-2 w-full bg-white rounded-xl shadow-xl border border-gray-100 p-1.5 animate-in fade-in slide-in-from-bottom-2 z-50">
-                <Link href="/profile" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-2 px-3 py-2 text-[11px] font-bold text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+              <div className="absolute left-0 bottom-full mb-2 w-full bg-white rounded-[8px] shadow-xl border border-gray-100 p-1.5 animate-in fade-in slide-in-from-bottom-2 z-50">
+                <Link href="/profile" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-2 px-3 py-2 text-[11px] font-bold text-gray-600 hover:bg-gray-50 rounded-[8px] transition-colors">
                   <Settings size={14} />
                   <span>Pengaturan Profil</span>
                 </Link>
-                <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-bold text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-bold text-red-500 hover:bg-red-50 rounded-[8px] transition-colors">
                   <LogOut size={14} />
                   <span>Keluar Sistem</span>
                 </button>
@@ -415,9 +425,14 @@ export default function Sidebar({ user }: SidebarProps) {
             )}
           </div>
         ) : (
-          <div className="h-10 bg-gray-200 rounded-lg animate-pulse" />
+          <div className="h-10 bg-gray-200 rounded-[8px] animate-pulse" />
         )}
       </div>
     </aside>
   );
 }
+
+
+
+
+
