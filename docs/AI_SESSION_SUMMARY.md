@@ -1,120 +1,86 @@
-# Ringkasan Sesi AI - 03 April 2026
-
-## Ringkas
-Sesi ini fokus pada:
-1. **Standardisasi API routes** - Penambahan `export const dynamic = 'force-dynamic'` di semua endpoint API
-2. **Standardisasi UI Client components** - Penambahan cache-buster `_t` di semua fetch client-side
-3. **Improvement Tracking Manufaktur** - Refactor UI, helper `toTitleCase`, formatting number
-4. **Pure raw_data** - Pastikan raw_data menyimpan data murni dari API MDT tanpa transformasi
-5. **RenderAllFields** - Simplifikasi display Tracking Manufaktur dengan RenderAllFields
+# AI Session Summary — SINTAK
+**Tanggal Sesi:** 08 April 2026  
+**Perangkat:** Kantor  
 
 ---
 
-# Ringkasan Sesi AI - 05 April 2026
+## ✅ Ringkasan Pekerjaan Sesi Ini
 
-## Ringkas
-Sesi ini fokus pada perbaikan logika `scrapedPeriod` di semua halaman scraper dan improvement UI Tracking Manufaktur (penambahan kolom baru).
+### 1. Standardisasi UI/UX — Border Radius 8px (Global)
+- Seluruh elemen card, container, modal, tombol, badge, dan input di semua modul telah diseragamkan menggunakan `rounded-[8px]`.
+- File yang terdampak: hampir semua `*Client.tsx`, `page.tsx`, dan komponen di `src/components/`.
+- Metode: penggantian massal via PowerShell untuk efisiensi.
 
-## Perubahan Utama
+### 2. Standardisasi Border Style Card & Search Bar
+- **Border default** seluruh card diubah dari `border-gray-200` menjadi `border-gray-100` (lebih halus/ringan).
+- **Efek hover** ditambahkan: `hover:border-gray-200 hover:shadow-sm transition-all duration-300` pada card, search bar, dan DataTable.
+- Komponen yang diperbarui: `DataTable.tsx`, semua scraper Client, `RecordsForm.tsx`, `StatsClient.tsx`, `UsersContent.tsx`, dashboard, dll.
 
-### 1. Fix Logika scrapedPeriod (BOM Pattern)
-**Masalah**: Keterangan periode berubah saat user ganti date picker (sebelum Tarik Data), padahal seharusnya menunjukkan periode data yang sudah di-scrape.
+### 3. Perubahan Nama & Navigasi Sidebar
+- Menu **"Sinkronisasi Data"** dipindah ke atas di bawah label **"Data Digit"** (tetap hanya tampil untuk Super Admin).
+- Divider (garis horizontal) ditambahkan setelah menu Sinkronisasi sebelum menu Bill of Material.
+- Nama menu diubah menjadi **"Sinkronisasi All Data"**.
+- Judul tab browser & PageHeader halaman `/sync` juga diperbarui.
 
-**Solusi**: 
-- Hapus `setScrapedPeriod` dari `loadData()` di semua client
-- `scrapedPeriod` hanya di-set saat `Tarik Data` via `persistScraperPeriod`
-- API routes baca `scrapedPeriod` dari `system_settings` (periode scrape terakhir)
+### 4. Fitur Modal Sukses Sinkronisasi All Data
+- Setelah batch sinkronisasi selesai, muncul modal `ConfirmDialog` dengan type `success`.
+- Menampilkan total data dan jumlah modul yang berhasil diperbarui.
+- File: `src/app/sync/SyncClient.tsx`
 
-**File yang diubah**:
-- Client: `SalesOrderClient.tsx`, `OrderProduksiClient.tsx`, `PengirimanClient.tsx`, `BahanBakuClient.tsx`, `BarangJadiClient.tsx`, `SalesReportClient.tsx`
-- Lib: `src/lib/scraper-period.ts` - Fix hydrateScrapedPeriod agar selalu hydrate period untuk display
+### 5. Halaman Tracking Manufaktur — Dua Fitur Baru
+#### a. Persist Pilihan BOM (Tahan Refresh)
+- Pilihan faktur BOM disimpan ke `localStorage` (`tracking_selected_faktur`, `tracking_selected_nama`).
+- Saat halaman di-refresh, pilihan otomatis di-restore dan data langsung di-fetch ulang.
+- Dropdown trigger menampilkan faktur aktif selama loading.
 
-### 2. UI Tracking Manufaktur - Font & Display
-**File**: `src/app/tracking-manufaktur/TrackingClient.tsx`
+#### b. Auto-Refresh dari Tab Sinkronisasi
+- TrackingClient kini listen ke event `storage` (`sintak_data_updated`) dari tab lain.
+- Saat sinkronisasi selesai di tab lain, tracking otomatis re-fetch data faktur aktif.
+- Badge **"Diperbarui otomatis"** muncul selama 3 detik sebagai indikator visual.
+- File: `src/app/tracking-manufaktur/TrackingClient.tsx`
 
-- Ubah font size dropdown BOM: 11px → 12px
-- Ubah font size isi tabel: 10px → 12px
-- Label key tampil sesuai raw_data (tanpa `toTitleCase`)
-- Field yang tampil apa adanya dari raw_data (tanpa formatting angka):
-  - `id`, `kode_cabang`, `kd_cabang`, `tgl`, `status`, `created_at`, `edited_at`, `kd_barang`, `recid`
-  - `top_hari`, `kd_gudang`, `create_at`, `updated_at`, `kd_pelanggan`
-  - `datetime_mulai`, `datetime_selesai`, `qty_order`, `qty_so`, `tgl_dibutuhkan`
-  - `tgl_close`, `status_close`
+### 6. Perbaikan Data Format
+- Field `no_ref_pelanggan` di tabel Tracking ditambahkan ke `rawFields` agar tidak diformat sebagai angka.
+- File: `src/app/tracking-manufaktur/TrackingClient.tsx`
 
-### 3. Tracking Manufaktur - Kolom Baru
-**File**: `src/app/api/tracking/route.ts`, `TrackingClient.tsx`
-
-**Kolom yang ditambahkan** (urutan):
-1. **SPPH Out** - via `faktur_pr` dari Purchase Request
-2. **SPH In** - via `faktur_spph` dari SPPH Out
-3. **Purchase Order** - via `sph_in.faktur` = `purchase_orders.faktur_sph`
-
-**Lebar kolom default**: Semua kolom 500px
-
-### 4. Debug API Enhancement
-**File**: `src/app/api/debug-raw-data/route.ts`
-
-- Support parameter `table` untuk debug raw_data dari berbagai tabel
-- Table tersedia: `bom`, `sph_out`, `sph_in`, `spph_out`, `purchase_orders`, `sales_orders`, `orders`, `purchase_requests`, `pengiriman`
-
-## Commit Summary
-- `5cccfc6` - fix: scrapedPeriod tetap tampil untuk display meskipun scrape bukan hari ini
-- `609add3` - ui: tracking manufaktur - ukuran font, tampilkan field sesuai raw data
-- `8fc6dc4` - fix: handle null raw_data in debug-raw-data API
-- `eabbf39` - feat: tracking manufaktur - tambah kolom SPPH Out, SPH In, Purchase Order
-
-## Flow Tracking Manufaktur
-1. BOM (awal)
-2. SPH Out (via `faktur_sph` dari BOM)
-3. SPPH Out (via `faktur_sph` dari SPH Out)
-4. SPH In (via `faktur_spph` dari SPPH Out)
-5. Purchase Order (via `sph_in.faktur` = `purchase_orders.faktur_sph`)
-6. Sales Order (via `faktur_so` dari SPH Out)
-7. Order Produksi
-8. Purchase Request
-9. Delivery
-
-## Dampak
-- Keterangan periode stabil, hanya berubah setelah Tarik Data berhasil
-- Tracking Manufaktur lebih lengkap dengan kolom SPPH, SPH In, dan PO
-- Debug API untuk cek raw_data semua tabel
-
-## Lokasi untuk Sinkronisasi
-- **Rumah**: `git pull origin master`
-- **Kantor**: `git pull origin master`
-- Pastikan `.env` dan database tidak ikut ter-push (sudah di .gitignore)
+### 7. Fitur Halaman Sinkronisasi All Data
+- Modal sukses setelah batch selesai.
+- `runSync()` kini mengembalikan `{ success, count }` agar bisa dihitung total.
+- Import `ConfirmDialog` pada `SyncClient.tsx`.
 
 ---
 
-# Ringkasan Sesi AI - 07 April 2026
+## 📌 Status Modul Saat Ini
 
-## Ringkasan
-Sesi ini berfokus pada penyempurnaan UI Tracking Manufaktur dengan melengkapi alur Supply Chain secara keseluruhan (end-to-end dari hulu ke hilir pelunasan) serta pembuatan instruksi/tutorial mandiri.
+| Modul | Status UI | Status Fungsi |
+|-------|-----------|---------------|
+| Dashboard | ✅ Selesai | ✅ Stabil |
+| Tracking Manufaktur | ✅ Selesai | ✅ + Persist + Auto-refresh |
+| Sinkronisasi All Data | ✅ Selesai | ✅ + Modal sukses |
+| Records / Pencatatan | ✅ Selesai | ✅ Stabil |
+| Statistik / Stats | ✅ Selesai | ✅ Stabil |
+| Users | ✅ Selesai | ✅ Stabil |
+| Semua Modul Scraper (16x) | ✅ Selesai | ✅ Stabil |
 
-## Perubahan Utama
+---
 
-### 1. Tracking Manufaktur - Kolom Baru & Logika Pemasangan
-**File**: `src/app/api/tracking/route.ts`, `TrackingClient.tsx`
-- Penambahan tipe state, default lebar 500px, dan layout tabel secara berurutan.
-- **Pembelian Barang**: via `Purchase Order.faktur` = `Pembelian Barang.faktur_po`
-- **Pelunasan Hutang**: via `Pembelian Barang.faktur` = `Pelunasan Hutang.faktur_pb`
-- **Bahan Baku**: via `Order Produksi.faktur` = `Bahan Baku.faktur_prd`
-- **Barang Jadi**: via `Order Produksi.faktur` = `Barang Jadi.faktur_prd`
-- **Laporan Penjualan**: via `Sales Order.faktur` = `Laporan Penjualan.faktur_so`
-- **Pengiriman**: Menggunakan *LIKE query* pada `pengiriman.faktur` dikarenakan nilainya berupa tag HTML (`<a>...</a>`), direlasikan berdasarkan string ID dari faktur `Laporan Penjualan`. (Step lama menggunakan JOIN strict equality dihapus karena gagal).
-- **Pelunasan Piutang**: via `Laporan Penjualan.faktur` = `Pelunasan Piutang.fkt`
+## 🔧 Next Steps (Sesi Berikutnya)
 
-### 2. Pengecualian Formatting Numerik pada UI
-**File**: `TrackingClient.tsx`
-- Memperpendek baris if-condition pengecekan variabel dengan pattern Array `includes()`.
-- Variabel string tipe ID seperti `kd_porsekot` dan `kd_bank` tidak lagi dirender sebagai angka desimal berkoma, melainkan apa adanya (*raw strings*).
+1. **Test visual** semua halaman di browser untuk verifikasi border & hover effect.  
+2. **Test fungsional** fitur auto-refresh tracking dari tab sinkronisasi.  
+3. **Test persist BOM** — refresh halaman tracking dan pastikan data terpulihkan.  
+4. Cek apakah ada modul lain yang belum sempurna secara UI (misalnya `SyncClient` card modules hover).
+5. Periksa komponen `sync` card kecil — apakah sudah punya hover effect yang konsisten.
 
-### 3. Pemutakhiran Prosedur Prompt & Dokumentasi
-- Menambahkan **TUTORIAL_TAMBAH_KOLOM_TRACKING.md** ke folder `docs/` yang mengajarkan *step-by-step* ekstensi tabel.
-- Menambahkan instruksi prompt di **COMMIT_INSTRUCTION.md** (Rule #6) untuk memaksa trigger pembuatan tutorial fitur untuk edukasi (*self-learning*).
+---
 
-## Dampak
-- UI tabel Tracking Manufaktur sekarang menampilkan visual supply chain utuh di satu layar (dari BOM - Pembelian/Hutang - Produksi - Penjualan - Pengiriman - Piutang).
+## 💡 Catatan Teknis Penting
 
-## Lokasi untuk Sinkronisasi Lanjut
-- Setelah ditarik asalkan DB terupdate, UI dapat dicoba dan digunakan. Fokus selanjutnya bisa diarahkan ke fungsionalitas Unduh CSV/PDF dari tabel raksasa ini atau PWA.
+- **Design System**: `rounded-[8px]`, `border-gray-100` (default), `hover:border-gray-200 hover:shadow-sm transition-all duration-300`.
+- **Storage Events**: Komunikasi antar tab menggunakan `localStorage.setItem('sintak_data_updated', ...)` + `window.addEventListener('storage', ...)`.
+- **Persist State Tracking**: Kunci localStorage: `tracking_selected_faktur`, `tracking_selected_nama`.
+- **runSync return value**: Fungsi kini mengembalikan `{ success: boolean, count: number }` — pertahankan pola ini untuk fitur masa depan.
+
+---
+
+*Dibuat otomatis oleh AI pada akhir sesi 08 April 2026.*
