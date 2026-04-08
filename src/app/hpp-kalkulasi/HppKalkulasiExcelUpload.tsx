@@ -94,9 +94,9 @@ export default function HppKalkulasiExcelUpload() {
 
   return (
     <div className="shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] px-4 py-3 flex items-center justify-between gap-4 relative">
+      <div className="bg-white border border-gray-200 shadow-sm rounded-[8px] px-4 py-3 flex items-center justify-between gap-4 relative">
         <div className="flex items-center gap-4 flex-1">
-          <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-[8px] bg-green-50 flex items-center justify-center shrink-0">
             <Upload className="text-green-600" size={20} />
           </div>
           <div className="min-w-0">
@@ -118,7 +118,7 @@ export default function HppKalkulasiExcelUpload() {
           <button
             onClick={() => fileRef.current?.click()}
             disabled={status === 'loading'}
-            className="px-4 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-bold rounded-lg transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm active:scale-[0.98]"
+            className="px-4 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-bold rounded-[8px] transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm active:scale-[0.98]"
           >
             {status === 'loading' ? (
               <Loader2 size={16} className="animate-spin" />
@@ -130,7 +130,7 @@ export default function HppKalkulasiExcelUpload() {
         </div>
 
         {status === 'error' && (
-          <div className="absolute top-full left-0 right-0 mt-2 p-2.5 bg-red-50 text-red-600 border border-red-100 rounded-lg text-[11px] flex items-start gap-2 animate-in slide-in-from-top-1 z-20">
+          <div className="absolute top-full left-0 right-0 mt-2 p-2.5 bg-red-50 text-red-600 border border-red-100 rounded-[8px] text-[11px] flex items-start gap-2 animate-in slide-in-from-top-1 z-20">
             <XCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
             <p className="font-medium">{message}</p>
           </div>
@@ -152,4 +152,9 @@ export default function HppKalkulasiExcelUpload() {
     </div>
   );
 }
+
+
+
+
+
 

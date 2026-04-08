@@ -226,7 +226,8 @@ export default function BarangJadiClient() {
   ], []);
 
   useEffect(() => {
-    setIsMounted(true);
+    setIsMounted(true);
+
   }, []);
 
   useEffect(() => {
@@ -421,14 +422,14 @@ export default function BarangJadiClient() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
-      <div className="bg-white rounded-[16px] border border-gray-200 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative z-50">
+      <div className="bg-white rounded-[8px] border border-gray-100 p-5 hover:border-gray-200 hover:shadow-sm transition-all duration-300 flex flex-col gap-5 shrink-0 relative z-50">
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex flex-wrap items-center gap-6">
             <div className="flex flex-col gap-1.5">
               <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Rentang Tanggal</span>
               <div className="flex items-center gap-2">
                 {!isMounted ? (
-                   <div className="w-[300px] h-10 bg-gray-50 animate-pulse rounded-lg" />
+                   <div className="w-[300px] h-10 bg-gray-50 animate-pulse rounded-[8px]" />
                 ) : (
                   <>
                     <div className="w-[140px] relative group">
@@ -470,7 +471,7 @@ export default function BarangJadiClient() {
             <button 
               onClick={handleFetch}
               disabled={loading || isBatching || !startDate || !endDate}
-              className="px-5 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-lg transition-all flex items-center justify-center gap-2.5 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm active:scale-[0.98]"
+              className="px-5 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-[8px] transition-all flex items-center justify-center gap-2.5 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm active:scale-[0.98]"
             >
               {isBatching ? (
                 <Loader2 size={16} className="animate-spin" />
@@ -484,7 +485,7 @@ export default function BarangJadiClient() {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm flex items-start gap-2 animate-in fade-in shrink-0">
+        <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-[8px] text-sm flex items-start gap-2 animate-in fade-in shrink-0">
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
           <p className="font-semibold">{error}</p>
         </div>
@@ -522,7 +523,7 @@ export default function BarangJadiClient() {
             <input 
               type="text" 
               placeholder="Cari ID, faktur, barang, atau produk..." 
-              className="w-full pl-12 pr-4 h-10 bg-white border border-gray-200 rounded-[14px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
+              className="w-full pl-12 pr-4 h-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -584,6 +585,11 @@ export default function BarangJadiClient() {
     </div>
   );
 }
+
+
+
+
+
 
 
 

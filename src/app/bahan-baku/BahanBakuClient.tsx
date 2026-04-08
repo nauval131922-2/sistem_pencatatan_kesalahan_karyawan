@@ -305,7 +305,7 @@ export default function BahanBakuClient() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
-      <div className="bg-white rounded-[16px] border border-gray-200 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative z-50">
+      <div className="bg-white rounded-[8px] border border-gray-100 p-5 hover:border-gray-200 hover:shadow-sm transition-all duration-300 flex flex-col gap-5 shrink-0 relative z-50">
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex flex-wrap items-center gap-6">
             <div className="flex flex-col gap-1.5">
@@ -330,7 +330,7 @@ export default function BahanBakuClient() {
             <button 
               onClick={handleFetch}
               disabled={loading || isBatching || !startDate || !endDate}
-              className="px-5 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-lg transition-all flex items-center justify-center gap-2.5 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm active:scale-[0.98]"
+              className="px-5 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-[8px] transition-all flex items-center justify-center gap-2.5 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm active:scale-[0.98]"
             >
               {isBatching ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} className={loading && data === null ? "animate-spin" : ""} />}
               <span>{isBatching ? `${batchProgress}%` : 'Tarik Data'}</span>
@@ -340,7 +340,7 @@ export default function BahanBakuClient() {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm flex items-start gap-2 animate-in fade-in shrink-0">
+        <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-[8px] text-sm flex items-start gap-2 animate-in fade-in shrink-0">
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" /><p className="font-semibold">{error}</p>
         </div>
       )}
@@ -364,7 +364,7 @@ export default function BahanBakuClient() {
             <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-green-500 transition-colors" />
             <input 
               type="text" placeholder="Cari faktur, barang, supplier..." 
-              className="w-full pl-12 pr-4 h-10 bg-white border border-gray-200 rounded-[14px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
+              className="w-full pl-12 pr-4 h-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
               value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
@@ -399,3 +399,8 @@ export default function BahanBakuClient() {
     </div>
   );
 }
+
+
+
+
+
