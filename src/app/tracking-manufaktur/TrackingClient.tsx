@@ -34,21 +34,20 @@ const parseLooseNumber = (value: unknown) => {
    return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const chipClass = "px-1.5 py-0.5 rounded border text-[11px] font-bold whitespace-nowrap";
-const cardClass = "bg-white rounded-lg p-3 shadow-sm flex flex-col gap-2.5 w-full max-w-full text-left";
-const infoCardClass = "bg-slate-50 p-2 rounded border border-gray-100/50";
+const chipClass = "px-1.5 py-0.5 rounded-[8px] border text-[11px] font-bold whitespace-nowrap";
+const cardClass = "bg-white rounded-[8px] p-3 flex flex-col gap-2.5 w-full max-w-full text-left transition-all duration-300";
+const infoCardClass = "bg-slate-50 p-2 rounded-[8px] border border-gray-100/50";
 const infoLabelClass = "text-[10px] text-gray-400 font-bold tracking-tight";
 const refLabelClass = "text-gray-400 font-bold min-w-[60px]";
 const refRowClass = "flex items-center gap-1.5 text-[11px] text-gray-500";
 const productTitleClass = "text-[12px] font-bold text-slate-800 leading-snug mt-1";
 const productMetaClass = "flex flex-wrap items-center gap-1.5 text-[11px] text-gray-400 font-medium tracking-tight mt-1";
 const customerTextClass = "text-[11px] font-bold";
-const locationBadgeClass = "text-[11px] text-gray-400 px-1.5 py-0.5 bg-gray-50 rounded border border-gray-100 tracking-tighter font-bold whitespace-nowrap";
-const emptyStateClass = "py-6 text-center text-[11px] font-bold uppercase tracking-widest text-gray-300 italic";
+const locationBadgeClass = "text-[11px] text-gray-400 px-1.5 py-0.5 bg-gray-50 rounded-[8px] border border-gray-100 tracking-tighter font-bold whitespace-nowrap";
+const emptyStateClass = "px-1 text-[11px] font-bold text-gray-300 italic py-1 mt-0.5";
 const headerDateClass = "text-[10px] text-gray-400 shrink-0 text-right";
 const auditSectionClass = "pt-1 mt-1 border-t border-gray-100 flex flex-col gap-0.5 text-[11px] text-gray-400 italic";
 
-// Tambahkan di atas component (baris 48)
 const toTitleCase = (str: string) => {
    const abbreviations: Record<string, string> = {
       'kd': 'Kode', 'brg': 'Barang',
@@ -68,449 +67,269 @@ const toTitleCase = (str: string) => {
       .join(' ');
 };
 
+// Helper to highlight search keywords in text
+const HighlightedText = ({ text, highlight }: { text: string; highlight: string }) => {
+   if (!highlight.trim()) return <span>{text}</span>;
+   const regex = new RegExp(`(${highlight})`, 'gi');
+   const parts = text.split(regex);
+
+   return (
+      <span>
+         {parts.map((part, i) => 
+            regex.test(part) ? (
+               <mark key={i} className="bg-yellow-100 text-yellow-900 px-0.5 rounded-[8px] shadow-sm border border-yellow-200 decoration-clone">
+                  {part}
+               </mark>
+            ) : (
+               <span key={i}>{part}</span>
+            )
+         )}
+      </span>
+   );
+};
+
+// Optimization: Move RenderAllFields outside to prevent re-creation on every render
+const RenderAllFields = ({ data, excludeKeys = [], highlightText = '' }: { data: any, excludeKeys?: string[], highlightText?: string }) => {
+   if (!data) return null;
+   const normalizeKey = (key: string) => String(key).toLowerCase().replace(/[^a-z0-9]/g, '');
+   const handledKeys = new Set([...excludeKeys].map(normalizeKey));
+   const entries = Object.entries(data).filter(([key]) => !handledKeys.has(normalizeKey(String(key))));
+
+   if (entries.length === 0) return null;
+
+   const rawFields = ['id', 'kode_cabang', 'kd_cabang', 'tgl', 'status', 'created_at', 'edited_at', 'kd_barang', 'recid', 'top_hari', 'kd_gudang', 'create_at', 'updated_at', 'kd_pelanggan', 'datetime_mulai', 'datetime_selesai', 'tgl_dibutuhkan', 'tgl_close', 'status_close', 'jthtmp', 'faktur_supplier', 'tgl_lunas', 'kd_porsekot', 'kd_bank', 'kd_supir', 'kd_armada', 'kd_eks', 'waktu_kirim', 'waktu_selesai', 'tgl_expired', 'gol_barang', 'no_ref_pelanggan'];
+
+   return (
+        <div className="grid grid-cols-1 gap-1.5 overflow-hidden">
+           {entries.map(([key, val]) => {
+              let displayVal = String(val);
+              const isRawField = rawFields.includes(key.toLowerCase());
+              if (!isRawField) {
+                 const numVal = parseFloat(String(val).replace(/,/g, ''));
+                 if (!isNaN(numVal)) {
+                     displayVal = numVal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                 }
+              }
+
+              return (
+                <div key={key} className="flex items-start justify-between gap-4 text-[12px] leading-tight">
+                   <span className="text-gray-400 font-bold shrink-0">{key}</span>
+                   <span className="text-gray-600 font-medium text-right break-words">
+                      <HighlightedText text={displayVal} highlight={highlightText} />
+                   </span>
+                </div>
+              );
+           })}
+        </div>
+   );
+};
+
+// Helper component for uniform column rendering
+const RenderColumnContent = ({ label, data, items, debouncedFilterText, matchesFilter, emptyStateClass, cardClass, RenderAllFields, extraLabel }: any) => {
+   const filterLabel = debouncedFilterText ? `(pencarian dengan keyword "${debouncedFilterText}")` : extraLabel;
+
+   if (items) {
+      const filtered = debouncedFilterText ? items.filter((it: any) => matchesFilter(it, debouncedFilterText)) : items;
+      if (!filtered || filtered.length === 0) return (
+         <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+            <div className="text-[10px] text-gray-400 mb-1">0 Data {label} {filterLabel && <span className="text-gray-500">{filterLabel}</span>}</div>
+         </div>
+      );
+      return (
+         <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+            <div className="text-[10px] text-gray-400 mb-1">{filtered.length} Data {label} {filterLabel && <span className="text-gray-500">{filterLabel}</span>}</div>
+            {filtered.map((item: any, idx: number) => (
+               <div key={idx} className={`${cardClass} border border-gray-100 hover:border-gray-200 hover:shadow-sm`}>
+                  <RenderAllFields data={item} excludeKeys={['raw_data']} highlightText={debouncedFilterText} />
+               </div>
+            ))}
+         </div>
+      );
+   }
+   
+   if (!data || (debouncedFilterText && !matchesFilter(data, debouncedFilterText))) return (
+      <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+         <div className="text-[10px] text-gray-400 mb-1">0 Data {label} {filterLabel && <span className="text-gray-500">{filterLabel}</span>}</div>
+      </div>
+   );
+   return (
+      <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
+         <div className="text-[10px] text-gray-400 mb-1">1 Data {label} {filterLabel && <span className="text-gray-500">{filterLabel}</span>}</div>
+         <div className={`${cardClass} border border-gray-100 hover:border-gray-200 hover:shadow-sm`}>
+            <RenderAllFields data={data} excludeKeys={['raw_data']} highlightText={debouncedFilterText} />
+         </div>
+      </div>
+   );
+};
+
 export default function TrackingClient() {
    const [q, setQ] = useState('');
    const [suggestions, setSuggestions] = useState<any[]>([]);
    const [loadingSuggestions, setLoadingSuggestions] = useState(false);
    const [loadingData, setLoadingData] = useState(false);
    const [error, setError] = useState('');
+   const [selectedFaktur, setSelectedFaktur] = useState<string | null>(null);
+   const [selectedNama, setSelectedNama] = useState<string>('');
+   const [isAutoRefreshing, setIsAutoRefreshing] = useState(false);
    const [trackingData, setTrackingData] = useState<{
-       bom: any;
-       sphOut: any;
-       spphOut: any[];
-       sphIn: any[];
-       purchaseOrders: any[];
-       salesOrder?: any;
-       productionOrder?: any;
-       purchaseRequests: any[];
-       pengiriman: any[];
-       pelunasanPiutang: any[];
-       penerimaanPembelian: any[];
-       pembelianBarang: any[];
-       pelunasanHutang: any[];
-       bahanBaku: any[];
-       barangJadi: any[];
-       laporanPenjualan: any[];
-       id?: string;
-    } | null>(null);
+        bom: any;
+        sphOut: any;
+        spphOut: any[];
+        sphIn: any[];
+        purchaseOrders: any[];
+        salesOrder?: any;
+        productionOrder?: any;
+        purchaseRequests: any[];
+        pengiriman: any[];
+        pelunasanPiutang: any[];
+        penerimaanPembelian: any[];
+        pembelianBarang: any[];
+        pelunasanHutang: any[];
+        bahanBaku: any[];
+        barangJadi: any[];
+        laporanPenjualan: any[];
+        id?: string;
+     } | null>(null);
    const [suggestionPage, setSuggestionPage] = useState(1);
    const [hasMoreSuggestions, setHasMoreSuggestions] = useState(true);
    const [loadTime, setLoadTime] = useState<number | null>(null);
+
+   const [filterText, setFilterText] = useState('');
+   const [debouncedFilterText, setDebouncedFilterText] = useState(''); // We use this for the actual table filtering
+
+   const handleSearchTrigger = () => {
+      setDebouncedFilterText(filterText);
+   };
 
    const suggestionRef = useRef<HTMLDivElement>(null);
    const [open, setOpen] = useState(false);
 
    // Column Widths for Resizing - Persisted in localStorage
-    const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
-       if (typeof window !== 'undefined') {
-          const saved = localStorage.getItem('tracking_columnWidths');
-             return saved ? JSON.parse(saved) : {
-               bom: 500,
-               sph: 500,
-               spph: 500,
-               sph_in: 500,
-               purchase_orders: 500,
-               so: 500,
-               production: 500,
-               pr: 500,
-               penerimaan_pembelian: 500,
-               pembelian_barang: 500,
-               pelunasan_hutang: 500,
-               bahan_baku: 500,
-               barang_jadi: 500,
-               laporan_penjualan: 500,
-               pengiriman: 500,
-               pelunasan_piutang: 500
-            };
-         }
-         return {
-            bom: 500,
-            sph: 500,
-            spph: 500,
-            sph_in: 500,
-            purchase_orders: 500,
-            so: 500,
-            production: 500,
-            pr: 500,
-            penerimaan_pembelian: 500,
-            pembelian_barang: 500,
-            pelunasan_hutang: 500,
-            bahan_baku: 500,
-            barang_jadi: 500,
-            laporan_penjualan: 500,
-            pengiriman: 500,
-            pelunasan_piutang: 500
-         };
-    });
+     const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
+        if (typeof window !== 'undefined') {
+           const saved = localStorage.getItem('tracking_columnWidths');
+              return saved ? JSON.parse(saved) : {
+                bom: 500,
+                sph: 500,
+                spph: 500,
+                sph_in: 500,
+                purchase_orders: 500,
+                so: 500,
+                production: 500,
+                pr: 500,
+                penerimaan_pembelian: 500,
+                pembelian_barang: 500,
+                pelunasan_hutang: 500,
+                bahan_baku: 500,
+                barang_jadi: 500,
+                laporan_penjualan: 500,
+                pengiriman: 500,
+                pelunasan_piutang: 500
+             };
+          }
+          return {
+             bom: 500, sph: 500, spph: 500, sph_in: 500, purchase_orders: 500, so: 500, production: 500, pr: 500,
+             penerimaan_pembelian: 500, pembelian_barang: 500, pelunasan_hutang: 500, bahan_baku: 500,
+             barang_jadi: 500, laporan_penjualan: 500, pengiriman: 500, pelunasan_piutang: 500
+          };
+     });
 
    useEffect(() => {
       localStorage.setItem('tracking_columnWidths', JSON.stringify(columnWidths));
    }, [columnWidths]);
 
-   // Helper to render all fields that are not explicitly handled
-   const RenderAllFields = ({ data, excludeKeys = [] }: { data: any, excludeKeys?: string[] }) => {
-      if (!data) return null;
-      const normalizeKey = (key: string) => String(key).toLowerCase().replace(/[^a-z0-9]/g, '');
-      const handledKeys = new Set([...excludeKeys].map(normalizeKey));
-      const entries = Object.entries(data).filter(([key]) => !handledKeys.has(normalizeKey(String(key))));
-
-      if (entries.length === 0) return null;
-
-      return (
-           <div className="grid grid-cols-1 gap-1.5 overflow-hidden">
-              {entries.map(([key, val]) => {
-                 let displayVal = String(val);
-                 const rawFields = ['id', 'kode_cabang', 'kd_cabang', 'tgl', 'status', 'created_at', 'edited_at', 'kd_barang', 'recid', 'top_hari', 'kd_gudang', 'create_at', 'updated_at', 'kd_pelanggan', 'datetime_mulai', 'datetime_selesai', 'qty_order', 'qty_so', 'tgl_dibutuhkan', 'tgl_close', 'status_close', 'jthtmp', 'faktur_supplier', 'tgl_lunas', 'kd_porsekot', 'kd_bank'];
-                 const isRawField = rawFields.includes(key.toLowerCase());
-                 if (!isRawField) {
-                    const numVal = parseFloat(String(val).replace(/,/g, ''));
-                    if (!isNaN(numVal)) {
-                        displayVal = numVal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                    }
-                 }
-
-                 return (
-                   <div key={key} className="flex items-start justify-between gap-4 text-[12px] leading-tight">
-                      <span className="text-gray-400 font-bold shrink-0">{key}</span>
-                      <span className="text-gray-600 font-medium text-right break-words">{displayVal}</span>
-                   </div>
-                );
-             })}
-          </div>
+   // Helper for deep filtering data for cards
+   const matchesFilter = (data: any, text: string) => {
+      if (!text) return true;
+      const lowerText = text.toLowerCase();
+      return Object.values(data || {}).some(val => 
+         String(val).toLowerCase().includes(lowerText)
       );
    };
 
    // Table Columns Definition
    const columns = useMemo<ColumnDef<any>[]>(() => [
        {
-          id: 'bom',
-          header: 'Bill of Material',
-          accessorKey: 'bom',
-          size: columnWidths.bom,
+          id: 'bom', header: 'Bill of Material', accessorKey: 'bom', size: columnWidths.bom,
           meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => {
-              const data = row.original.bom;
-              if (!data) return <div className={emptyStateClass}>Tidak Ada Data BOM</div>;
-              return (
-                 <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                    <div className="text-[10px] text-gray-400 mb-1">1 Data Bill of Material</div>
-                    <div className={`${cardClass} border border-slate-100`}>
-                       <RenderAllFields data={data} excludeKeys={['raw_data']} />
-                    </div>
-                 </div>
-              );
-           }
+          cell: ({ row }) => <RenderColumnContent label="Bill of Material" data={row.original.bom} debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
         },
         {
-           id: 'sph',
-           header: 'SPH Out',
-           accessorKey: 'sphOut',
-           size: columnWidths.sph,
+           id: 'sph', header: 'SPH Out', accessorKey: 'sphOut', size: columnWidths.sph,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => {
-              const data = row.original.sphOut;
-              if (!data) return <div className={emptyStateClass}>Tidak Ada Data SPH Out</div>;
-              return (
-                 <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                    <div className="text-[10px] text-gray-400 mb-1">1 Data SPH Out <span className="text-gray-500">(via BOM.faktur = SPH Out.faktur_bom)</span></div>
-                    <div className={`${cardClass} border border-slate-100`}>
-                       <RenderAllFields data={data} excludeKeys={['raw_data']} />
-                    </div>
-                 </div>
-              );
-           }
+           cell: ({ row }) => <RenderColumnContent label="SPH Out" data={row.original.sphOut} extraLabel="(via BOM.faktur = SPH Out.faktur_bom)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
         },
         {
-           id: 'so',
-           header: 'Sales Order',
-           accessorKey: 'salesOrder',
-           size: columnWidths.so,
+           id: 'so', header: 'Sales Order', accessorKey: 'salesOrder', size: columnWidths.so,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => {
-              const data = row.original.salesOrder;
-              if (!data) return <div className={emptyStateClass}>Tidak Ada Data Sales Order</div>;
-              return (
-                 <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                     <div className="text-[10px] text-gray-400 mb-1">1 Data Sales Order <span className="text-gray-500">(via SPH Out.faktur = Sales Order.faktur_sph)</span></div>
-                    <div className={`${cardClass} border border-slate-100`}>
-                       <RenderAllFields data={data} excludeKeys={['raw_data']} />
-                    </div>
-                 </div>
-              );
-           }
+           cell: ({ row }) => <RenderColumnContent label="Sales Order" data={row.original.salesOrder} extraLabel="(via SPH Out.faktur = Sales Order.faktur_sph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
         },
         {
-           id: 'production',
-           header: 'Order Produksi',
-           accessorKey: 'productionOrder',
-           size: columnWidths.production,
+           id: 'production', header: 'Order Produksi', accessorKey: 'productionOrder', size: columnWidths.production,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => {
-              const data = row.original.productionOrder;
-              if (!data) return <div className={emptyStateClass}>Tidak Ada Data Order Produksi</div>;
-              return (
-                 <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                     <div className="text-[10px] text-gray-400 mb-1">1 Data Order Produksi <span className="text-gray-500">(via Sales Order.faktur = Order Produksi.faktur_so AND BOM.faktur = Order Produksi.faktur_bom)</span></div>
-                    <div className={`${cardClass} border border-slate-100`}>
-                       <RenderAllFields data={data} excludeKeys={['raw_data']} />
-                    </div>
-                 </div>
-              );
-           }
+           cell: ({ row }) => <RenderColumnContent label="Order Produksi" data={row.original.productionOrder} extraLabel="(via Sales Order.faktur = Order Produksi.faktur_so AND BOM.faktur = Order Produksi.faktur_bom)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
         },
-      {
-         id: 'pr',
-         header: 'Purchase Request',
-         accessorKey: 'purchaseRequests',
-         size: columnWidths.pr,
+        {
+         id: 'pr', header: 'Purchase Request', accessorKey: 'purchaseRequests', size: columnWidths.pr,
          meta: { wrap: true, valign: 'top' },
-         cell: ({ row }) => {
-             const items = row.original.purchaseRequests;
-             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data PR</div>;
-             return (
-                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Purchase Request <span className="text-gray-500">(via Order Produksi.faktur = Purchase Request.faktur_prd)</span></div>
-                   {items.map((pr: any, idx: number) => (
-                      <div key={idx} className={`${cardClass} border border-slate-100`}>
-                         <RenderAllFields data={pr} excludeKeys={['raw_data']} />
-                      </div>
-                   ))}
-                </div>
-              );
-           }
-         },
-       {
-          id: 'spph',
-          header: 'SPPH Out',
-          accessorKey: 'spphOut',
-          size: columnWidths.spph,
-          meta: { wrap: true, valign: 'top' },
-          cell: ({ row }) => {
-             const items = row.original.spphOut;
-             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data SPPH Out</div>;
-             return (
-                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data SPPH Out <span className="text-gray-500">(via Purchase Request.faktur = SPPH Out.faktur_pr)</span></div>
-                   {items.map((spph: any, idx: number) => (
-                      <div key={idx} className={`${cardClass} border border-slate-100`}>
-                         <RenderAllFields data={spph} excludeKeys={['raw_data']} />
-                      </div>
-                   ))}
-                </div>
-              );
-           }
+         cell: ({ row }) => <RenderColumnContent label="Purchase Request" items={row.original.purchaseRequests} extraLabel="(via Order Produksi.faktur = Purchase Request.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+        },
+        {
+           id: 'spph', header: 'SPPH Out', accessorKey: 'spphOut', size: columnWidths.spph,
+           meta: { wrap: true, valign: 'top' },
+           cell: ({ row }) => <RenderColumnContent label="SPPH Out" items={row.original.spphOut} extraLabel="(via Purchase Request.faktur = SPPH Out.faktur_pr)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+        },
+        {
+           id: 'sph_in', header: 'SPH In', accessorKey: 'sphIn', size: columnWidths.sph_in,
+           meta: { wrap: true, valign: 'top' },
+           cell: ({ row }) => <RenderColumnContent label="SPH In" items={row.original.sphIn} extraLabel="(via SPPH Out.faktur = SPH In.faktur_spph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+        },
+        {
+           id: 'purchase_orders', header: 'Purchase Order', accessorKey: 'purchaseOrders', size: columnWidths.purchase_orders,
+           meta: { wrap: true, valign: 'top' },
+           cell: ({ row }) => <RenderColumnContent label="Purchase Order" items={row.original.purchaseOrders} extraLabel="(via sph_in.faktur = PO.faktur_sph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
         },
        {
-          id: 'sph_in',
-          header: 'SPH In',
-          accessorKey: 'sphIn',
-          size: columnWidths.sph_in,
+          id: 'penerimaan_pembelian', header: 'Penerimaan Pembelian', accessorKey: 'penerimaanPembelian', size: columnWidths.penerimaan_pembelian,
           meta: { wrap: true, valign: 'top' },
-          cell: ({ row }) => {
-             const items = row.original.sphIn;
-             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data SPH In</div>;
-             return (
-                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data SPH In <span className="text-gray-500">(via SPPH Out.faktur = SPH In.faktur_spph)</span></div>
-                   {items.map((sph: any, idx: number) => (
-                      <div key={idx} className={`${cardClass} border border-slate-100`}>
-                         <RenderAllFields data={sph} excludeKeys={['raw_data']} />
-                      </div>
-                   ))}
-                </div>
-              );
-           }
+          cell: ({ row }) => <RenderColumnContent label="Penerimaan Pembelian" items={row.original.penerimaanPembelian} extraLabel="(via PO.faktur = PB.faktur_po)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
         },
-       {
-          id: 'purchase_orders',
-          header: 'Purchase Order',
-          accessorKey: 'purchaseOrders',
-          size: columnWidths.purchase_orders,
-          meta: { wrap: true, valign: 'top' },
-          cell: ({ row }) => {
-             const items = row.original.purchaseOrders;
-             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Purchase Order</div>;
-             return (
-                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Purchase Order <span className="text-gray-500">(via sph_in.faktur = PO.faktur_sph)</span></div>
-                   {items.map((po: any, idx: number) => (
-                      <div key={idx} className={`${cardClass} border border-slate-100`}>
-                         <RenderAllFields data={po} excludeKeys={['raw_data']} />
-                      </div>
-                   ))}
-               </div>
-            );
-         }
-       },
-      {
-         id: 'penerimaan_pembelian',
-         header: 'Penerimaan Pembelian',
-         accessorKey: 'penerimaanPembelian',
-         size: columnWidths.penerimaan_pembelian,
-         meta: { wrap: true, valign: 'top' },
-         cell: ({ row }) => {
-            const items = row.original.penerimaanPembelian;
-            if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Penerimaan Pembelian</div>;
-            return (
-               <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                  <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Penerimaan Pembelian <span className="text-gray-500">(via PO.faktur = PB.faktur_po)</span></div>
-                  {items.map((pb: any, idx: number) => (
-                     <div key={idx} className={`${cardClass} border border-slate-100`}>
-                        <RenderAllFields data={pb} excludeKeys={['raw_data']} />
-                     </div>
-                  ))}
-               </div>
-            );
-         }
-       },
-       {
-          id: 'pembelian_barang',
-          header: 'Pembelian Barang',
-          accessorKey: 'pembelianBarang',
-          size: columnWidths.pembelian_barang,
-          meta: { wrap: true, valign: 'top' },
-          cell: ({ row }) => {
-             const items = row.original.pembelianBarang;
-             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Pembelian Barang</div>;
-             return (
-                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Pembelian Barang <span className="text-gray-500">(via Purchase Order.faktur = Pembelian Barang.faktur_po)</span></div>
-                   {items.map((pb: any, idx: number) => (
-                      <div key={idx} className={`${cardClass} border border-slate-100`}>
-                         <RenderAllFields data={pb} excludeKeys={['raw_data']} />
-                      </div>
-                   ))}
-                </div>
-             );
-          }
-       },
-       {
-          id: 'pelunasan_hutang',
-          header: 'Pelunasan Hutang',
-          accessorKey: 'pelunasanHutang',
-          size: columnWidths.pelunasan_hutang,
-          meta: { wrap: true, valign: 'top' },
-          cell: ({ row }) => {
-             const items = row.original.pelunasanHutang;
-             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Pelunasan Hutang</div>;
-             return (
-                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Pelunasan Hutang <span className="text-gray-500">(via Pembelian Barang.faktur = Pelunasan Hutang.faktur_pb)</span></div>
-                   {items.map((ph: any, idx: number) => (
-                      <div key={idx} className={`${cardClass} border border-slate-100`}>
-                         <RenderAllFields data={ph} excludeKeys={['raw_data']} />
-                      </div>
-                   ))}
-                </div>
-             );
-          }
-       },
-       {
-          id: 'bahan_baku',
-          header: 'Bahan Baku',
-          accessorKey: 'bahanBaku',
-          size: columnWidths.bahan_baku,
-          meta: { wrap: true, valign: 'top' },
-          cell: ({ row }) => {
-             const items = row.original.bahanBaku;
-             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Bahan Baku</div>;
-             return (
-                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Bahan Baku <span className="text-gray-500">(via Order Produksi.faktur = Bahan Baku.faktur_prd)</span></div>
-                   {items.map((bb: any, idx: number) => (
-                      <div key={idx} className={`${cardClass} border border-slate-100`}>
-                         <RenderAllFields data={bb} excludeKeys={['raw_data']} />
-                      </div>
-                   ))}
-                </div>
-             );
-          }
-       },
-       {
-          id: 'barang_jadi',
-          header: 'Barang Jadi',
-          accessorKey: 'barangJadi',
-          size: columnWidths.barang_jadi,
-          meta: { wrap: true, valign: 'top' },
-          cell: ({ row }) => {
-             const items = row.original.barangJadi;
-             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Barang Jadi</div>;
-             return (
-                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Barang Jadi <span className="text-gray-500">(via Order Produksi.faktur = Barang Jadi.faktur_prd)</span></div>
-                   {items.map((bj: any, idx: number) => (
-                      <div key={idx} className={`${cardClass} border border-slate-100`}>
-                         <RenderAllFields data={bj} excludeKeys={['raw_data']} />
-                      </div>
-                   ))}
-                </div>
-             );
-          }
-       },
-       {
-          id: 'laporan_penjualan',
-          header: 'Laporan Penjualan',
-          accessorKey: 'laporanPenjualan',
-          size: columnWidths.laporan_penjualan,
-          meta: { wrap: true, valign: 'top' },
-          cell: ({ row }) => {
-             const items = row.original.laporanPenjualan;
-             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Laporan Penjualan</div>;
-             return (
-                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Laporan Penjualan <span className="text-gray-500">(via Sales Order.faktur = Laporan Penjualan.faktur_so)</span></div>
-                   {items.map((lp: any, idx: number) => (
-                      <div key={idx} className={`${cardClass} border border-slate-100`}>
-                         <RenderAllFields data={lp} excludeKeys={['raw_data']} />
-                      </div>
-                   ))}
-                </div>
-             );
-          }
-       },
-       {
-          id: 'pengiriman',
-          header: 'Pengiriman',
-          accessorKey: 'pengiriman',
-          size: columnWidths.pengiriman,
-          meta: { wrap: true, valign: 'top' },
-          cell: ({ row }) => {
-             const items = row.original.pengiriman;
-             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Pengiriman</div>;
-             return (
-                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Pengiriman <span className="text-gray-500">(via Laporan Penjualan.faktur = Pengiriman.faktur)</span></div>
-                   {items.map((pg: any, idx: number) => (
-                      <div key={idx} className={`${cardClass} border border-slate-100`}>
-                         <RenderAllFields data={pg} excludeKeys={['raw_data']} />
-                      </div>
-                   ))}
-                </div>
-             );
-          }
-       },
-       {
-          id: 'pelunasan_piutang',
-          header: 'Pelunasan Piutang',
-          accessorKey: 'pelunasanPiutang',
-          size: columnWidths.pelunasan_piutang,
-          meta: { wrap: true, valign: 'top' },
-          cell: ({ row }) => {
-             const items = row.original.pelunasanPiutang;
-             if (!items || items.length === 0) return <div className={emptyStateClass}>Tidak Ada Data Pelunasan Piutang</div>;
-             return (
-                <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-                   <div className="text-[10px] text-gray-400 mb-1">{items.length} Data Pelunasan Piutang <span className="text-gray-500">(via Laporan Penjualan.faktur = Pelunasan Piutang.fkt)</span></div>
-                   {items.map((pp: any, idx: number) => (
-                      <div key={idx} className={`${cardClass} border border-slate-100`}>
-                         <RenderAllFields data={pp} excludeKeys={['raw_data']} />
-                      </div>
-                   ))}
-                </div>
-             );
-          }
-       }
-    ], [columnWidths]);
+        {
+           id: 'pembelian_barang', header: 'Pembelian Barang', accessorKey: 'pembelianBarang', size: columnWidths.pembelian_barang,
+           meta: { wrap: true, valign: 'top' },
+           cell: ({ row }) => <RenderColumnContent label="Pembelian Barang" items={row.original.pembelianBarang} extraLabel="(via Purchase Order.faktur = Pembelian Barang.faktur_po)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+        },
+        {
+           id: 'pelunasan_hutang', header: 'Pelunasan Hutang', accessorKey: 'pelunasanHutang', size: columnWidths.pelunasan_hutang,
+           meta: { wrap: true, valign: 'top' },
+           cell: ({ row }) => <RenderColumnContent label="Pelunasan Hutang" items={row.original.pelunasanHutang} extraLabel="(via Pembelian Barang.faktur = Pelunasan Hutang.faktur_pb)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+        },
+        {
+           id: 'bahan_baku', header: 'Bahan Baku', accessorKey: 'bahanBaku', size: columnWidths.bahan_baku,
+           meta: { wrap: true, valign: 'top' },
+           cell: ({ row }) => <RenderColumnContent label="Bahan Baku" items={row.original.bahanBaku} extraLabel="(via Order Produksi.faktur = Bahan Baku.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+        },
+        {
+           id: 'barang_jadi', header: 'Barang Jadi', accessorKey: 'barangJadi', size: columnWidths.barang_jadi,
+           meta: { wrap: true, valign: 'top' },
+           cell: ({ row }) => <RenderColumnContent label="Barang Jadi" items={row.original.barangJadi} extraLabel="(via Order Produksi.faktur = Barang Jadi.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+        },
+        {
+           id: 'laporan_penjualan', header: 'Laporan Penjualan', accessorKey: 'laporanPenjualan', size: columnWidths.laporan_penjualan,
+           meta: { wrap: true, valign: 'top' },
+           cell: ({ row }) => <RenderColumnContent label="Laporan Penjualan" items={row.original.laporanPenjualan} extraLabel="(via Sales Order.faktur = Laporan Penjualan.faktur_so OR Sales Order.kd_barang = Laporan Penjualan.kd_barang)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+        },
+        {
+           id: 'pengiriman', header: 'Pengiriman', accessorKey: 'pengiriman', size: columnWidths.pengiriman,
+           meta: { wrap: true, valign: 'top' },
+           cell: ({ row }) => <RenderColumnContent label="Pengiriman" items={row.original.pengiriman} extraLabel="(via Laporan Penjualan.faktur = Pengiriman.faktur)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+        },
+        {
+           id: 'pelunasan_piutang', header: 'Pelunasan Piutang', accessorKey: 'pelunasanPiutang', size: columnWidths.pelunasan_piutang,
+           meta: { wrap: true, valign: 'top' },
+           cell: ({ row }) => <RenderColumnContent label="Pelunasan Piutang" items={row.original.pelunasanPiutang} extraLabel="(via Laporan Penjualan.faktur = Pelunasan Piutang.fkt)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+        }
+    ], [columnWidths, debouncedFilterText]);
 
    // Search logic for dropdown
    useEffect(() => {
@@ -551,15 +370,13 @@ export default function TrackingClient() {
       return () => document.removeEventListener("mousedown", handleClickOutside);
    }, []);
 
-   const handleSelect = async (selected: any) => {
-      setOpen(false);
-      setQ('');
+   const fetchTrackingData = async (faktur: string) => {
       setLoadingData(true);
       setTrackingData(null);
       setError('');
       const start = Date.now();
       try {
-         const res = await fetch(`/api/tracking?target_faktur=${encodeURIComponent(selected.faktur)}`);
+         const res = await fetch(`/api/tracking?target_faktur=${encodeURIComponent(faktur)}`);
          const json = await res.json();
          if (json.success) {
             setTrackingData({ ...json.data, id: json.data.productionOrder?.faktur || json.data.bom?.faktur || 'N/A' });
@@ -571,6 +388,44 @@ export default function TrackingClient() {
       finally { setLoadingData(false); }
    };
 
+   const handleSelect = async (selected: any) => {
+      setOpen(false);
+      setQ('');
+      setSelectedFaktur(selected.faktur);
+      setSelectedNama(selected.nama_prd || '');
+      // Persist to localStorage so it survives refresh
+      localStorage.setItem('tracking_selected_faktur', selected.faktur);
+      localStorage.setItem('tracking_selected_nama', selected.nama_prd || '');
+      await fetchTrackingData(selected.faktur);
+   };
+
+   // Hydrate selected BOM from localStorage on mount
+   useEffect(() => {
+      const savedFaktur = localStorage.getItem('tracking_selected_faktur');
+      const savedNama = localStorage.getItem('tracking_selected_nama');
+      if (savedFaktur) {
+         setSelectedFaktur(savedFaktur);
+         setSelectedNama(savedNama || '');
+         fetchTrackingData(savedFaktur);
+      }
+   // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, []);
+
+   // Auto-refresh when sync happens from another tab
+   useEffect(() => {
+      const handleStorageChange = (e: StorageEvent) => {
+         if (e.key === 'sintak_data_updated' && selectedFaktur) {
+            setIsAutoRefreshing(true);
+            fetchTrackingData(selectedFaktur).finally(() => {
+               setTimeout(() => setIsAutoRefreshing(false), 3000);
+            });
+         }
+      };
+      window.addEventListener('storage', handleStorageChange);
+      return () => window.removeEventListener('storage', handleStorageChange);
+   // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [selectedFaktur]);
+
    const handleListScroll = (e: React.UIEvent<HTMLDivElement>) => {
       const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
       if (scrollHeight - scrollTop <= clientHeight + 50 && !loadingSuggestions && hasMoreSuggestions) {
@@ -579,42 +434,50 @@ export default function TrackingClient() {
    };
 
    return (
-      <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-2 duration-700 overflow-hidden">
-         <div className="bg-white rounded-[16px] border border-gray-200 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative z-50">
+      <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-700 overflow-hidden">
+         <div className="bg-white rounded-[8px] border border-gray-100 p-5 hover:border-gray-200 hover:shadow-sm transition-all duration-300 flex flex-col gap-5 shrink-0 relative z-50">
             <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
                <div className="flex-1">
-                  <div className="flex flex-col gap-2.5 mb-2">
-                     <span className="text-[11px] font-bold text-gray-700 uppercase tracking-widest ml-1">Pilih BOM (Pencarian Bill of Material)</span>
+                  <div className="flex flex-col gap-1.5">
+                     <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Pilih BOM (Pencarian Bill of Material)</span>
                   </div>
-                  <div className="relative" ref={suggestionRef}>
+                  <div className="relative mt-2" ref={suggestionRef}>
                      <div
-                        className={`w-full bg-gray-50/50 border border-gray-100 rounded-xl px-4 h-11 text-sm flex items-center justify-between transition-all text-gray-800 cursor-pointer hover:border-gray-300 hover:bg-gray-100/50 shadow-sm ${open ? 'ring-4 ring-green-500/10 border-green-500 bg-white' : ''}`}
+                        className={`w-full bg-gray-50/50 border border-gray-100 rounded-[8px] px-4 h-11 text-sm flex items-center justify-between transition-all text-gray-800 cursor-pointer hover:border-gray-300 hover:bg-gray-100/50 shadow-sm ${open ? 'ring-4 ring-green-500/10 border-green-500 bg-white' : ''}`}
                         onClick={() => { setOpen(!open); setQ(''); }}
                      >
                         <div className="flex items-center gap-3 truncate">
-                           <Calculator size={16} className={trackingData ? 'text-green-600' : 'text-gray-400'} />
-                           <span className={trackingData ? 'text-gray-700 truncate font-bold text-[12px]' : 'text-gray-400 font-medium truncate text-[12px]'}>
-                              {trackingData ? `[${trackingData?.bom?.faktur || trackingData?.productionOrder?.faktur}] ${trackingData?.bom?.nama_prd || trackingData?.productionOrder?.nama_prd}` : 'Cari nomor BOM atau nama produk...'}
+                           {loadingData ? (
+                              <Loader2 size={16} className="animate-spin text-green-500" />
+                           ) : (
+                              <Calculator size={16} className={trackingData ? 'text-green-600' : 'text-gray-400'} />
+                           )}
+                           <span className={trackingData || (loadingData && selectedFaktur) ? 'text-gray-700 truncate font-bold text-[12px]' : 'text-gray-400 font-medium truncate text-[12px]'}>
+                              {loadingData 
+                                 ? (selectedFaktur ? `[${selectedFaktur}] Memperbarui data...` : 'Sedang melacak data...')
+                                 : trackingData 
+                                   ? `[${trackingData?.bom?.faktur || trackingData?.productionOrder?.faktur}] ${trackingData?.bom?.nama_prd || trackingData?.productionOrder?.nama_prd}` 
+                                   : 'Cari nomor BOM atau nama produk...'}
                            </span>
                         </div>
                         <ChevronDown size={14} className={`text-gray-400 transition-transform duration-300 ${open ? 'rotate-180 text-green-500' : ''}`} />
                      </div>
 
                      {open && (
-                        <div className="absolute top-full left-0 right-0 mt-3 bg-white border border-gray-100 rounded-3xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 ring-4 ring-black/5">
+                        <div className="absolute top-full left-0 right-0 mt-3 bg-white border border-gray-100 rounded-[8px] shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 ring-4 ring-black/5">
                            <div className="p-4 border-b border-gray-50 bg-gray-50/50">
                               <div className="relative">
                                  <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                                 <input autoFocus type="text" placeholder="Ketik nomor BOM atau nama produk..." className="w-full pl-11 pr-4 h-11 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 bg-white font-bold" value={q} onChange={(e) => setQ(e.target.value)} />
+                                 <input autoFocus type="text" placeholder="Ketik nomor BOM atau nama produk..." className="w-full pl-11 pr-4 h-11 text-sm border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 bg-white font-bold" value={q} onChange={(e) => setQ(e.target.value)} />
                                  {loadingSuggestions && <div className="absolute right-4 top-1/2 -translate-y-1/2"><Loader2 size={16} className="animate-spin text-green-500" /></div>}
                               </div>
                            </div>
                            <div className="max-h-[320px] overflow-y-auto custom-scrollbar p-2" onScroll={handleListScroll}>
                               {suggestions.length > 0 ? suggestions.map((s: any, idx: number) => (
-                                 <button key={`${s.faktur}-${idx}`} onClick={() => handleSelect(s)} className={`w-full px-4 py-3 text-left rounded-xl transition-all flex items-center justify-between group/item mb-1 last:mb-0 ${trackingData?.id === s.faktur ? 'bg-green-50 text-green-700 font-black' : 'hover:bg-green-600 hover:text-white group/item'}`}>
+                                 <button key={`${s.faktur}-${idx}`} onClick={() => handleSelect(s)} className={`w-full px-4 py-3 text-left rounded-[8px] transition-all flex items-center justify-between group/item mb-1 last:mb-0 ${trackingData?.id === s.faktur ? 'bg-green-50 text-green-700 font-black' : 'hover:bg-green-600 hover:text-white group/item'}`}>
                                     <div className="flex flex-col min-w-0">
                                        <span className={`text-[12px] font-black truncate ${trackingData?.id === s.faktur ? 'text-green-700' : 'text-gray-800 group-hover/item:text-white'}`}>{s.faktur}</span>
-                                       <span className={`text-[12px] font-bold truncate ${trackingData?.id === s.faktur ? 'text-green-600/70' : 'text-gray-400 group-hover/item:text-white/85'}`}>{s.nama_prd}</span>
+                                       <span className={`text-[12px] font-medium truncate ${trackingData?.id === s.faktur ? 'text-green-600/70' : 'text-gray-400 group-hover/item:text-white/85'}`}>{s.nama_prd}</span>
                                     </div>
                                     <ArrowRight size={14} className="shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity translate-x-1" />
                                  </button>
@@ -628,37 +491,66 @@ export default function TrackingClient() {
          </div>
 
          {error && (
-            <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-lg text-sm flex items-start gap-3 animate-in fade-in shrink-0">
+            <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-[8px] text-sm flex items-start gap-3 animate-in fade-in shrink-0">
                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                <p className="font-semibold">{error}</p>
             </div>
          )}
 
          <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
-            <div className="flex flex-col gap-4 shrink-0 px-1">
+            <div className="flex flex-col gap-4 shrink-0">
                <div className="flex items-center justify-between gap-4 min-h-[32px]">
-                  <h3 className="text-[14px] font-extrabold text-gray-800 flex items-center gap-3.5 leading-snug">
+                  <h3 className="text-[14px] font-extrabold text-gray-800 flex items-center gap-3.5 leading-none">
                      <Clock size={18} className="text-green-600" />
                      <span>Hasil Pelacakan</span>
                   </h3>
+                  {isAutoRefreshing && (
+                     <div className="flex items-center gap-1.5 text-[11px] font-bold text-green-600 animate-pulse bg-green-50 px-2.5 py-1 rounded-full border border-green-100 uppercase tracking-tighter leading-none">
+                       <Loader2 size={11} className="animate-spin" />
+                       <span>Diperbarui otomatis</span>
+                     </div>
+                  )}
+               </div>
+               <div className="relative w-full group">
+                  <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-green-500 transition-colors" />
+                  <input 
+                     type="text" 
+                     placeholder="Cari dalam hasil pelacakan (Faktur, Barang, Pelanggan, dll)..." 
+                     className="w-full pl-12 pr-4 h-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-bold placeholder:text-gray-300 shadow-sm" 
+                     value={filterText} 
+                     onChange={(e) => setFilterText(e.target.value)} 
+                     onBlur={handleSearchTrigger}
+                     onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSearchTrigger();
+                     }}
+                  />
                </div>
             </div>
             <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
-               <DataTable
-                  columns={columns} data={trackingData ? [trackingData] : []}
-                  isLoading={loadingData} columnWidths={columnWidths} onColumnWidthChange={setColumnWidths}
-                  rowHeight="h-auto" className="flex-1" onRowClick={() => { }}
-                  hideSorting={true} disableHover={true} rowCursor="cursor-grab"
-               />
+               {useMemo(() => (
+                  <DataTable
+                     columns={columns} data={trackingData ? [trackingData] : []}
+                     isLoading={loadingData} columnWidths={columnWidths} onColumnWidthChange={setColumnWidths}
+                     rowHeight="h-auto" className="flex-1" onRowClick={() => { }}
+                     hideSorting={true} disableHover={true} rowCursor="cursor-grab"
+                  />
+               ), [columns, trackingData, loadingData, columnWidths])}
                <div className="flex items-center justify-between shrink-0 px-1 mt-1">
-                  <span className="text-[12px] leading-snug font-bold text-gray-400">
-                     {trackingData ? 'Data Pelacakan: 1 Siklus Manufaktur Ditemukan' : 'Silakan pilih BOM di atas untuk melihat pelacakan'}
+                  <span className="text-[12px] leading-none font-bold text-gray-400">
+                     {loadingData ? (
+                        <span className="flex items-center gap-2">
+                           <Loader2 size={14} className="animate-spin text-green-500" />
+                           Sedang menelusuri alur manufaktur...
+                        </span>
+                     ) : trackingData ? 'Data Pelacakan: 1 Siklus Manufaktur Ditemukan' : 'Silakan pilih BOM di atas untuk melihat pelacakan'}
                   </span>
                   {loadTime !== null && trackingData && (
-                     <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-2.5 shadow-sm border ${loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
-                        <span className="animate-pulse">⚡</span>
-                        <span className="leading-snug">{(loadTime / 1000).toFixed(2)}s</span>
-                     </span>
+                     <div className="flex items-center gap-4">
+                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
+                           <span className="animate-pulse">⚡</span>
+                           <span>{(loadTime / 1000).toFixed(2)}s</span>
+                        </span>
+                     </div>
                   )}
                </div>
             </div>
@@ -666,3 +558,8 @@ export default function TrackingClient() {
       </div>
    );
 }
+
+
+
+
+

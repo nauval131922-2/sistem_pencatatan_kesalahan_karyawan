@@ -188,8 +188,8 @@ export async function GET(request: NextRequest) {
     let laporanPenjualan: any[] = [];
     if (salesOrder?.faktur) {
       const lpRes = await db.execute({
-        sql: `SELECT * FROM sales_reports WHERE faktur_so = ?`,
-        args: [salesOrder.faktur]
+        sql: `SELECT * FROM sales_reports WHERE faktur_so = ? OR kd_barang = ?`,
+        args: [salesOrder.faktur, salesOrder.kd_barang]
       });
       laporanPenjualan = lpRes.rows;
     }
