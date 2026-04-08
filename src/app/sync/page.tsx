@@ -1,0 +1,28 @@
+import SyncClient from "./SyncClient";
+import PageHeader from "@/components/PageHeader";
+
+export const metadata = {
+  title: "SINTAK | Sinkronisasi All Data",
+  description: "Pusat Sinkronisasi Data Scraper - SINTAK",
+};
+
+export default function SyncPage() {
+  return (
+    <div className="flex-1 min-h-0 h-full flex flex-col gap-6 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700">
+      <PageHeader
+        title="Sinkronisasi All Data"
+        description={
+          <>
+            Pusat kendali sinkronisasi seluruh modul operasional secara langsung dari <span className="text-green-600 font-bold">MDT Host</span>
+          </>
+        }
+      />
+      <SyncClient />
+    </div>
+  );
+}
+
+
+
+
+
