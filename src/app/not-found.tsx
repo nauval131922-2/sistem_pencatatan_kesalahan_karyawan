@@ -22,14 +22,14 @@ export default function NotFound() {
       <div className="flex flex-col sm:flex-row gap-3 mt-10">
         <button 
           onClick={() => window.history.back()}
-          className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 bg-white hover:bg-gray-50 transition-all shadow-sm active:scale-95"
+          className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-[8px] border border-gray-200 text-sm font-bold text-gray-600 bg-white hover:bg-gray-50 transition-all shadow-sm active:scale-95"
         >
           <ArrowLeft size={16} />
           <span>Kembali</span>
         </button>
         <Link 
           href="/dashboard-kesalahan-karyawan"
-          className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-green-600 text-sm font-bold text-white hover:bg-green-700 transition-all shadow-md active:scale-95"
+          className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-[8px] bg-green-600 text-sm font-bold text-white hover:bg-green-700 transition-all shadow-md active:scale-95"
         >
           <Home size={16} />
           <span>Ke Dashboard</span>
@@ -42,3 +42,8 @@ export default function NotFound() {
     </div>
   );
 }
+
+
+
+
+

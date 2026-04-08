@@ -43,7 +43,7 @@ export default function LoginContent() {
             <Image
               src={logoPic}
               alt="SINTAK Logo"
-              className="w-12 h-12 object-contain rounded-xl"
+              className="w-12 h-12 object-contain rounded-[8px]"
               priority
             />
           </div>
@@ -56,10 +56,10 @@ export default function LoginContent() {
         </div>
 
         {/* Login Form Card */}
-        <div className="bg-white rounded-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border border-gray-100 border-t-4 border-t-green-600 overflow-hidden">
+        <div className="bg-white rounded-[8px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border border-gray-100 border-t-4 border-t-green-600 overflow-hidden">
           <form onSubmit={handleSubmit} className="p-5 pt-6 flex flex-col gap-4">
             {error && (
-              <div className="p-2.5 bg-red-50 border border-red-100 rounded-lg flex items-start gap-2 text-red-600 text-xs animate-in shake duration-300">
+              <div className="p-2.5 bg-red-50 border border-red-100 rounded-[8px] flex items-start gap-2 text-red-600 text-xs animate-in shake duration-300">
                 <AlertCircle size={14} className="mt-0.5 shrink-0" />
                 <span className="font-medium">{error}</span>
               </div>
@@ -76,7 +76,7 @@ export default function LoginContent() {
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="block w-full h-9 pl-9 pr-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all bg-white hover:border-gray-300 text-gray-700 placeholder:text-gray-300"
+                    className="block w-full h-9 pl-9 pr-3 border border-gray-100 rounded-[8px] text-sm focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all bg-white hover:border-gray-300 text-gray-700 placeholder:text-gray-300"
                     placeholder="Username"
                     required
                   />
@@ -93,7 +93,7 @@ export default function LoginContent() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full h-9 pl-9 pr-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all bg-white hover:border-gray-300 text-gray-700 placeholder:text-gray-300"
+                    className="block w-full h-9 pl-9 pr-3 border border-gray-100 rounded-[8px] text-sm focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all bg-white hover:border-gray-300 text-gray-700 placeholder:text-gray-300"
                     placeholder="Password"
                     required
                   />
@@ -104,7 +104,7 @@ export default function LoginContent() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-10 mt-1 flex items-center justify-center gap-2 px-4 rounded-lg shadow-sm text-sm font-bold text-white bg-green-600 hover:bg-green-700 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-green-500/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full h-10 mt-1 flex items-center justify-center gap-2 px-4 rounded-[8px] shadow-sm text-sm font-bold text-white bg-green-600 hover:bg-green-700 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-green-500/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -129,3 +129,8 @@ export default function LoginContent() {
     </div>
   );
 }
+
+
+
+
+

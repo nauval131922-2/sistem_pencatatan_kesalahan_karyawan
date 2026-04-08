@@ -26,7 +26,7 @@ export default function Error({ error, reset }: ErrorProps) {
 
   return (
     <div className="min-h-[400px] flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+      <div className="max-w-md w-full bg-white rounded-[8px] shadow-lg p-8 text-center">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <AlertTriangle size={32} className="text-red-600" />
         </div>
@@ -40,7 +40,7 @@ export default function Error({ error, reset }: ErrorProps) {
         </p>
 
         {process.env.NODE_ENV === 'development' && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-left overflow-auto max-h-48">
+          <div className="bg-red-50 border border-red-200 rounded-[8px] p-4 mb-6 text-left overflow-auto max-h-48">
             <p className="text-xs font-mono text-red-800 whitespace-pre-wrap break-words">
               {error.message}
               {error.stack && `\n\n${error.stack}`}
@@ -52,7 +52,7 @@ export default function Error({ error, reset }: ErrorProps) {
         <div className="space-y-3">
           <button
             onClick={reset}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 px-4 rounded-[8px] transition-colors flex items-center justify-center gap-2"
           >
             <RefreshCw size={16} />
             Coba Muat Ulang
@@ -60,7 +60,7 @@ export default function Error({ error, reset }: ErrorProps) {
 
           <button
             onClick={() => window.location.href = '/'}
-            className="w-full border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-4 rounded-lg transition-colors"
+            className="w-full border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-4 rounded-[8px] transition-colors"
           >
             Kembali ke Dashboard
           </button>
@@ -76,3 +76,8 @@ export default function Error({ error, reset }: ErrorProps) {
     </div>
   );
 }
+
+
+
+
+

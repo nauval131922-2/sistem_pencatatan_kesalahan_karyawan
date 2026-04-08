@@ -131,7 +131,7 @@ export default function ProfilePage() {
                 <div className="animate-pulse space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-12">
                     <div className="flex flex-col items-center">
-                      <div className="w-32 h-32 rounded-2xl bg-gray-100 mb-4" />
+                      <div className="w-32 h-32 rounded-[8px] bg-gray-100 mb-4" />
                       <div className="h-2 w-24 bg-gray-100 rounded" />
                     </div>
                     <div className="space-y-8">
@@ -139,17 +139,17 @@ export default function ProfilePage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div className="space-y-2">
                           <div className="h-2 w-20 bg-gray-100 rounded mb-1" />
-                          <div className="h-11 bg-gray-50 rounded-xl" />
+                          <div className="h-11 bg-gray-50 rounded-[8px]" />
                         </div>
                         <div className="space-y-2">
                           <div className="h-2 w-20 bg-gray-100 rounded mb-1" />
-                          <div className="h-11 bg-gray-50 rounded-xl" />
+                          <div className="h-11 bg-gray-50 rounded-[8px]" />
                         </div>
                       </div>
                       <div className="h-4 w-32 bg-gray-100 rounded" />
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div className="h-11 bg-gray-50 rounded-xl" />
-                        <div className="h-11 bg-gray-50 rounded-xl" />
+                        <div className="h-11 bg-gray-50 rounded-[8px]" />
+                        <div className="h-11 bg-gray-50 rounded-[8px]" />
                       </div>
                     </div>
                   </div>
@@ -175,7 +175,7 @@ export default function ProfilePage() {
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="absolute -bottom-2 -right-2 w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-xl flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95 border-4 border-white z-20"
+                        className="absolute -bottom-2 -right-2 w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-[8px] flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95 border-4 border-white z-20"
                         title="Ubah Foto"
                         aria-label="Ubah Foto Profil"
                       >
@@ -198,7 +198,7 @@ export default function ProfilePage() {
                   {/* Form Column */}
                   <div className="space-y-8">
                     {message && (
-                      <div className={`p-4 rounded-xl flex items-start gap-3 text-sm border animate-in slide-in-from-top-2 duration-300 ${
+                      <div className={`p-4 rounded-[8px] flex items-start gap-3 text-sm border animate-in slide-in-from-top-2 duration-300 ${
                         message.type === 'success' 
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-100' 
                           : 'bg-red-50 text-red-700 border-red-100'
@@ -231,7 +231,7 @@ export default function ProfilePage() {
                               onChange={(e) => setName(e.target.value)}
                               required
                               placeholder="Administrator"
-                              className="w-full h-11 px-4 bg-slate-50/30 border border-gray-200 rounded-xl text-[13px] font-semibold focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 focus:bg-white transition-all text-gray-700 placeholder:text-gray-300 shadow-sm shadow-black/[0.02]"
+                              className="w-full h-11 px-4 bg-slate-50/30 border border-gray-100 rounded-[8px] text-[13px] font-semibold focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 focus:bg-white transition-all text-gray-700 placeholder:text-gray-300 shadow-sm shadow-black/[0.02]"
                             />
                           </div>
                           
@@ -244,7 +244,7 @@ export default function ProfilePage() {
                               onChange={(e) => setUsername(e.target.value)}
                               required
                               placeholder="admin"
-                              className="w-full h-11 px-4 bg-slate-50/30 border border-gray-200 rounded-xl text-[13px] font-semibold focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 focus:bg-white transition-all text-gray-700 placeholder:text-gray-300 shadow-sm shadow-black/[0.02]"
+                              className="w-full h-11 px-4 bg-slate-50/30 border border-gray-100 rounded-[8px] text-[13px] font-semibold focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 focus:bg-white transition-all text-gray-700 placeholder:text-gray-300 shadow-sm shadow-black/[0.02]"
                             />
                           </div>
                         </div>
@@ -267,7 +267,7 @@ export default function ProfilePage() {
                               onChange={(e) => setPassword(e.target.value)}
                               placeholder="••••••••"
                               autoComplete="new-password"
-                              className="w-full h-11 px-4 bg-slate-50/30 border border-gray-200 rounded-xl text-[13px] font-semibold focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 focus:bg-white transition-all text-gray-700 placeholder:text-gray-300 shadow-sm shadow-black/[0.02]"
+                              className="w-full h-11 px-4 bg-slate-50/30 border border-gray-100 rounded-[8px] text-[13px] font-semibold focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 focus:bg-white transition-all text-gray-700 placeholder:text-gray-300 shadow-sm shadow-black/[0.02]"
                             />
                           </div>
                           
@@ -280,7 +280,7 @@ export default function ProfilePage() {
                               onChange={(e) => setConfirmPassword(e.target.value)}
                               placeholder="••••••••"
                               autoComplete="new-password"
-                              className={`w-full h-11 px-4 bg-slate-50/30 border rounded-xl text-[13px] font-semibold focus:outline-none focus:ring-4 transition-all text-gray-700 placeholder:text-gray-300 shadow-sm shadow-black/[0.02] ${
+                              className={`w-full h-11 px-4 bg-slate-50/30 border rounded-[8px] text-[13px] font-semibold focus:outline-none focus:ring-4 transition-all text-gray-700 placeholder:text-gray-300 shadow-sm shadow-black/[0.02] ${
                                 password && confirmPassword 
                                   ? (password === confirmPassword ? 'border-green-500 focus:ring-green-500/10' : 'border-red-500 focus:ring-red-500/10')
                                   : 'border-gray-200 focus:ring-green-500/10 focus:border-green-500 focus:bg-white'
@@ -305,14 +305,14 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="h-11 px-6 text-[13px] font-bold text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all active:scale-95"
+                className="h-11 px-6 text-[13px] font-bold text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-[8px] transition-all active:scale-95"
               >
                 Batal
               </button>
               <button
                 type="submit"
                 disabled={isLoading || isPending || (password !== '' && password !== confirmPassword)}
-                className="h-11 px-8 text-[13px] bg-green-600 hover:bg-green-700 text-white rounded-xl flex items-center gap-2.5 transition-all hover:shadow-lg hover:shadow-green-600/20 active:scale-[0.95] disabled:opacity-50 disabled:cursor-not-allowed font-extrabold"
+                className="h-11 px-8 text-[13px] bg-green-600 hover:bg-green-700 text-white rounded-[8px] flex items-center gap-2.5 transition-all hover:shadow-lg hover:shadow-green-600/20 active:scale-[0.95] disabled:opacity-50 disabled:cursor-not-allowed font-extrabold"
               >
                 {isLoading || isPending ? (
                   <RefreshCw size={18} className="animate-spin" />
@@ -328,4 +328,9 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+
+
+
+
 

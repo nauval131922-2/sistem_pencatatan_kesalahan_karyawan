@@ -15,7 +15,7 @@ export default function RolesPage() {
       />
       
       <div className="flex-1 flex flex-col items-center justify-center bg-white border border-gray-100 rounded-3xl shadow-sm">
-        <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-6">
+        <div className="w-16 h-16 bg-red-50 rounded-[8px] flex items-center justify-center mb-6">
           <ShieldCheck size={32} className="text-red-500" />
         </div>
         <div className="flex items-center gap-2">
@@ -29,3 +29,8 @@ export default function RolesPage() {
     </div>
   );
 }
+
+
+
+
+
