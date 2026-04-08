@@ -85,7 +85,7 @@ export default function ConfirmDialog({
         />
         
         {/* Modal Box */}
-        <div className={`relative w-full max-w-sm bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100 transform transition-transform duration-200 ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
+        <div className={`relative w-full max-w-sm bg-white rounded-[8px] shadow-xl overflow-hidden border border-slate-100 transform transition-transform duration-200 ${isOpen ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'}`}>
           
           {/* Header Icon & Title */}
           <div className="p-6 pb-2">
@@ -106,7 +106,7 @@ export default function ConfirmDialog({
               <button
                 onClick={onCancel}
                 disabled={isLoading}
-                className="px-4 py-2 font-medium text-slate-600 hover:bg-slate-200/50 bg-white border border-slate-200 rounded-lg transition-colors text-sm disabled:opacity-50"
+                className="px-4 py-2 font-medium text-slate-600 hover:bg-slate-200/50 bg-white border border-slate-200 rounded-[8px] transition-colors text-sm disabled:opacity-50"
               >
                 {cancelLabel}
               </button>
@@ -114,7 +114,7 @@ export default function ConfirmDialog({
             <button
               onClick={onConfirm}
               disabled={isLoading}
-              className={`px-4 py-2 font-medium rounded-lg transition-colors text-sm shadow-sm flex items-center justify-center min-w-[80px] ${btnConfirmStyles[type]} ${!isConfirmType ? 'w-full' : ''} disabled:opacity-70`}
+              className={`px-4 py-2 font-medium rounded-[8px] transition-colors text-sm shadow-sm flex items-center justify-center min-w-[80px] ${btnConfirmStyles[type]} ${!isConfirmType ? 'w-full' : ''} disabled:opacity-70`}
             >
               {isLoading ? (
                 <Loader2 size={16} className="animate-spin" />
@@ -128,3 +128,8 @@ export default function ConfirmDialog({
     </Portal>
   );
 }
+
+
+
+
+

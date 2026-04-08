@@ -173,7 +173,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
         <div className="flex items-center justify-end opacity-0 group-hover:opacity-100 group-[.is-selected]:opacity-100 transition-opacity">
           <button
             onClick={(e) => { e.stopPropagation(); setSelectedLog(info.row.original); }}
-            className="px-3 py-1 text-[11px] font-extrabold text-[#16a34a] border border-[#16a34a]/30 hover:bg-[#16a34a] hover:text-white rounded-lg transition-all active:scale-[0.95] leading-none"
+            className="px-3 py-1 text-[11px] font-extrabold text-[#16a34a] border border-[#16a34a]/30 hover:bg-[#16a34a] hover:text-white rounded-[8px] transition-all active:scale-[0.95] leading-none"
           >
             Detail
           </button>
@@ -208,7 +208,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
             value={searchImmediate}
             onChange={(e) => setSearchImmediate(e.target.value)}
             placeholder="Cari menu, user, atau keterangan..."
-            className="w-full pl-12 pr-4 h-10 bg-white border border-gray-200 rounded-[14px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
+            className="w-full pl-12 pr-4 h-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
           />
         </div>
       </div>
@@ -259,12 +259,12 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
       {selectedLog && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[2px] animate-in fade-in duration-200">
           <div
-            className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
+            className="bg-white rounded-[8px] shadow-2xl border border-slate-200 w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-3 border-b border-slate-100 bg-slate-50/50">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-600">
+                <div className="w-10 h-10 rounded-[8px] bg-green-500/10 flex items-center justify-center text-green-600">
                   <Cpu size={20} />
                 </div>
                 <div>
@@ -284,21 +284,21 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
             <div className="p-6 overflow-y-auto custom-scrollbar bg-white flex-1">
               {/* Top Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                <div className="bg-slate-50 rounded-[8px] p-3 border border-slate-100">
                   <div className="flex items-center gap-2 mb-1">
                     <UserIcon size={14} className="text-slate-400" />
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Pelaku (recorded_by)</span>
                   </div>
                   <p className="text-sm font-bold text-slate-700">{selectedLog.recorded_by || 'System'}</p>
                 </div>
-                <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                <div className="bg-slate-50 rounded-[8px] p-3 border border-slate-100">
                   <div className="flex items-center gap-2 mb-1">
                     <CalendarIcon size={14} className="text-slate-400" />
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Waktu Kejadian</span>
                   </div>
                   <p className="text-sm font-bold text-slate-700">{fmtDateTime(selectedLog.created_at)}</p>
                 </div>
-                <div className="bg-indigo-50 rounded-xl p-3 border border-indigo-100/50">
+                <div className="bg-indigo-50 rounded-[8px] p-3 border border-indigo-100/50">
                   <div className="flex items-center gap-2 mb-1">
                     <Database size={14} className="text-indigo-400" />
                     <span className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Target Tabel & ID</span>
@@ -315,7 +315,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                     <Info size={16} className="text-amber-500" />
                     <span className="text-xs font-bold text-slate-500 uppercase">Keterangan Aktivitas</span>
                   </div>
-                  <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-xl text-sm text-slate-700 leading-relaxed font-medium">
+                  <div className="p-4 bg-amber-50/50 border border-amber-100 rounded-[8px] text-sm text-slate-700 leading-relaxed font-medium">
                     {selectedLog.message}
                   </div>
               </div>
@@ -329,7 +329,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                       <span className="text-xs font-bold text-slate-500 uppercase">Snapshot Log (Data Saat Kejadian)</span>
                     </div>
                   </div>
-                  <div className="bg-slate-900 rounded-xl overflow-hidden border border-slate-800 shadow-xl">
+                  <div className="bg-slate-900 rounded-[8px] overflow-hidden border border-slate-800 shadow-xl">
                     <div className="px-4 py-2 bg-slate-800 border-b border-white/5 flex items-center justify-between">
                       <span className="text-[10px] font-mono text-slate-400">audit_snapshot.json</span>
                       <div className="flex gap-1.5">
@@ -369,7 +369,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                     </div>
                     {isLoadingLive && <span className="text-[10px] text-green-600 font-bold animate-pulse">MEMUAT...</span>}
                   </div>
-                  <div className="bg-slate-900 rounded-xl overflow-hidden border border-slate-800 shadow-xl">
+                  <div className="bg-slate-900 rounded-[8px] overflow-hidden border border-slate-800 shadow-xl">
                     <div className="px-4 py-2 bg-slate-800 border-b border-white/5 flex items-center justify-between">
                       <span className="text-[10px] font-mono text-slate-400">current_db_state.json</span>
                       {liveData ? (
@@ -405,7 +405,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
             <div className="px-6 py-3 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3">
               <button
                 onClick={() => setSelectedLog(null)}
-                className="px-6 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95 shadow-sm"
+                className="px-6 py-2 bg-white border border-slate-200 rounded-[8px] text-sm font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95 shadow-sm"
               >
                 Tutup Jendela
               </button>
@@ -418,4 +418,9 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
     </div>
   );
 }
+
+
+
+
+
 

@@ -62,7 +62,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
     <div className="flex-1 flex flex-col gap-5 pb-10 overflow-y-auto custom-scrollbar sm:px-0">
       {/* Year Selector - Back at the top */}
       <div className="shrink-0">
-        <div className="bg-white border border-gray-200 shadow-sm rounded-[10px] px-5 py-3.5 flex items-center justify-between">
+        <div className="bg-white border border-gray-100 shadow-sm rounded-[8px] px-5 py-3.5 flex items-center justify-between hover:border-gray-200 hover:shadow-sm transition-all duration-300">
           <div className="flex items-center gap-3">
             <Calendar size={16} className="text-green-600" />
             <span className="text-[13px] font-extrabold text-gray-400 tracking-wider">Tahun Analisis</span>
@@ -72,7 +72,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
             <button 
                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                className={`
-                 flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 border
+                 flex items-center gap-3 px-4 py-2 rounded-[8px] transition-all duration-200 border
                  ${isDropdownOpen 
                    ? 'bg-white border-green-500 text-green-700' 
                    : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-700'
@@ -87,7 +87,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
              </button>
 
             {isDropdownOpen && (
-              <div className="absolute top-full right-0 mt-2 w-40 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 py-2 animate-in fade-in zoom-in-95 duration-200">
+              <div className="absolute top-full right-0 mt-2 w-40 bg-white border border-gray-100 rounded-[8px] shadow-xl z-50 py-2 animate-in fade-in zoom-in-95 duration-200">
                 <div className="px-3 pb-2 mb-1 border-b border-gray-50">
                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pilih Tahun</span>
                 </div>
@@ -97,7 +97,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
                       key={y}
                       onClick={() => handleYearSelect(y)}
                       className={`
-                        w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-bold transition-all
+                        w-full flex items-center justify-between px-3 py-2 rounded-[8px] text-sm font-bold transition-all
                         ${selectedYear === y 
                           ? 'bg-green-50 text-green-700' 
                           : 'text-gray-600 hover:bg-slate-50 hover:text-gray-900'
@@ -119,15 +119,15 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
         {/* Monthly Trend Chart */}
-        <div className="lg:col-span-3 bg-white border border-gray-100 p-6 rounded-2xl shadow-sm flex flex-col min-h-[500px]">
+        <div className="lg:col-span-3 bg-white border border-gray-100 p-6 rounded-[8px] flex flex-col min-h-[500px] hover:border-gray-200 hover:shadow-sm transition-all duration-300 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+              <div className="p-2 bg-indigo-50 text-indigo-600 rounded-[8px]">
                 <TrendingUp size={18} />
               </div>
               <h3 className="text-sm font-bold text-gray-700">Tren Kesalahan Bulanan</h3>
             </div>
-            <div className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded uppercase">Jan - Des {selectedYear}</div>
+            <div className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-[8px] uppercase">Jan - Des {selectedYear}</div>
           </div>
 
           <div className="flex-1 w-full min-h-[450px]">
@@ -190,7 +190,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
                 <Tooltip 
                   cursor={{ fill: '#f8fafc' }}
                   contentStyle={{ 
-                    borderRadius: '16px', 
+                    borderRadius: '8px', 
                     border: 'none', 
                     boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', 
                     fontSize: '12px',
@@ -230,7 +230,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
                   stroke="#cbd5e1"
                   strokeWidth={1}
                   strokeDasharray="4 4"
-                  radius={[16, 16, 0, 0]} 
+                  radius={[8, 8, 0, 0]} 
                   barSize={72}
                 />
                 <Bar 
@@ -277,9 +277,9 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
         </div>
 
         {/* Severity Pie Chart */}
-        <div className="bg-white border border-gray-100 p-6 rounded-2xl shadow-sm flex flex-col min-h-[400px]">
+        <div className="bg-white border border-gray-100 p-6 rounded-[8px] flex flex-col min-h-[400px] hover:border-gray-200 hover:shadow-sm transition-all duration-300 shadow-sm">
           <div className="flex items-center gap-3 mb-8">
-            <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
+            <div className="p-2 bg-rose-50 text-rose-600 rounded-[8px]">
               < ShieldAlert size={18} />
             </div>
             <h3 className="text-sm font-bold text-gray-700">Distribusi Severitas</h3>
@@ -303,7 +303,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
                     ))}
                   </Pie>
                   <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px' }}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px' }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -318,14 +318,14 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
 
             <div className="w-full space-y-1.5 mt-6 px-1">
               {pieData.map((item, idx) => (
-                <div key={idx} className="group flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
+                <div key={idx} className="group flex items-center justify-between p-2 rounded-[8px] hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100">
                   <div className="flex items-center gap-3">
                     <div className="w-2.5 h-2.5 rounded-full shadow-sm ring-2 ring-white" style={{ backgroundColor: severityColors[item.name] }}></div>
                     <p className="text-[11px] font-bold text-gray-500 group-hover:text-gray-900 transition-colors uppercase tracking-tight">{item.name} Severity</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-[14px] font-black text-gray-800">{item.value}</span>
-                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100/50 px-2 py-1 rounded-lg min-w-[42px] text-center group-hover:bg-slate-200/50 group-hover:text-slate-600 transition-colors">
+                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100/50 px-2 py-1 rounded-[8px] min-w-[42px] text-center group-hover:bg-slate-200/50 group-hover:text-slate-600 transition-colors">
                       {Math.round(item.value / (stats.totalInfractions || 1) * 100)}%
                     </span>
                   </div>
@@ -338,10 +338,10 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Top Repeaters List */}
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden min-h-[350px] flex flex-col">
+        <div className="bg-white border border-gray-100 rounded-[8px] flex flex-col min-h-[350px] overflow-hidden hover:border-gray-200 hover:shadow-sm transition-all duration-300 shadow-sm">
           <div className="p-6 border-b border-gray-50 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+              <div className="p-2 bg-amber-50 text-amber-600 rounded-[8px]">
                 <UserMinus size={18} />
               </div>
               <h3 className="text-sm font-bold text-gray-700">Top Employee Infractions (Repeaters)</h3>
@@ -403,7 +403,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
         </div>
 
         {/* Dynamic Actionable Insights */}
-        <div className={`rounded-2xl p-8 flex flex-col justify-center relative overflow-hidden text-white shadow-lg transition-all duration-500 ${
+        <div className={`rounded-[8px] p-8 flex flex-col justify-center relative overflow-hidden text-white shadow-lg transition-all duration-500 ${
           stats.totalInfractions === 0 
             ? 'bg-emerald-600 shadow-emerald-100' 
             : stats.highSeverity > 0 
@@ -414,7 +414,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
            <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-48 h-48 bg-white/5 blur-3xl rounded-full"></div>
            
            <div className="relative z-10">
-              <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 shadow-inner">
+              <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-[8px] flex items-center justify-center mb-6 shadow-inner">
                  {stats.totalInfractions === 0 
                    ? <TrendingDown size={28} /> 
                    : stats.highSeverity > 0 
@@ -440,7 +440,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
               </p>
               
               <div className="flex flex-wrap gap-2">
-                 <div className="px-3 py-1.5 bg-white/20 backdrop-blur-sm border border-white/20 text-white text-[10px] font-black rounded-lg tracking-wider">
+                 <div className="px-3 py-1.5 bg-white/20 backdrop-blur-sm border border-white/20 text-white text-[10px] font-black rounded-[8px] tracking-wider">
                    {stats.totalInfractions === 0 
                      ? '⭐ Sertifikasi Kualitas' 
                      : stats.highSeverity > 0 
@@ -448,7 +448,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
                        : '📚 Edukasi SOP'
                    }
                  </div>
-                 <div className="px-3 py-1.5 bg-white/20 backdrop-blur-sm border border-white/20 text-white text-[10px] font-black rounded-lg tracking-wider">
+                 <div className="px-3 py-1.5 bg-white/20 backdrop-blur-sm border border-white/20 text-white text-[10px] font-black rounded-[8px] tracking-wider">
                    {stats.totalInfractions === 0 
                      ? '🏆 Pertahankan Standar' 
                      : stats.highSeverity > 0 
@@ -463,3 +463,8 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
     </div>
   );
 }
+
+
+
+
+

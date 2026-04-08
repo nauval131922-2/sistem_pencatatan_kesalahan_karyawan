@@ -60,14 +60,14 @@ export default function UserFormModal({ user, onClose }: UserFormModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-[8px] shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
           <h2 className="text-lg font-bold text-slate-800">
             {isEditing ? 'Edit User' : 'Tambah User Baru'}
           </h2>
           <button
             onClick={() => onClose(false)}
-            className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-lg transition-colors"
+            className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-[8px] transition-colors"
           >
             <X size={20} />
           </button>
@@ -75,7 +75,7 @@ export default function UserFormModal({ user, onClose }: UserFormModalProps) {
 
         <form onSubmit={handleSubmit} className="p-6">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-xl flex items-start gap-2 text-sm border border-red-100">
+            <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-[8px] flex items-start gap-2 text-sm border border-red-100">
               <AlertCircle size={16} className="shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -88,7 +88,7 @@ export default function UserFormModal({ user, onClose }: UserFormModalProps) {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
+                className="w-full px-3 py-2 border border-slate-200 rounded-[8px] focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
                 placeholder="Ex. John Doe"
                 required
               />
@@ -100,7 +100,7 @@ export default function UserFormModal({ user, onClose }: UserFormModalProps) {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s/g, ''))}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
+                className="w-full px-3 py-2 border border-slate-200 rounded-[8px] focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
                 placeholder="Ex. johnd"
                 required
               />
@@ -111,7 +111,7 @@ export default function UserFormModal({ user, onClose }: UserFormModalProps) {
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none bg-white transition-all font-medium"
+                className="w-full px-3 py-2 border border-slate-200 rounded-[8px] focus:ring-2 focus:ring-emerald-500 outline-none bg-white transition-all font-medium"
               >
                 <option value="Admin">Admin</option>
                 <option value="Super Admin">Super Admin</option>
@@ -127,7 +127,7 @@ export default function UserFormModal({ user, onClose }: UserFormModalProps) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="new-password"
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
+                className="w-full px-3 py-2 border border-slate-200 rounded-[8px] focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
                 placeholder={isEditing ? 'Biarkan kosong jika tidak diubah' : 'Minimal 6 karakter'}
                 required={!isEditing}
               />
@@ -138,14 +138,14 @@ export default function UserFormModal({ user, onClose }: UserFormModalProps) {
             <button
               type="button"
               onClick={() => onClose(false)}
-              className="px-4 py-2 text-slate-600 hover:bg-slate-100 font-semibold rounded-xl transition-colors"
+              className="px-4 py-2 text-slate-600 hover:bg-slate-100 font-semibold rounded-[8px] transition-colors"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl flex items-center gap-2 transition-colors disabled:opacity-50"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-[8px] flex items-center gap-2 transition-colors disabled:opacity-50"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -160,4 +160,9 @@ export default function UserFormModal({ user, onClose }: UserFormModalProps) {
     </div>
   );
 }
+
+
+
+
+
 

@@ -108,7 +108,7 @@ function SearchableSelect({
       {label && <label className="flex items-center gap-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">{label}{required && <span className="text-red-500 font-black">*</span>}</label>}
       <input type="hidden" name={name} value={selected ? String(valueFn(selected)) : ''} />
       <div
-        className={`w-full bg-gray-50/50 border border-gray-100 rounded-xl px-4 h-11 text-sm flex items-center justify-between transition-all text-gray-800 ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-gray-300 hover:bg-gray-100/50'}`}
+        className={`w-full bg-gray-50/50 border border-gray-100 rounded-[8px] px-4 h-11 text-sm flex items-center justify-between transition-all text-gray-800 ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-gray-300 hover:bg-gray-100/50'}`}
         onClick={() => { if (!disabled) { setOpen((o) => !o); setQuery(''); } }}
       >
         <span className={selected ? 'text-gray-700 truncate font-bold' : 'text-gray-400 font-medium truncate'}>
@@ -118,7 +118,7 @@ function SearchableSelect({
       </div>
 
       {open && !disabled && (
-        <div className={`absolute z-[200] w-full bg-white border border-gray-100 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${
+        <div className={`absolute z-[200] w-full bg-white border border-gray-100 rounded-[8px] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${
           dropdownPos === 'up' ? 'bottom-full mb-3' : 'top-full mt-3'
         }`}>
           <div className="p-3 border-b border-gray-50 bg-gray-50/50">
@@ -130,14 +130,14 @@ function SearchableSelect({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Cari..."
-                className="w-full pl-9 pr-3 h-10 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 bg-white"
+                className="w-full pl-9 pr-3 h-10 text-sm border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 bg-white"
               />
             </div>
           </div>
           <ul className="max-h-60 overflow-y-auto custom-scrollbar px-1 py-1">
             {!required && (
               <li
-                className="px-3 py-2 text-[11px] text-gray-400 hover:bg-gray-50 cursor-pointer italic rounded-lg font-medium"
+                className="px-3 py-2 text-[11px] text-gray-400 hover:bg-gray-50 cursor-pointer italic rounded-[8px] font-medium"
                 onClick={() => handleSelect(null)}
               >
                 — Kosongkan pilihan
@@ -156,7 +156,7 @@ function SearchableSelect({
               filtered.map((o, i) => (
                 <li
                   key={i}
-                  className={`px-4 py-3 text-sm cursor-pointer rounded-xl transition-all mb-0.5 last:mb-0 ${
+                  className={`px-4 py-3 text-sm cursor-pointer rounded-[8px] transition-all mb-0.5 last:mb-0 ${
                     selected && valueFn(selected) === valueFn(o) 
                       ? 'bg-green-50 text-green-700 font-black' 
                       : 'text-gray-700 hover:bg-green-500 hover:text-white'
@@ -611,7 +611,7 @@ export default function RecordsForm({
     finally { setLoading(false); pendingSubmitDataRef.current = null; }
   };
 
-  const inputCls = 'w-full bg-gray-50/50 border border-gray-100 rounded-xl px-4 h-11 text-sm focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all text-gray-700 font-medium placeholder:text-gray-300';
+  const inputCls = 'w-full bg-gray-50/50 border border-gray-100 rounded-[8px] px-4 h-11 text-sm focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all text-gray-700 font-medium placeholder:text-gray-300';
   const labelCls = 'flex items-center gap-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1';
   const sectionHeaderCls = 'flex items-center gap-2.5 pb-2 border-b border-gray-50 mb-6 mt-2';
 
@@ -622,9 +622,9 @@ export default function RecordsForm({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           <div className="lg:col-span-5 flex flex-col gap-4">
-            <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
+            <div className="bg-white rounded-[8px] border border-gray-100 p-8 hover:border-gray-200 hover:shadow-sm transition-all duration-300">
               <div className={sectionHeaderCls}>
-                <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-[8px] bg-green-50 flex items-center justify-center">
                   <ClipboardList size={18} className="text-green-600" />
                 </div>
                 <h3 className="text-base font-bold text-gray-800 tracking-tight">Data Utama</h3>
@@ -633,7 +633,7 @@ export default function RecordsForm({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1.5">
                   <label className={labelCls}>Nomor Faktur</label>
-                  <div className="h-11 px-4 bg-gray-50 border border-gray-100 rounded-xl flex items-center text-sm font-bold text-gray-500 ring-1 ring-inset ring-gray-200/50">
+                  <div className="h-11 px-4 bg-gray-50 border border-gray-100 rounded-[8px] flex items-center text-sm font-bold text-gray-500 ring-1 ring-inset ring-gray-200/50">
                     {fakturPreview}
                   </div>
                 </div>
@@ -664,9 +664,9 @@ export default function RecordsForm({
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm">
+            <div className="bg-white rounded-[8px] border border-gray-100 p-8 hover:border-gray-200 hover:shadow-sm transition-all duration-300">
               <div className={sectionHeaderCls}>
-                <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-[8px] bg-amber-50 flex items-center justify-center">
                   <ShieldAlert size={18} className="text-amber-600" />
                 </div>
                 <h3 className="text-base font-bold text-gray-800 tracking-tight">Tingkat Severitas & Detail</h3>
@@ -685,7 +685,7 @@ export default function RecordsForm({
                         key={opt.value}
                         type="button"
                         onClick={() => setSeverity(opt.value)}
-                        className={`px-4 h-10 text-[11px] font-bold rounded-lg border transition-all flex items-center justify-center gap-2 ${
+                        className={`px-4 h-10 text-[11px] font-bold rounded-[8px] border transition-all flex items-center justify-center gap-2 ${
                           severity === opt.value 
                             ? `${opt.activeCls} shadow-md ring-4` 
                             : 'bg-white text-gray-500 border-gray-100 hover:border-gray-300'
@@ -713,9 +713,9 @@ export default function RecordsForm({
           </div>
 
           <div className="lg:col-span-7 flex flex-col gap-4">
-            <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm overflow-visible text-gray-800">
+            <div className="bg-white rounded-[8px] border border-gray-100 p-8 hover:border-gray-200 hover:shadow-sm transition-all duration-300 overflow-visible text-gray-800">
               <div className={sectionHeaderCls}>
-                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-[8px] bg-blue-50 flex items-center justify-center">
                   <Box size={18} className="text-blue-600" />
                 </div>
                 <h3 className="text-base font-bold text-gray-800 tracking-tight">Rincian Beban Biaya</h3>
@@ -794,7 +794,7 @@ export default function RecordsForm({
                               setHarga('');
                             }
                           }}
-                          className={`px-3 py-2 text-[11px] font-bold rounded-lg border transition-all text-center leading-tight h-10 flex items-center justify-center ${
+                          className={`px-3 py-2 text-[11px] font-bold rounded-[8px] border transition-all text-center leading-tight h-10 flex items-center justify-center ${
                             jenisBarang === opt.value
                               ? 'bg-green-600 text-white border-green-600 shadow-md ring-4 ring-green-600/10'
                               : 'bg-white text-gray-500 border-gray-100 hover:border-gray-300'
@@ -845,7 +845,7 @@ export default function RecordsForm({
                   ) : (
                     <div className="space-y-1.5 opacity-80">
                       <label className={labelCls}>Nama Barang (Order)</label>
-                      <div className="h-11 px-4 bg-blue-50/50 border border-blue-100 rounded-xl flex items-center text-sm font-bold text-blue-600">
+                      <div className="h-11 px-4 bg-blue-50/50 border border-blue-100 rounded-[8px] flex items-center text-sm font-bold text-blue-600">
                         {hppLoading ? <Loader2 size={16} className="animate-spin mr-2" /> : <Star size={14} className="mr-2" />}
                         {selectedOrderName || 'Pilih Order Dulu'}
                       </div>
@@ -866,7 +866,7 @@ export default function RecordsForm({
                               setHarga('');
                             }
                           }}
-                          className={`px-3 py-2 text-[11px] font-bold rounded-lg border transition-all h-9 flex items-center justify-center ${
+                          className={`px-3 py-2 text-[11px] font-bold rounded-[8px] border transition-all h-9 flex items-center justify-center ${
                             jenisHarga === opt.value
                               ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-4 ring-blue-600/10'
                               : 'bg-white text-gray-500 border-gray-100 hover:border-gray-300'
@@ -918,7 +918,7 @@ export default function RecordsForm({
                     </div>
                   </div>
 
-                  <div className="mt-4 p-4 bg-gray-50/50 rounded-xl border border-gray-100 flex justify-between items-center">
+                  <div className="mt-4 p-4 bg-gray-50/50 rounded-[8px] border border-gray-100 flex justify-between items-center">
                     <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Total Estimasi Beban</span>
                     <span className="text-lg font-bold text-gray-700">
                       Rp {totalValue.toLocaleString('id-ID')}
@@ -932,7 +932,7 @@ export default function RecordsForm({
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-500/10 transition-all flex items-center justify-center gap-2.5 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="flex-1 h-12 rounded-[8px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-500/10 transition-all flex items-center justify-center gap-2.5 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed group"
               >
                 {loading ? (
                   <Loader2 size={18} className="animate-spin" />
@@ -948,7 +948,7 @@ export default function RecordsForm({
                 <button
                   type="button"
                   onClick={onCancelEdit}
-                  className="flex-1 h-12 rounded-xl bg-white border border-gray-200 text-gray-500 font-bold text-sm hover:bg-gray-50 transition-all active:scale-[0.98]"
+                  className="flex-1 h-12 rounded-[8px] bg-white border border-gray-200 text-gray-500 font-bold text-sm hover:bg-gray-50 transition-all active:scale-[0.98]"
                 >
                   Batal
                 </button>
@@ -971,4 +971,9 @@ export default function RecordsForm({
     </div>
   );
 }
+
+
+
+
+
 

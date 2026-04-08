@@ -48,9 +48,9 @@ async function DashboardStats() {
         <Link 
           key={card.title} 
           href={card.href} 
-          className="group bg-white border border-[#e5e7eb] rounded-[10px] p-5 h-[100px] flex items-center gap-4 shadow-sm hover:border-[#16a34a]/30 transition-all active:scale-[0.98]"
+          className="group bg-white border border-gray-100 rounded-[8px] p-5 h-[100px] flex items-center gap-4 hover:border-gray-200 hover:shadow-sm transition-all duration-300 active:scale-[0.98]"
         >
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors ${card.classes}`}>
+          <div className={`w-12 h-12 rounded-[8px] flex items-center justify-center shrink-0 transition-colors ${card.classes}`}>
             <card.icon size={24} />
           </div>
           <div className="flex flex-col">
@@ -75,7 +75,7 @@ function StatSkeleton() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0">
        {[1, 2, 3].map(i => (
-         <div key={i} className="bg-gray-50 border border-gray-100 rounded-[10px] p-5 h-[100px] animate-pulse"></div>
+         <div key={i} className="bg-gray-50 border border-gray-100 rounded-[8px] p-5 h-[100px] animate-pulse"></div>
        ))}
     </div>
   );
@@ -94,10 +94,15 @@ export default async function Home() {
       </Suspense>
 
       <div className="flex-1 overflow-hidden flex flex-col">
-        <Suspense fallback={<div className="h-full bg-gray-50 rounded-xl animate-pulse border border-gray-100"></div>}>
+        <Suspense fallback={<div className="h-full bg-gray-50 rounded-[8px] animate-pulse border border-gray-100"></div>}>
           <DashboardLogs />
         </Suspense>
       </div>
     </div>
   );
 }
+
+
+
+
+

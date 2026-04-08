@@ -12,6 +12,7 @@ import {
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ArrowUp, ArrowDown, ArrowUpDown, Loader2, AlertCircle } from 'lucide-react';
+
 interface DataTableProps<TData> {
   columns: ColumnDef<TData, any>[];
   data: TData[];
@@ -146,10 +147,10 @@ export function DataTable<TData extends { id: number | string }>({
   const headers = table.getFlatHeaders();
   const totalWidth = table.getTotalSize();
 
-  if (!isMounted) return <div className={`bg-white border border-gray-200 rounded-xl overflow-hidden ${height} animate-pulse`} />;
+  if (!isMounted) return <div className={`bg-white border border-gray-100 rounded-[8px] overflow-hidden ${height} animate-pulse`} />;
 
   return (
-    <div className={`bg-white border border-gray-200 shadow-[0_4px_20px_-3px_rgba(0,0,0,0.06),0_10px_20px_-2px_rgba(0,0,0,0.02)] rounded-xl overflow-hidden flex flex-col min-h-0 relative ${height} ${className} ${isResizingColumn ? 'is-resizing' : ''}`}>
+    <div className={`bg-white border border-gray-100 hover:border-gray-200 transition-all duration-300 rounded-[8px] overflow-hidden flex flex-col min-h-0 relative ${height} ${className} ${isResizingColumn ? 'is-resizing' : ''}`}>
       <style dangerouslySetInnerHTML={{ __html: `.is-resizing * { user-select: none !important; transition: none !important; cursor: col-resize !important; } .is-resizing th > div { cursor: col-resize !important; }` }} />
       <div 
         ref={parentRef}
@@ -205,7 +206,7 @@ export function DataTable<TData extends { id: number | string }>({
                 <tr key="empty-row">
                   <td key="empty-cell" colSpan={headers.length} className="p-0 border-none">
                     <div className="flex flex-col items-center justify-center py-24 text-center">
-                       <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4 ring-1 ring-gray-100 shadow-sm">
+                       <div className="w-16 h-16 bg-gray-50 rounded-[8px] flex items-center justify-center mb-4 ring-1 ring-gray-100 shadow-sm">
                           <AlertCircle className="text-gray-200" size={32} />
                        </div>
                        <h3 className="text-[14px] font-bold text-gray-800 mb-1">Data Tidak Ditemukan</h3>
@@ -286,3 +287,8 @@ const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick, onRowDoubleCl
 });
 
 TableRow.displayName = 'TableRow';
+
+
+
+
+

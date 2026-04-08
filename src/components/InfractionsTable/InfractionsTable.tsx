@@ -223,7 +223,7 @@ export default function InfractionsTable({
                 <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 group-[.is-selected]:opacity-100 transition-opacity">
                     <button
                         onClick={(e) => { e.stopPropagation(); generateSinglePDF(inf); }}
-                        className="flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-50 hover:bg-red-500 hover:text-white border border-red-100 px-2 py-1 rounded-lg transition-all leading-none"
+                        className="flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-50 hover:bg-red-500 hover:text-white border border-red-100 px-2 py-1 rounded-[8px] transition-all leading-none"
                         title="Cetak PDF Faktur"
                     >
                         <FileText size={12} />
@@ -231,14 +231,14 @@ export default function InfractionsTable({
                     </button>
                     <button
                         onClick={(e) => { e.stopPropagation(); onEdit?.(inf); }}
-                        className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
+                        className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-[8px] transition-all"
                         title="Edit Data"
                     >
                         <Pencil size={15} />
                     </button>
                     <button
                         onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(inf.id); }}
-                        className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-all"
+                        className="p-1.5 text-red-400 hover:bg-red-50 rounded-[8px] transition-all"
                         title="Hapus Data"
                     >
                         <Trash2 size={15} />
@@ -323,7 +323,7 @@ export default function InfractionsTable({
         cell: (info: any) => {
             const val = info.getValue() as string;
             return val ? (
-                <span className="inline-block px-2.5 py-1 rounded-lg border border-slate-100 bg-slate-50 text-slate-400 text-[11px] font-bold truncate max-w-full" title={val}>
+                <span className="inline-block px-2.5 py-1 rounded-[8px] border border-slate-100 bg-slate-50 text-slate-400 text-[11px] font-bold truncate max-w-full" title={val}>
                     {val}
                 </span>
             ) : <span className="text-gray-200">—</span>;
@@ -379,7 +379,7 @@ export default function InfractionsTable({
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
       {/* Top Filter Bar - Same style as Sales */}
-      <div className="bg-white rounded-[16px] border border-gray-200 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative z-50">
+      <div className="bg-white rounded-[8px] border border-gray-200 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative z-50">
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex flex-col gap-1.5">
             <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Rentang Periode Kesalahan</span>
@@ -401,14 +401,14 @@ export default function InfractionsTable({
           <div className="shrink-0 flex items-center gap-3">
             <button 
               onClick={generateExcel}
-              className="px-5 h-10 bg-green-50 text-green-600 border border-green-100 font-extrabold rounded-lg hover:bg-green-600 hover:text-white transition-all flex items-center gap-2.5 shadow-sm active:scale-[0.98]"
+              className="px-5 h-10 bg-green-50 text-green-600 border border-green-100 font-extrabold rounded-[8px] hover:bg-green-600 hover:text-white transition-all flex items-center gap-2.5 shadow-sm active:scale-[0.98]"
             >
               <FileSpreadsheet size={16} />
               <span>Ekspor Excel</span>
             </button>
             <button 
               onClick={generatePDF}
-              className="px-5 h-10 bg-red-50 text-red-600 border border-red-100 font-extrabold rounded-lg hover:bg-red-600 hover:text-white transition-all flex items-center gap-2.5 shadow-sm active:scale-[0.98]"
+              className="px-5 h-10 bg-red-50 text-red-600 border border-red-100 font-extrabold rounded-[8px] hover:bg-red-600 hover:text-white transition-all flex items-center gap-2.5 shadow-sm active:scale-[0.98]"
             >
               <Printer size={16} />
               <span>Cetak Rekap PDF</span>
@@ -440,7 +440,7 @@ export default function InfractionsTable({
             <input 
               type="text" 
               placeholder="Cari nama karyawan, deskripsi, nomor faktur, atau referensi order..." 
-              className="w-full pl-12 pr-4 h-10 bg-white border border-gray-200 rounded-[14px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm" 
+              className="w-full pl-12 pr-4 h-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm" 
               value={query} 
               onChange={handleSearch} 
             />
@@ -516,4 +516,9 @@ export default function InfractionsTable({
     </div>
   );
 }
+
+
+
+
+
 

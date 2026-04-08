@@ -204,7 +204,7 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
           <input 
             type="text" 
             placeholder="Cari nama, jabatan, atau ID karyawan..." 
-            className="w-full pl-12 pr-4 h-10 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm" 
+            className="w-full pl-12 pr-4 h-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm" 
             value={searchQuery} 
             onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }} 
           />
@@ -221,7 +221,7 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
               <p className="text-sm font-black text-gray-800">{error}</p>
               <button 
                 onClick={() => setRefreshKey(k => k + 1)}
-                className="mt-4 px-6 py-2 bg-white border border-rose-200 text-rose-600 rounded-xl text-xs font-black hover:bg-rose-50 transition-colors"
+                className="mt-4 px-6 py-2 bg-white border border-rose-200 text-rose-600 rounded-[8px] text-xs font-black hover:bg-rose-50 transition-colors"
               >
                 Coba Lagi
               </button>
@@ -273,4 +273,9 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
     </div>
   );
 }
+
+
+
+
+
 

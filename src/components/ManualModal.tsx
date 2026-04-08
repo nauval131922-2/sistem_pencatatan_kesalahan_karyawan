@@ -345,12 +345,12 @@ export default function ManualModal() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
-            className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300"
+            className="relative w-full max-w-lg bg-white rounded-[8px] shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300"
           >
             {/* Header */}
             <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-emerald-50/50">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-600 text-white rounded-lg shadow-sm">
+                <div className="p-2 bg-emerald-600 text-white rounded-[8px] shadow-sm">
                   <currentGuide.icon size={18} />
                 </div>
                 <div className="flex flex-col">
@@ -425,7 +425,7 @@ export default function ManualModal() {
                     </div>
 
                     {(currentGuide as any).tips && (
-                      <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl flex gap-3">
+                      <div className="p-4 bg-amber-50 border border-amber-100 rounded-[8px] flex gap-3">
                         <Info size={18} className="text-amber-500 shrink-0 mt-0.5" />
                         <div>
                           <p className="text-[10px] font-bold text-amber-600 mb-1">Tips Berguna:</p>
@@ -450,3 +450,8 @@ export default function ManualModal() {
     </>
   );
 }
+
+
+
+
+

@@ -151,7 +151,7 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
         const user = info.row.original as User;
         return (
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-green-500 flex items-center justify-center text-white font-black text-[10px] shadow-sm shrink-0 overflow-hidden ring-1 ring-black/5">
+            <div className="w-9 h-9 rounded-[8px] bg-green-500 flex items-center justify-center text-white font-black text-[10px] shadow-sm shrink-0 overflow-hidden ring-1 ring-black/5">
               {user.photo ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
@@ -172,7 +172,7 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
       cell: (info: any) => {
         const role = info.getValue() as string;
         return (
-          <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-tight inline-flex items-center gap-1.5 leading-none ${
+          <span className={`px-2.5 py-1 rounded-[8px] text-[10px] font-black uppercase tracking-tight inline-flex items-center gap-1.5 leading-none ${
             role === 'Super Admin' 
               ? 'bg-purple-50 text-purple-600 border border-purple-100/50' 
               : 'bg-indigo-50 text-indigo-600 border border-indigo-100/50'
@@ -194,7 +194,7 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
           <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 group-[.is-selected]:opacity-100 transition-opacity">
             <button 
               onClick={(e) => { e.stopPropagation(); handleEdit(user); }}
-              className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
+              className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-[8px] transition-all"
               title="Edit User"
             >
               <Edit2 size={15} />
@@ -202,7 +202,7 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
             {user.id !== currentUserId && (
               <button 
                 onClick={(e) => { e.stopPropagation(); handleDelete(user.id, user.username); }}
-                className="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition-all"
+                className="p-1.5 text-red-400 hover:bg-red-50 rounded-[8px] transition-all"
                 title="Hapus User"
               >
                 <Trash2 size={15} />
@@ -273,8 +273,8 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
     <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
       {/* Stats Cards at the Top */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
-        <div className="bg-white rounded-[10px] border border-[#e5e7eb] p-5 h-[100px] flex items-center gap-4 shadow-sm hover:border-[#16a34a]/30 transition-colors text-blue-600">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+        <div className="bg-white rounded-[8px] border border-gray-100 p-5 h-[100px] flex items-center gap-4 hover:border-gray-200 hover:shadow-sm transition-all duration-300 text-blue-600">
+          <div className="w-12 h-12 rounded-[8px] bg-blue-50 flex items-center justify-center shrink-0">
             <Users size={24} />
           </div>
           <div className="flex flex-col">
@@ -283,8 +283,8 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
           </div>
         </div>
         
-        <div className="bg-white rounded-[10px] border border-[#e5e7eb] p-5 h-[100px] flex items-center gap-4 shadow-sm hover:border-[#16a34a]/30 transition-colors text-purple-600">
-          <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
+        <div className="bg-white rounded-[8px] border border-gray-100 p-5 h-[100px] flex items-center gap-4 hover:border-gray-200 hover:shadow-sm transition-all duration-300 text-purple-600">
+          <div className="w-12 h-12 rounded-[8px] bg-purple-50 flex items-center justify-center shrink-0">
             <ShieldCheck size={24} />
           </div>
           <div className="flex flex-col">
@@ -293,8 +293,8 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
           </div>
         </div>
 
-        <div className="bg-white rounded-[10px] border border-[#e5e7eb] p-5 h-[100px] flex items-center gap-4 shadow-sm hover:border-[#16a34a]/30 transition-colors text-indigo-600">
-          <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+        <div className="bg-white rounded-[8px] border border-gray-100 p-5 h-[100px] flex items-center gap-4 hover:border-gray-200 hover:shadow-sm transition-all duration-300 text-indigo-600">
+          <div className="w-12 h-12 rounded-[8px] bg-indigo-50 flex items-center justify-center shrink-0">
             <UserCog size={24} />
           </div>
           <div className="flex flex-col">
@@ -306,7 +306,7 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
 
       {/* Top Controls Row */}
       <div className="shrink-0 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2 p-1.5 bg-white border border-gray-200 rounded-2xl shadow-sm">
+        <div className="flex items-center gap-2 p-1.5 bg-white border border-gray-100 rounded-[8px] shadow-sm">
           {[
             { label: 'Semua', value: 'Semua Jabatan', icon: Users },
             { label: 'Super Admin', value: 'Super Admin', icon: ShieldCheck },
@@ -320,7 +320,7 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
                 });
               }}
               className={`
-                flex items-center gap-2 px-5 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all duration-200
+                flex items-center gap-2 px-5 py-2.5 rounded-[8px] text-[11px] font-black uppercase tracking-wider transition-all duration-200
                 ${roleFilter === role.value 
                   ? 'bg-green-600 text-white shadow-md shadow-green-600/20' 
                   : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
@@ -335,7 +335,7 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
 
         <button 
           onClick={handleCreate}
-          className="px-6 h-[52px] bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-2xl transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-green-600/10 active:scale-95"
+          className="px-6 h-[52px] bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-[8px] transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-green-600/10 active:scale-95"
         >
           <Plus size={20} />
           <span>Tambah User Baru</span>
@@ -354,7 +354,7 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
         <input 
           type="text" 
           placeholder="Cari user berdasarkan nama lengkap atau username sistem..." 
-          className="w-full pl-12 pr-12 h-[56px] bg-white border border-gray-200 rounded-2xl focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-sm font-semibold placeholder:text-gray-300 shadow-sm"
+          className="w-full pl-12 pr-12 h-[56px] bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-sm font-semibold placeholder:text-gray-300 shadow-sm"
           value={searchImmediate}
           onChange={(e) => setSearchImmediate(e.target.value)}
         />
@@ -369,7 +369,7 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
       </div>
 
       {message && (
-        <div className={`p-4 rounded-xl flex items-center gap-3 text-sm animate-in slide-in-from-top-2 border ${
+        <div className={`p-4 rounded-[8px] flex items-center gap-3 text-sm animate-in slide-in-from-top-2 border ${
           message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'
         }`}>
           {message.type === 'success' ? <BadgeCheck size={18} /> : <AlertCircle size={18} />}
@@ -472,4 +472,9 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
     </div>
   );
 }
+
+
+
+
+
 

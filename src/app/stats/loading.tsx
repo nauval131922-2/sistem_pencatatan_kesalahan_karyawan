@@ -12,7 +12,7 @@ export default function Loading() {
       
       <div className="flex-1 flex flex-col gap-6 pb-10 overflow-y-auto custom-scrollbar">
         {/* Year Selector Skeleton */}
-        <div className="shrink-0 h-[72px] bg-white border border-gray-100 rounded-[10px] animate-pulse"></div>
+        <div className="shrink-0 h-[72px] bg-white border border-gray-100 rounded-[8px] animate-pulse"></div>
 
         {/* Cards Skeleton */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -43,3 +43,8 @@ export default function Loading() {
     </div>
   );
 }
+
+
+
+
+

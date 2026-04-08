@@ -231,7 +231,7 @@ export default function DatePicker({ name, required, label, onChange, value }: D
 
       <div
         onClick={() => setOpen(o => !o)}
-        className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-sm cursor-pointer flex items-center justify-between hover:border-emerald-500 transition-all shadow-sm"
+        className="w-full bg-white border border-slate-200 rounded-[8px] px-3 py-1.5 text-sm cursor-pointer flex items-center justify-between hover:border-emerald-500 transition-all shadow-sm"
       >
         <span className={formatted ? 'text-slate-700 font-medium' : 'text-slate-400'}>
           {formatted || 'Pilih tanggal...'}
@@ -275,3 +275,8 @@ export default function DatePicker({ name, required, label, onChange, value }: D
     </div>
   );
 }
+
+
+
+
+
