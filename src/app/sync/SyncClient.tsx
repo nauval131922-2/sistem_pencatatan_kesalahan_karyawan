@@ -248,7 +248,7 @@ export default function SyncClient() {
   return (
     <div className="w-full flex-1 min-h-0 overflow-hidden flex flex-col gap-6">
       {/* Header Section */}
-      <div className="bg-white rounded-[8px] border border-gray-100 p-5 hover:border-gray-200 hover:shadow-sm transition-all duration-300 flex flex-col gap-5 shrink-0 relative z-50">
+      <div className="bg-white rounded-[8px] border-[1.5px] border-gray-200 p-5 hover:border-gray-300 hover:shadow-sm transition-all duration-300 flex flex-col gap-5 shrink-0 relative z-50">
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex flex-col gap-1.5">
             <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Rentang Tanggal</span>
@@ -286,8 +286,8 @@ export default function SyncClient() {
               <div 
                 key={mod.id} 
                 className={`
-                  bg-white border p-5 rounded-[8px] transition-all duration-300 relative group
-                  ${isActive ? 'border-green-500 ring-4 ring-green-500/5 shadow-md' : 'border-gray-100 hover:border-gray-200 hover:shadow-sm'}
+                  relative bg-white rounded-[8px] p-5 transition-all duration-300
+                  ${isActive ? 'border-[2px] border-green-500 ring-4 ring-green-500/5 shadow-md' : 'border-[1.5px] border-gray-200 hover:border-gray-300 hover:shadow-sm'}
                 `}
               >
                 <div className="flex flex-col gap-4">
@@ -356,7 +356,7 @@ export default function SyncClient() {
       </div>
 
       {/* Info Section */}
-      <div className="bg-white border border-gray-100 rounded-[8px] p-6 flex items-start gap-4 hover:border-gray-200 hover:shadow-sm transition-all duration-300 shadow-sm mt-auto">
+      <div className="bg-white border-[1.5px] border-gray-200 rounded-[8px] p-6 flex items-start gap-4 hover:border-gray-300 hover:shadow-sm transition-all duration-300 shadow-sm mt-auto">
         <div className="w-10 h-10 rounded-[8px] bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100 shrink-0">
           <ShieldCheck size={20} />
         </div>
