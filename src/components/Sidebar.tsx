@@ -416,7 +416,7 @@ export default function Sidebar({ user }: SidebarProps) {
                 { 
                   label: 'Purchase Request (PR)', 
                   icon: <FileText size={16} />,
-                  items: [{ label: 'Purchase Request', href: '/pr', icon: <FileText size={14} /> }]
+                  items: [{ label: 'Purchase Request (PR)', href: '/pr', icon: <FileText size={14} /> }]
                 },
                 { 
                   label: 'Penawaran', 
