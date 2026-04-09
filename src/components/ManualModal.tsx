@@ -18,8 +18,8 @@ export default function ManualModal() {
   }, []);
 
   const allGuides = useMemo(() => ({
-    '/dashboard-kesalahan-karyawan': {
-      title: 'Dashboard Kesalahan Karyawan',
+    '/dashboard': {
+      title: 'Dashboard',
       icon: TrendingDown,
       description: 'Ringkasan aktivitas dan metrik sistem secara real-time untuk audit cepat performa harian.',
       steps: [
@@ -46,11 +46,12 @@ export default function ManualModal() {
     '/tracking-manufaktur': {
       title: 'Tracking Manufaktur',
       icon: Search,
-      description: 'Mesin pencari histori dan alur faktur produksi secara instan.',
+      description: 'Melacak keterkaitan data manufaktur mulai dari BOM hingga Pelunasan Piutang.',
       steps: [
-        'Masukkan **Nomor Faktur** pada kotak pencarian untuk melihat alur produksinya.',
-        'Sistem akan menampilkan status terakhir barang di bagian produksi.',
-        'Gunakan fitur ini untuk menjawab pertanyaan pelanggan mengenai status order mereka secara cepat.'
+        'Pilih **Nomor Faktur BOM** pada kotak pencarian utama di bagian atas.',
+        'Sistem akan menampilkan **Hasil Pelacakan** yang menghubungkan dokumen terkait secara otomatis.',
+        'Gunakan kotak pencarian di dalam hasil pelacakan untuk memfilter data spesifik jika diperlukan.',
+        'Lihat rincian data pada setiap kartu (BOM hingga Pelunasan Piutang) untuk memverifikasi alur manufaktur.'
       ]
     },
     '/roles': {
@@ -329,7 +330,7 @@ export default function ManualModal() {
     return () => window.removeEventListener('open-manual', handleOpen);
   }, []);
 
-  const currentGuide = allGuides[pathname as keyof typeof allGuides] || allGuides['/dashboard-kesalahan-karyawan'];
+  const currentGuide = allGuides[pathname as keyof typeof allGuides] || allGuides['/dashboard'];
 
   return (
     <>
