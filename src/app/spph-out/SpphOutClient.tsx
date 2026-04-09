@@ -146,6 +146,7 @@ export default function SpphOutClient() {
             return [...currentData, ...filteredNew];
           });
           setTotalCount(json.total || 0);
+          if (json.scrapedPeriod) setScrapedPeriod(json.scrapedPeriod);
           
           if (json.lastUpdated) {
             const latestDate = new Date(json.lastUpdated);

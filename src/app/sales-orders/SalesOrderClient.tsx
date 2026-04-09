@@ -241,6 +241,7 @@ export default function SalesOrderClient() {
               });
             }
             setTotalCount(json.total || 0);
+            if (json.scrapedPeriod) setScrapedPeriod(json.scrapedPeriod);
             if (json.lastUpdated) {
                 const date = new Date(json.lastUpdated);
                 if (!isNaN(date.getTime())) {

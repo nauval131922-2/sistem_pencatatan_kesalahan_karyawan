@@ -89,17 +89,26 @@ export default function SyncClient() {
             const newState = { ...prev };
             for (const modId of Object.keys(newState)) {
               const lastUpdatedTimestamp = data.statuses[modId];
+              const apiPeriod = data.periods?.[modId];
               
-              // Hydrate period from individual module's localStorage
-              const keys = PERSISTENCE_KEYS[modId];
+              // Hydrate period from API first, then fall back to individual module's localStorage
               let period: { start: Date; end: Date } | null = null;
-              if (keys) {
-                const hydrated = hydrateScraperPeriod(keys);
-                if (hydrated.scrapedPeriod) {
-                  period = {
-                    start: new Date(hydrated.scrapedPeriod.start),
-                    end: new Date(hydrated.scrapedPeriod.end)
-                  };
+              
+              if (apiPeriod && apiPeriod.start && apiPeriod.end) {
+                period = {
+                  start: new Date(apiPeriod.start),
+                  end: new Date(apiPeriod.end)
+                };
+              } else {
+                const keys = PERSISTENCE_KEYS[modId];
+                if (keys) {
+                  const hydrated = hydrateScraperPeriod(keys);
+                  if (hydrated.scrapedPeriod) {
+                    period = {
+                      start: new Date(hydrated.scrapedPeriod.start),
+                      end: new Date(hydrated.scrapedPeriod.end)
+                    };
+                  }
                 }
               }
 

@@ -228,6 +228,10 @@ export default function BarangJadiClient() {
   useEffect(() => {
     setIsMounted(true);
 
+    const hydratedPeriod = hydrateScraperPeriod({ stateKey: 'barangJadiState', periodKey: 'BarangJadiClient_scrapedPeriod' });
+    setScrapedPeriod(hydratedPeriod.scrapedPeriod);
+    setStartDate(hydratedPeriod.startDate);
+    setEndDate(hydratedPeriod.endDate);
   }, []);
 
   useEffect(() => {
@@ -281,6 +285,7 @@ export default function BarangJadiClient() {
               return [...currentData, ...filteredNew];
             });
             setTotalCount(json.total || 0);
+            if (json.scrapedPeriod) setScrapedPeriod(json.scrapedPeriod);
             setLastUpdated(json.lastUpdated ? formatLastUpdate(new Date(json.lastUpdated)) : null);
             setError('');
           }

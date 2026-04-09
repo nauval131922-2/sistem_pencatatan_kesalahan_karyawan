@@ -184,6 +184,7 @@ export default function SalesReportClient() {
               return [...currentData, ...filteredNew];
             });
             setTotalCount(json.total || 0);
+            if (json.scrapedPeriod) setScrapedPeriod(json.scrapedPeriod);
             setLastUpdated(json.lastUpdated ? formatLastUpdate(new Date(json.lastUpdated)) : null);
             setError('');
           }
