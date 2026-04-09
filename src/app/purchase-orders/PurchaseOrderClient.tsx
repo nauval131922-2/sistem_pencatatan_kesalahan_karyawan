@@ -233,7 +233,7 @@ export default function PurchaseOrderClient() {
           body: JSON.stringify({
             action_type: 'SCRAPE',
             table_name: 'purchase_orders',
-            message: `Tarik Data Purchase Order (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
+            message: `Tarik Data Purchase Order (PO) (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
             raw_data: JSON.stringify({ totalScraped })
           })
         });
@@ -242,7 +242,7 @@ export default function PurchaseOrderClient() {
           isOpen: true,
           type: 'success',
           title: 'Berhasil',
-          message: `Berhasil menarik ${totalScraped} data Purchase Order.`
+          message: `Berhasil menarik ${totalScraped} data Purchase Order (PO).`
         });
       }
     } catch (err: any) {
@@ -496,7 +496,7 @@ export default function PurchaseOrderClient() {
 
           <div className="flex items-center justify-between shrink-0 px-1 mt-1">
             <span className="text-[12px] leading-none font-bold text-gray-400">
-              {totalCount === 0 ? 'Tidak ada data Purchase Order' : `Menampilkan ${data?.length || 0} dari ${totalCount} data Purchase Order`}
+              {totalCount === 0 ? 'Tidak ada data Purchase Order (PO)' : `Menampilkan ${data?.length || 0} dari ${totalCount} data Purchase Order (PO)`}
             </span>
             <div className="flex items-center gap-4">
               {selectedIds.size > 0 && (

@@ -256,7 +256,7 @@ export default function SphInClient() {
           body: JSON.stringify({
             action_type: 'SCRAPE',
             table_name: 'sph_in',
-            message: `Tarik Data SPH In (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
+            message: `Tarik Data SPH Masuk (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
             raw_data: JSON.stringify({ totalScraped })
           })
         });
@@ -265,7 +265,7 @@ export default function SphInClient() {
           isOpen: true,
           type: 'success',
           title: 'Berhasil',
-          message: `Berhasil menarik ${totalScraped} data SPH In.`
+          message: `Berhasil menarik ${totalScraped} data SPH Masuk.`
         });
       }
     } catch (err: any) {
@@ -602,7 +602,7 @@ export default function SphInClient() {
 
           <div className="flex items-center justify-between shrink-0 px-1 mt-1">
             <span className="text-[12px] leading-none font-bold text-gray-400">
-              {totalCount === 0 ? 'Tidak ada data SPH In' : `Menampilkan ${data?.length || 0} dari ${totalCount} data SPH In`}
+              {totalCount === 0 ? 'Tidak ada data SPH Masuk' : `Menampilkan ${data?.length || 0} dari ${totalCount} data SPH Masuk`}
             </span>
             <div className="flex items-center gap-4">
               {selectedIds.size > 0 && (

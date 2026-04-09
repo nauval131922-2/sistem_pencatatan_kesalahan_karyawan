@@ -238,7 +238,7 @@ export default function PembelianBarangClient() {
           body: JSON.stringify({
             action_type: 'SCRAPE',
             table_name: 'rekap_pembelian_barang',
-            message: `Tarik Rekap Pembelian Barang (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
+            message: `Tarik Laporan Rekap Pembelian Barang (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
             raw_data: JSON.stringify({ totalScraped })
           })
         });
@@ -247,7 +247,7 @@ export default function PembelianBarangClient() {
           isOpen: true,
           type: 'success',
           title: 'Berhasil',
-          message: `Berhasil menarik ${totalScraped} data Pembelian Barang.`
+          message: `Berhasil menarik ${totalScraped} data Laporan Rekap Pembelian Barang.`
         });
       }
     } catch (err: any) {
@@ -524,7 +524,7 @@ export default function PembelianBarangClient() {
 
           <div className="flex items-center justify-between shrink-0 px-1 mt-1">
             <span className="text-[12px] leading-none font-bold text-gray-400">
-              {totalCount === 0 ? 'Tidak ada data pembelian' : `Menampilkan ${data?.length || 0} dari ${totalCount} Pembelian`}
+              {totalCount === 0 ? 'Tidak ada data Laporan Rekap Pembelian Barang' : `Menampilkan ${data?.length || 0} dari ${totalCount} Laporan Rekap Pembelian Barang`}
             </span>
             <div className="flex items-center gap-4">
               {selectedIds.size > 0 && (

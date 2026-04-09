@@ -252,7 +252,7 @@ export default function SpphOutClient() {
           body: JSON.stringify({
             action_type: 'SCRAPE',
             table_name: 'spph_out',
-            message: `Tarik SPPH Out Out (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
+            message: `Tarik SPPH Keluar (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
             raw_data: JSON.stringify({ totalScraped })
           })
         });
@@ -261,7 +261,7 @@ export default function SpphOutClient() {
           isOpen: true,
           type: 'success',
           title: 'Berhasil',
-          message: `Berhasil menarik ${totalScraped} SPPH Out Out.`
+          message: `Berhasil menarik ${totalScraped} SPPH Keluar.`
         });
       }
     } catch (err: any) {
@@ -559,7 +559,7 @@ export default function SpphOutClient() {
 
           <div className="flex items-center justify-between shrink-0 px-1 mt-1">
             <span className="text-[12px] leading-none font-bold text-gray-400">
-              {totalCount === 0 ? 'Tidak ada SPPH Out' : `Menampilkan ${data?.length || 0} dari ${totalCount} SPPH Out`}
+              {totalCount === 0 ? 'Tidak ada SPPH Keluar' : `Menampilkan ${data?.length || 0} dari ${totalCount} SPPH Keluar`}
             </span>
             <div className="flex items-center gap-4">
               {selectedIds.size > 0 && (

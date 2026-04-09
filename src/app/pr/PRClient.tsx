@@ -254,7 +254,7 @@ export default function PRClient() {
           body: JSON.stringify({
             action_type: 'SCRAPE',
             table_name: 'purchase_requests',
-            message: `Tarik Purchase Request (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
+            message: `Tarik Purchase Request (PR) (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
             raw_data: JSON.stringify({ totalScraped })
           })
         });
@@ -265,7 +265,7 @@ export default function PRClient() {
           isOpen: true,
           type: 'success',
           title: 'Berhasil',
-          message: `Berhasil menarik ${totalScraped} Purchase Request.`
+          message: `Berhasil menarik ${totalScraped} Purchase Request (PR).`
         });
       }
     } catch (err: any) {
@@ -545,7 +545,7 @@ export default function PRClient() {
 
           <div className="flex items-center justify-between shrink-0 px-1 mt-1">
             <span className="text-[12px] leading-none font-bold text-gray-400">
-              {totalCount === 0 ? 'Tidak ada Purchase Request' : `Menampilkan ${data?.length || 0} dari ${totalCount} Purchase Request`}
+              {totalCount === 0 ? 'Tidak ada Purchase Request (PR)' : `Menampilkan ${data?.length || 0} dari ${totalCount} Purchase Request (PR)`}
             </span>
             <div className="flex items-center gap-4">
               {selectedIds.size > 0 && (

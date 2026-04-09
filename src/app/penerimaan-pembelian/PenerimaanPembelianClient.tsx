@@ -256,7 +256,7 @@ export default function PenerimaanPembelianClient() {
           body: JSON.stringify({
             action_type: 'SCRAPE',
             table_name: 'penerimaan_pembelian',
-            message: `Tarik Penerimaan Pembelian (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
+            message: `Tarik Penerimaan Barang (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
             raw_data: JSON.stringify({ totalScraped })
           })
         });
@@ -265,7 +265,7 @@ export default function PenerimaanPembelianClient() {
           isOpen: true,
           type: 'success',
           title: 'Berhasil',
-          message: `Berhasil menarik ${totalScraped} Penerimaan Pembelian.`
+          message: `Berhasil menarik ${totalScraped} Penerimaan Barang.`
         });
       }
     } catch (err: any) {
@@ -635,7 +635,7 @@ export default function PenerimaanPembelianClient() {
 
           <div className="flex items-center justify-between shrink-0 px-1 mt-1">
             <span className="text-[12px] leading-none font-bold text-gray-400">
-              {totalCount === 0 ? 'Tidak ada Penerimaan Pembelian' : `Menampilkan ${data.length} dari ${totalCount} Penerimaan Pembelian`}
+              {totalCount === 0 ? 'Tidak ada Penerimaan Barang' : `Menampilkan ${data.length} dari ${totalCount} Penerimaan Barang`}
             </span>
             <div className="flex items-center gap-4">
               {selectedIds.size > 0 && (
