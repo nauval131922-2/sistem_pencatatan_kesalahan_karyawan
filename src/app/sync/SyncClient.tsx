@@ -59,7 +59,7 @@ interface ModuleSyncState {
   status: SyncStatus;
   lastUpdate: string | null;
   message: string | null;
-  period?: { start: Date; end: Date } | null;
+  period?: { start: string; end: string } | null;
 }
 
 export default function SyncClient() {
@@ -92,12 +92,12 @@ export default function SyncClient() {
               const apiPeriod = data.periods?.[modId];
               
               // Hydrate period from API first, then fall back to individual module's localStorage
-              let period: { start: Date; end: Date } | null = null;
+              let period: { start: string; end: string } | null = null;
               
               if (apiPeriod && apiPeriod.start && apiPeriod.end) {
                 period = {
-                  start: new Date(apiPeriod.start),
-                  end: new Date(apiPeriod.end)
+                  start: apiPeriod.start,
+                  end: apiPeriod.end
                 };
               } else {
                 const keys = PERSISTENCE_KEYS[modId];
@@ -196,7 +196,10 @@ export default function SyncClient() {
           [modId]: { 
             status: 'success', 
             lastUpdate: formattedNow, 
-            period: { start: new Date(startDate), end: new Date(endDate) },
+            period: { 
+              start: startDate.toLocaleDateString('en-GB').replace(/\//g, '-'), 
+              end: endDate.toLocaleDateString('en-GB').replace(/\//g, '-') 
+            },
             message: `Berhasil menarik ${processedCount} data.` 
           }
         }));
@@ -312,7 +315,7 @@ export default function SyncClient() {
                         <span className="tracking-tight">Diperbarui: {state.lastUpdate || '-'}</span>
                         {state.period && (
                           <span className="text-[9px] font-medium opacity-70">
-                            (Periode: {state.period.start.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })} s.d. {state.period.end.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })})
+                            (Periode: {formatScrapedPeriodDate(state.period.start)} s.d. {formatScrapedPeriodDate(state.period.end)})
                           </span>
                         )}
                       </div>

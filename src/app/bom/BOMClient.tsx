@@ -126,9 +126,7 @@ export default function BOMClient() {
       const json = await res.json();
       
       if (mountedRef.current) {
-        if (json.scrapedPeriod?.start && json.scrapedPeriod?.end) {
-          setScrapedPeriod(json.scrapedPeriod);
-        }
+        if (json.scrapedPeriod) setScrapedPeriod(json.scrapedPeriod);
 
         setData(prev => {
           const items = json.data || [];
