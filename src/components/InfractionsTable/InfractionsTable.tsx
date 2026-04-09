@@ -379,7 +379,7 @@ export default function InfractionsTable({
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
       {/* Top Filter Bar - Same style as Sales */}
-      <div className="bg-white rounded-[8px] border border-gray-200 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative z-50">
+      <div className="bg-white rounded-[8px] border-[1.5px] border-gray-200 p-5 shadow-sm flex flex-col gap-5 shrink-0 relative z-50">
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex flex-col gap-1.5">
             <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Rentang Periode Kesalahan</span>
@@ -440,7 +440,7 @@ export default function InfractionsTable({
             <input 
               type="text" 
               placeholder="Cari nama karyawan, deskripsi, nomor faktur, atau referensi order..." 
-              className="w-full pl-12 pr-4 h-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm" 
+              className="w-full pl-12 pr-4 h-10 bg-white border-[1.5px] border-gray-200 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm" 
               value={query} 
               onChange={handleSearch} 
             />

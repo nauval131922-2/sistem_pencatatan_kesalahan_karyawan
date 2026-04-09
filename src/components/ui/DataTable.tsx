@@ -153,7 +153,7 @@ export function DataTable<TData extends { id: number | string }>({
 
   return (
     <ScrollContext.Provider value={parentRef}>
-      <div className={`bg-white border border-gray-100 hover:border-gray-200 transition-all duration-300 rounded-[8px] overflow-hidden flex flex-col min-h-0 relative ${height} ${className} ${isResizingColumn ? 'is-resizing' : ''}`}>
+      <div className={`bg-white border-[1.5px] border-gray-200 hover:border-gray-300 transition-all duration-300 rounded-[8px] overflow-hidden flex flex-col min-h-0 relative ${height} ${className} ${isResizingColumn ? 'is-resizing' : ''}`}>
         <style dangerouslySetInnerHTML={{ __html: `.is-resizing * { user-select: none !important; transition: none !important; cursor: col-resize !important; } .is-resizing th > div { cursor: col-resize !important; }` }} />
         <div 
           ref={parentRef}
@@ -205,20 +205,9 @@ export function DataTable<TData extends { id: number | string }>({
               ))}
             </thead>
             <tbody>
-              {rows.length === 0 ? (
+              {rows.length === 0 && !isLoading ? (
                 <tr key="empty-row">
                   <td key="empty-cell" colSpan={headers.length} className="p-0 border-none">
-                    {isLoading ? (
-                      <div className="flex flex-col items-center justify-center py-24 text-center">
-                         <div className="w-16 h-16 bg-green-50 rounded-[8px] flex items-center justify-center mb-4 ring-1 ring-green-100 shadow-sm">
-                            <Loader2 className="text-green-600 animate-spin" size={32} />
-                         </div>
-                         <h3 className="text-[14px] font-bold text-gray-800 mb-1">Memproses Data</h3>
-                         <p className="text-[12px] text-gray-400 font-medium max-w-[240px] leading-relaxed">
-                            Mohon tunggu sebentar, sistem sedang menarik data dari database...
-                         </p>
-                      </div>
-                    ) : (
                       <div className="flex flex-col items-center justify-center py-24 text-center">
                          <div className="w-16 h-16 bg-gray-50 rounded-[8px] flex items-center justify-center mb-4 ring-1 ring-gray-100 shadow-sm">
                             <AlertCircle className="text-gray-200" size={32} />
@@ -228,7 +217,6 @@ export function DataTable<TData extends { id: number | string }>({
                             Tidak ada rekaman untuk ditampilkan pada periode ini atau kriteria pencarian Anda.
                          </p>
                       </div>
-                    )}
                   </td>
                 </tr>
               ) : (
@@ -261,14 +249,24 @@ export function DataTable<TData extends { id: number | string }>({
               )}
             </tbody>
           </table>
-          {isLoading && data.length > 0 && (
-            <div className="p-4 flex justify-center bg-gray-50/50 text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
-              <Loader2 size={12} className="animate-spin mr-2" />
-              <span>MEMUAT...</span>
-            </div>
-          )}
+          </div>
         </div>
-      </div>
+        
+        {/* Minimalist Loading Overlay */}
+        {isLoading && (
+          <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-white/30 backdrop-blur-[1.5px] animate-in fade-in duration-500">
+             <div className="flex flex-col items-center gap-3">
+                <div className="relative">
+                   <div className="w-10 h-10 border-2 border-green-100 rounded-full" />
+                   <Loader2 className="text-green-600 animate-spin absolute inset-0 m-auto" size={20} />
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                   <span className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] animate-pulse">Memproses</span>
+                   <span className="text-[10px] text-gray-300 font-bold italic">Sedang mengambil data terbaru...</span>
+                </div>
+             </div>
+          </div>
+        )}
       </div>
     </ScrollContext.Provider>
   );

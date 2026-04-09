@@ -163,7 +163,7 @@ const DataCard = React.memo(({ item, highlightText }: { item: any, highlightText
    return (
       <div 
          ref={cardRef} 
-         className={`${cardClass} border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-shadow min-h-[100px]`}
+         className={`${cardClass} border-[1.5px] border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all min-h-[100px]`}
       >
          {isVisible ? (
             <RenderAllFields data={item} excludeKeys={['raw_data']} highlightText={highlightText} />
@@ -490,7 +490,7 @@ export default function TrackingClient() {
 
    return (
       <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-700 overflow-hidden">
-         <div className="bg-white rounded-[8px] border border-gray-100 p-5 hover:border-gray-200 hover:shadow-sm transition-all duration-300 flex flex-col gap-5 shrink-0 relative z-50">
+         <div className="bg-white rounded-[8px] border-[1.5px] border-gray-200 p-5 hover:border-gray-300 hover:shadow-sm transition-all duration-300 flex flex-col gap-5 shrink-0 relative z-50">
             <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
                <div className="flex-1">
                   <div className="flex flex-col gap-1.5">
