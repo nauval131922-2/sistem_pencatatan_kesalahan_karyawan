@@ -208,15 +208,27 @@ export function DataTable<TData extends { id: number | string }>({
               {rows.length === 0 ? (
                 <tr key="empty-row">
                   <td key="empty-cell" colSpan={headers.length} className="p-0 border-none">
-                    <div className="flex flex-col items-center justify-center py-24 text-center">
-                       <div className="w-16 h-16 bg-gray-50 rounded-[8px] flex items-center justify-center mb-4 ring-1 ring-gray-100 shadow-sm">
-                          <AlertCircle className="text-gray-200" size={32} />
-                       </div>
-                       <h3 className="text-[14px] font-bold text-gray-800 mb-1">Data Tidak Ditemukan</h3>
-                       <p className="text-[12px] text-gray-400 font-medium max-w-[240px] leading-relaxed">
-                          Tidak ada rekaman untuk ditampilkan pada periode ini atau kriteria pencarian Anda.
-                       </p>
-                    </div>
+                    {isLoading ? (
+                      <div className="flex flex-col items-center justify-center py-24 text-center">
+                         <div className="w-16 h-16 bg-green-50 rounded-[8px] flex items-center justify-center mb-4 ring-1 ring-green-100 shadow-sm">
+                            <Loader2 className="text-green-600 animate-spin" size={32} />
+                         </div>
+                         <h3 className="text-[14px] font-bold text-gray-800 mb-1">Memproses Data</h3>
+                         <p className="text-[12px] text-gray-400 font-medium max-w-[240px] leading-relaxed">
+                            Mohon tunggu sebentar, sistem sedang menarik data dari database...
+                         </p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-24 text-center">
+                         <div className="w-16 h-16 bg-gray-50 rounded-[8px] flex items-center justify-center mb-4 ring-1 ring-gray-100 shadow-sm">
+                            <AlertCircle className="text-gray-200" size={32} />
+                         </div>
+                         <h3 className="text-[14px] font-bold text-gray-800 mb-1">Data Tidak Ditemukan</h3>
+                         <p className="text-[12px] text-gray-400 font-medium max-w-[240px] leading-relaxed">
+                            Tidak ada rekaman untuk ditampilkan pada periode ini atau kriteria pencarian Anda.
+                         </p>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ) : (
