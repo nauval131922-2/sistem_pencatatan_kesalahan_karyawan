@@ -28,7 +28,7 @@ export default function NotFound() {
           <span>Kembali</span>
         </button>
         <Link 
-          href="/dashboard-kesalahan-karyawan"
+          href="/dashboard"
           className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-[8px] bg-green-600 text-sm font-bold text-white hover:bg-green-700 transition-all shadow-md active:scale-95"
         >
           <Home size={16} />

@@ -198,7 +198,7 @@ export default function Sidebar({ user }: SidebarProps) {
       )}
 
       {/* Header */}
-      <div className="p-4 pb-2 relative min-h-[64px]">
+      <div className="p-4 pb-4 relative min-h-[64px] bg-gray-50/50 border-b border-gray-100">
         <div className={`flex items-center ${!isExpanded ? 'justify-center' : 'justify-between'}`}>
           {isExpanded ? (
             <div className="flex flex-col w-full">
@@ -237,15 +237,10 @@ export default function Sidebar({ user }: SidebarProps) {
 
       <nav ref={navRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 custom-scrollbar">
         {/* DASHBOARD SECTION */}
-        <SectionLabel label="Dashboard" />
-        <div className="space-y-1">
-          <Link href="/dashboard-kesalahan-karyawan" className={navItemClasses('/dashboard-kesalahan-karyawan')} title={!isExpanded ? "Dashboard Kesalahan Karyawan" : ""}>
-            <TrendingDown size={18} />
-            {isExpanded && <span className="truncate">Kesalahan Karyawan</span>}
-          </Link>
-          <Link href="/dashboard-manufaktur" className={navItemClasses('/dashboard-manufaktur')} title={!isExpanded ? "Dashboard Tracking Manufaktur" : ""}>
-            <Monitor size={18} />
-            {isExpanded && <span className="truncate">Tracking Manufaktur</span>}
+        <div className="space-y-1 mt-2">
+          <Link href="/dashboard" className={navItemClasses('/dashboard')} title={!isExpanded ? "Dashboard" : ""}>
+            <LayoutDashboard size={18} />
+            {isExpanded && <span className="truncate">Dashboard</span>}
           </Link>
         </div>
 

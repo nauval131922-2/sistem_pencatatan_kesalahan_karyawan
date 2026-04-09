@@ -22,7 +22,7 @@ export default function LoginContent() {
     try {
       const result = await login(username, password);
       if (result.success) {
-        router.push('/dashboard-kesalahan-karyawan');
+        router.push('/dashboard');
         router.refresh();
       } else {
         setError(result.message || 'Login gagal.');
