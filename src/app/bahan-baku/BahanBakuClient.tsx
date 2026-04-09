@@ -232,7 +232,7 @@ export default function BahanBakuClient() {
           isOpen: true,
           type: (chunks.length - successCount) > 0 ? 'alert' : 'success',
           title: (chunks.length - successCount) > 0 ? 'Selesai Sebagian' : 'Berhasil',
-          message: `Berhasil menarik ${totalScraped} data Bahan Baku dari Digit.`
+          message: `Berhasil menarik ${totalScraped} data BBB Produksi dari Digit.`
         });
 
         localStorage.setItem('sintak_data_updated', Date.now().toString());
@@ -384,7 +384,7 @@ export default function BahanBakuClient() {
 
         <div className="flex items-center justify-between shrink-0 px-1 mt-1">
           <span className="text-[12px] leading-none font-bold text-gray-400">
-            {data === null ? 'Memuat...' : totalCount === 0 ? 'Tidak ada data' : `Menampilkan ${data?.length || 0} dari ${totalCount} Bahan Baku`}
+            {data === null ? 'Memuat...' : totalCount === 0 ? 'Tidak ada data' : `Menampilkan ${data?.length || 0} dari ${totalCount} BBB Produksi`}
           </span>
           <div className="flex items-center gap-4">
             {loadTime !== null && (

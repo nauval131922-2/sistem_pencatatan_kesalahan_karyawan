@@ -389,8 +389,8 @@ export default function BarangJadiClient() {
           type: failCount > 0 ? 'alert' : 'success',
           title: failCount > 0 ? 'Selesai Sebagian' : 'Berhasil',
           message: failCount > 0 
-            ? `Berhasil menarik ${totalScraped} data Barang Jadi dari Digit. (${failCount} bulan gagal)`
-            : `Berhasil menarik ${totalScraped} data Barang Jadi dari Digit.`
+            ? `Berhasil menarik ${totalScraped} data Penerimaan Barang Hasil Produksi dari Digit. (${failCount} bulan gagal)`
+            : `Berhasil menarik ${totalScraped} data Penerimaan Barang Hasil Produksi dari Digit.`
         });
 
         localStorage.setItem('sintak_data_updated', Date.now().toString());
@@ -556,7 +556,7 @@ export default function BarangJadiClient() {
           {/* Footer info Banner (Synced with Bahan Baku layout) */}
           <div className="flex items-center justify-between shrink-0 px-1 mt-1">
             <span className="text-[12px] leading-none font-bold text-gray-400">
-              {totalCount === 0 ? 'Tidak ada data Barang Jadi' : `Menampilkan ${data?.length || 0} dari ${totalCount} Barang Jadi`}
+              {totalCount === 0 ? 'Tidak ada data Penerimaan Barang Hasil Produksi' : `Menampilkan ${data?.length || 0} dari ${totalCount} Penerimaan Barang Hasil Produksi`}
             </span>
             <div className="flex items-center gap-4">
               {selectedIds.size > 0 && (

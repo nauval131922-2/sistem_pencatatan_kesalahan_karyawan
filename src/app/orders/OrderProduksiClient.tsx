@@ -229,7 +229,7 @@ export default function OrderProduksiClient() {
     { accessorKey: 'kd_satuan', header: 'Satuan', size: 100 },
     { 
       accessorKey: 'faktur_pr', 
-      header: 'Purchase Request', 
+      header: 'Purchase Request (PR)', 
       size: 180,
       cell: (info: any) => <div dangerouslySetInnerHTML={{ __html: info.getValue() || '-' }} />
     },

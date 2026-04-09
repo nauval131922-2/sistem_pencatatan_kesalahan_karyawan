@@ -282,7 +282,7 @@ export default function BOMClient() {
           body: JSON.stringify({
             action_type: 'SCRAPE',
             table_name: 'bom',
-            message: `Tarik Bill of Material (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
+            message: `Tarik Bill of Material Produksi (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
             raw_data: JSON.stringify({ totalScraped })
           })
         });
@@ -293,7 +293,7 @@ export default function BOMClient() {
           isOpen: true,
           type: 'success',
           title: 'Berhasil',
-          message: `Berhasil menarik ${totalScraped} Bill of Material.`
+          message: `Berhasil menarik ${totalScraped} Bill of Material Produksi.`
         });
       }
     } catch (err: any) {
@@ -658,7 +658,7 @@ export default function BOMClient() {
 
           <div className="flex items-center justify-between shrink-0 px-1 mt-1">
             <span className="text-[12px] leading-none font-bold text-gray-400">
-              {totalCount === 0 ? 'Tidak ada Bill of Material' : `Menampilkan ${data?.length || 0} dari ${totalCount} Bill of Material`}
+              {totalCount === 0 ? 'Tidak ada Bill of Material Produksi' : `Menampilkan ${data?.length || 0} dari ${totalCount} Bill of Material Produksi`}
             </span>
             <div className="flex items-center gap-4">
               {selectedIds.size > 0 && (
