@@ -105,8 +105,8 @@ export default function SyncClient() {
                   const hydrated = hydrateScraperPeriod(keys);
                   if (hydrated.scrapedPeriod) {
                     period = {
-                      start: new Date(hydrated.scrapedPeriod.start),
-                      end: new Date(hydrated.scrapedPeriod.end)
+                      start: hydrated.scrapedPeriod.start,
+                      end: hydrated.scrapedPeriod.end
                     };
                   }
                 }
