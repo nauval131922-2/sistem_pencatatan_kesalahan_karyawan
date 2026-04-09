@@ -346,7 +346,7 @@ export default function SalesOrderClient() {
           isOpen: true,
           type: (chunks.length - successCount) > 0 ? 'alert' : 'success',
           title: (chunks.length - successCount) > 0 ? 'Selesai Sebagian' : 'Berhasil',
-          message: `Berhasil menarik ${totalScraped} data Sales Order dari Digit.`
+          message: `Berhasil menarik ${totalScraped} data Sales Order Barang dari Digit.`
         });
 
         if (lastUpdatedScrape) {
@@ -470,7 +470,7 @@ export default function SalesOrderClient() {
 
           <div className="flex items-center justify-between shrink-0 px-1 mt-1">
             <span className="text-[12px] leading-none font-bold text-gray-400">
-              {totalCount === 0 ? 'Tidak ada data Sales Order' : `Menampilkan ${data?.length || 0} dari ${totalCount} Sales Order`}
+              {totalCount === 0 ? 'Tidak ada data Sales Order Barang' : `Menampilkan ${data?.length || 0} dari ${totalCount} Sales Order Barang`}
             </span>
             <div className="flex items-center gap-4">
               {selectedIds.size > 0 && (

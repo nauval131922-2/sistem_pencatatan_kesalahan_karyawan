@@ -232,7 +232,7 @@ export default function PelunasanPiutangClient() {
           body: JSON.stringify({
             action_type: 'SCRAPE',
             table_name: 'pelunasan_piutang',
-            message: `Tarik Pelunasan Piutang (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
+            message: `Tarik Pelunasan Piutang Penjualan (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
             raw_data: JSON.stringify({ totalScraped })
           })
         });
@@ -241,7 +241,7 @@ export default function PelunasanPiutangClient() {
           isOpen: true,
           type: 'success',
           title: 'Berhasil',
-          message: `Berhasil menarik ${totalScraped} data Pelunasan Piutang.`
+          message: `Berhasil menarik ${totalScraped} data Pelunasan Piutang Penjualan.`
         });
       }
     } catch (err: any) {
@@ -445,7 +445,7 @@ export default function PelunasanPiutangClient() {
 
           <div className="flex items-center justify-between shrink-0 px-1 mt-1">
             <span className="text-[12px] leading-none font-bold text-gray-400">
-              {totalCount === 0 ? 'Tidak ada data pelunasan' : `Menampilkan ${data?.length || 0} dari ${totalCount} Pelunasan`}
+              {totalCount === 0 ? 'Tidak ada data pelunasan' : `Menampilkan ${data?.length || 0} dari ${totalCount} Pelunasan Piutang Penjualan`}
             </span>
             <div className="flex items-center gap-4">
               {selectedIds.size > 0 && (
