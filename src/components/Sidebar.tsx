@@ -422,21 +422,21 @@ export default function Sidebar({ user }: SidebarProps) {
                   label: 'Penawaran', 
                   icon: <FileText size={16} />,
                   items: [
-                    { label: 'SPPH Out', href: '/spph-out', icon: <FileText size={14} /> },
-                    { label: 'SPH In', href: '/sph-in', icon: <FileText size={14} /> },
+                    { label: 'SPPH Keluar', href: '/spph-out', icon: <FileText size={14} /> },
+                    { label: 'SPH Masuk', href: '/sph-in', icon: <FileText size={14} /> },
                   ]
                 },
                 { 
                   label: 'Purchase Order (PO)', 
                   icon: <ShoppingCart size={16} />,
-                  items: [{ label: 'Purchase Order', href: '/purchase-orders', icon: <ShoppingCart size={14} /> }]
+                  items: [{ label: 'Purchase Order (PO)', href: '/purchase-orders', icon: <ShoppingCart size={14} /> }]
                 },
                 { 
                   label: 'Pembelian Barang', 
                   icon: <Truck size={16} />,
                   items: [
-                    { label: 'Penerimaan Pembelian', href: '/penerimaan-pembelian', icon: <Truck size={14} /> },
-                    { label: 'Pembelian Barang', href: '/rekap-pembelian-barang', icon: <ShoppingCart size={14} /> },
+                    { label: 'Penerimaan Barang', href: '/penerimaan-pembelian', icon: <Truck size={14} /> },
+                    { label: 'Laporan Rekap Pembelian Barang', href: '/rekap-pembelian-barang', icon: <ShoppingCart size={14} /> },
                   ]
                 },
                 { 
@@ -454,14 +454,14 @@ export default function Sidebar({ user }: SidebarProps) {
               label="Produksi"
               icon={<Package size={18} />}
               items={[
-                { label: 'Bill of Material', href: '/bom', icon: <Calculator size={16} /> },
+                { label: 'Bill of Material Produksi', href: '/bom', icon: <Calculator size={16} /> },
                 { label: 'Order Produksi', href: '/orders', icon: <ClipboardList size={16} /> },
                 { 
                   label: 'Laporan', 
                   icon: <BarChart3 size={16} />,
                   items: [
-                    { label: 'Bahan Baku', href: '/bahan-baku', icon: <Box size={14} /> },
-                    { label: 'Barang Jadi', href: '/barang-jadi', icon: <Package size={14} /> },
+                    { label: 'BBB Produksi', href: '/bahan-baku', icon: <Box size={14} /> },
+                    { label: 'Penerimaan Barang Hasil Produksi', href: '/barang-jadi', icon: <Package size={14} /> },
                   ]
                 }
               ]}
@@ -477,12 +477,18 @@ export default function Sidebar({ user }: SidebarProps) {
                 { 
                   label: 'Penawaran', 
                   icon: <FileText size={16} />,
-                  items: [{ label: 'SPH Out', href: '/sph-out', icon: <FileText size={14} /> }]
+                  items: [{ label: 'SPH Keluar', href: '/sph-out', icon: <FileText size={14} /> }]
                 },
                 { 
                   label: 'Sales Order (SO)', 
                   icon: <FileCheck size={16} />,
-                  items: [{ label: 'Sales Order', href: '/sales-orders', icon: <FileCheck size={14} /> }]
+                  items: [
+                    { 
+                      label: 'Laporan', 
+                      icon: <BarChart3 size={14} />,
+                      items: [{ label: 'Sales Order Barang', href: '/sales-orders', icon: <FileCheck size={12} /> }]
+                    }
+                  ]
                 },
                 { 
                   label: 'Penjualan Barang', 
@@ -502,7 +508,7 @@ export default function Sidebar({ user }: SidebarProps) {
                     { 
                       label: 'Laporan', 
                       icon: <BarChart3 size={14} />,
-                      items: [{ label: 'Pelunasan Piutang', href: '/pelunasan-piutang', icon: <TrendingUp size={12} /> }]
+                      items: [{ label: 'Pelunasan Piutang Penjualan', href: '/pelunasan-piutang', icon: <TrendingUp size={12} /> }]
                     }
                   ]
                 },

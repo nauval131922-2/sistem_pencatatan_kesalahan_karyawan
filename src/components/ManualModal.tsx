@@ -46,12 +46,12 @@ export default function ManualModal() {
     '/tracking-manufaktur': {
       title: 'Tracking Manufaktur',
       icon: Search,
-      description: 'Melacak keterkaitan data manufaktur mulai dari BOM hingga Pelunasan Piutang.',
+      description: 'Melacak keterkaitan data manufaktur mulai dari BOM hingga Pelunasan Piutang Penjualan.',
       steps: [
         'Pilih **Nomor Faktur BOM** pada kotak pencarian utama di bagian atas.',
         'Sistem akan menampilkan **Hasil Pelacakan** yang menghubungkan dokumen terkait secara otomatis.',
         'Gunakan kotak pencarian di dalam hasil pelacakan untuk memfilter data spesifik jika diperlukan.',
-        'Lihat rincian data pada setiap kartu (BOM hingga Pelunasan Piutang) untuk memverifikasi alur manufaktur.'
+        'Lihat rincian data pada setiap kartu (BOM hingga Pelunasan Piutang Penjualan) untuk memverifikasi alur manufaktur.'
       ]
     },
     '/roles': {
@@ -78,9 +78,9 @@ export default function ManualModal() {
       ]
     },
     '/sph-out': {
-      title: 'SPH Out (Surat Penawaran Harga Keluar)',
+      title: 'SPH Keluar (Surat Penawaran Harga Keluar)',
       icon: FileText,
-      description: 'Sinkronisasi daftar SPH Out secara langsung dari sistem Digit.',
+      description: 'Sinkronisasi daftar SPH Keluar secara langsung dari sistem Digit.',
       steps: [
         'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel Periode di bagian atas.',
         'Klik tombol **Tarik Data** untuk memulai sinkronisasi dari Digit.',
@@ -90,9 +90,9 @@ export default function ManualModal() {
       ]
     },
     '/sph-in': {
-      title: 'SPH In (Surat Penawaran Harga Masuk)',
+      title: 'SPH Masuk (Surat Penawaran Harga Masuk)',
       icon: FileText,
-      description: 'Sinkronisasi daftar SPH In secara langsung dari sistem Digit.',
+      description: 'Sinkronisasi daftar SPH Masuk secara langsung dari sistem Digit.',
       steps: [
         'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel periode di bagian atas.',
         'Klik tombol **Tarik Data** untuk memulai sinkronisasi dari Digit.',
@@ -102,9 +102,9 @@ export default function ManualModal() {
       ]
     },
     '/spph-out': {
-      title: 'SPPH Out',
+      title: 'SPPH Keluar',
       icon: FileText,
-      description: 'Sinkronisasi daftar SPPH Out secara langsung dari Digit',
+      description: 'Sinkronisasi daftar SPPH Keluar secara langsung dari Digit',
       steps: [
         'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel periode di bagian atas.',
         'Klik tombol **Tarik Data** untuk memulai sinkronisasi dari Digit.',
@@ -114,9 +114,9 @@ export default function ManualModal() {
       ]
     },
     '/sales-orders': {
-      title: 'Sales Order',
+      title: 'Sales Order Barang',
       icon: FileCheck,
-      description: 'Sinkronisasi daftar Sales Order (SO) secara langsung dari sistem Digit.',
+      description: 'Sinkronisasi daftar Sales Order Barang secara langsung dari sistem Digit.',
       steps: [
         'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel Periode di bagian atas.',
         'Klik tombol **Tarik Data** untuk memulai sinkronisasi dari Digit.',
@@ -141,7 +141,7 @@ export default function ManualModal() {
       tips: 'Lakukan penarikan data secara berkala untuk memastikan nomor faktur terbaru dari Digit tersedia di sistem.'
     },
     '/purchase-orders': {
-      title: 'Purchase Order',
+      title: 'Purchase Order (PO)',
       icon: ShoppingCart,
       description: 'Sinkronisasi daftar Purchase Order (PO) secara langsung dari sistem Digit.',
       steps: [
@@ -153,9 +153,9 @@ export default function ManualModal() {
       ]
     },
     '/penerimaan-pembelian': {
-      title: 'Penerimaan Pembelian',
+      title: 'Penerimaan Barang',
       icon: Truck,
-      description: 'Sinkronisasi daftar Penerimaan Pembelian secara langsung dari sistem Digit.',
+      description: 'Sinkronisasi daftar Penerimaan Barang secara langsung dari sistem Digit.',
       steps: [
         'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel periode di bagian atas.',
         'Klik tombol **Tarik Data** untuk memulai sinkronisasi.',
@@ -165,9 +165,9 @@ export default function ManualModal() {
       ]
     },
     '/rekap-pembelian-barang': {
-      title: 'Pembelian Barang',
+      title: 'Laporan Rekap Pembelian Barang',
       icon: ShoppingCart,
-      description: 'Sinkronisasi daftar rekap pembelian barang secara langsung dari sistem Digit.',
+      description: 'Laporan detail transaksi Pembelian Barang per item secara langsung dari sistem Digit.',
       steps: [
         'Atur **Rentang Tanggal** (Mulai & Akhir) pada panel periode di bagian atas.',
         'Klik tombol **Tarik Data** untuk memulai sinkronisasi data rekap pembelian.',
@@ -189,7 +189,7 @@ export default function ManualModal() {
       ]
     },
     '/pelunasan-piutang': {
-      title: 'Pelunasan Piutang',
+      title: 'Pelunasan Piutang Penjualan',
       icon: TrendingUp,
       description: 'Sinkronisasi riwayat pelunasan piutang (pembayaran dari pelanggan) secara langsung dari sistem Digit.',
       steps: [
@@ -213,32 +213,32 @@ export default function ManualModal() {
       ]
     },
     '/bahan-baku': {
-      title: 'Daftar Bahan Baku Keluar',
+      title: 'Daftar BBB Produksi',
       icon: Box,
-      description: 'Sinkronisasi daftar pengeluaran Bahan Baku secara langsung dari sistem Digit.',
+      description: 'Sinkronisasi daftar pengeluaran BBB Produksi secara langsung dari sistem Digit.',
       steps: [
         'Atur **Rentang Tanggal** pada panel Periode dan klik **Tarik Data** untuk sinkronisasi.',
         'Tabel menampilkan kolom **Faktur**, **Faktur PRD**, **Nama Barang**, **Qty**, dan **HPP Digit**.',
         'Gunakan **Kotak Pencarian** untuk memfilter berdasarkan **Nomor Faktur**, **Nama Barang**, atau **Supplier**.',
         'Pantau indikator **Load Time (ms)** untuk melihat kecepatan akses data.',
-        'Data di sini menjadi **source** pada form **Pencatatan Kesalahan** saat memilih kategori **Bahan Baku** (mengambil harga dari kolom **HPP Digit**).',
+        'Data di sini menjadi **source** pada form **Pencatatan Kesalahan** saat memilih kategori **BBB Produksi** (mengambil harga dari kolom **HPP Digit**).',
         'Geser tabel atau scroll ke bawah untuk memuat data lama (Infinite Scroll).'
       ]
     },
     '/barang-jadi': {
-      title: 'Barang Jadi',
+      title: 'Penerimaan Barang Hasil Produksi',
       icon: Star,
       description: 'Sinkronisasi Daftar Barang Hasil Produksi secara langsung dari sistem Digit.',
       steps: [
         'Atur **Rentang Tanggal** dan klik **Tarik Data** untuk menarik data produksi terbaru.',
         'Pantau **Indikator Persentase (%)** untuk melihat kemajuan sinkronisasi data.',
         'Gunakan **Kotak Pencarian** untuk memfilter berdasarkan **Nama Barang**, **Tanggal**, atau **Order Produksi**.',
-        'Data di sini menjadi **source** pada form **Pencatatan Kesalahan** saat memilih kategori **Barang Jadi** (mengambil harga dari kolom **HPP Digit**).',
+        'Data di sini menjadi **source** pada form **Pencatatan Kesalahan** saat memilih kategori **Penerimaan Barang Hasil Produksi** (mengambil harga dari kolom **HPP Digit**).',
         'Scroll tabel ke bawah untuk melihat lebih banyak data tanpa perlu berpindah halaman (Infinite Scroll).'
       ]
     },
     '/bom': {
-      title: 'Bill of Material (BOM)',
+      title: 'Bill of Material Produksi',
       icon: Calculator,
       description: 'Sinkronisasi riwayat kalkulasi biaya produksi (BOM) secara langsung dari sistem Digit.',
       steps: [
@@ -262,7 +262,7 @@ export default function ManualModal() {
       ]
     },
     '/pr': {
-      title: 'Purchase Request',
+      title: 'Purchase Request (PR)',
       icon: FileText,
       description: 'Sinkronisasi riwayat permintaan pembelian (PR) secara langsung dari sistem Digit.',
       steps: [
@@ -309,8 +309,8 @@ export default function ManualModal() {
         '**Deskripsi Detail**: Jelaskan secara rinci kesalahan yang terjadi (opsional).',
         '**Referensi Order**: Pilih nomor order/faktur produksi terkait.',
         '**Kategori Barang**: Pilih kategori sesuai sumber datanya:',
-        '  • **Bahan Baku**: Harga ditarik dari menu **Bahan Baku**.',
-        '  • **Barang Jadi**: Harga ditarik dari menu **Barang Jadi**.',
+        '  • **BBB Produksi**: Harga ditarik dari menu **BBB Produksi**.',
+        '  • **Penerimaan Barang Hasil Produksi**: Harga ditarik dari menu **Penerimaan Barang Hasil Produksi**.',
         '  • **HPP Kalkulasi**: Harga ditarik dari menu **HPP Kalkulasi**.',
         '  • **Penjualan**: Harga ditarik dari menu **Laporan Penjualan**.',
         '  • **Manual**: Masukkan nama barang dan harga secara mandiri.',

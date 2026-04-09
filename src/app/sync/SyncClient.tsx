@@ -16,22 +16,22 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatScrapedPeriodDate, getDefaultScraperDateRange, persistScraperPeriod, hydrateScraperPeriod } from '@/lib/scraper-period';
 
 const MODULES = [
-  { id: 'bom', name: 'Bill of Material', endpoint: '/api/scrape-bom', description: 'Data formula produksi' },
-  { id: 'sph-out', name: 'SPH Out', endpoint: '/api/scrape-sph-out', description: 'Surat Penawaran Harga Keluar' },
-  { id: 'sales-orders', name: 'Sales Orders', endpoint: '/api/scrape-sales-orders', description: 'Pesanan dari pelanggan' },
+  { id: 'bom', name: 'Bill of Material Produksi', endpoint: '/api/scrape-bom', description: 'Data formula produksi' },
+  { id: 'sph-out', name: 'SPH Keluar', endpoint: '/api/scrape-sph-out', description: 'Surat Penawaran Harga Keluar' },
+  { id: 'sales-orders', name: 'Sales Order Barang', endpoint: '/api/scrape-sales-orders', description: 'Pesanan dari pelanggan' },
   { id: 'orders', name: 'Order Produksi', endpoint: '/api/scrape-orders', description: 'Surat Perintah Kerja' },
-  { id: 'pr', name: 'Purchase Request', endpoint: '/api/scrape-pr', description: 'Permintaan pembelian bahan' },
-  { id: 'spph-out', name: 'SPPH Out', endpoint: '/api/scrape-spph-out', description: 'Permintaan penawaran supplier' },
-  { id: 'sph-in', name: 'SPH In', endpoint: '/api/scrape-sph-in', description: 'Penawaran masuk dari supplier' },
-  { id: 'purchase-orders', name: 'Purchase Orders', endpoint: '/api/scrape-purchase-orders', description: 'Pesanan resmi ke supplier' },
-  { id: 'penerimaan-pembelian', name: 'Penerimaan Pembelian', endpoint: '/api/scrape-penerimaan-pembelian', description: 'Logistik barang masuk' },
-  { id: 'rekap-pembelian-barang', name: 'Pembelian Barang', endpoint: '/api/scrape-rekap-pembelian-barang', description: 'Faktur pembelian barang' },
+  { id: 'pr', name: 'Purchase Request (PR)', endpoint: '/api/scrape-pr', description: 'Permintaan pembelian bahan' },
+  { id: 'spph-out', name: 'SPPH Keluar', endpoint: '/api/scrape-spph-out', description: 'Permintaan penawaran supplier' },
+  { id: 'sph-in', name: 'SPH Masuk', endpoint: '/api/scrape-sph-in', description: 'Penawaran masuk dari supplier' },
+  { id: 'purchase-orders', name: 'Purchase Order (PO)', endpoint: '/api/scrape-purchase-orders', description: 'Pesanan resmi ke supplier' },
+  { id: 'penerimaan-pembelian', name: 'Penerimaan Barang', endpoint: '/api/scrape-penerimaan-pembelian', description: 'Logistik barang masuk' },
+  { id: 'rekap-pembelian-barang', name: 'Laporan Rekap Pembelian Barang', endpoint: '/api/scrape-rekap-pembelian-barang', description: 'Faktur pembelian barang' },
   { id: 'pelunasan-hutang', name: 'Pelunasan Hutang', endpoint: '/api/scrape-pelunasan-hutang', description: 'Pembayaran ke supplier' },
-  { id: 'bahan-baku', name: 'Bahan Baku', endpoint: '/api/scrape-bahan-baku', description: 'Pengeluaran bahan produksi' },
-  { id: 'barang-jadi', name: 'Barang Jadi', endpoint: '/api/scrape-barang-jadi', description: 'Stok produk siap kirim' },
+  { id: 'bahan-baku', name: 'BBB Produksi', endpoint: '/api/scrape-bahan-baku', description: 'Pengeluaran bahan produksi' },
+  { id: 'barang-jadi', name: 'Penerimaan Barang Hasil Produksi', endpoint: '/api/scrape-barang-jadi', description: 'Stok produk siap kirim' },
   { id: 'sales', name: 'Laporan Penjualan', endpoint: '/api/scrape-sales', description: 'Faktur penjualan barang' },
   { id: 'pengiriman', name: 'Pengiriman', endpoint: '/api/scrape-pengiriman', description: 'Logistik barang keluar' },
-  { id: 'pelunasan-piutang', name: 'Pelunasan Piutang', endpoint: '/api/scrape-pelunasan-piutang', description: 'Penerimaan dari pelanggan' },
+  { id: 'pelunasan-piutang', name: 'Pelunasan Piutang Penjualan', endpoint: '/api/scrape-pelunasan-piutang', description: 'Penerimaan dari pelanggan' },
 ];
 
 const PERSISTENCE_KEYS: Record<string, { stateKey: string; periodKey: string }> = {

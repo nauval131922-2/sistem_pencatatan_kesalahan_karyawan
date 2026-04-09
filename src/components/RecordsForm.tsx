@@ -23,8 +23,8 @@ interface ItemData {
   nama_barang: string;
   kd_barang: string;
   faktur: string;
-  harga: number; // For Bahan Baku -> HPP Digit, For Barang Jadi -> hp
-  harga_jual?: number; // Only For Barang Jadi -> Harga yg dr orders
+  harga: number; // For Bahan Baku -> HPP Digit, For Penerimaan Barang Hasil Produksi -> hp
+  harga_jual?: number; // Only For Penerimaan Barang Hasil Produksi -> Harga yg dr orders
 }
 
 interface SearchableSelectProps {
@@ -272,7 +272,7 @@ export default function RecordsForm({
 
   const [selectedOrderFaktur, setSelectedOrderFaktur] = useState<string>('');
   const [selectedOrderName, setSelectedOrderName] = useState<string>('');
-  const [jenisBarang, setJenisBarang] = useState<string>('Bahan Baku');
+  const [jenisBarang, setJenisBarang] = useState<string>('BBB Produksi');
   
   const [items, setItems] = useState<ItemData[]>([]);
   const [itemsLoading, setItemsLoading] = useState(false);
@@ -295,8 +295,8 @@ export default function RecordsForm({
 
 
   const jenisBarangOptions = [
-    { label: 'Bahan Baku', value: 'Bahan Baku' },
-    { label: 'Barang Jadi', value: 'Barang Jadi' },
+    { label: 'BBB Produksi', value: 'BBB Produksi' },
+    { label: 'Penerimaan Barang Hasil Produksi', value: 'Penerimaan Barang Hasil Produksi' },
     { label: 'HPP Kalkulasi', value: 'HPP Kalkulasi' },
     { label: 'Penjualan', value: 'Penjualan Barang' },
     { label: 'Manual', value: 'Input Manual' },
@@ -310,8 +310,8 @@ export default function RecordsForm({
   ];
 
   const jenisHargaOptions = useMemo(() => {
-    if (jenisBarang === 'Bahan Baku') return allJenisHargaOptions.filter(o => o.value === 'HPP Digit' || o.value === 'Input Manual');
-    if (jenisBarang === 'Barang Jadi') return allJenisHargaOptions.filter(o => o.value === 'HPP Digit' || o.value === 'Input Manual');
+    if (jenisBarang === 'BBB Produksi') return allJenisHargaOptions.filter(o => o.value === 'HPP Digit' || o.value === 'Input Manual');
+    if (jenisBarang === 'Penerimaan Barang Hasil Produksi') return allJenisHargaOptions.filter(o => o.value === 'HPP Digit' || o.value === 'Input Manual');
     if (jenisBarang === 'Penjualan Barang') return allJenisHargaOptions.filter(o => o.value === 'Harga Jual Digit' || o.value === 'Input Manual');
     if (jenisBarang === 'Input Manual') return allJenisHargaOptions.filter(o => o.value === 'Input Manual');
     if (jenisBarang === 'HPP Kalkulasi') return allJenisHargaOptions.filter(o => o.value === 'HPP Kalkulasi' || o.value === 'Input Manual');
@@ -331,7 +331,7 @@ export default function RecordsForm({
       setFakturPreview(editingInfraction.faktur || 'Tanpa Faktur');
       setSelectedOrderFaktur(editingInfraction.order_faktur || '');
       setSelectedOrderName(editingInfraction.order_name || '');
-      setJenisBarang(editingInfraction.jenis_barang || 'Bahan Baku');
+      setJenisBarang(editingInfraction.jenis_barang || 'BBB Produksi');
       setJenisHarga(editingInfraction.jenis_harga || 'HPP Digit');
       setSeverity(editingInfraction.severity || 'Low');
       
@@ -367,7 +367,7 @@ export default function RecordsForm({
           }
           setSelectedOrderFaktur(draft.selectedOrderFaktur || '');
           setSelectedOrderName(draft.selectedOrderName || '');
-          setJenisBarang(draft.jenisBarang || 'Bahan Baku');
+          setJenisBarang(draft.jenisBarang || 'BBB Produksi');
           setJenisHarga(draft.jenisHarga || 'HPP Digit');
           setSelectedNamaBarang(draft.selectedNamaBarang || '');
           setSelectedItemFaktur(draft.selectedItemFaktur || '');
@@ -426,7 +426,7 @@ export default function RecordsForm({
     setSelectedDate(new Date());
     setSelectedOrderFaktur('');
     setSelectedOrderName('');
-    setJenisBarang('Bahan Baku');
+    setJenisBarang('BBB Produksi');
     setJenisHarga('HPP Digit');
     setSelectedNamaBarang('');
     setSelectedItemFaktur('');
@@ -781,8 +781,8 @@ export default function RecordsForm({
                             
                             // 2. Set Default Price Type & Price Reset
                             if (!nextIsManual) {
-                              if (opt.value === 'Bahan Baku') setJenisHarga('HPP Digit');
-                              else if (opt.value === 'Barang Jadi') setJenisHarga('HPP Digit');
+                              if (opt.value === 'BBB Produksi') setJenisHarga('HPP Digit');
+                              else if (opt.value === 'Penerimaan Barang Hasil Produksi') setJenisHarga('HPP Digit');
                               else if (opt.value === 'Penjualan Barang') setJenisHarga('Harga Jual Digit');
                               else if (opt.value === 'HPP Kalkulasi') setJenisHarga('HPP Kalkulasi');
                               

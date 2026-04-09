@@ -100,7 +100,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
     switch (tableName) {
       case 'employees': return 'Data Karyawan';
       case 'orders': return 'Order Produksi';
-      case 'bahan_baku': return 'Bahan Baku (BBB)';
+      case 'bahan_baku': return 'BBB Produksi';
       case 'barang_jadi': return 'Barang Hasil Produksi';
       case 'hpp_kalkulasi': return 'HPP Kalkulasi';
       case 'sales_reports': return 'Laporan Penjualan';

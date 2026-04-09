@@ -305,54 +305,54 @@ export default function TrackingClient() {
    // Table Columns Definition
    const columns = useMemo<ColumnDef<any>[]>(() => [
        {
-          id: 'bom', header: 'Bill of Material', accessorKey: 'bom', size: columnWidths.bom,
+          id: 'bom', header: 'Bill of Material Produksi', accessorKey: 'bom', size: columnWidths.bom,
           meta: { wrap: true, valign: 'top' },
-          cell: ({ row }) => <RenderColumnContent label="Bill of Material" data={row.original.bom} debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+          cell: ({ row }) => <RenderColumnContent label="Bill of Material Produksi" data={row.original.bom} debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
-           id: 'sph', header: 'SPH Out', accessorKey: 'sphOut', size: columnWidths.sph,
+           id: 'sph', header: 'SPH Keluar', accessorKey: 'sphOut', size: columnWidths.sph,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="SPH Out" data={row.original.sphOut} extraLabel="(via BOM.faktur = SPH Out.faktur_bom)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }) => <RenderColumnContent label="SPH Keluar" data={row.original.sphOut} extraLabel="(via Bill of Material Produksi.faktur = SPH Keluar.faktur_bom)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
-           id: 'so', header: 'Sales Order', accessorKey: 'salesOrder', size: columnWidths.so,
+           id: 'so', header: 'Sales Order Barang', accessorKey: 'salesOrder', size: columnWidths.so,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Sales Order" data={row.original.salesOrder} extraLabel="(via SPH Out.faktur = Sales Order.faktur_sph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }) => <RenderColumnContent label="Sales Order Barang" data={row.original.salesOrder} extraLabel="(via SPH Keluar.faktur = Sales Order Barang.faktur_sph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'production', header: 'Order Produksi', accessorKey: 'productionOrder', size: columnWidths.production,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Order Produksi" data={row.original.productionOrder} extraLabel="(via Sales Order.faktur = Order Produksi.faktur_so AND BOM.faktur = Order Produksi.faktur_bom)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }) => <RenderColumnContent label="Order Produksi" data={row.original.productionOrder} extraLabel="(via Sales Order Barang.faktur = Order Produksi.faktur_so AND Bill of Material Produksi.faktur = Order Produksi.faktur_bom)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
-         id: 'pr', header: 'Purchase Request', accessorKey: 'purchaseRequests', size: columnWidths.pr,
+         id: 'pr', header: 'Purchase Request (PR)', accessorKey: 'purchaseRequests', size: columnWidths.pr,
          meta: { wrap: true, valign: 'top' },
-         cell: ({ row }) => <RenderColumnContent label="Purchase Request" items={row.original.purchaseRequests} extraLabel="(via Order Produksi.faktur = Purchase Request.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+         cell: ({ row }) => <RenderColumnContent label="Purchase Request (PR)" items={row.original.purchaseRequests} extraLabel="(via Order Produksi.faktur = Purchase Request (PR).faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
-           id: 'spph', header: 'SPPH Out', accessorKey: 'spphOut', size: columnWidths.spph,
+            id: 'spph', header: 'SPPH Keluar', accessorKey: 'spphOut', size: columnWidths.spph,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="SPPH Out" items={row.original.spphOut} extraLabel="(via Purchase Request.faktur = SPPH Out.faktur_pr)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+            cell: ({ row }) => <RenderColumnContent label="SPPH Keluar" items={row.original.spphOut} extraLabel="(via Purchase Request (PR).faktur = SPPH Keluar.faktur_pr)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
-           id: 'sph_in', header: 'SPH In', accessorKey: 'sphIn', size: columnWidths.sph_in,
+           id: 'sph_in', header: 'SPH Masuk', accessorKey: 'sphIn', size: columnWidths.sph_in,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="SPH In" items={row.original.sphIn} extraLabel="(via SPPH Out.faktur = SPH In.faktur_spph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }) => <RenderColumnContent label="SPH Masuk" items={row.original.sphIn} extraLabel="(via SPPH Keluar.faktur = SPH Masuk.faktur_spph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
-           id: 'purchase_orders', header: 'Purchase Order', accessorKey: 'purchaseOrders', size: columnWidths.purchase_orders,
+           id: 'purchase_orders', header: 'Purchase Order (PO)', accessorKey: 'purchaseOrders', size: columnWidths.purchase_orders,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Purchase Order" items={row.original.purchaseOrders} extraLabel="(via sph_in.faktur = PO.faktur_sph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }) => <RenderColumnContent label="Purchase Order (PO)" items={row.original.purchaseOrders} extraLabel="(via SPH Masuk.faktur = Purchase Order (PO).faktur_sph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
        {
-          id: 'penerimaan_pembelian', header: 'Penerimaan Pembelian', accessorKey: 'penerimaanPembelian', size: columnWidths.penerimaan_pembelian,
+          id: 'penerimaan_pembelian', header: 'Penerimaan Barang', accessorKey: 'penerimaanPembelian', size: columnWidths.penerimaan_pembelian,
           meta: { wrap: true, valign: 'top' },
-          cell: ({ row }) => <RenderColumnContent label="Penerimaan Pembelian" items={row.original.penerimaanPembelian} extraLabel="(via PO.faktur = PB.faktur_po)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+          cell: ({ row }) => <RenderColumnContent label="Penerimaan Barang" items={row.original.penerimaanPembelian} extraLabel="(via Purchase Order (PO).faktur = PB.faktur_po)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
-           id: 'pembelian_barang', header: 'Pembelian Barang', accessorKey: 'pembelianBarang', size: columnWidths.pembelian_barang,
+           id: 'pembelian_barang', header: 'Laporan Rekap Pembelian Barang', accessorKey: 'pembelianBarang', size: columnWidths.pembelian_barang,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Pembelian Barang" items={row.original.pembelianBarang} extraLabel="(via Purchase Order.faktur = Pembelian Barang.faktur_po)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }) => <RenderColumnContent label="Laporan Rekap Pembelian Barang" items={row.original.pembelianBarang} extraLabel="(via Penerimaan Barang.faktur = Pembelian Barang.faktur_pb)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'pelunasan_hutang', header: 'Pelunasan Hutang', accessorKey: 'pelunasanHutang', size: columnWidths.pelunasan_hutang,
@@ -360,19 +360,19 @@ export default function TrackingClient() {
            cell: ({ row }) => <RenderColumnContent label="Pelunasan Hutang" items={row.original.pelunasanHutang} extraLabel="(via Pembelian Barang.faktur = Pelunasan Hutang.faktur_pb)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
-           id: 'bahan_baku', header: 'Bahan Baku', accessorKey: 'bahanBaku', size: columnWidths.bahan_baku,
+           id: 'bahan_baku', header: 'BBB Produksi', accessorKey: 'bahanBaku', size: columnWidths.bahan_baku,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Bahan Baku" items={row.original.bahanBaku} extraLabel="(via Order Produksi.faktur = Bahan Baku.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }) => <RenderColumnContent label="BBB Produksi" items={row.original.bahanBaku} extraLabel="(via Order Produksi.faktur = BBB Produksi.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
-           id: 'barang_jadi', header: 'Barang Jadi', accessorKey: 'barangJadi', size: columnWidths.barang_jadi,
+           id: 'barang_jadi', header: 'Penerimaan Barang Hasil Produksi', accessorKey: 'barangJadi', size: columnWidths.barang_jadi,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Barang Jadi" items={row.original.barangJadi} extraLabel="(via Order Produksi.faktur = Barang Jadi.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }) => <RenderColumnContent label="Penerimaan Barang Hasil Produksi" items={row.original.barangJadi} extraLabel="(via Order Produksi.faktur = Penerimaan Barang Hasil Produksi.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'laporan_penjualan', header: 'Laporan Penjualan', accessorKey: 'laporanPenjualan', size: columnWidths.laporan_penjualan,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Laporan Penjualan" items={row.original.laporanPenjualan} extraLabel="(via Sales Order.faktur = Laporan Penjualan.faktur_so OR Sales Order.kd_barang = Laporan Penjualan.kd_barang)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }) => <RenderColumnContent label="Laporan Penjualan" items={row.original.laporanPenjualan} extraLabel="(via Sales Order Barang.faktur = Laporan Penjualan.faktur_so OR Sales Order Barang.kd_barang = Laporan Penjualan.kd_barang)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'pengiriman', header: 'Pengiriman', accessorKey: 'pengiriman', size: columnWidths.pengiriman,
@@ -380,9 +380,9 @@ export default function TrackingClient() {
            cell: ({ row }) => <RenderColumnContent label="Pengiriman" items={row.original.pengiriman} extraLabel="(via Laporan Penjualan.faktur = Pengiriman.faktur)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
-           id: 'pelunasan_piutang', header: 'Pelunasan Piutang', accessorKey: 'pelunasanPiutang', size: columnWidths.pelunasan_piutang,
+           id: 'pelunasan_piutang', header: 'Pelunasan Piutang Penjualan', accessorKey: 'pelunasanPiutang', size: columnWidths.pelunasan_piutang,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Pelunasan Piutang" items={row.original.pelunasanPiutang} extraLabel="(via Laporan Penjualan.faktur = Pelunasan Piutang.fkt)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }) => <RenderColumnContent label="Pelunasan Piutang Penjualan" items={row.original.pelunasanPiutang} extraLabel="(via Laporan Penjualan.faktur = Pelunasan Piutang Penjualan.fkt)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         }
     ], [columnWidths, debouncedFilterText]);
 

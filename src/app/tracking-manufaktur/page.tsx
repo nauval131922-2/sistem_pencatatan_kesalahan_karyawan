@@ -13,7 +13,7 @@ export default function TrackingManufakturPage() {
         title="Tracking Manufaktur"
         description={
           <>
-            Lacak data manufaktur dari BOM hingga Pelunasan Piutang dari <a href="https://buyapercetakan.mdthoster.com/" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-bold">Digit.</a>
+            Lacak data manufaktur dari BOM hingga Pelunasan Piutang Penjualan dari <a href="https://buyapercetakan.mdthoster.com/" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-bold">Digit.</a>
           </>
         }
       />
