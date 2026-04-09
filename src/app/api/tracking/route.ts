@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     let bom = bomRes.rows[0] as any || null;
 
-    // --- LEVEL 2: SPH Out & Sales Order (Dependent on BOM) ---
+    // --- LEVEL 2: SPH Keluar & Sales Order Barang (Dependent on BOM) ---
     // These can be run in parallel
     let sphOut = null;
     let salesOrder = null;
@@ -79,8 +79,8 @@ export async function GET(request: NextRequest) {
     }
 
     // --- LEVEL 4: Sub-branches (Dependent on Production Order & Reports) ---
-    // 1. Production Branch: PRs, Bahan Baku, Barang Jadi
-    // 2. Sales Branch: Pengiriman, Pelunasan Piutang
+    // 1. Production Branch: PRs, Bahan Baku, Penerimaan Barang Hasil Produksi
+    // 2. Sales Branch: Pengiriman, Pelunasan Piutang Penjualan
     const prdFaktur = productionOrder?.faktur;
     const lpFakturs = laporanPenjualanList.map(lp => lp.faktur).filter(Boolean);
 

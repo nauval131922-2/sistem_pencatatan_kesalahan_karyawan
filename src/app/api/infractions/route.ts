@@ -55,8 +55,8 @@ export async function GET(req: NextRequest) {
       LEFT JOIN employees e ON i.employee_id = e.id
       LEFT JOIN employees r ON i.recorded_by_id = r.id
       LEFT JOIN orders o ON i.order_faktur = o.faktur
-      LEFT JOIN bahan_baku bb ON (i.item_faktur = bb.faktur AND i.jenis_barang = 'Bahan Baku')
-      LEFT JOIN barang_jadi bj ON (i.item_faktur = bj.faktur AND i.jenis_barang = 'Barang Jadi')
+      LEFT JOIN bahan_baku bb ON (i.item_faktur = bb.faktur AND i.jenis_barang = 'BBB Produksi')
+      LEFT JOIN barang_jadi bj ON (i.item_faktur = bj.faktur AND i.jenis_barang = 'Penerimaan Barang Hasil Produksi')
     `;
     const params: any[] = [];
 

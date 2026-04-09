@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const orderName = searchParams.get('order_name');
     const orderFaktur = searchParams.get('order_faktur');
-    const jenisBarang = searchParams.get('jenis_barang'); // 'Bahan Baku' | 'Barang Jadi'
+    const jenisBarang = searchParams.get('jenis_barang'); // 'BBB Produksi' | 'Penerimaan Barang Hasil Produksi'
 
     if (!jenisBarang) {
       return NextResponse.json({ error: "jenis_barang is required" }, { status: 400 });
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       : '';
     const queryParams = (orderFaktur || orderName) ? [orderFaktur || '', orderName || ''] : [];
 
-    if (jenisBarang === 'Bahan Baku') {
+    if (jenisBarang === 'BBB Produksi') {
       const sql = `
         SELECT DISTINCT nama_barang, kd_barang, faktur, hp as harga
         FROM bahan_baku
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       const result = await db.execute({ sql, args: queryParams });
       items = result.rows;
 
-    } else if (jenisBarang === 'Barang Jadi') {
+    } else if (jenisBarang === 'Penerimaan Barang Hasil Produksi') {
       const sql = `
         SELECT DISTINCT nama_barang, kd_barang, faktur, hp as harga
         FROM barang_jadi

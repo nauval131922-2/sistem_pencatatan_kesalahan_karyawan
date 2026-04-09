@@ -60,8 +60,8 @@ export const getInfractions = cache(async (startDate?: string, endDate?: string)
     LEFT JOIN employees e ON (i.employee_id = e.id OR (i.employee_no IS NOT NULL AND i.employee_no = e.employee_no))
     LEFT JOIN employees r ON (i.recorded_by_id = r.id OR (i.recorded_by_no IS NOT NULL AND i.recorded_by_no = r.employee_no))
     LEFT JOIN orders o ON (i.order_faktur = o.faktur)
-    LEFT JOIN bahan_baku bb ON (i.item_faktur = bb.faktur AND i.jenis_barang = 'Bahan Baku' AND i.order_name = bb.nama_prd)
-    LEFT JOIN barang_jadi bj ON (i.item_faktur = bj.faktur AND i.jenis_barang = 'Barang Jadi' AND i.order_name = bj.nama_prd)
+    LEFT JOIN bahan_baku bb ON (i.item_faktur = bb.faktur AND i.jenis_barang = 'BBB Produksi' AND i.order_name = bb.nama_prd)
+    LEFT JOIN barang_jadi bj ON (i.item_faktur = bj.faktur AND i.jenis_barang = 'Penerimaan Barang Hasil Produksi' AND i.order_name = bj.nama_prd)
   `;
 
   const params: any[] = [];
