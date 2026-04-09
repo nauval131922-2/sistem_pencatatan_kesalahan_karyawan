@@ -174,6 +174,155 @@ export default function Sidebar({ user }: SidebarProps) {
     );
   };
 
+  const [activePath, setActivePath] = useState<string[]>([]);
+  const [flyoutPositions, setFlyoutPositions] = useState<Record<string, { top: number, left: number }>>({});
+
+  const handleItemClick = (label: string, e: React.MouseEvent, level: number) => {
+    e.stopPropagation();
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    
+    setActivePath(prev => {
+      // If clicking already active item at this level, close it and children
+      if (prev[level] === label) {
+        return prev.slice(0, level);
+      }
+      // Otherwise, open this item and set path up to this level
+      const newPath = [...prev.slice(0, level), label];
+      return newPath;
+    });
+
+    setFlyoutPositions(prev => ({
+      ...prev,
+      [label]: { top: rect.top, left: rect.right }
+    }));
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
+        setActivePath([]);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  interface MenuItem {
+    label: string;
+    href?: string;
+    icon: React.ReactNode;
+    items?: MenuItem[];
+  }
+
+  const FlyoutItem = ({ item, level }: { item: MenuItem, level: number }) => {
+    const hasSub = item.items && item.items.length > 0;
+    const itemActive = item.href ? checkIsActive(item.href) : item.items?.some(si => si.href && checkIsActive(si.href));
+    const isOpen = activePath[level] === item.label;
+    const pos = flyoutPositions[item.label];
+
+    return (
+      <div className="relative">
+        {item.href ? (
+          <Link
+            href={item.href}
+            onClick={() => setActivePath([])}
+            className={`
+              flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[12px] font-bold transition-all w-full
+              ${itemActive ? 'bg-green-50 text-green-600 font-black' : 'text-gray-500 hover:bg-gray-50 hover:text-green-600'}
+            `}
+          >
+            <span className={itemActive ? 'text-green-600' : 'text-gray-400'}>{item.icon}</span>
+            <span className="truncate">{item.label}</span>
+          </Link>
+        ) : (
+          <button
+            onClick={(e) => hasSub && handleItemClick(item.label, e, level)}
+            className={`
+              flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[12px] font-bold transition-all cursor-pointer w-full
+              ${isOpen ? 'bg-green-600 text-white shadow-md' : itemActive ? 'bg-green-50 text-green-600' : 'text-gray-500 hover:bg-gray-50 hover:text-green-600'}
+            `}
+          >
+            <span className={isOpen ? 'text-white' : itemActive ? 'text-green-600' : 'text-gray-400'}>{item.icon}</span>
+            <span className="flex-1 text-left truncate">{item.label}</span>
+            {hasSub && <ChevronRight size={12} className={`transition-transform duration-200 ${isOpen ? 'rotate-90 sm:rotate-0' : 'text-gray-300'}`} />}
+          </button>
+        )}
+
+        {/* Nested Flyout (Level 3 or higher) */}
+        {hasSub && isOpen && pos && (
+          <div 
+            className="fixed z-[120] pl-1 animate-in fade-in zoom-in-95 duration-200 slide-in-from-left-2"
+            onClick={(e) => e.stopPropagation()}
+            style={{ 
+              left: `${pos.left - 4}px`,
+              top: `${pos.top - 6}px`
+            }}
+          >
+            <div className="bg-white border-[1.5px] border-gray-100 rounded-[12px] shadow-2xl p-1.5 min-w-[200px]">
+              <div className="flex flex-col gap-1">
+                {item.items?.map((subItem) => (
+                  <FlyoutItem key={subItem.label} item={subItem} level={level + 1} />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const FlyoutMenu = ({ label, icon, items }: { label: string, icon: React.ReactNode, items: MenuItem[] }) => {
+    const isActive = items.some(item => 
+      item.href ? checkIsActive(item.href) : item.items?.some(si => si.href && checkIsActive(si.href))
+    );
+    const isOpen = activePath[0] === label;
+    const pos = flyoutPositions[label];
+
+    return (
+      <div className="relative">
+        <button 
+          onClick={(e) => handleItemClick(label, e, 0)}
+          className={`
+            group flex items-center gap-3 px-3 h-9 rounded-[8px] transition-all text-[12.5px] font-semibold w-full
+            ${!isExpanded ? 'justify-center px-0 w-9 mx-auto' : ''}
+            ${isActive && !isOpen ? 'bg-green-50 text-green-600' : isOpen ? 'bg-green-600 text-white shadow-lg scale-[1.02]' : 'text-gray-500 hover:bg-green-50 hover:text-green-600'}
+          `}
+        >
+          {icon}
+          {isExpanded && (
+            <>
+              <span className="flex-1 text-left truncate">{label}</span>
+              <ChevronRight size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
+            </>
+          )}
+        </button>
+
+        {/* Level 2 Flyout */}
+        {isOpen && pos && (
+          <div 
+            className={`
+              fixed z-[100] pl-3 animate-in fade-in zoom-in-95 duration-200 slide-in-from-left-2
+              ${!isExpanded ? 'ml-[-8px]' : 'ml-[-2px]'}
+            `}
+            onClick={(e) => e.stopPropagation()}
+            style={{ 
+              left: `${pos.left}px`,
+              top: `${pos.top - 6}px`
+            }}
+          >
+            <div className="bg-white border-[1.5px] border-gray-100 rounded-[12px] shadow-2xl p-1.5 min-w-[190px]">
+              <div className="flex flex-col gap-1">
+                {items.map((item) => (
+                  <FlyoutItem key={item.label} item={item} level={1} />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Removed isMounted skeleton gating to fix hydration mismatch
   // The sidebar will render in its expanded state by default on server and first client pass
 
@@ -245,6 +394,7 @@ export default function Sidebar({ user }: SidebarProps) {
         </div>
 
         {/* DATA DIGIT */}
+        {/* DATA DIGIT */}
         <SectionLabel label="Data Digit" />
         <div className="space-y-1">
           {user?.role === 'Super Admin' && (
@@ -256,70 +406,120 @@ export default function Sidebar({ user }: SidebarProps) {
               <div className={`h-px bg-gray-100 my-2 ${!isExpanded ? 'mx-1' : 'mx-3'}`} />
             </>
           )}
-          <Link href="/bom" className={navItemClasses('/bom')} title={!isExpanded ? "Bill of Material" : ""}>
-            <Calculator size={18} />
-            {isExpanded && <span className="truncate">Bill of Material</span>}
-          </Link>
-          <Link href="/sph-out" className={navItemClasses('/sph-out')} title={!isExpanded ? "SPH Out" : ""}>
-            <FileText size={18} />
-            {isExpanded && <span className="truncate">SPH Out</span>}
-          </Link>
-          <Link href="/sales-orders" className={navItemClasses('/sales-orders')} title={!isExpanded ? "Sales Order" : ""}>
-            <FileCheck size={18} />
-            {isExpanded && <span className="truncate">Sales Order</span>}
-          </Link>
-          <Link href="/orders" className={navItemClasses('/orders')} title={!isExpanded ? "Order Produksi" : ""}>
-            <ClipboardList size={18} />
-            {isExpanded && <span className="truncate">Order Produksi</span>}
-          </Link>
-          <Link href="/pr" className={navItemClasses('/pr')} title={!isExpanded ? "Purchase Request" : ""}>
-            <FileText size={18} />
-            {isExpanded && <span className="truncate">Purchase Request</span>}
-          </Link>
-          <Link href="/spph-out" className={navItemClasses('/spph-out')} title={!isExpanded ? "SPPH Out" : ""}>
-            <FileText size={18} />
-            {isExpanded && <span className="truncate">SPPH Out</span>}
-          </Link>
-          <Link href="/sph-in" className={navItemClasses('/sph-in')} title={!isExpanded ? "SPH In" : ""}>
-            <FileText size={18} />
-            {isExpanded && <span className="truncate">SPH In</span>}
-          </Link>
-          <Link href="/purchase-orders" className={navItemClasses('/purchase-orders')} title={!isExpanded ? "Purchase Order" : ""}>
-            <ShoppingCart size={18} />
-            {isExpanded && <span className="truncate">Purchase Order</span>}
-          </Link>
-          <Link href="/penerimaan-pembelian" className={navItemClasses('/penerimaan-pembelian')} title={!isExpanded ? "Penerimaan Pembelian" : ""}>
-            <Truck size={18} />
-            {isExpanded && <span className="truncate">Penerimaan Pembelian</span>}
-          </Link>
-          <Link href="/rekap-pembelian-barang" className={navItemClasses('/rekap-pembelian-barang')} title={!isExpanded ? "Pembelian Barang" : ""}>
-            <ShoppingCart size={18} />
-            {isExpanded && <span className="truncate">Pembelian Barang</span>}
-          </Link>
-          <Link href="/pelunasan-hutang" className={navItemClasses('/pelunasan-hutang')} title={!isExpanded ? "Pelunasan Hutang" : ""}>
-            <CreditCard size={18} />
-            {isExpanded && <span className="truncate">Pelunasan Hutang</span>}
-          </Link>
-          <Link href="/bahan-baku" className={navItemClasses('/bahan-baku')} title={!isExpanded ? "Bahan Baku" : ""}>
-            <Package size={18} />
-            {isExpanded && <span className="truncate">Bahan Baku</span>}
-          </Link>
-          <Link href="/barang-jadi" className={navItemClasses('/barang-jadi')} title={!isExpanded ? "Barang Jadi" : ""}>
-            <Box size={18} />
-            {isExpanded && <span className="truncate">Barang Jadi</span>}
-          </Link>
-          <Link href="/sales" className={navItemClasses('/sales')} title={!isExpanded ? "Laporan Penjualan" : ""}>
-            <BarChart3 size={18} />
-            {isExpanded && <span className="truncate">Laporan Penjualan</span>}
-          </Link>
-          <Link href="/pengiriman" className={navItemClasses('/pengiriman')} title={!isExpanded ? "Pengiriman" : ""}>
-            <Truck size={18} />
-            {isExpanded && <span className="truncate">Pengiriman</span>}
-          </Link>
-          <Link href="/pelunasan-piutang" className={navItemClasses('/pelunasan-piutang')} title={!isExpanded ? "Pelunasan Piutang" : ""}>
-            <TrendingUp size={18} />
-            {isExpanded && <span className="truncate">Pelunasan Piutang</span>}
-          </Link>
+
+          {/* PEMBELIAN SECTION */}
+          <div data-group="Pembelian">
+            <FlyoutMenu 
+              label="Pembelian"
+              icon={<ShoppingCart size={18} />}
+              items={[
+                { 
+                  label: 'Purchase Request (PR)', 
+                  icon: <FileText size={16} />,
+                  items: [{ label: 'Purchase Request', href: '/pr', icon: <FileText size={14} /> }]
+                },
+                { 
+                  label: 'Penawaran', 
+                  icon: <FileText size={16} />,
+                  items: [
+                    { label: 'SPPH Out', href: '/spph-out', icon: <FileText size={14} /> },
+                    { label: 'SPH In', href: '/sph-in', icon: <FileText size={14} /> },
+                  ]
+                },
+                { 
+                  label: 'Purchase Order (PO)', 
+                  icon: <ShoppingCart size={16} />,
+                  items: [{ label: 'Purchase Order', href: '/purchase-orders', icon: <ShoppingCart size={14} /> }]
+                },
+                { 
+                  label: 'Pembelian Barang', 
+                  icon: <Truck size={16} />,
+                  items: [
+                    { label: 'Penerimaan Pembelian', href: '/penerimaan-pembelian', icon: <Truck size={14} /> },
+                    { label: 'Pembelian Barang', href: '/rekap-pembelian-barang', icon: <ShoppingCart size={14} /> },
+                  ]
+                },
+                { 
+                  label: 'Hutang', 
+                  icon: <CreditCard size={16} />,
+                  items: [{ label: 'Pelunasan Hutang', href: '/pelunasan-hutang', icon: <CreditCard size={14} /> }]
+                }
+              ]}
+            />
+          </div>
+
+          {/* PRODUKSI SECTION */}
+          <div data-group="Produksi">
+            <FlyoutMenu 
+              label="Produksi"
+              icon={<Package size={18} />}
+              items={[
+                { label: 'Bill of Material', href: '/bom', icon: <Calculator size={16} /> },
+                { label: 'Order Produksi', href: '/orders', icon: <ClipboardList size={16} /> },
+                { 
+                  label: 'Laporan', 
+                  icon: <BarChart3 size={16} />,
+                  items: [
+                    { label: 'Bahan Baku', href: '/bahan-baku', icon: <Box size={14} /> },
+                    { label: 'Barang Jadi', href: '/barang-jadi', icon: <Package size={14} /> },
+                  ]
+                }
+              ]}
+            />
+          </div>
+
+          {/* PENJUALAN SECTION */}
+          <div data-group="Penjualan">
+            <FlyoutMenu 
+              label="Penjualan"
+              icon={<TrendingUp size={18} />}
+              items={[
+                { 
+                  label: 'Penawaran', 
+                  icon: <FileText size={16} />,
+                  items: [{ label: 'SPH Out', href: '/sph-out', icon: <FileText size={14} /> }]
+                },
+                { 
+                  label: 'Sales Order (SO)', 
+                  icon: <FileCheck size={16} />,
+                  items: [{ label: 'Sales Order', href: '/sales-orders', icon: <FileCheck size={14} /> }]
+                },
+                { 
+                  label: 'Penjualan Barang', 
+                  icon: <TrendingUp size={16} />,
+                  items: [
+                    { 
+                      label: 'Laporan', 
+                      icon: <BarChart3 size={14} />,
+                      items: [{ label: 'Laporan Penjualan', href: '/sales', icon: <BarChart3 size={12} /> }]
+                    }
+                  ]
+                },
+                { 
+                  label: 'Piutang', 
+                  icon: <TrendingUp size={16} />,
+                  items: [
+                    { 
+                      label: 'Laporan', 
+                      icon: <BarChart3 size={14} />,
+                      items: [{ label: 'Pelunasan Piutang', href: '/pelunasan-piutang', icon: <TrendingUp size={12} /> }]
+                    }
+                  ]
+                },
+                { 
+                  label: 'Pengiriman (SJ)', 
+                  icon: <Truck size={16} />,
+                  items: [
+                    { 
+                      label: 'Laporan', 
+                      icon: <BarChart3 size={14} />,
+                      items: [{ label: 'Pengiriman', href: '/pengiriman', icon: <Truck size={12} /> }]
+                    }
+                  ]
+                }
+              ]}
+            />
+          </div>
         </div>
 
         {/* DATA MASTER UMUM */}
