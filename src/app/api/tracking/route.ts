@@ -207,7 +207,7 @@ export async function GET(request: NextRequest) {
         pelunasanHutang: pelunasanHutang.map(ph => parseRawData(ph)),
         bahanBaku: bahanBaku.map(bb => parseRawData(bb)),
         barangJadi: barangJadi.map(bj => parseRawData(bj)),
-        laporanPenjualan: laporanPenjualan.map(lp => parseRawData(lp)),
+        laporanPenjualan: laporanPenjualanList.map(lp => parseRawData(lp)),
         pengiriman: pengiriman.map(pg => parseRawData(pg)),
         pelunasanPiutang: pelunasanPiutang.map(pp => parseRawData(pp))
       }
