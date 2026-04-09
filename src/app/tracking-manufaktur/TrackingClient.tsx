@@ -3,7 +3,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Search, Loader2, Calculator, ArrowRight, AlertCircle, Clock, ChevronDown } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
-import { DataTable } from '@/components/ui/DataTable';
+import { DataTable, ScrollContext } from '@/components/ui/DataTable';
+import { useContext } from 'react';
 
 // Unified date formatter for MDT Host source data (YYYY-MM-DD -> DD-MM-YYYY)
 const formatMdtDate = (str: string) => {
@@ -68,9 +69,9 @@ const toTitleCase = (str: string) => {
 };
 
 // Helper to highlight search keywords in text
-const HighlightedText = ({ text, highlight }: { text: string; highlight: string }) => {
+const HighlightedText = React.memo(({ text, highlight }: { text: string; highlight: string }) => {
    if (!highlight.trim()) return <span>{text}</span>;
-   const regex = new RegExp(`(${highlight})`, 'gi');
+   const regex = new RegExp(`(${highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
    const parts = text.split(regex);
 
    return (
@@ -86,52 +87,107 @@ const HighlightedText = ({ text, highlight }: { text: string; highlight: string 
          )}
       </span>
    );
-};
+});
+HighlightedText.displayName = 'HighlightedText';
+
+// Memoized individual field to reduce render work
+const DataField = React.memo(({ k, v, isRaw, highlight }: { k: string, v: any, isRaw: boolean, highlight: string }) => {
+   let displayVal = String(v);
+   if (!isRaw) {
+      const numVal = parseFloat(String(v).replace(/,/g, ''));
+      if (!isNaN(numVal)) {
+         displayVal = numVal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+   }
+
+   return (
+      <div className="flex items-start justify-between gap-4 text-[12px] leading-tight group/field">
+         <span className="text-gray-400 font-bold shrink-0">{k}</span>
+         <span className="text-gray-600 font-medium text-right break-words group-hover/field:text-gray-900 transition-colors">
+            <HighlightedText text={displayVal} highlight={highlight} />
+         </span>
+      </div>
+   );
+});
+DataField.displayName = 'DataField';
 
 const RenderAllFieldsRaw = ({ data, excludeKeys = [], highlightText = '' }: { data: any, excludeKeys?: string[], highlightText?: string }) => {
    if (!data) return null;
    const normalizeKey = (key: string) => String(key).toLowerCase().replace(/[^a-z0-9]/g, '');
-   const handledKeys = new Set([...excludeKeys].map(normalizeKey));
-   const entries = Object.entries(data).filter(([key]) => !handledKeys.has(normalizeKey(String(key))));
+   const handledKeys = useMemo(() => new Set([...excludeKeys].map(normalizeKey)), [excludeKeys]);
+   const entries = useMemo(() => Object.entries(data).filter(([key]) => !handledKeys.has(normalizeKey(String(key)))), [data, handledKeys]);
 
    if (entries.length === 0) return null;
 
    const rawFields = ['id', 'kode_cabang', 'kd_cabang', 'tgl', 'status', 'created_at', 'edited_at', 'kd_barang', 'recid', 'top_hari', 'kd_gudang', 'create_at', 'updated_at', 'kd_pelanggan', 'datetime_mulai', 'datetime_selesai', 'tgl_dibutuhkan', 'tgl_close', 'status_close', 'jthtmp', 'faktur_supplier', 'tgl_lunas', 'kd_porsekot', 'kd_bank', 'kd_supir', 'kd_armada', 'kd_eks', 'waktu_kirim', 'waktu_selesai', 'tgl_expired', 'gol_barang', 'no_ref_pelanggan'];
 
    return (
-         <div className="grid grid-cols-1 gap-1.5 overflow-hidden">
-            {entries.map(([key, val]) => {
-               let displayVal = String(val);
-               const isRawField = rawFields.includes(key.toLowerCase());
-               if (!isRawField) {
-                  const numVal = parseFloat(String(val).replace(/,/g, ''));
-                  if (!isNaN(numVal)) {
-                      displayVal = numVal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                  }
-               }
-
-               return (
-                 <div key={key} className="flex items-start justify-between gap-4 text-[12px] leading-tight">
-                    <span className="text-gray-400 font-bold shrink-0">{key}</span>
-                    <span className="text-gray-600 font-medium text-right break-words">
-                       <HighlightedText text={displayVal} highlight={highlightText} />
-                    </span>
-                 </div>
-               );
-            })}
-         </div>
+      <div className="grid grid-cols-1 gap-1.5 overflow-hidden">
+         {entries.map(([key, val]) => (
+            <DataField key={key} k={key} v={val} isRaw={rawFields.includes(key.toLowerCase())} highlight={highlightText} />
+         ))}
+      </div>
    );
 };
 
 // Use memo to prevent unnecessary re-renders of data cards
 const RenderAllFields = React.memo(RenderAllFieldsRaw);
 
+// Optimized Card component with lazy rendering (Intersection Observer)
+const DataCard = React.memo(({ item, highlightText }: { item: any, highlightText: string }) => {
+   const [isVisible, setIsVisible] = useState(false);
+   const cardRef = useRef<HTMLDivElement>(null);
+   const scrollContainer = useContext(ScrollContext);
+
+   useEffect(() => {
+      if (!cardRef.current) return;
+
+      const observer = new IntersectionObserver(
+         ([entry]) => {
+            if (entry.isIntersecting) {
+               setIsVisible(true);
+               observer.disconnect();
+            }
+         },
+         { 
+            // root: scrollContainer?.current, // Use global scroll if specific one not found
+            rootMargin: '800px 0px', // Pre-render 800px before/after viewport for smooth scrolling
+            threshold: 0.01 
+         }
+      );
+
+      observer.observe(cardRef.current);
+      return () => observer.disconnect();
+   }, [scrollContainer]);
+
+   return (
+      <div 
+         ref={cardRef} 
+         className={`${cardClass} border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-shadow min-h-[100px]`}
+      >
+         {isVisible ? (
+            <RenderAllFields data={item} excludeKeys={['raw_data']} highlightText={highlightText} />
+         ) : (
+            <div className="flex flex-col gap-2.5 animate-pulse">
+               <div className="h-3 w-3/4 bg-gray-50 rounded-full" />
+               <div className="h-3 w-1/2 bg-gray-50 rounded-full" />
+               <div className="h-10 w-full bg-gray-50/50 rounded-[8px]" />
+            </div>
+         )}
+      </div>
+   );
+});
+DataCard.displayName = 'DataCard';
+
 // Helper component for uniform column rendering
-const RenderColumnContent = ({ label, data, items, debouncedFilterText, matchesFilter, emptyStateClass, cardClass, RenderAllFields, extraLabel }: any) => {
+const RenderColumnContent = React.memo(({ label, data, items, debouncedFilterText, matchesFilter, extraLabel }: any) => {
    const filterLabel = debouncedFilterText ? `(pencarian dengan keyword "${debouncedFilterText}")` : extraLabel;
 
    if (items) {
-      const filtered = debouncedFilterText ? items.filter((it: any) => matchesFilter(it, debouncedFilterText)) : items;
+      const filtered = useMemo(() => 
+         debouncedFilterText ? items.filter((it: any) => matchesFilter(it, debouncedFilterText)) : items
+      , [items, debouncedFilterText]);
+
       if (!filtered || filtered.length === 0) return (
          <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
             <div className="text-[10px] text-gray-400 mb-1">0 Data {label} {filterLabel && <span className="text-gray-500">{filterLabel}</span>}</div>
@@ -141,9 +197,7 @@ const RenderColumnContent = ({ label, data, items, debouncedFilterText, matchesF
          <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
             <div className="text-[10px] text-gray-400 mb-1">{filtered.length} Data {label} {filterLabel && <span className="text-gray-500">{filterLabel}</span>}</div>
             {filtered.map((item: any, idx: number) => (
-               <div key={idx} className={`${cardClass} border border-gray-100 hover:border-gray-200 hover:shadow-sm`}>
-                  <RenderAllFields data={item} excludeKeys={['raw_data']} highlightText={debouncedFilterText} />
-               </div>
+               <DataCard key={item.id || idx} item={item} highlightText={debouncedFilterText} />
             ))}
          </div>
       );
@@ -157,12 +211,11 @@ const RenderColumnContent = ({ label, data, items, debouncedFilterText, matchesF
    return (
       <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
          <div className="text-[10px] text-gray-400 mb-1">1 Data {label} {filterLabel && <span className="text-gray-500">{filterLabel}</span>}</div>
-         <div className={`${cardClass} border border-gray-100 hover:border-gray-200 hover:shadow-sm`}>
-            <RenderAllFields data={data} excludeKeys={['raw_data']} highlightText={debouncedFilterText} />
-         </div>
+         <DataCard item={data} highlightText={debouncedFilterText} />
       </div>
    );
-};
+});
+RenderColumnContent.displayName = 'RenderColumnContent';
 
 export default function TrackingClient() {
    const [q, setQ] = useState('');
@@ -241,95 +294,95 @@ export default function TrackingClient() {
    }, [columnWidths]);
 
    // Helper for deep filtering data for cards
-   const matchesFilter = (data: any, text: string) => {
+   const matchesFilter = React.useCallback((data: any, text: string) => {
       if (!text) return true;
       const lowerText = text.toLowerCase();
       return Object.values(data || {}).some(val => 
          String(val).toLowerCase().includes(lowerText)
       );
-   };
+   }, []);
 
    // Table Columns Definition
    const columns = useMemo<ColumnDef<any>[]>(() => [
        {
           id: 'bom', header: 'Bill of Material', accessorKey: 'bom', size: columnWidths.bom,
           meta: { wrap: true, valign: 'top' },
-          cell: ({ row }) => <RenderColumnContent label="Bill of Material" data={row.original.bom} debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+          cell: ({ row }) => <RenderColumnContent label="Bill of Material" data={row.original.bom} debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'sph', header: 'SPH Out', accessorKey: 'sphOut', size: columnWidths.sph,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="SPH Out" data={row.original.sphOut} extraLabel="(via BOM.faktur = SPH Out.faktur_bom)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+           cell: ({ row }) => <RenderColumnContent label="SPH Out" data={row.original.sphOut} extraLabel="(via BOM.faktur = SPH Out.faktur_bom)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'so', header: 'Sales Order', accessorKey: 'salesOrder', size: columnWidths.so,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Sales Order" data={row.original.salesOrder} extraLabel="(via SPH Out.faktur = Sales Order.faktur_sph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+           cell: ({ row }) => <RenderColumnContent label="Sales Order" data={row.original.salesOrder} extraLabel="(via SPH Out.faktur = Sales Order.faktur_sph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'production', header: 'Order Produksi', accessorKey: 'productionOrder', size: columnWidths.production,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Order Produksi" data={row.original.productionOrder} extraLabel="(via Sales Order.faktur = Order Produksi.faktur_so AND BOM.faktur = Order Produksi.faktur_bom)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+           cell: ({ row }) => <RenderColumnContent label="Order Produksi" data={row.original.productionOrder} extraLabel="(via Sales Order.faktur = Order Produksi.faktur_so AND BOM.faktur = Order Produksi.faktur_bom)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
          id: 'pr', header: 'Purchase Request', accessorKey: 'purchaseRequests', size: columnWidths.pr,
          meta: { wrap: true, valign: 'top' },
-         cell: ({ row }) => <RenderColumnContent label="Purchase Request" items={row.original.purchaseRequests} extraLabel="(via Order Produksi.faktur = Purchase Request.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+         cell: ({ row }) => <RenderColumnContent label="Purchase Request" items={row.original.purchaseRequests} extraLabel="(via Order Produksi.faktur = Purchase Request.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'spph', header: 'SPPH Out', accessorKey: 'spphOut', size: columnWidths.spph,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="SPPH Out" items={row.original.spphOut} extraLabel="(via Purchase Request.faktur = SPPH Out.faktur_pr)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+           cell: ({ row }) => <RenderColumnContent label="SPPH Out" items={row.original.spphOut} extraLabel="(via Purchase Request.faktur = SPPH Out.faktur_pr)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'sph_in', header: 'SPH In', accessorKey: 'sphIn', size: columnWidths.sph_in,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="SPH In" items={row.original.sphIn} extraLabel="(via SPPH Out.faktur = SPH In.faktur_spph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+           cell: ({ row }) => <RenderColumnContent label="SPH In" items={row.original.sphIn} extraLabel="(via SPPH Out.faktur = SPH In.faktur_spph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'purchase_orders', header: 'Purchase Order', accessorKey: 'purchaseOrders', size: columnWidths.purchase_orders,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Purchase Order" items={row.original.purchaseOrders} extraLabel="(via sph_in.faktur = PO.faktur_sph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+           cell: ({ row }) => <RenderColumnContent label="Purchase Order" items={row.original.purchaseOrders} extraLabel="(via sph_in.faktur = PO.faktur_sph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
        {
           id: 'penerimaan_pembelian', header: 'Penerimaan Pembelian', accessorKey: 'penerimaanPembelian', size: columnWidths.penerimaan_pembelian,
           meta: { wrap: true, valign: 'top' },
-          cell: ({ row }) => <RenderColumnContent label="Penerimaan Pembelian" items={row.original.penerimaanPembelian} extraLabel="(via PO.faktur = PB.faktur_po)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+          cell: ({ row }) => <RenderColumnContent label="Penerimaan Pembelian" items={row.original.penerimaanPembelian} extraLabel="(via PO.faktur = PB.faktur_po)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'pembelian_barang', header: 'Pembelian Barang', accessorKey: 'pembelianBarang', size: columnWidths.pembelian_barang,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Pembelian Barang" items={row.original.pembelianBarang} extraLabel="(via Purchase Order.faktur = Pembelian Barang.faktur_po)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+           cell: ({ row }) => <RenderColumnContent label="Pembelian Barang" items={row.original.pembelianBarang} extraLabel="(via Purchase Order.faktur = Pembelian Barang.faktur_po)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'pelunasan_hutang', header: 'Pelunasan Hutang', accessorKey: 'pelunasanHutang', size: columnWidths.pelunasan_hutang,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Pelunasan Hutang" items={row.original.pelunasanHutang} extraLabel="(via Pembelian Barang.faktur = Pelunasan Hutang.faktur_pb)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+           cell: ({ row }) => <RenderColumnContent label="Pelunasan Hutang" items={row.original.pelunasanHutang} extraLabel="(via Pembelian Barang.faktur = Pelunasan Hutang.faktur_pb)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'bahan_baku', header: 'Bahan Baku', accessorKey: 'bahanBaku', size: columnWidths.bahan_baku,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Bahan Baku" items={row.original.bahanBaku} extraLabel="(via Order Produksi.faktur = Bahan Baku.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+           cell: ({ row }) => <RenderColumnContent label="Bahan Baku" items={row.original.bahanBaku} extraLabel="(via Order Produksi.faktur = Bahan Baku.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'barang_jadi', header: 'Barang Jadi', accessorKey: 'barangJadi', size: columnWidths.barang_jadi,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Barang Jadi" items={row.original.barangJadi} extraLabel="(via Order Produksi.faktur = Barang Jadi.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+           cell: ({ row }) => <RenderColumnContent label="Barang Jadi" items={row.original.barangJadi} extraLabel="(via Order Produksi.faktur = Barang Jadi.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'laporan_penjualan', header: 'Laporan Penjualan', accessorKey: 'laporanPenjualan', size: columnWidths.laporan_penjualan,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Laporan Penjualan" items={row.original.laporanPenjualan} extraLabel="(via Sales Order.faktur = Laporan Penjualan.faktur_so OR Sales Order.kd_barang = Laporan Penjualan.kd_barang)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+           cell: ({ row }) => <RenderColumnContent label="Laporan Penjualan" items={row.original.laporanPenjualan} extraLabel="(via Sales Order.faktur = Laporan Penjualan.faktur_so OR Sales Order.kd_barang = Laporan Penjualan.kd_barang)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'pengiriman', header: 'Pengiriman', accessorKey: 'pengiriman', size: columnWidths.pengiriman,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Pengiriman" items={row.original.pengiriman} extraLabel="(via Laporan Penjualan.faktur = Pengiriman.faktur)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+           cell: ({ row }) => <RenderColumnContent label="Pengiriman" items={row.original.pengiriman} extraLabel="(via Laporan Penjualan.faktur = Pengiriman.faktur)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'pelunasan_piutang', header: 'Pelunasan Piutang', accessorKey: 'pelunasanPiutang', size: columnWidths.pelunasan_piutang,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Pelunasan Piutang" items={row.original.pelunasanPiutang} extraLabel="(via Laporan Penjualan.faktur = Pelunasan Piutang.fkt)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} emptyStateClass={emptyStateClass} cardClass={cardClass} RenderAllFields={RenderAllFields} />
+           cell: ({ row }) => <RenderColumnContent label="Pelunasan Piutang" items={row.original.pelunasanPiutang} extraLabel="(via Laporan Penjualan.faktur = Pelunasan Piutang.fkt)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         }
     ], [columnWidths, debouncedFilterText]);
 

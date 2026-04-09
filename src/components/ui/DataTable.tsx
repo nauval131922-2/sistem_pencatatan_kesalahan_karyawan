@@ -13,6 +13,8 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ArrowUp, ArrowDown, ArrowUpDown, Loader2, AlertCircle } from 'lucide-react';
 
+export const ScrollContext = React.createContext<React.RefObject<HTMLDivElement> | null>(null);
+
 interface DataTableProps<TData> {
   columns: ColumnDef<TData, any>[];
   data: TData[];
@@ -150,17 +152,18 @@ export function DataTable<TData extends { id: number | string }>({
   if (!isMounted) return <div className={`bg-white border border-gray-100 rounded-[8px] overflow-hidden ${height} animate-pulse`} />;
 
   return (
-    <div className={`bg-white border border-gray-100 hover:border-gray-200 transition-all duration-300 rounded-[8px] overflow-hidden flex flex-col min-h-0 relative ${height} ${className} ${isResizingColumn ? 'is-resizing' : ''}`}>
-      <style dangerouslySetInnerHTML={{ __html: `.is-resizing * { user-select: none !important; transition: none !important; cursor: col-resize !important; } .is-resizing th > div { cursor: col-resize !important; }` }} />
-      <div 
-        ref={parentRef}
-        className={`overflow-auto custom-scrollbar flex-1 min-h-0 relative bg-white ${isDragging ? 'cursor-grabbing' : ''}`} 
-        onScroll={onScroll}
-        onMouseDown={onMouseDown}
-        onMouseLeave={onMouseLeave}
-        onMouseUp={onMouseUp}
-        onMouseMove={onMouseMove}
-      >
+    <ScrollContext.Provider value={parentRef}>
+      <div className={`bg-white border border-gray-100 hover:border-gray-200 transition-all duration-300 rounded-[8px] overflow-hidden flex flex-col min-h-0 relative ${height} ${className} ${isResizingColumn ? 'is-resizing' : ''}`}>
+        <style dangerouslySetInnerHTML={{ __html: `.is-resizing * { user-select: none !important; transition: none !important; cursor: col-resize !important; } .is-resizing th > div { cursor: col-resize !important; }` }} />
+        <div 
+          ref={parentRef}
+          className={`overflow-auto custom-scrollbar flex-1 min-h-0 relative bg-white ${isDragging ? 'cursor-grabbing' : ''}`} 
+          onScroll={onScroll}
+          onMouseDown={onMouseDown}
+          onMouseLeave={onMouseLeave}
+          onMouseUp={onMouseUp}
+          onMouseMove={onMouseMove}
+        >
         <div style={{ width: totalWidth, minWidth: '100%' }}>
           <table 
             className="text-left relative border-separate border-spacing-0 min-w-full"
@@ -254,7 +257,8 @@ export function DataTable<TData extends { id: number | string }>({
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </ScrollContext.Provider>
   );
 }
 
