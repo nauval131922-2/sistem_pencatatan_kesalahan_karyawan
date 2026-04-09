@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Search, Loader2, Calculator, ArrowRight, AlertCircle, Clock, ChevronDown } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/ui/DataTable';
@@ -35,7 +35,7 @@ const parseLooseNumber = (value: unknown) => {
 };
 
 const chipClass = "px-1.5 py-0.5 rounded-[8px] border text-[11px] font-bold whitespace-nowrap";
-const cardClass = "bg-white rounded-[8px] p-3 flex flex-col gap-2.5 w-full max-w-full text-left transition-all duration-300";
+const cardClass = "bg-white rounded-[8px] p-3 flex flex-col gap-2.5 w-full max-w-full text-left [content-visibility:auto] [contain-intrinsic-size:100px]";
 const infoCardClass = "bg-slate-50 p-2 rounded-[8px] border border-gray-100/50";
 const infoLabelClass = "text-[10px] text-gray-400 font-bold tracking-tight";
 const refLabelClass = "text-gray-400 font-bold min-w-[60px]";
@@ -88,8 +88,7 @@ const HighlightedText = ({ text, highlight }: { text: string; highlight: string 
    );
 };
 
-// Optimization: Move RenderAllFields outside to prevent re-creation on every render
-const RenderAllFields = ({ data, excludeKeys = [], highlightText = '' }: { data: any, excludeKeys?: string[], highlightText?: string }) => {
+const RenderAllFieldsRaw = ({ data, excludeKeys = [], highlightText = '' }: { data: any, excludeKeys?: string[], highlightText?: string }) => {
    if (!data) return null;
    const normalizeKey = (key: string) => String(key).toLowerCase().replace(/[^a-z0-9]/g, '');
    const handledKeys = new Set([...excludeKeys].map(normalizeKey));
@@ -100,29 +99,32 @@ const RenderAllFields = ({ data, excludeKeys = [], highlightText = '' }: { data:
    const rawFields = ['id', 'kode_cabang', 'kd_cabang', 'tgl', 'status', 'created_at', 'edited_at', 'kd_barang', 'recid', 'top_hari', 'kd_gudang', 'create_at', 'updated_at', 'kd_pelanggan', 'datetime_mulai', 'datetime_selesai', 'tgl_dibutuhkan', 'tgl_close', 'status_close', 'jthtmp', 'faktur_supplier', 'tgl_lunas', 'kd_porsekot', 'kd_bank', 'kd_supir', 'kd_armada', 'kd_eks', 'waktu_kirim', 'waktu_selesai', 'tgl_expired', 'gol_barang', 'no_ref_pelanggan'];
 
    return (
-        <div className="grid grid-cols-1 gap-1.5 overflow-hidden">
-           {entries.map(([key, val]) => {
-              let displayVal = String(val);
-              const isRawField = rawFields.includes(key.toLowerCase());
-              if (!isRawField) {
-                 const numVal = parseFloat(String(val).replace(/,/g, ''));
-                 if (!isNaN(numVal)) {
-                     displayVal = numVal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                 }
-              }
+         <div className="grid grid-cols-1 gap-1.5 overflow-hidden">
+            {entries.map(([key, val]) => {
+               let displayVal = String(val);
+               const isRawField = rawFields.includes(key.toLowerCase());
+               if (!isRawField) {
+                  const numVal = parseFloat(String(val).replace(/,/g, ''));
+                  if (!isNaN(numVal)) {
+                      displayVal = numVal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                  }
+               }
 
-              return (
-                <div key={key} className="flex items-start justify-between gap-4 text-[12px] leading-tight">
-                   <span className="text-gray-400 font-bold shrink-0">{key}</span>
-                   <span className="text-gray-600 font-medium text-right break-words">
-                      <HighlightedText text={displayVal} highlight={highlightText} />
-                   </span>
-                </div>
-              );
-           })}
-        </div>
+               return (
+                 <div key={key} className="flex items-start justify-between gap-4 text-[12px] leading-tight">
+                    <span className="text-gray-400 font-bold shrink-0">{key}</span>
+                    <span className="text-gray-600 font-medium text-right break-words">
+                       <HighlightedText text={displayVal} highlight={highlightText} />
+                    </span>
+                 </div>
+               );
+            })}
+         </div>
    );
 };
+
+// Use memo to prevent unnecessary re-renders of data cards
+const RenderAllFields = React.memo(RenderAllFieldsRaw);
 
 // Helper component for uniform column rendering
 const RenderColumnContent = ({ label, data, items, debouncedFilterText, matchesFilter, emptyStateClass, cardClass, RenderAllFields, extraLabel }: any) => {
