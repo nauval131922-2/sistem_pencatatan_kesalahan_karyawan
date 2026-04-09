@@ -39,7 +39,21 @@ export async function initIndexing(database: any) {
     "CREATE INDEX IF NOT EXISTS idx_pengiriman_tgl ON pengiriman(tgl DESC);",
     "CREATE INDEX IF NOT EXISTS idx_pengiriman_recid ON pengiriman(recid);",
     
-    // 9. System Optimization
+    // 9. Tracking Manufaktur Optimization (Critical for Pipeline view)
+    "CREATE INDEX IF NOT EXISTS idx_bill_of_materials_faktur_prd ON bill_of_materials(faktur_prd);",
+    "CREATE INDEX IF NOT EXISTS idx_sales_orders_faktur_sph ON sales_orders(faktur_sph);",
+    "CREATE INDEX IF NOT EXISTS idx_purchase_requests_faktur_prd ON purchase_requests(faktur_prd);",
+    "CREATE INDEX IF NOT EXISTS idx_spph_out_faktur_pr ON spph_out(faktur_pr);",
+    "CREATE INDEX IF NOT EXISTS idx_sph_in_faktur_spph ON sph_in(faktur_spph);",
+    "CREATE INDEX IF NOT EXISTS idx_purchase_orders_faktur_sph ON purchase_orders(faktur_sph);",
+    "CREATE INDEX IF NOT EXISTS idx_penerimaan_pembelian_faktur_po ON penerimaan_pembelian(faktur_po);",
+    "CREATE INDEX IF NOT EXISTS idx_rekap_pembelian_barang_faktur_po ON rekap_pembelian_barang(faktur_po);",
+    "CREATE INDEX IF NOT EXISTS idx_pelunasan_hutang_faktur_pb ON pelunasan_hutang(faktur_pb);",
+    "CREATE INDEX IF NOT EXISTS idx_sales_reports_faktur_so ON sales_reports(faktur_so);",
+    "CREATE INDEX IF NOT EXISTS idx_sales_reports_kd_barang ON sales_reports(kd_barang);",
+    "CREATE INDEX IF NOT EXISTS idx_pelunasan_piutang_fkt ON pelunasan_piutang(fkt);",
+
+    // 10. System Optimization
     "ANALYZE;" // Update SQLite statistics for query planner
   ];
 
