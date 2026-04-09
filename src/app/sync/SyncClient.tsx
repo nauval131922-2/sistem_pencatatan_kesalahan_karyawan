@@ -15,24 +15,45 @@ import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatScrapedPeriodDate, getDefaultScraperDateRange, persistScraperPeriod, hydrateScraperPeriod } from '@/lib/scraper-period';
 
-const MODULES = [
-  { id: 'bom', name: 'Bill of Material Produksi', endpoint: '/api/scrape-bom', description: 'Data formula produksi' },
-  { id: 'sph-out', name: 'SPH Keluar', endpoint: '/api/scrape-sph-out', description: 'Surat Penawaran Harga Keluar' },
-  { id: 'sales-orders', name: 'Sales Order Barang', endpoint: '/api/scrape-sales-orders', description: 'Pesanan dari pelanggan' },
-  { id: 'orders', name: 'Order Produksi', endpoint: '/api/scrape-orders', description: 'Surat Perintah Kerja' },
-  { id: 'pr', name: 'Purchase Request (PR)', endpoint: '/api/scrape-pr', description: 'Permintaan pembelian bahan' },
-  { id: 'spph-out', name: 'SPPH Keluar', endpoint: '/api/scrape-spph-out', description: 'Permintaan penawaran supplier' },
-  { id: 'sph-in', name: 'SPH Masuk', endpoint: '/api/scrape-sph-in', description: 'Penawaran masuk dari supplier' },
-  { id: 'purchase-orders', name: 'Purchase Order (PO)', endpoint: '/api/scrape-purchase-orders', description: 'Pesanan resmi ke supplier' },
-  { id: 'penerimaan-pembelian', name: 'Penerimaan Barang', endpoint: '/api/scrape-penerimaan-pembelian', description: 'Logistik barang masuk' },
-  { id: 'rekap-pembelian-barang', name: 'Laporan Rekap Pembelian Barang', endpoint: '/api/scrape-rekap-pembelian-barang', description: 'Faktur pembelian barang' },
-  { id: 'pelunasan-hutang', name: 'Pelunasan Hutang', endpoint: '/api/scrape-pelunasan-hutang', description: 'Pembayaran ke supplier' },
-  { id: 'bahan-baku', name: 'BBB Produksi', endpoint: '/api/scrape-bahan-baku', description: 'Pengeluaran bahan produksi' },
-  { id: 'barang-jadi', name: 'Penerimaan Barang Hasil Produksi', endpoint: '/api/scrape-barang-jadi', description: 'Stok produk siap kirim' },
-  { id: 'sales', name: 'Laporan Penjualan', endpoint: '/api/scrape-sales', description: 'Faktur penjualan barang' },
-  { id: 'pengiriman', name: 'Pengiriman', endpoint: '/api/scrape-pengiriman', description: 'Logistik barang keluar' },
-  { id: 'pelunasan-piutang', name: 'Pelunasan Piutang Penjualan', endpoint: '/api/scrape-pelunasan-piutang', description: 'Penerimaan dari pelanggan' },
+const MODULE_GROUPS = [
+  {
+    group: 'Produksi',
+    color: 'green',
+    modules: [
+      { id: 'bom', name: 'Bill of Material Produksi', endpoint: '/api/scrape-bom', description: 'Data formula produksi' },
+      { id: 'orders', name: 'Order Produksi', endpoint: '/api/scrape-orders', description: 'Surat Perintah Kerja' },
+      { id: 'bahan-baku', name: 'BBB Produksi', endpoint: '/api/scrape-bahan-baku', description: 'Pengeluaran bahan produksi' },
+      { id: 'barang-jadi', name: 'Penerimaan Barang Hasil Produksi', endpoint: '/api/scrape-barang-jadi', description: 'Stok produk siap kirim' },
+    ]
+  },
+  {
+    group: 'Pembelian',
+    color: 'blue',
+    modules: [
+      { id: 'pr', name: 'Purchase Request (PR)', endpoint: '/api/scrape-pr', description: 'Permintaan pembelian bahan' },
+      { id: 'spph-out', name: 'SPPH Keluar', endpoint: '/api/scrape-spph-out', description: 'Permintaan penawaran supplier' },
+      { id: 'sph-in', name: 'SPH Masuk', endpoint: '/api/scrape-sph-in', description: 'Penawaran masuk dari supplier' },
+      { id: 'purchase-orders', name: 'Purchase Order (PO)', endpoint: '/api/scrape-purchase-orders', description: 'Pesanan resmi ke supplier' },
+      { id: 'penerimaan-pembelian', name: 'Penerimaan Barang', endpoint: '/api/scrape-penerimaan-pembelian', description: 'Logistik barang masuk' },
+      { id: 'rekap-pembelian-barang', name: 'Laporan Rekap Pembelian Barang', endpoint: '/api/scrape-rekap-pembelian-barang', description: 'Faktur pembelian barang' },
+      { id: 'pelunasan-hutang', name: 'Pelunasan Hutang', endpoint: '/api/scrape-pelunasan-hutang', description: 'Pembayaran ke supplier' },
+    ]
+  },
+  {
+    group: 'Penjualan',
+    color: 'purple',
+    modules: [
+      { id: 'sph-out', name: 'SPH Keluar', endpoint: '/api/scrape-sph-out', description: 'Surat Penawaran Harga Keluar' },
+      { id: 'sales-orders', name: 'Sales Order Barang', endpoint: '/api/scrape-sales-orders', description: 'Pesanan dari pelanggan' },
+      { id: 'sales', name: 'Laporan Penjualan', endpoint: '/api/scrape-sales', description: 'Faktur penjualan barang' },
+      { id: 'pengiriman', name: 'Pengiriman', endpoint: '/api/scrape-pengiriman', description: 'Logistik barang keluar' },
+      { id: 'pelunasan-piutang', name: 'Pelunasan Piutang Penjualan', endpoint: '/api/scrape-pelunasan-piutang', description: 'Penerimaan dari pelanggan' },
+    ]
+  },
 ];
+
+// Flat list for batch processing
+const MODULES = MODULE_GROUPS.flatMap(g => g.modules);
 
 const PERSISTENCE_KEYS: Record<string, { stateKey: string; periodKey: string }> = {
   'bom': { stateKey: 'bomReportState', periodKey: 'BOMClient_scrapedPeriod' },
@@ -275,84 +296,119 @@ export default function SyncClient() {
         </div>
       </div>
 
-      {/* Grid Modules Container */}
-      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0 pb-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {MODULES.map((mod) => {
-            const state = syncStates[mod.id];
-            const isActive = currentModuleId === mod.id;
+      {/* Grouped Modules */}
+      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0 pb-10 flex flex-col gap-8">
+        {MODULE_GROUPS.map((group) => {
+          const groupColorMap: Record<string, { badge: string; header: string; dot: string }> = {
+            green: {
+              badge: 'bg-green-50 text-green-700 border-green-200',
+              header: 'border-green-500',
+              dot: 'bg-green-500',
+            },
+            blue: {
+              badge: 'bg-blue-50 text-blue-700 border-blue-200',
+              header: 'border-blue-500',
+              dot: 'bg-blue-500',
+            },
+            purple: {
+              badge: 'bg-violet-50 text-violet-700 border-violet-200',
+              header: 'border-violet-500',
+              dot: 'bg-violet-500',
+            },
+          };
+          const gc = groupColorMap[group.color] || groupColorMap.green;
 
-            return (
-              <div 
-                key={mod.id} 
-                className={`
-                  relative bg-white rounded-[8px] p-5 transition-all duration-300
-                  ${isActive ? 'border-[2px] border-green-500 ring-4 ring-green-500/5 shadow-md' : 'border-[1.5px] border-gray-200 hover:border-gray-300 hover:shadow-sm'}
-                `}
-              >
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex flex-col min-w-0">
-                      <h3 className="text-[14px] font-black text-gray-800 truncate leading-tight py-0.5">{mod.name}</h3>
-                      <p className="text-[10px] text-gray-400 font-bold mt-1 truncate">{mod.description}</p>
-                    </div>
-                    <div className={`
-                      w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 border
-                      ${state.status === 'success' ? 'bg-green-50 border-green-100 text-green-600' : 
-                        state.status === 'error' ? 'bg-red-50 border-red-100 text-red-600' :
-                        isActive ? 'bg-blue-50 border-blue-100 text-blue-600' : 'bg-gray-50 border-gray-100 text-gray-400'}
-                    `}>
-                      {state.status === 'success' ? <CheckCircle2 size={16} /> : 
-                       state.status === 'error' ? <AlertCircle size={16} /> :
-                       isActive ? <Loader2 size={16} className="animate-spin" /> : <Database size={16} />}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-start gap-2 text-[10px] font-bold text-gray-400 leading-tight">
-                      <Clock size={12} className="mt-0.5 shrink-0" />
-                      <div className="flex flex-col gap-0.5">
-                        <span className="tracking-tight">Diperbarui: {state.lastUpdate || '-'}</span>
-                        {state.period && (
-                          <span className="text-[9px] font-medium opacity-70">
-                            (Periode: {formatScrapedPeriodDate(state.period.start)} s.d. {formatScrapedPeriodDate(state.period.end)})
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    {state.message && (
-                      <div className={`
-                        text-[10px] font-bold px-2.5 py-1.5 rounded-[8px] border leading-tight
-                        ${state.status === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}
-                      `}>
-                        {state.message}
-                      </div>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={() => runSync(mod.id)}
-                    disabled={isBatchProcessing}
-                    className={`
-                      w-full h-9 rounded-[8px] border text-[11px] font-black transition-all flex items-center justify-center gap-2 uppercase tracking-wide
-                      ${isBatchProcessing ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300 active:scale-95'}
-                    `}
-                  >
-                    <RefreshCw size={12} className={isActive ? 'animate-spin' : ''} />
-                    Sinkronkan
-                  </button>
-                </div>
-
-                {isActive && (
-                  <div className="absolute top-3 right-3 flex gap-1">
-                    <span className="flex h-2 w-2 rounded-full bg-green-500 animate-ping" />
-                  </div>
-                )}
+          return (
+            <div key={group.group} className="flex flex-col gap-4">
+              {/* Group Header */}
+              <div className={`flex items-center gap-3 border-l-4 pl-3 ${gc.header}`}>
+                <span className={`text-[11px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${gc.badge}`}>
+                  {group.group}
+                </span>
+                <div className="flex-1 h-px bg-gray-100" />
+                <span className="text-[10px] font-bold text-gray-400">{group.modules.length} modul</span>
               </div>
-            );
-          })}
-        </div>
+
+              {/* Module Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {group.modules.map((mod) => {
+                  const state = syncStates[mod.id];
+                  const isActive = currentModuleId === mod.id;
+
+                  return (
+                    <div
+                      key={mod.id}
+                      className={`
+                        relative bg-white rounded-[8px] p-5 transition-all duration-300
+                        ${isActive ? 'border-[2px] border-green-500 ring-4 ring-green-500/5 shadow-md' : 'border-[1.5px] border-gray-200 hover:border-gray-300 hover:shadow-sm'}
+                      `}
+                    >
+                      <div className="flex flex-col gap-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex flex-col min-w-0">
+                            <h3 className="text-[14px] font-black text-gray-800 leading-tight py-0.5">{mod.name}</h3>
+                            <p className="text-[10px] text-gray-400 font-bold mt-1 truncate">{mod.description}</p>
+                          </div>
+                          <div className={`
+                            w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 border
+                            ${state?.status === 'success' ? 'bg-green-50 border-green-100 text-green-600' :
+                              state?.status === 'error' ? 'bg-red-50 border-red-100 text-red-600' :
+                              isActive ? 'bg-blue-50 border-blue-100 text-blue-600' : 'bg-gray-50 border-gray-100 text-gray-400'}
+                          `}>
+                            {state?.status === 'success' ? <CheckCircle2 size={16} /> :
+                             state?.status === 'error' ? <AlertCircle size={16} /> :
+                             isActive ? <Loader2 size={16} className="animate-spin" /> : <Database size={16} />}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-start gap-2 text-[10px] font-bold text-gray-400 leading-tight">
+                            <Clock size={12} className="mt-0.5 shrink-0" />
+                            <div className="flex flex-col gap-0.5">
+                              <span className="tracking-tight">Diperbarui: {state?.lastUpdate || '-'}</span>
+                              {state?.period && (
+                                <span className="text-[9px] font-medium opacity-70">
+                                  (Periode: {formatScrapedPeriodDate(state.period.start)} s.d. {formatScrapedPeriodDate(state.period.end)})
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {state?.message && (
+                            <div className={`
+                              text-[10px] font-bold px-2.5 py-1.5 rounded-[8px] border leading-tight
+                              ${state.status === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}
+                            `}>
+                              {state.message}
+                            </div>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => runSync(mod.id)}
+                          disabled={isBatchProcessing}
+                          className={`
+                            w-full h-9 rounded-[8px] border text-[11px] font-black transition-all flex items-center justify-center gap-2 uppercase tracking-wide
+                            ${isBatchProcessing ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300 active:scale-95'}
+                          `}
+                        >
+                          <RefreshCw size={12} className={isActive ? 'animate-spin' : ''} />
+                          Sinkronkan
+                        </button>
+                      </div>
+
+                      {isActive && (
+                        <div className="absolute top-3 right-3 flex gap-1">
+                          <span className="flex h-2 w-2 rounded-full bg-green-500 animate-ping" />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Info Section */}
