@@ -13,7 +13,7 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ArrowUp, ArrowDown, ArrowUpDown, Loader2, AlertCircle } from 'lucide-react';
 
-export const ScrollContext = React.createContext<React.RefObject<HTMLDivElement> | null>(null);
+export const ScrollContext = React.createContext<React.RefObject<HTMLDivElement | null> | null>(null);
 
 interface DataTableProps<TData> {
   columns: ColumnDef<TData, any>[];
