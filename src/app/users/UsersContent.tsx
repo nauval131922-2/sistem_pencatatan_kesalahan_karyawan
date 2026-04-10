@@ -22,7 +22,7 @@ interface User {
   created_at?: string | null;
 }
 
-export default function UsersContent({ currentUser, currentUserId }: { currentUser: string, currentUserId: number }) {
+export default function UsersContent({ currentUser, currentUserId, customRoles = [] }: { currentUser: string, currentUserId: number, customRoles?: string[] }) {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchImmediate, setSearchImmediate] = useState('');
@@ -36,6 +36,10 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [lastSelectedId, setLastSelectedId] = useState<number | null>(null);
   const [loadTime, setLoadTime] = useState<number | null>(null);
+
+  // Custom Dropdown State
+  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
+  const [roleSearchQuery, setRoleSearchQuery] = useState('');
 
   // Column Resizing State
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
@@ -101,6 +105,17 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [loadUsers]);
+
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.role-dropdown-container')) {
+        setIsRoleDropdownOpen(false);
+      }
+    };
+    window.addEventListener('click', handleGlobalClick);
+    return () => window.removeEventListener('click', handleGlobalClick);
+  }, []);
 
 
   useEffect(() => {
@@ -214,15 +229,6 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
     }
   ], [columnWidths, currentUserId]);
 
-  const stats = useMemo(() => {
-    let superAdmins = 0;
-    let admins = 0;
-    users.forEach(u => {
-      if (u.role === 'Super Admin') superAdmins++;
-      else if (u.role === 'Admin') admins++;
-    });
-    return { total: users.length, superAdmins, admins };
-  }, [users]);
 
   const handleDelete = (id: number, username: string) => {
     if (id === currentUserId || username === currentUser) {
@@ -271,74 +277,76 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
-      {/* Stats Cards at the Top */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
-        <div className="bg-white rounded-[8px] border border-gray-100 p-5 h-[100px] flex items-center gap-4 hover:border-gray-200 hover:shadow-sm transition-all duration-300 text-blue-600">
-          <div className="w-12 h-12 rounded-[8px] bg-blue-50 flex items-center justify-center shrink-0">
-            <Users size={24} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-2xl font-black tracking-tighter text-gray-800 leading-none mb-1">{stats.total}</span>
-            <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Total Pengguna</span>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-[8px] border border-gray-100 p-5 h-[100px] flex items-center gap-4 hover:border-gray-200 hover:shadow-sm transition-all duration-300 text-purple-600">
-          <div className="w-12 h-12 rounded-[8px] bg-purple-50 flex items-center justify-center shrink-0">
-            <ShieldCheck size={24} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-2xl font-black tracking-tighter text-gray-800 leading-none mb-1">{stats.superAdmins}</span>
-            <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Super Admin</span>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-[8px] border border-gray-100 p-5 h-[100px] flex items-center gap-4 hover:border-gray-200 hover:shadow-sm transition-all duration-300 text-indigo-600">
-          <div className="w-12 h-12 rounded-[8px] bg-indigo-50 flex items-center justify-center shrink-0">
-            <UserCog size={24} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-2xl font-black tracking-tighter text-gray-800 leading-none mb-1">{stats.admins}</span>
-            <span className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Admin</span>
-          </div>
-        </div>
-      </div>
-
       {/* Top Controls Row */}
-      <div className="shrink-0 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2 p-1.5 bg-white border border-gray-100 rounded-[8px] shadow-sm">
-          {[
-            { label: 'Semua', value: 'Semua Jabatan', icon: Users },
-            { label: 'Super Admin', value: 'Super Admin', icon: ShieldCheck },
-            { label: 'Admin', value: 'Admin', icon: UserCog }
-          ].map((role) => (
-            <button
-              key={role.value}
-              onClick={() => {
-                startTransition(() => {
-                  setRoleFilter(role.value);
-                });
-              }}
-              className={`
-                flex items-center gap-2 px-5 py-2.5 rounded-[8px] text-[11px] font-black uppercase tracking-wider transition-all duration-200
-                ${roleFilter === role.value 
-                  ? 'bg-green-600 text-white shadow-md shadow-green-600/20' 
-                  : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
-                }
-              `}
-            >
-              <role.icon size={14} className={roleFilter === role.value ? 'text-white' : 'opacity-50'} />
-              <span>{role.label}</span>
-            </button>
-          ))}
+      <div className="shrink-0 flex items-center justify-between gap-4 z-50">
+        <div className="flex-1 max-w-[250px] relative role-dropdown-container z-50">
+          <button
+            onClick={() => setIsRoleDropdownOpen(prev => !prev)}
+            className="w-full h-[52px] pl-10 pr-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-sm font-semibold text-gray-700 shadow-sm flex items-center justify-between"
+          >
+            <span className="truncate">{roleFilter === 'Semua Jabatan' ? 'Semua Role' : roleFilter}</span>
+            <div className="absolute top-1/2 -translate-y-1/2 left-3 pointer-events-none text-gray-400">
+              <Users size={16} />
+            </div>
+            <div className="absolute top-1/2 -translate-y-1/2 right-3 pointer-events-none text-gray-400">
+              <ChevronDown size={16} className={`transition-transform duration-200 ${isRoleDropdownOpen ? 'rotate-180' : ''}`} />
+            </div>
+          </button>
+
+          {isRoleDropdownOpen && (
+            <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-gray-100 rounded-[8px] shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[300px]">
+              <div className="px-3 pb-2 shrink-0 border-b border-gray-50 mb-1">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400">
+                    <Search size={14} />
+                  </div>
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="Cari role..."
+                    value={roleSearchQuery}
+                    onChange={(e) => setRoleSearchQuery(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-green-500/20 rounded-[6px] placeholder:text-gray-400 font-medium"
+                  />
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto px-1.5 scrollbar-thin">
+                {['Semua Jabatan', ...customRoles]
+                  .filter(r => r.toLowerCase().includes(roleSearchQuery.toLowerCase()))
+                  .map(role => (
+                    <button
+                      key={role}
+                      onClick={() => {
+                        startTransition(() => setRoleFilter(role));
+                        setIsRoleDropdownOpen(false);
+                        setRoleSearchQuery('');
+                      }}
+                      className={`w-full text-left px-3 py-2 text-sm font-medium rounded-md transition-colors truncate ${
+                        roleFilter === role 
+                          ? 'bg-green-50 text-green-700' 
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      {role === 'Semua Jabatan' ? 'Semua Role' : role}
+                    </button>
+                  ))}
+                  {['Semua Jabatan', ...customRoles].filter(r => r.toLowerCase().includes(roleSearchQuery.toLowerCase())).length === 0 && (
+                    <div className="px-3 py-4 text-center text-xs text-gray-400 font-medium">
+                      Pencarian tidak ditemukan.
+                    </div>
+                  )}
+              </div>
+            </div>
+          )}
         </div>
 
         <button 
           onClick={handleCreate}
-          className="px-6 h-[52px] bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-[8px] transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-green-600/10 active:scale-95"
+          className="px-6 h-[52px] bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-[8px] transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-green-600/10 active:scale-95 whitespace-nowrap"
         >
           <Plus size={20} />
-          <span>Tambah User Baru</span>
+          <span className="hidden sm:inline">Tambah User Baru</span>
+          <span className="sm:hidden">Tambah</span>
         </button>
       </div>
 
@@ -454,6 +462,7 @@ export default function UsersContent({ currentUser, currentUserId }: { currentUs
       {showModal && (
         <UserFormModal 
           user={editingUser}
+          customRoles={customRoles}
           onClose={(refresh) => {
             setShowModal(false);
             if (refresh) loadUsers();

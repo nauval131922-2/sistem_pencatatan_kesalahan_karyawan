@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { X, Save, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Save, AlertCircle, Search, ChevronDown } from 'lucide-react';
 import { createUser, updateUser } from '@/lib/users';
 
 interface User {
@@ -13,10 +13,11 @@ interface User {
 
 interface UserFormModalProps {
   user: User | null;
+  customRoles?: string[];
   onClose: (refresh: boolean) => void;
 }
 
-export default function UserFormModal({ user, onClose }: UserFormModalProps) {
+export default function UserFormModal({ user, customRoles = ['Super Admin', 'Admin'], onClose }: UserFormModalProps) {
   const isEditing = !!user;
 
   const [name, setName] = useState(user?.name || '');
@@ -26,6 +27,23 @@ export default function UserFormModal({ user, onClose }: UserFormModalProps) {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Custom Dropdown State
+  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
+  const [roleSearchQuery, setRoleSearchQuery] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsRoleDropdownOpen(false);
+      }
+    };
+    if (isRoleDropdownOpen) {
+      window.addEventListener('mousedown', handleGlobalClick);
+    }
+    return () => window.removeEventListener('mousedown', handleGlobalClick);
+  }, [isRoleDropdownOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,9 +77,9 @@ export default function UserFormModal({ user, onClose }: UserFormModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-[8px] shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-[8px] shadow-xl w-full max-w-md animate-in zoom-in-95 duration-200">
+        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-[8px]">
           <h2 className="text-lg font-bold text-slate-800">
             {isEditing ? 'Edit User' : 'Tambah User Baru'}
           </h2>
@@ -108,14 +126,62 @@ export default function UserFormModal({ user, onClose }: UserFormModalProps) {
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">Peran Akses (Role)</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-[8px] focus:ring-2 focus:ring-emerald-500 outline-none bg-white transition-all font-medium"
-              >
-                <option value="Admin">Admin</option>
-                <option value="Super Admin">Super Admin</option>
-              </select>
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsRoleDropdownOpen(prev => !prev)}
+                  className="w-full px-3 py-2 text-left bg-white border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all font-medium text-slate-700 flex items-center justify-between"
+                >
+                  <span className="truncate">{role}</span>
+                  <ChevronDown size={16} className={`text-slate-400 shrink-0 transition-transform duration-200 ${isRoleDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {isRoleDropdownOpen && (
+                  <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-100 rounded-[8px] shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[250px]">
+                    <div className="px-3 pb-2 shrink-0 border-b border-slate-50 mb-1">
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                          <Search size={14} />
+                        </div>
+                        <input
+                          type="text"
+                          autoFocus
+                          placeholder="Cari role..."
+                          value={roleSearchQuery}
+                          onChange={(e) => setRoleSearchQuery(e.target.value)}
+                          className="w-full pl-8 pr-3 py-1.5 text-sm bg-slate-50 border-none focus:outline-none focus:ring-2 focus:ring-emerald-500/20 rounded-[6px] placeholder:text-slate-400 font-medium"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex-1 overflow-y-auto px-1.5 scrollbar-thin">
+                      {customRoles
+                        .filter(r => r.toLowerCase().includes(roleSearchQuery.toLowerCase()))
+                        .map(cr => (
+                          <button
+                            type="button"
+                            key={cr}
+                            onClick={() => {
+                              setRole(cr);
+                              setIsRoleDropdownOpen(false);
+                              setRoleSearchQuery('');
+                            }}
+                            className={`w-full text-left px-3 py-2 text-sm font-medium rounded-md transition-colors truncate ${
+                              role === cr 
+                                ? 'bg-emerald-50 text-emerald-700' 
+                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                            }`}
+                          >
+                            {cr}
+                          </button>
+                        ))}
+                        {customRoles.filter(r => r.toLowerCase().includes(roleSearchQuery.toLowerCase())).length === 0 && (
+                          <div className="px-3 py-4 text-center text-xs text-slate-400 font-medium">
+                            Role tidak ditemukan.
+                          </div>
+                        )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
