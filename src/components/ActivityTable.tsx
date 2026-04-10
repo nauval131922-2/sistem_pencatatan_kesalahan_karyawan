@@ -72,21 +72,34 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-6 w-full animate-in fade-in duration-500">
-      <div className="flex items-center gap-4 bg-white p-4 rounded-[8px] border border-gray-100 shadow-sm shrink-0">
-        <div className="relative flex-1">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+    <div className="flex-1 min-h-0 flex flex-col gap-4 w-full animate-in fade-in duration-500">
+      <div className="flex flex-col gap-4 shrink-0">
+        <div className="flex items-center px-1">
+          <div className="flex items-center gap-3">
+            <h3 className="text-[15px] font-extrabold text-gray-800 flex items-center gap-2">
+              <History size={18} className="text-green-600" />
+              <span>Aktivitas Terkini</span>
+            </h3>
+            {filteredLogs.length !== initialLogs.length && (
+              <div className="flex items-center gap-3">
+                <span className="text-gray-200 text-xs mx-1">|</span>
+                <span className="text-[10px] bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full font-black uppercase tracking-wider border border-amber-100/50 animate-in fade-in zoom-in-95">
+                  {filteredLogs.length} HASIL
+                </span>
+              </div>
+            )}
+            {isPending && <Loader2 size={14} className="animate-spin text-gray-400" />}
+          </div>
+        </div>
+        <div className="relative w-full shrink-0 group">
+          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-green-500 transition-colors" />
           <input
             type="text"
-            className="w-full h-10 pl-10 pr-4 text-[13px] bg-gray-50 border border-gray-200 rounded-[6px] focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 font-medium transition-all"
-            placeholder="Cari berdasarkan aksi, tabel, pesan, atau user..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            placeholder="Cari menu, user, atau keterangan..."
+            className="w-full pl-12 pr-4 h-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
           />
-        </div>
-        <div className="shrink-0 flex items-center gap-2 text-[12px] font-bold text-gray-500 px-3 py-2 bg-gray-50 rounded-[6px] border border-gray-100">
-          {isPending ? <Loader2 size={16} className="animate-spin" /> : <History size={16} />}
-          <span>{filteredLogs.length} Entri</span>
         </div>
       </div>
 
