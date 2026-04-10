@@ -27,6 +27,18 @@ export async function login(username: string, password: string):Promise<{success
       return { success: false, message: 'Password salah.' };
     }
 
+    // Role existence validation
+    if (user.role !== 'Super Admin') {
+      const roleCheck = await db.execute({
+        sql: 'SELECT 1 FROM app_roles WHERE role_name = ?',
+        args: [user.role]
+      });
+      if (roleCheck.rows.length === 0) {
+        console.log(`[AUTH] Orphaned role: ${user.role} for user: ${username}`);
+        return { success: false, message: 'Akses masuk ditolak: Role Anda telah dihapus atau tidak dikenali. Hubungi Super Admin untuk penugasan ulang peran.' };
+      }
+    }
+
     console.log(`[AUTH] Password match, creating session...`);
     // Create session
     await createSession({

@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from "react";
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from "./Sidebar";
+import { ShieldAlert, X } from 'lucide-react';
+import type { PermissionMap } from '@/lib/permissions-constants';
 
 interface MainContentWrapperProps {
   children: React.ReactNode;
@@ -12,16 +14,19 @@ interface MainContentWrapperProps {
     role?: string;
     photo?: string | null;
   } | null;
+  permissions?: PermissionMap;
 }
 
 export default function MainContentWrapper({
   children,
-  user
+  user,
+  permissions = {},
 }: MainContentWrapperProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const isStaleRef = useRef(false);
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // Sync initial state from localStorage after mount
   useEffect(() => {
@@ -76,16 +81,12 @@ export default function MainContentWrapper({
   const isLoginPage = pathname ? pathname.startsWith('/login') : false;
 
   if (isLoginPage) {
-    return (
-      <div className="flex-1 w-full min-h-screen bg-slate-50">
-        {children}
-      </div>
-    );
+    return <>{children}</>;
   }
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-50">
-      <Sidebar user={user} />
+      <Sidebar user={user} permissions={permissions} />
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Changed from main to div with standardized classes to reduce hydration mismatch risk */}
         <div className="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar bg-slate-50 px-6 md:px-8 py-8">
@@ -95,6 +96,7 @@ export default function MainContentWrapper({
     </div>
   );
 }
+
 
 
 

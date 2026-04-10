@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import db from '@/lib/db';
 
 const secretKey = process.env.SESSION_SECRET || 'sintaksecretkey_change_in_production';
 const key = new TextEncoder().encode(secretKey);
@@ -45,11 +46,27 @@ export async function createSession(payload: SessionPayload) {
   });
 }
 
-export async function getSession() {
+export async function getSession(): Promise<SessionPayload | null> {
   const cookieStore = await cookies();
   const session = cookieStore.get('sintak_session')?.value;
   if (!session) return null;
-  return await decrypt(session);
+  
+  const payload = await decrypt(session);
+  if (!payload) return null;
+
+  // Refresh role from database dynamically to prevent stale tokens 
+  // when a Super Admin renames or changes a role's permissions.
+  try {
+    const { rows } = await db.execute({
+      sql: 'SELECT role FROM users WHERE id = ?',
+      args: [payload.userId]
+    });
+    if (rows.length > 0 && rows[0].role) {
+      payload.role = rows[0].role as string;
+    }
+  } catch (err) {}
+
+  return payload;
 }
 
 export async function destroySession() {

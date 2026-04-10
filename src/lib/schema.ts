@@ -76,6 +76,22 @@ export async function initSchema(db: any) {
       recorded_by TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`,
+    `CREATE TABLE IF NOT EXISTS app_roles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      role_name TEXT UNIQUE NOT NULL,
+      description TEXT,
+      color TEXT DEFAULT 'text-indigo-600',
+      bg TEXT DEFAULT 'bg-indigo-50',
+      border TEXT DEFAULT 'border-indigo-200',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS role_permissions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      role TEXT NOT NULL,
+      module_key TEXT NOT NULL,
+      can_access INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
     `CREATE TABLE IF NOT EXISTS orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       faktur TEXT UNIQUE NOT NULL,
@@ -551,6 +567,45 @@ export async function initSchema(db: any) {
       if (!msg.includes('already exists') && !msg.includes('duplicate') && !msg.includes('locked')) {
         console.warn(`[DB] Migration failed for: ${sql.slice(0, 50)}...`, e.message);
       }
+    }
+  }
+
+  // 2.5 Seed default roles ONLY if app_roles table is entirely empty
+  try {
+    if (executor.execute) {
+      const res = await executor.execute("SELECT COUNT(*) as c FROM app_roles");
+      if (res.rows[0].c === 0) {
+        await executor.execute("INSERT OR IGNORE INTO app_roles (role_name, description, color, bg, border) VALUES ('Admin', 'Akses standar dapat dikonfigurasi per modul.', 'text-indigo-600', 'bg-indigo-50', 'border-indigo-200');");
+        await db.batch([
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'dashboard', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'sync', 0);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'pembelian_pr', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'pembelian_spph', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'pembelian_sph_in', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'pembelian_po', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'pembelian_penerimaan', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'pembelian_rekap', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'pembelian_hutang', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'produksi_bom', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'produksi_orders', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'produksi_bahan_baku', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'produksi_barang_jadi', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'penjualan_sph_out', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'penjualan_so', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'penjualan_laporan', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'penjualan_piutang', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'penjualan_pengiriman', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'karyawan', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'hpp_kalkulasi', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'statistik', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'catat_kesalahan', 1);",
+          "INSERT OR IGNORE INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'tracking_manufaktur', 1);"
+        ], "write");
+      }
+    }
+  } catch (e: any) {
+    if (!e.message?.includes('no such table')) {
+      console.warn("[DB] Failed seeding permissions:", e.message);
     }
   }
 
