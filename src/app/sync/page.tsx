@@ -11,6 +11,7 @@ export const metadata = {
 export default async function SyncPage() {
   await requirePermission("sync");
   const session = await getSession();
+  if (!session) return null; // requirePermission handles redirect for unauthenticated users
   const userPermissions = await getRolePermissions(session.role);
   return (
     <div className="flex-1 min-h-0 h-full flex flex-col gap-6 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700">
