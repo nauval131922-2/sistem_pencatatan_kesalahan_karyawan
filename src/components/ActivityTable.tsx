@@ -99,6 +99,40 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
     }
   };
 
+  // Find which fields in raw_data contain the search term
+  const getSnapshotMatches = (log: any): { key: string; value: string }[] => {
+    if (!search.trim() || !log.raw_data) return [];
+    // If other fields already matched, don't show snapshot hints
+    const term = search.toLowerCase();
+    const directMatch =
+      (log.action_type || '').toLowerCase().includes(term) ||
+      (log.table_name || '').toLowerCase().includes(term) ||
+      (log.message || '').toLowerCase().includes(term) ||
+      (log.recorded_by || '').toLowerCase().includes(term);
+    if (directMatch) return [];
+    try {
+      const parsed = JSON.parse(log.raw_data);
+      const matches: { key: string; value: string }[] = [];
+      const scan = (obj: any, prefix = '') => {
+        for (const [k, v] of Object.entries(obj)) {
+          const fullKey = prefix ? `${prefix}.${k}` : k;
+          if (typeof v === 'object' && v !== null) {
+            scan(v, fullKey);
+          } else {
+            const strVal = String(v ?? '');
+            if (strVal.toLowerCase().includes(term)) {
+              matches.push({ key: fullKey, value: strVal });
+            }
+          }
+        }
+      };
+      scan(parsed);
+      return matches.slice(0, 3); // max 3 hints per card
+    } catch {
+      return [];
+    }
+  };
+
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-4 w-full animate-in fade-in duration-500">
       <div className="flex flex-col gap-4 shrink-0">
@@ -173,6 +207,23 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                            Oleh: <span className="font-bold text-gray-700">@{log.recorded_by || 'system'}</span>
                         </span>
                       </div>
+                      {/* Snapshot match hints */}
+                      {(() => {
+                        const matches = getSnapshotMatches(log);
+                        if (matches.length === 0) return null;
+                        return (
+                          <div className="flex flex-wrap gap-1.5 mt-1">
+                            <span className="text-[10px] font-bold text-violet-500 uppercase tracking-wider self-center">Snapshot:</span>
+                            {matches.map(({ key, value }) => (
+                              <span key={key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-violet-50 border border-violet-200 text-[10px] font-semibold text-violet-700 max-w-[280px]">
+                                <span className="font-extrabold shrink-0">{key}</span>
+                                <span className="text-violet-400 shrink-0">:</span>
+                                <span className="truncate">{value.length > 45 ? value.slice(0, 45) + '…' : value}</span>
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
