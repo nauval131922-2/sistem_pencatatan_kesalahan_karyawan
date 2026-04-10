@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useTransition } from 'react';
+import { useState, useMemo, useEffect, useTransition, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, History, Clock, X, Cpu, User as UserIcon, Calendar as CalendarIcon, Database, Info, Loader2 } from 'lucide-react';
 import { formatLastUpdate } from '@/lib/date-utils';
@@ -8,7 +8,9 @@ import { getLiveRecord } from '@/lib/actions';
 
 export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
   const [search, setSearch] = useState('');
-  const [visibleCount, setVisibleCount] = useState(100);
+  const [visibleCount, setVisibleCount] = useState(50);
+  const [loadTime, setLoadTime] = useState<number | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
   
   // Modal states
   const [selectedLog, setSelectedLog] = useState<any | null>(null);
@@ -43,6 +45,30 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
         .finally(() => setIsLoadingLive(false));
     }
   }, [selectedLog]);
+
+  // Load time measurement
+  useEffect(() => {
+    const start = performance.now();
+    setTimeout(() => setLoadTime(Math.round(performance.now() - start)), 50);
+  }, []);
+
+  // Infinite scroll: observe sentinel at bottom of list
+  const loadMore = useCallback(() => {
+    setVisibleCount(v => v + 50);
+  }, []);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadMore();
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [loadMore, filteredLogs]);
 
   const filteredLogs = useMemo(() => {
     const term = search.toLowerCase();
@@ -160,17 +186,32 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                 </div>
               ))}
               
+              {/* Infinite scroll sentinel */}
               {visibleCount < filteredLogs.length && (
-                <button
-                  onClick={() => setVisibleCount(v => v + 50)}
-                  className="w-full p-3 text-[13px] font-bold text-green-600 bg-green-50 hover:bg-green-100 rounded-[8px] transition-all border border-green-200 mt-4"
-                >
-                  Muat Lebih Banyak ({filteredLogs.length - visibleCount} tersisa)
-                </button>
+                <div ref={sentinelRef} className="flex items-center justify-center py-4">
+                  <Loader2 size={18} className="animate-spin text-gray-300" />
+                </div>
               )}
             </div>
           )}
         </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between shrink-0 px-1">
+        <span className="text-[12px] leading-none font-bold text-gray-400">
+          {initialLogs.length === 0
+            ? 'Belum ada aktivitas'
+            : `Menampilkan ${Math.min(visibleCount, filteredLogs.length)} dari ${filteredLogs.length} total aktivitas`}
+        </span>
+        {loadTime !== null && (
+          <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
+            loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'
+          }`}>
+            <span className="animate-pulse">⚡</span>
+            <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
+          </span>
+        )}
       </div>
 
       {selectedLog && (
