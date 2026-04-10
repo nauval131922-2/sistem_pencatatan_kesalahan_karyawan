@@ -83,7 +83,26 @@ interface ModuleSyncState {
   period?: { start: string; end: string } | null;
 }
 
-export default function SyncClient() {
+const SYNC_TO_PERM_MAP: Record<string, string> = {
+  'pr': 'pembelian_pr',
+  'spph-out': 'pembelian_spph',
+  'sph-in': 'pembelian_sph_in',
+  'purchase-orders': 'pembelian_po',
+  'penerimaan-pembelian': 'pembelian_penerimaan',
+  'rekap-pembelian-barang': 'pembelian_rekap',
+  'pelunasan-hutang': 'pembelian_hutang',
+  'bom': 'produksi_bom',
+  'orders': 'produksi_orders',
+  'bahan-baku': 'produksi_bahan_baku',
+  'barang-jadi': 'produksi_barang_jadi',
+  'sph-out': 'penjualan_sph_out',
+  'sales-orders': 'penjualan_so',
+  'sales': 'penjualan_laporan',
+  'pengiriman': 'penjualan_pengiriman',
+  'pelunasan-piutang': 'penjualan_piutang',
+};
+
+export default function SyncClient({ userPermissions = {} }: { userPermissions?: Record<string, boolean> }) {
   const [startDate, setStartDate] = useState<Date>(() => getDefaultScraperDateRange().startDate);
   const [endDate, setEndDate] = useState<Date>(() => getDefaultScraperDateRange().endDate);
   
@@ -248,6 +267,11 @@ export default function SyncClient() {
 
     for (const mod of MODULES) {
       setCurrentModuleId(mod.id);
+      
+      // Check if user has permission to sync this specific module before running batch
+      const pKey = SYNC_TO_PERM_MAP[mod.id];
+      if (pKey && userPermissions[pKey] === false) continue;
+
       const result = await runSync(mod.id);
       if (result.success) {
         totalSuccessCount += result.count;
@@ -299,6 +323,14 @@ export default function SyncClient() {
       {/* Grouped Modules */}
       <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0 pb-10 flex flex-col gap-8">
         {MODULE_GROUPS.map((group) => {
+          // Filter modules in this group by permission 
+          const visibleMods = group.modules.filter(mod => {
+            const pKey = SYNC_TO_PERM_MAP[mod.id];
+            return !pKey || userPermissions[pKey] !== false; // if no mapping found, assume visible, otherwise check
+          });
+
+          if (visibleMods.length === 0) return null;
+
           const groupColorMap: Record<string, { badge: string; header: string; dot: string }> = {
             green: {
               badge: 'bg-green-50 text-green-700 border-green-200',
@@ -326,12 +358,12 @@ export default function SyncClient() {
                   {group.group}
                 </span>
                 <div className="flex-1 h-px bg-gray-100" />
-                <span className="text-[10px] font-bold text-gray-400">{group.modules.length} modul</span>
+                <span className="text-[10px] font-bold text-gray-400">{visibleMods.length} modul</span>
               </div>
 
               {/* Module Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {group.modules.map((mod) => {
+                {visibleMods.map((mod) => {
                   const state = syncStates[mod.id];
                   const isActive = currentModuleId === mod.id;
 
