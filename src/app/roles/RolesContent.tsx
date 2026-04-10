@@ -149,7 +149,7 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
   };
 
   const currentRoleMeta = customRoles.find(r => r.name === selectedRole) || {
-    name: selectedRole, desc: '', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200'
+    name: selectedRole, description: '', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200'
   };
 
   // Group modules
@@ -433,7 +433,7 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
                   </div>
                   <div>
                     <h3 className={`text-[14px] font-black ${currentRoleMeta.color}`}>{selectedRole}</h3>
-                    <p className="text-[11px] text-gray-500 font-medium">{currentRoleMeta.desc}</p>
+                    <p className="text-[11px] text-gray-500 font-medium">{currentRoleMeta.description}</p>
                   </div>
                 </div>
 
