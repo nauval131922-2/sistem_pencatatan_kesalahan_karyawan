@@ -604,10 +604,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
                 <ShieldCheck size={18} />
                 {isExpanded && <span className="truncate">Hak Akses</span>}
               </Link>
-              <Link href="/logs" className={navItemClasses('/logs')} title={!isExpanded ? "Log Aktivitas" : ""}>
-                <ClipboardList size={18} />
-                {isExpanded && <span className="truncate">Log Aktivitas</span>}
-              </Link>
+
             </div>
           </>
         )}
