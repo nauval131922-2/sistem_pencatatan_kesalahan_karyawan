@@ -25,9 +25,9 @@ export async function saveRolePermissions(
     const queries: string[] = [];
     for (const [moduleKey, canAccess] of Object.entries(permissions)) {
       queries.push(
-        `INSERT INTO role_permissions (role, module_key, can_access, updated_at) 
-         VALUES ('${role}', '${moduleKey}', ${canAccess ? 1 : 0}, CURRENT_TIMESTAMP)
-         ON CONFLICT(role, module_key) DO UPDATE SET can_access = ${canAccess ? 1 : 0}, updated_at = CURRENT_TIMESTAMP;`
+        `INSERT INTO role_permissions (role, module_key, can_access) 
+         VALUES ('${role}', '${moduleKey}', ${canAccess ? 1 : 0})
+         ON CONFLICT(role, module_key) DO UPDATE SET can_access = ${canAccess ? 1 : 0};`
       );
     }
 
