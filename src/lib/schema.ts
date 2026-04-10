@@ -76,6 +76,17 @@ export async function initSchema(db: any) {
       recorded_by TEXT NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`,
+    `CREATE TABLE IF NOT EXISTS activity_logs_archive (
+      id INTEGER PRIMARY KEY,
+      action_type TEXT NOT NULL,
+      table_name TEXT NOT NULL,
+      record_id INTEGER NOT NULL,
+      message TEXT NOT NULL,
+      raw_data TEXT NOT NULL,
+      recorded_by TEXT NOT NULL,
+      created_at DATETIME NOT NULL,
+      archived_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
     `CREATE TABLE IF NOT EXISTS app_roles (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       role_name TEXT UNIQUE NOT NULL,
