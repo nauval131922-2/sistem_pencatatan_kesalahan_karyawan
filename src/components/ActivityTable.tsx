@@ -46,6 +46,20 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
     }
   }, [selectedLog]);
 
+  // filteredLogs must be declared BEFORE useEffect that depends on it
+  const filteredLogs = useMemo(() => {
+    const term = search.toLowerCase();
+    if (!term) return initialLogs;
+    return initialLogs.filter(log => (
+      (log.action_type || '').toLowerCase().includes(term) ||
+      (log.table_name || '').toLowerCase().includes(term) ||
+      (log.message || '').toLowerCase().includes(term) ||
+      (log.recorded_by || '').toLowerCase().includes(term)
+    ));
+  }, [initialLogs, search]);
+
+  const displayedLogs = filteredLogs.slice(0, visibleCount);
+
   // Load time measurement
   useEffect(() => {
     const start = performance.now();
@@ -69,19 +83,6 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
     observer.observe(el);
     return () => observer.disconnect();
   }, [loadMore, filteredLogs]);
-
-  const filteredLogs = useMemo(() => {
-    const term = search.toLowerCase();
-    if (!term) return initialLogs;
-    return initialLogs.filter(log => (
-      (log.action_type || '').toLowerCase().includes(term) ||
-      (log.table_name || '').toLowerCase().includes(term) ||
-      (log.message || '').toLowerCase().includes(term) ||
-      (log.recorded_by || '').toLowerCase().includes(term)
-    ));
-  }, [initialLogs, search]);
-
-  const displayedLogs = filteredLogs.slice(0, visibleCount);
 
   const getActionColor = (action: string) => {
     switch (action) {
