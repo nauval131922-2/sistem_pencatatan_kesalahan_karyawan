@@ -55,11 +55,12 @@ export function formatScrapedPeriodDate(value?: string) {
 }
 
 export function getDefaultScraperDateRange() {
-  const startDate = new Date(2026, 0, 1);
-  startDate.setHours(0, 0, 0, 0);
-
   const endDate = new Date();
   endDate.setHours(23, 59, 59, 999);
+
+  const startDate = new Date(endDate);
+  startDate.setMonth(startDate.getMonth() - 1);
+  startDate.setHours(0, 0, 0, 0);
 
   return { startDate, endDate };
 }
