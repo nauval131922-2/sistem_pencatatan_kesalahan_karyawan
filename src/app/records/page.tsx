@@ -1,29 +1,33 @@
-import { getEmployees, getInfractions, fetchProductionOrders } from '@/lib/actions';
-import { getSession } from '@/lib/session';
-import type { Metadata } from 'next';
-import RecordsTabs from '@/components/RecordsTabs';
-import { Suspense } from 'react';
-import PageHeader from '@/components/PageHeader';
-import { redirect } from 'next/navigation';
+import {
+  getEmployees,
+  getInfractions,
+  fetchProductionOrders,
+} from "@/lib/actions";
+import { getSession } from "@/lib/session";
+import type { Metadata } from "next";
+import RecordsTabs from "@/components/RecordsTabs";
+import { Suspense } from "react";
+import PageHeader from "@/components/PageHeader";
+import { redirect } from "next/navigation";
+import { requirePermission } from "@/lib/permissions";
 
 export const metadata: Metadata = {
-  title: 'SINTAK | Pencatatan Kesalahan',
+  title: "SINTAK | Pencatatan Kesalahan",
 };
 
-export const dynamic = 'force-dynamic';
-
+export const dynamic = "force-dynamic";
 
 async function RecordsContent({ today }: { today: string }) {
   const [employees, infractions, orders] = await Promise.all([
     getEmployees(),
     getInfractions(today, today),
-    fetchProductionOrders()
+    fetchProductionOrders(),
   ]);
 
   return (
-    <RecordsTabs 
-      employees={employees as any} 
-      orders={orders as any} 
+    <RecordsTabs
+      employees={employees as any}
+      orders={orders as any}
       infractions={infractions as any}
       initialPeriod={{ start: today, end: today }}
     />
@@ -31,14 +35,17 @@ async function RecordsContent({ today }: { today: string }) {
 }
 
 export default async function RecordsPage() {
+  await requirePermission("catat_kesalahan");
   const session = await getSession();
-  
+
   if (!session) {
-    redirect('/login');
+    redirect("/login");
   }
 
   // Gunakan timezone WIB (UTC+7) agar tanggal konsisten dengan tampilan lokal
-  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+  }).format(new Date());
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700">
@@ -63,7 +70,7 @@ function RecordsSkeleton() {
         <div className="h-10 w-32 bg-gray-100 rounded-[8px]"></div>
         <div className="h-10 w-32 bg-gray-100 rounded-[8px]"></div>
       </div>
-      
+
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-5 space-y-4">
           <div className="h-64 bg-gray-50 rounded-[8px] border border-gray-100"></div>
@@ -76,8 +83,3 @@ function RecordsSkeleton() {
     </div>
   );
 }
-
-
-
-
-

@@ -1,20 +1,31 @@
-import { Metadata } from 'next';
-import PRClient from './PRClient';
-import PageHeader from '@/components/PageHeader';
+import { Metadata } from "next";
+import PRClient from "./PRClient";
+import PageHeader from "@/components/PageHeader";
+import { requirePermission } from "@/lib/permissions";
 
 export const metadata: Metadata = {
-  title: 'SINTAK | Purchase Request (PR)',
-  description: 'Halaman monitoring dan audit Purchase Request dari sistem Digit.',
+  title: "SINTAK | Purchase Request (PR)",
+  description:
+    "Halaman monitoring dan audit Purchase Request dari sistem Digit.",
 };
 
-export default function PRPage() {
+export default async function PRPage() {
+  await requirePermission("pembelian_pr");
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700">
-      <PageHeader 
-        title="Purchase Request (PR)" 
+      <PageHeader
+        title="Purchase Request (PR)"
         description={
           <>
-            Sinkronisasi daftar Purchase Request secara langsung dari <a href="https://buyapercetakan.mdthoster.com/#cGIvdHJwcg==" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-bold">Digit</a>
+            Sinkronisasi daftar Purchase Request secara langsung dari{" "}
+            <a
+              href="https://buyapercetakan.mdthoster.com/#cGIvdHJwcg=="
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-green-600 hover:underline font-bold"
+            >
+              Digit
+            </a>
           </>
         }
       />
@@ -23,8 +34,3 @@ export default function PRPage() {
     </div>
   );
 }
-
-
-
-
-

@@ -11,7 +11,7 @@ Gunakan prompt ini jika Anda ingin saya melakukan commit dan push semua perubaha
 3. Periksa `.gitignore` agar tidak ada file sampah atau database yang ikut ter-push.
 4. **PENTING**: Periksa pola `.gitignore` yang terlalu serakah (seperti tanda bintang `*`). Pastikan file penting (seperti `.md`) tidak terabaikan secara tidak sengaja seperti kasus sebelumnya.
 5. **Sinkronisasi AI**: Sebelum mengakhiri sesi, minta AI membuat ringkasan status di `docs/AI_SESSION_SUMMARY.md` atau perbarui `task.md` agar progres bisa dilanjutkan di perangkat lain (Rumah/Kantor).
-6. **Tutorial Mandiri**: Jika selama sesi ini ada perbaikan bug atau penambahan fitur, buatkan/perbarui dokumentasi tutorial *step-by-step*, agar saya bisa melakukannya secara mandiri di lain waktu.
+6. **Tutorial Mandiri**: Jika selama sesi ini ada perbaikan bug atau penambahan fitur, buatkan/perbarui dokumentasi tutorial *step-by-step* (boleh lebih dari 1 file, tergantung perbaikan bug atau penambahan fitur), agar saya bisa melakukannya secara mandiri di lain waktu.
 7. Lakukan push ke branch master."
 
 ---

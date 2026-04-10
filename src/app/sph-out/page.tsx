@@ -1,21 +1,32 @@
-import SPHOutClient from './SPHOutClient';
-import type { Metadata } from 'next';
-import PageHeader from '@/components/PageHeader';
+import SPHOutClient from "./SPHOutClient";
+import type { Metadata } from "next";
+import PageHeader from "@/components/PageHeader";
+import { requirePermission } from "@/lib/permissions";
 
 export const metadata: Metadata = {
-  title: 'SINTAK | SPH Keluar',
+  title: "SINTAK | SPH Keluar",
 };
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-export default function SPHOutPage() {
+export default async function SPHOutPage() {
+  await requirePermission("penjualan_sph_out");
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700">
       <PageHeader
         title="SPH Keluar"
         description={
           <>
-            Sinkronisasi daftar SPH Keluar (Surat Penawaran Harga Keluar) secara langsung dari <a href="https://buyapercetakan.mdthoster.com/#cGovdHJzcGhfb3V0" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-bold">Digit</a>
+            Sinkronisasi daftar SPH Keluar (Surat Penawaran Harga Keluar) secara
+            langsung dari{" "}
+            <a
+              href="https://buyapercetakan.mdthoster.com/#cGovdHJzcGhfb3V0"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-green-600 hover:underline font-bold"
+            >
+              Digit
+            </a>
           </>
         }
       />
@@ -24,8 +35,3 @@ export default function SPHOutPage() {
     </div>
   );
 }
-
-
-
-
-

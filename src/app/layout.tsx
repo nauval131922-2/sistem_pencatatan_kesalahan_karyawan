@@ -8,6 +8,7 @@ import { Analytics } from "@vercel/analytics/react";
 
 
 import { getSession } from "@/lib/session";
+import { getRolePermissions } from "@/lib/permissions";
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"] });
 
@@ -49,10 +50,13 @@ export default async function RootLayout({
     photo: userPhoto || session.photo, // Prioritize fresh photo from DB
   } : null;
 
+  // Fetch permissions for the current user's role
+  const permissions = session?.role ? await getRolePermissions(session.role) : {};
+
   return (
     <html lang="id">
       <body className={jakarta.className}>
-        <MainContentWrapper user={user}>
+        <MainContentWrapper user={user} permissions={permissions}>
           {children}
         </MainContentWrapper>
         <ManualModal />
@@ -63,6 +67,7 @@ export default async function RootLayout({
     </html>
   );
 }
+
 
 
 
