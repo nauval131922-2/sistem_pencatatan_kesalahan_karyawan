@@ -1,6 +1,7 @@
 'use server';
 
 import { cache } from 'react';
+import { unstable_cache } from 'next/cache';
 import db from '@/lib/db';
 import { getSession } from '@/lib/session';
 
@@ -22,20 +23,36 @@ function sanitizeData(data: any): any {
   return data;
 }
 
-export const getEmployees = cache(async () => {
-  const result = await db.execute('SELECT * FROM employees WHERE is_active = 1 ORDER BY id ASC');
-  return sanitizeData(result.rows.map((row: any) => ({ ...row })));
-});
+// Caching Karyawan (Master Data) — Di-cache 1 jam (3600 detik)
+// karena data karyawan jarang berubah. Menghemat ratusan query DB per hari.
+export const getEmployees = cache(
+  unstable_cache(
+    async () => {
+      const result = await db.execute('SELECT * FROM employees WHERE is_active = 1 ORDER BY id ASC');
+      return sanitizeData(result.rows.map((row: any) => ({ ...row })));
+    },
+    ['master-employees-active'],
+    { revalidate: 3600, tags: ['karyawan'] }
+  )
+);
 
-export const fetchProductionOrders = cache(async () => {
-  const result = await db.execute(`
-    SELECT id, faktur, nama_prd 
-    FROM orders 
-    ORDER BY id DESC
-    LIMIT 2000
-  `);
-  return sanitizeData(result.rows.map((row: any) => ({ ...row })));
-});
+// Caching Order Produksi — Di-cache 5 menit (300 detik) 
+// Membantu meringankan beban join table saat query log infraction.
+export const fetchProductionOrders = cache(
+  unstable_cache(
+    async () => {
+      const result = await db.execute(`
+        SELECT id, faktur, nama_prd 
+        FROM orders 
+        ORDER BY id DESC
+        LIMIT 2000
+      `);
+      return sanitizeData(result.rows.map((row: any) => ({ ...row })));
+    },
+    ['master-production-orders-latest'],
+    { revalidate: 300, tags: ['orders'] }
+  )
+);
 
 export async function addEmployee(name: string, position: string, department: string) {
   const result = await db.execute({
