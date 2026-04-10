@@ -117,6 +117,16 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
   const [currentModuleId, setCurrentModuleId] = useState<string | null>(null);
   const [dialog, setDialog] = useState({ isOpen: false, title: '', message: '' });
 
+  // Hydrate global date picker on mount
+  useEffect(() => {
+    const defaultKeys = PERSISTENCE_KEYS['bom'];
+    if (defaultKeys) {
+      const hydrated = hydrateScraperPeriod(defaultKeys);
+      if (hydrated.startDate) setStartDate(hydrated.startDate);
+      if (hydrated.endDate) setEndDate(hydrated.endDate);
+    }
+  }, []);
+
   // Restore sync status on mount
   useEffect(() => {
     async function restoreStatus() {
