@@ -262,27 +262,50 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
     if (isBatchProcessing) return;
     setIsBatchProcessing(true);
 
+    // Filter only permitted modules
+    const allowedMods = MODULES.filter(mod => {
+      const pKey = SYNC_TO_PERM_MAP[mod.id];
+      return !pKey || userPermissions[pKey] !== false;
+    });
+
+    // Set all permitted modules to loading state immediately
+    setSyncStates(prev => {
+      const next = { ...prev };
+      for (const mod of allowedMods) {
+        next[mod.id] = { ...prev[mod.id], status: 'loading', message: 'Menunggu giliran...' };
+      }
+      return next;
+    });
+
     let totalSuccessCount = 0;
     let totalModulesSuccess = 0;
 
-    for (const mod of MODULES) {
-      setCurrentModuleId(mod.id);
-      
-      // Check if user has permission to sync this specific module before running batch
-      const pKey = SYNC_TO_PERM_MAP[mod.id];
-      if (pKey && userPermissions[pKey] === false) continue;
+    // Process in parallel batches of 4 (avoids overloading MDT host)
+    const CONCURRENCY = 4;
+    for (let i = 0; i < allowedMods.length; i += CONCURRENCY) {
+      const batch = allowedMods.slice(i, i + CONCURRENCY);
 
-      const result = await runSync(mod.id);
-      if (result.success) {
-        totalSuccessCount += result.count;
-        totalModulesSuccess++;
+      // Mark batch as active
+      setSyncStates(prev => {
+        const next = { ...prev };
+        for (const mod of batch) {
+          next[mod.id] = { ...prev[mod.id], status: 'loading', message: 'Sedang diproses...' };
+        }
+        return next;
+      });
+
+      const results = await Promise.all(batch.map(mod => runSync(mod.id)));
+      for (const result of results) {
+        if (result.success) {
+          totalSuccessCount += result.count;
+          totalModulesSuccess++;
+        }
       }
     }
 
     setCurrentModuleId(null);
     setIsBatchProcessing(false);
 
-    // Show success modal
     setDialog({
       isOpen: true,
       title: 'Berhasil',
