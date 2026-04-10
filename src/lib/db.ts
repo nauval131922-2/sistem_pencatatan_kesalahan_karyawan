@@ -134,6 +134,12 @@ const db = {
 export default db;
 
 // Auto-initialize schema on startup
-import('./schema').then(({ initSchema }) => {
-  initSchema(db).catch(e => console.error("[DB] Auto-initialization failed:", e));
-});
+// Prevent multiple initializations in development HMR (Hot Module Replacement)
+const globalDbInit = globalThis as unknown as { __dbInitialized?: boolean };
+
+if (!globalDbInit.__dbInitialized) {
+  import('./schema').then(({ initSchema }) => {
+    initSchema(db).catch(e => console.error("[DB] Auto-initialization failed:", e));
+  });
+  globalDbInit.__dbInitialized = true;
+}

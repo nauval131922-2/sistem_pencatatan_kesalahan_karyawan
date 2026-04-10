@@ -24,6 +24,8 @@ export default function LogsClient() {
     fetchLogs();
   }, []);
 
+  const [visibleCount, setVisibleCount] = useState(100);
+
   const filteredLogs = logs.filter(log => {
     const term = search.toLowerCase();
     return (
@@ -33,6 +35,8 @@ export default function LogsClient() {
       (log.recorded_by || '').toLowerCase().includes(term)
     );
   });
+
+  const displayedLogs = filteredLogs.slice(0, visibleCount);
 
   const getActionColor = (action: string) => {
     switch (action) {
@@ -49,8 +53,8 @@ export default function LogsClient() {
   };
 
   return (
-    <div className="flex-1 flex flex-col gap-6 w-full animate-in fade-in duration-500">
-      <div className="flex items-center gap-4 bg-white p-4 rounded-[8px] border border-gray-100 shadow-sm">
+    <div className="flex-1 min-h-0 flex flex-col gap-6 w-full animate-in fade-in duration-500">
+      <div className="flex items-center gap-4 bg-white p-4 rounded-[8px] border border-gray-100 shadow-sm shrink-0">
         <div className="relative flex-1">
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
@@ -80,7 +84,7 @@ export default function LogsClient() {
             </div>
           ) : (
             <div className="w-full space-y-2">
-              {filteredLogs.map((log) => (
+              {displayedLogs.map((log) => (
                 <div key={log.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-[8px] border border-gray-100 hover:border-green-200 bg-white hover:bg-green-50/30 transition-all">
                   
                   <div className="flex gap-4 items-start min-w-0">
@@ -119,6 +123,15 @@ export default function LogsClient() {
                   </div>
                 </div>
               ))}
+              
+              {visibleCount < filteredLogs.length && (
+                <button
+                  onClick={() => setVisibleCount(v => v + 50)}
+                  className="w-full p-3 text-[13px] font-bold text-green-600 bg-green-50 hover:bg-green-100 rounded-[8px] transition-all border border-green-200 mt-4"
+                >
+                  Muat Lebih Banyak ({filteredLogs.length - visibleCount} tersisa)
+                </button>
+              )}
             </div>
           )}
         </div>
