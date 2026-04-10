@@ -295,7 +295,7 @@ export async function getActivityLogs(limit = 1000) {
   const [recordsResult] = await db.batch([
     {
       sql: `
-        SELECT id, action_type, table_name, record_id, message, recorded_by, created_at 
+        SELECT *
         FROM activity_logs
         ORDER BY created_at DESC
         LIMIT ?
