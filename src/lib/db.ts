@@ -135,11 +135,16 @@ export default db;
 
 // Auto-initialize schema on startup
 // Prevent multiple initializations in development HMR (Hot Module Replacement)
-const globalDbInit = globalThis as unknown as { __dbInitialized?: boolean };
-
-if (!globalDbInit.__dbInitialized) {
+if (process.env.NODE_ENV === 'development') {
+  if (!process.env.__DB_INITIALIZED) {
+    process.env.__DB_INITIALIZED = 'true';
+    import('./schema').then(({ initSchema }) => {
+      initSchema(db).catch(e => console.error("[DB] Auto-initialization failed:", e));
+    });
+  }
+} else {
+  // In production, execute normally (Vercel serverless functions load once per instance)
   import('./schema').then(({ initSchema }) => {
     initSchema(db).catch(e => console.error("[DB] Auto-initialization failed:", e));
   });
-  globalDbInit.__dbInitialized = true;
 }
