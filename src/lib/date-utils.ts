@@ -44,7 +44,18 @@ function formatDate(date: Date): string {
  */
 export function formatLastUpdate(dateInput: Date | string | null | undefined): string {
   if (!dateInput) return '';
-  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  
+  let date: Date;
+  if (typeof dateInput === 'string') {
+    let validStr = dateInput;
+    if (!validStr.includes('Z') && !validStr.includes('+')) {
+      validStr = validStr.replace(' ', 'T') + 'Z';
+    }
+    date = new Date(validStr);
+  } else {
+    date = dateInput;
+  }
+  
   if (isNaN(date.getTime())) return '';
 
   const day = String(date.getDate()).padStart(2, '0');
