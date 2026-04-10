@@ -54,7 +54,8 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
       (log.action_type || '').toLowerCase().includes(term) ||
       (log.table_name || '').toLowerCase().includes(term) ||
       (log.message || '').toLowerCase().includes(term) ||
-      (log.recorded_by || '').toLowerCase().includes(term)
+      (log.recorded_by || '').toLowerCase().includes(term) ||
+      (log.raw_data || '').toLowerCase().includes(term)
     ));
   }, [initialLogs, search]);
 
