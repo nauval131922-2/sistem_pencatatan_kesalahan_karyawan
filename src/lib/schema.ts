@@ -90,7 +90,8 @@ export async function initSchema(db: any) {
       role TEXT NOT NULL,
       module_key TEXT NOT NULL,
       can_access INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(role, module_key)
     );`,
     `CREATE TABLE IF NOT EXISTS orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -510,6 +511,7 @@ export async function initSchema(db: any) {
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_sales_orders_unique ON sales_orders(faktur, kd_barang, tgl);",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_bom_unique ON bill_of_materials(faktur);",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_pr_unique ON purchase_requests(faktur);",
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_role_permissions_unique ON role_permissions(role, module_key);",
     "ALTER TABLE sales_orders ADD COLUMN satuan TEXT;",
     "ALTER TABLE barang_jadi ADD COLUMN faktur_so TEXT;",
     "ALTER TABLE barang_jadi ADD COLUMN kd_cabang TEXT;",
