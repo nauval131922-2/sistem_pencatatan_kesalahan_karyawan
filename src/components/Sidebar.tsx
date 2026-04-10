@@ -29,10 +29,12 @@ import {
   Truck,
   CreditCard,
   TrendingUp,
-  RefreshCw
+  RefreshCw,
+  Database
 } from 'lucide-react';
 import Image from 'next/image';
 import logoPic from '../../public/icon.png';
+import type { PermissionMap } from '@/lib/permissions-constants';
 
 interface SidebarProps {
   user: {
@@ -41,13 +43,14 @@ interface SidebarProps {
     role?: string;
     photo?: string | null;
   } | null;
+  permissions?: PermissionMap;
 }
 
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 480;
 const COLLAPSED_WIDTH = 64;
 
-export default function Sidebar({ user }: SidebarProps) {
+export default function Sidebar({ user, permissions = {} }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const [expandedWidth, setExpandedWidth] = useState(240);
@@ -152,6 +155,15 @@ export default function Sidebar({ user }: SidebarProps) {
     if (!pathname) return false;
     if (href === '/') return pathname === '/';
     return pathname === href || pathname.startsWith(href + '/');
+  };
+
+  // Check if user has access to a module key.
+  // Super Admin always has full access.
+  const canAccess = (moduleKey: string): boolean => {
+    if (user?.role === 'Super Admin') return true;
+    // If permissions not yet loaded or key missing, default to allow
+    if (Object.keys(permissions).length === 0) return true;
+    return permissions[moduleKey] !== false;
   };
 
   const navItemClasses = (href: string) => {
@@ -386,18 +398,19 @@ export default function Sidebar({ user }: SidebarProps) {
 
       <nav ref={navRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 custom-scrollbar">
         {/* DASHBOARD SECTION */}
-        <div className="space-y-1 mt-2">
-          <Link href="/dashboard" className={navItemClasses('/dashboard')} title={!isExpanded ? "Dashboard" : ""}>
-            <LayoutDashboard size={18} />
-            {isExpanded && <span className="truncate">Dashboard</span>}
-          </Link>
-        </div>
+        {canAccess('dashboard') && (
+          <div className="space-y-1 mt-2">
+            <Link href="/dashboard" className={navItemClasses('/dashboard')} title={!isExpanded ? "Dashboard" : ""}>
+              <LayoutDashboard size={18} />
+              {isExpanded && <span className="truncate">Dashboard</span>}
+            </Link>
+          </div>
+        )}
 
-        {/* DATA DIGIT */}
         {/* DATA DIGIT */}
         <SectionLabel label="Data Digit" />
         <div className="space-y-1">
-          {user?.role === 'Super Admin' && (
+          {canAccess('sync') && (
             <>
               <Link href="/sync" className={navItemClasses('/sync')} title={!isExpanded ? "Sinkronisasi All Data" : ""}>
                 <RefreshCw size={18} />
@@ -408,167 +421,177 @@ export default function Sidebar({ user }: SidebarProps) {
           )}
 
           {/* PEMBELIAN SECTION */}
-          <div data-group="Pembelian">
-            <FlyoutMenu 
-              label="Pembelian"
-              icon={<ShoppingCart size={18} />}
-              items={[
-                { 
-                  label: 'Purchase Request (PR)', 
-                  icon: <FileText size={16} />,
-                  items: [{ label: 'Purchase Request (PR)', href: '/pr', icon: <FileText size={14} /> }]
-                },
-                { 
-                  label: 'Penawaran', 
-                  icon: <FileText size={16} />,
-                  items: [
-                    { label: 'SPPH Keluar', href: '/spph-out', icon: <FileText size={14} /> },
-                    { label: 'SPH Masuk', href: '/sph-in', icon: <FileText size={14} /> },
-                  ]
-                },
-                { 
-                  label: 'Purchase Order (PO)', 
-                  icon: <ShoppingCart size={16} />,
-                  items: [{ label: 'Purchase Order (PO)', href: '/purchase-orders', icon: <ShoppingCart size={14} /> }]
-                },
-                { 
-                  label: 'Pembelian Barang', 
-                  icon: <Truck size={16} />,
-                  items: [
-                    { label: 'Penerimaan Barang', href: '/penerimaan-pembelian', icon: <Truck size={14} /> },
-                    { label: 'Laporan Rekap Pembelian Barang', href: '/rekap-pembelian-barang', icon: <ShoppingCart size={14} /> },
-                  ]
-                },
-                { 
-                  label: 'Hutang', 
-                  icon: <CreditCard size={16} />,
-                  items: [{ label: 'Pelunasan Hutang', href: '/pelunasan-hutang', icon: <CreditCard size={14} /> }]
-                }
-              ]}
-            />
-          </div>
+          {(canAccess('pembelian_pr') || canAccess('pembelian_spph') || canAccess('pembelian_sph_in') ||
+            canAccess('pembelian_po') || canAccess('pembelian_penerimaan') || canAccess('pembelian_rekap') ||
+            canAccess('pembelian_hutang')) && (
+            <div data-group="Pembelian">
+              <FlyoutMenu
+                label="Pembelian"
+                icon={<ShoppingCart size={18} />}
+                items={[
+                  ...(canAccess('pembelian_pr') ? [{
+                    label: 'Purchase Request (PR)',
+                    icon: <FileText size={16} />,
+                    items: [{ label: 'Purchase Request (PR)', href: '/pr', icon: <FileText size={14} /> }]
+                  }] : []),
+                  ...(canAccess('pembelian_spph') || canAccess('pembelian_sph_in') ? [{
+                    label: 'Penawaran',
+                    icon: <FileText size={16} />,
+                    items: [
+                      ...(canAccess('pembelian_spph') ? [{ label: 'SPPH Keluar', href: '/spph-out', icon: <FileText size={14} /> }] : []),
+                      ...(canAccess('pembelian_sph_in') ? [{ label: 'SPH Masuk', href: '/sph-in', icon: <FileText size={14} /> }] : []),
+                    ]
+                  }] : []),
+                  ...(canAccess('pembelian_po') ? [{
+                    label: 'Purchase Order (PO)',
+                    icon: <ShoppingCart size={16} />,
+                    items: [{ label: 'Purchase Order (PO)', href: '/purchase-orders', icon: <ShoppingCart size={14} /> }]
+                  }] : []),
+                  ...(canAccess('pembelian_penerimaan') || canAccess('pembelian_rekap') ? [{
+                    label: 'Pembelian Barang',
+                    icon: <Truck size={16} />,
+                    items: [
+                      ...(canAccess('pembelian_penerimaan') ? [{ label: 'Penerimaan Barang', href: '/penerimaan-pembelian', icon: <Truck size={14} /> }] : []),
+                      ...(canAccess('pembelian_rekap') ? [{ label: 'Laporan Rekap Pembelian Barang', href: '/rekap-pembelian-barang', icon: <ShoppingCart size={14} /> }] : []),
+                    ]
+                  }] : []),
+                  ...(canAccess('pembelian_hutang') ? [{
+                    label: 'Hutang',
+                    icon: <CreditCard size={16} />,
+                    items: [{ label: 'Pelunasan Hutang', href: '/pelunasan-hutang', icon: <CreditCard size={14} /> }]
+                  }] : []),
+                ]}
+              />
+            </div>
+          )}
 
           {/* PRODUKSI SECTION */}
-          <div data-group="Produksi">
-            <FlyoutMenu 
-              label="Produksi"
-              icon={<Package size={18} />}
-              items={[
-                { label: 'Bill of Material Produksi', href: '/bom', icon: <Calculator size={16} /> },
-                { label: 'Order Produksi', href: '/orders', icon: <ClipboardList size={16} /> },
-                { 
-                  label: 'Laporan', 
-                  icon: <BarChart3 size={16} />,
-                  items: [
-                    { label: 'BBB Produksi', href: '/bahan-baku', icon: <Box size={14} /> },
-                    { label: 'Penerimaan Barang Hasil Produksi', href: '/barang-jadi', icon: <Package size={14} /> },
-                  ]
-                }
-              ]}
-            />
-          </div>
+          {(canAccess('produksi_bom') || canAccess('produksi_orders') || canAccess('produksi_bahan_baku') || canAccess('produksi_barang_jadi')) && (
+            <div data-group="Produksi">
+              <FlyoutMenu
+                label="Produksi"
+                icon={<Package size={18} />}
+                items={[
+                  ...(canAccess('produksi_bom') ? [{ label: 'Bill of Material Produksi', href: '/bom', icon: <Calculator size={16} /> }] : []),
+                  ...(canAccess('produksi_orders') ? [{ label: 'Order Produksi', href: '/orders', icon: <ClipboardList size={16} /> }] : []),
+                  ...(canAccess('produksi_bahan_baku') || canAccess('produksi_barang_jadi') ? [{
+                    label: 'Laporan',
+                    icon: <BarChart3 size={16} />,
+                    items: [
+                      ...(canAccess('produksi_bahan_baku') ? [{ label: 'BBB Produksi', href: '/bahan-baku', icon: <Box size={14} /> }] : []),
+                      ...(canAccess('produksi_barang_jadi') ? [{ label: 'Penerimaan Barang Hasil Produksi', href: '/barang-jadi', icon: <Package size={14} /> }] : []),
+                    ]
+                  }] : []),
+                ]}
+              />
+            </div>
+          )}
 
           {/* PENJUALAN SECTION */}
-          <div data-group="Penjualan">
-            <FlyoutMenu 
-              label="Penjualan"
-              icon={<TrendingUp size={18} />}
-              items={[
-                { 
-                  label: 'Penawaran', 
-                  icon: <FileText size={16} />,
-                  items: [{ label: 'SPH Keluar', href: '/sph-out', icon: <FileText size={14} /> }]
-                },
-                { 
-                  label: 'Sales Order (SO)', 
-                  icon: <FileCheck size={16} />,
-                  items: [
-                    { 
-                      label: 'Laporan', 
+          {(canAccess('penjualan_sph_out') || canAccess('penjualan_so') || canAccess('penjualan_laporan') ||
+            canAccess('penjualan_piutang') || canAccess('penjualan_pengiriman')) && (
+            <div data-group="Penjualan">
+              <FlyoutMenu
+                label="Penjualan"
+                icon={<TrendingUp size={18} />}
+                items={[
+                  ...(canAccess('penjualan_sph_out') ? [{
+                    label: 'Penawaran',
+                    icon: <FileText size={16} />,
+                    items: [{ label: 'SPH Keluar', href: '/sph-out', icon: <FileText size={14} /> }]
+                  }] : []),
+                  ...(canAccess('penjualan_so') ? [{
+                    label: 'Sales Order (SO)',
+                    icon: <FileCheck size={16} />,
+                    items: [{
+                      label: 'Laporan',
                       icon: <BarChart3 size={14} />,
                       items: [{ label: 'Sales Order Barang', href: '/sales-orders', icon: <FileCheck size={12} /> }]
-                    }
-                  ]
-                },
-                { 
-                  label: 'Penjualan Barang', 
-                  icon: <TrendingUp size={16} />,
-                  items: [
-                    { 
-                      label: 'Laporan', 
+                    }]
+                  }] : []),
+                  ...(canAccess('penjualan_laporan') ? [{
+                    label: 'Penjualan Barang',
+                    icon: <TrendingUp size={16} />,
+                    items: [{
+                      label: 'Laporan',
                       icon: <BarChart3 size={14} />,
                       items: [{ label: 'Laporan Penjualan', href: '/sales', icon: <BarChart3 size={12} /> }]
-                    }
-                  ]
-                },
-                { 
-                  label: 'Piutang', 
-                  icon: <TrendingUp size={16} />,
-                  items: [
-                    { 
-                      label: 'Laporan', 
+                    }]
+                  }] : []),
+                  ...(canAccess('penjualan_piutang') ? [{
+                    label: 'Piutang',
+                    icon: <TrendingUp size={16} />,
+                    items: [{
+                      label: 'Laporan',
                       icon: <BarChart3 size={14} />,
                       items: [{ label: 'Pelunasan Piutang Penjualan', href: '/pelunasan-piutang', icon: <TrendingUp size={12} /> }]
-                    }
-                  ]
-                },
-                { 
-                  label: 'Pengiriman (SJ)', 
-                  icon: <Truck size={16} />,
-                  items: [
-                    { 
-                      label: 'Laporan', 
+                    }]
+                  }] : []),
+                  ...(canAccess('penjualan_pengiriman') ? [{
+                    label: 'Pengiriman (SJ)',
+                    icon: <Truck size={16} />,
+                    items: [{
+                      label: 'Laporan',
                       icon: <BarChart3 size={14} />,
                       items: [{ label: 'Pengiriman', href: '/pengiriman', icon: <Truck size={12} /> }]
-                    }
-                  ]
-                }
-              ]}
-            />
-          </div>
-        </div>
-
-        {/* DATA MASTER UMUM */}
-        <SectionLabel label="Data Master Umum" />
-        <div className="space-y-1">
-          <Link href="/employees" className={navItemClasses('/employees')} title={!isExpanded ? "Karyawan" : ""}>
-            <Users size={18} />
-            {isExpanded && <span className="truncate">Karyawan</span>}
-          </Link>
-        </div>
-
-        {/* DATA MASTER KESALAHAN */}
-        <SectionLabel label="Data Master Kesalahan Karyawan" />
-        <div className="space-y-1">
-          <Link href="/hpp-kalkulasi" className={navItemClasses('/hpp-kalkulasi')} title={!isExpanded ? "HPP Kalkulasi" : ""}>
-            <Calculator size={18} />
-            {isExpanded && <span className="truncate">HPP Kalkulasi</span>}
-          </Link>
+                    }]
+                  }] : []),
+                ]}
+              />
+            </div>
+          )}
         </div>
 
         {/* KESALAHAN KARYAWAN */}
-        <SectionLabel label="Kesalahan Karyawan" />
-        <div className="space-y-1">
-          <Link href="/stats" className={navItemClasses('/stats')} title={!isExpanded ? "Statistik Performa" : ""}>
-            <BarChart2 size={18} />
-            {isExpanded && <span className="truncate">Statistik Performa</span>}
-          </Link>
-          <Link href="/records" className={navItemClasses('/records')} title={!isExpanded ? "Catat Kesalahan" : ""}>
-            <ClipboardCheck size={18} />
-            {isExpanded && <span className="truncate">Catat Kesalahan</span>}
-          </Link>
-        </div>
+        {(canAccess('karyawan') || canAccess('hpp_kalkulasi') || canAccess('statistik') || canAccess('catat_kesalahan')) && (
+          <>
+            <SectionLabel label="Kesalahan Karyawan" />
+            <div className="space-y-1">
+              
+              {/* Data Group */}
+              {(canAccess('karyawan') || canAccess('hpp_kalkulasi')) && (
+                <FlyoutMenu
+                  label="Data"
+                  icon={<Database size={18} />}
+                  items={[
+                    ...(canAccess('karyawan') ? [{ label: 'Karyawan', href: '/employees', icon: <Users size={16} /> }] : []),
+                    ...(canAccess('hpp_kalkulasi') ? [{ label: 'HPP Kalkulasi', href: '/hpp-kalkulasi', icon: <Calculator size={16} /> }] : []),
+                  ]}
+                />
+              )}
+
+              {canAccess('catat_kesalahan') && (
+                <Link href="/records" className={navItemClasses('/records')} title={!isExpanded ? "Catat Kesalahan" : ""}>
+                  <ClipboardCheck size={18} />
+                  {isExpanded && <span className="truncate">Catat Kesalahan</span>}
+                </Link>
+              )}
+              
+              {canAccess('statistik') && (
+                <Link href="/stats" className={navItemClasses('/stats')} title={!isExpanded ? "Statistik Performa" : ""}>
+                  <BarChart2 size={18} />
+                  {isExpanded && <span className="truncate">Statistik Performa</span>}
+                </Link>
+              )}
+              
+            </div>
+          </>
+        )}
 
         {/* TRACKING MANUFAKTUR */}
-        <SectionLabel label="Tracking Manufaktur" />
-        <div className="space-y-1">
-          <Link href="/tracking-manufaktur" className={navItemClasses('/tracking-manufaktur')} title={!isExpanded ? "Tracking Manufaktur" : ""}>
-            <Search size={18} />
-            {isExpanded && <span className="truncate">Tracking Manufaktur</span>}
-          </Link>
-        </div>
+        {canAccess('tracking_manufaktur') && (
+          <>
+            <SectionLabel label="Tracking Manufaktur" />
+            <div className="space-y-1">
+              <Link href="/tracking-manufaktur" className={navItemClasses('/tracking-manufaktur')} title={!isExpanded ? "Tracking Manufaktur" : ""}>
+                <Search size={18} />
+                {isExpanded && <span className="truncate">Tracking Manufaktur</span>}
+              </Link>
+            </div>
+          </>
+        )}
 
-        {/* SISTEM */}
+        {/* SISTEM — Super Admin only */}
         {user?.role === 'Super Admin' && (
           <>
             <SectionLabel label="Sistem" />
@@ -585,6 +608,7 @@ export default function Sidebar({ user }: SidebarProps) {
           </>
         )}
       </nav>
+
 
       {/* User Focus Footer */}
       <div className={`mt-auto border-t border-gray-100 p-3 bg-gray-50/50 relative z-10`} ref={profileRef}>
