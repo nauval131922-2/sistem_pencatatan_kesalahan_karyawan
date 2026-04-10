@@ -9,9 +9,7 @@ import {
   Database, 
   Clock, 
   ShieldCheck,
-  HelpCircle,
-  Wifi,
-  WifiOff
+  HelpCircle
 } from 'lucide-react';
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
@@ -119,12 +117,6 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
   const [currentModuleId, setCurrentModuleId] = useState<string | null>(null);
   const [dialog, setDialog] = useState({ isOpen: false, title: '', message: '' });
 
-  // Background job state
-  const [activeJobId, setActiveJobId] = useState<string | null>(null);
-  const [isServerProcessing, setIsServerProcessing] = useState(false);
-  const [serverJobDone, setServerJobDone] = useState(false);
-  const pollingRef = useRef<NodeJS.Timeout | null>(null);
-
   // Restore sync status on mount
   useEffect(() => {
     async function restoreStatus() {
@@ -189,13 +181,6 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
       }
     }
     restoreStatus();
-
-    // Check if there's an active job in localStorage (user returned after closing tab)
-    const savedJobId = localStorage.getItem('sintak_active_sync_job');
-    if (savedJobId) {
-      setActiveJobId(savedJobId);
-      setIsServerProcessing(true);
-    }
   }, []);
 
 
@@ -273,131 +258,36 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
     }
   }, [startDate, endDate]);
 
-  // Poll job status from server
-  const startPolling = useCallback((jobId: string) => {
-    if (pollingRef.current) clearInterval(pollingRef.current);
-
-    pollingRef.current = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/sync-job-status?jobId=${jobId}`);
-        const data = await res.json();
-        if (!data.success) return;
-
-        const { job, modules } = data;
-
-        // Update currentModuleId to highlight active card
-        setCurrentModuleId(job.currentModule || null);
-
-        // Update each module card status from job data
-        setSyncStates(prev => {
-          const next = { ...prev };
-          for (const [modId, info] of Object.entries(modules) as [string, any][]) {
-            if (info.status === 'done') {
-              const now = new Date();
-              const formattedNow = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) +
-                ', ' + now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).replace(/\./g, ':');
-              next[modId] = { 
-                status: 'success', 
-                lastUpdate: formattedNow, 
-                message: `Berhasil menarik ${info.count} data.`,
-                period: job.startDate && job.endDate ? { start: job.startDate, end: job.endDate } : null
-              };
-            } else if (info.status === 'error') {
-              next[modId] = { ...prev[modId], status: 'error', message: info.error || 'Gagal sinkronisasi' };
-            } else if (info.status === 'running') {
-              next[modId] = { ...prev[modId], status: 'loading', message: 'Sedang diproses di server...' };
-            }
-          }
-          return next;
-        });
-
-        // Stop polling when done
-        if (job.status === 'done') {
-          clearInterval(pollingRef.current!);
-          pollingRef.current = null;
-          setIsServerProcessing(false);
-          setServerJobDone(true);
-          setCurrentModuleId(null);
-          localStorage.removeItem('sintak_active_sync_job');
-          setDialog({ isOpen: true, title: 'Sinkronisasi Selesai', message: 'Server telah menyelesaikan semua sinkronisasi data.' });
-        }
-      } catch {}
-    }, 3000);
-  }, []);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
-  }, []);
-
-  // Resume polling if job was active (user came back after closing tab)
-  useEffect(() => {
-    if (activeJobId && isServerProcessing) {
-      startPolling(activeJobId);
-    }
-  }, [activeJobId, isServerProcessing, startPolling]);
-
   const runBatchSync = async () => {
-    if (isServerProcessing || isBatchProcessing) return;
+    if (isBatchProcessing) return;
+    setIsBatchProcessing(true);
 
-    const formatDate = (d: Date) => {
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
-    };
+    let totalSuccessCount = 0;
+    let totalModulesSuccess = 0;
 
-    const allModuleIds = MODULES
-      .filter(mod => {
-        const pKey = SYNC_TO_PERM_MAP[mod.id];
-        return !pKey || userPermissions[pKey] !== false;
-      })
-      .map(mod => mod.id);
+    for (const mod of MODULES) {
+      setCurrentModuleId(mod.id);
+      
+      // Check if user has permission to sync this specific module before running batch
+      const pKey = SYNC_TO_PERM_MAP[mod.id];
+      if (pKey && userPermissions[pKey] === false) continue;
 
-    // Set all visible modules to pending
-    setSyncStates(prev => {
-      const next = { ...prev };
-      for (const modId of allModuleIds) {
-        next[modId] = { ...prev[modId], status: 'loading', message: 'Menunggu antrian server...' };
+      const result = await runSync(mod.id);
+      if (result.success) {
+        totalSuccessCount += result.count;
+        totalModulesSuccess++;
       }
-      return next;
-    });
-
-    try {
-      const res = await fetch('/api/sync-batch-queue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          modules: allModuleIds,
-          start: formatDate(startDate),
-          end: formatDate(endDate),
-        })
-      });
-
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'Gagal membuat antrian');
-
-      const jobId = data.jobId;
-      setActiveJobId(jobId);
-      setIsServerProcessing(true);
-      setServerJobDone(false);
-
-      // Save to localStorage so user can return after closing tab
-      localStorage.setItem('sintak_active_sync_job', jobId);
-
-      // Start polling
-      startPolling(jobId);
-    } catch (err: any) {
-      setDialog({ isOpen: true, title: 'Error', message: err.message || 'Gagal memulai sinkronisasi server.' });
-      // Reset loading states
-      setSyncStates(prev => {
-        const next = { ...prev };
-        for (const modId of allModuleIds) {
-          next[modId] = { ...prev[modId], status: 'idle', message: null };
-        }
-        return next;
-      });
     }
+
+    setCurrentModuleId(null);
+    setIsBatchProcessing(false);
+
+    // Show success modal
+    setDialog({
+      isOpen: true,
+      title: 'Berhasil',
+      message: `Berhasil menarik total ${totalSuccessCount.toLocaleString('id-ID')} data dari ${totalModulesSuccess} modul.`
+    });
   };
 
   return (
@@ -414,27 +304,19 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
             </div>
           </div>
 
-          <div className="flex flex-col items-end gap-1.5">
-            <button
-              onClick={runBatchSync}
-              disabled={isServerProcessing || isBatchProcessing}
-              className={`
-                px-5 h-10 rounded-[8px] font-extrabold text-[13px] transition-all flex items-center justify-center gap-2.5 shadow-sm active:scale-[0.98]
-                ${isServerProcessing || isBatchProcessing
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200' 
-                  : 'bg-green-600 text-white hover:bg-green-700 shadow-sm'}
-              `}
-            >
-              {isServerProcessing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-              <span>{isServerProcessing ? 'Server Memproses...' : 'Mulai Scrape All'}</span>
-            </button>
-            {isServerProcessing && (
-              <span className="text-[10px] font-bold text-green-600 flex items-center gap-1">
-                <Wifi size={10} className="animate-pulse" />
-                Server aktif — aman menutup halaman ini
-              </span>
-            )}
-          </div>
+          <button
+            onClick={runBatchSync}
+            disabled={isBatchProcessing}
+            className={`
+              px-5 h-10 rounded-[8px] font-extrabold text-[13px] transition-all flex items-center justify-center gap-2.5 shadow-sm active:scale-[0.98]
+              ${isBatchProcessing 
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200' 
+                : 'bg-green-600 text-white hover:bg-green-700 shadow-sm'}
+            `}
+          >
+            {isBatchProcessing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+            <span>{isBatchProcessing ? `Sinkronkan...` : 'Mulai Scrape All'}</span>
+          </button>
         </div>
       </div>
 
@@ -569,8 +451,8 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
         <div className="flex flex-col gap-1">
           <h4 className="text-[14px] font-black text-gray-800 tracking-tight">Catatan Keamanan & Performa</h4>
           <p className="text-[12px] text-gray-500 font-medium leading-relaxed">
-            Sinkronisasi kini berjalan di server&nbsp;— Anda <strong>boleh menutup halaman ini</strong> dan kembali nanti, proses tetap berjalan. 
-            Halaman akan otomatis memperbarui status kartu setiap 3 detik selama sinkronisasi berlangsung.
+            Batch sinkronisasi menjalankan perintah satu per satu untuk mencegah overload pada server MDT Host. 
+            Proses ini mungkin memakan waktu beberapa menit tergantung pada volume data. Pastikan koneksi internet stabil selama proses berlangsung.
           </p>
         </div>
       </div>
