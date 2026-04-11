@@ -21,7 +21,7 @@ Gunakan prompt ini jika Anda ingin saya melakukan commit dan push semua perubaha
 Saat Anda berpindah PC dan membuka chat baru, gunakan prompt ini agar saya langsung paham konteks terakhir:
 
 **Prompt:**
-"Saya baru pindah PC. Tolong lakukan `git pull` terlebih dahulu, lalu baca `docs/AI_SESSION_SUMMARY.md` dan `docs/task.md` (jika ada) untuk memahami progres terakhir, lalu lanjutkan tugas kita."
+"Saya baru pindah PC. Tolong lakukan `git pull` terlebih dahulu, lalu baca `docs/AI_SESSION_SUMMARY.md` dan `docs/task.md` (jika ada) untuk memahami progres terakhir, lalu tunjukkan ke saya."
 
 ---
 
