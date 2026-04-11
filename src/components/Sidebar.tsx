@@ -408,8 +408,15 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
         )}
 
         {/* DATA DIGIT */}
-        <SectionLabel label="Data Digit" />
-        <div className="space-y-1">
+        {(canAccess('sync') ||
+          canAccess('pembelian_pr') || canAccess('pembelian_spph') || canAccess('pembelian_sph_in') ||
+          canAccess('pembelian_po') || canAccess('pembelian_penerimaan') || canAccess('pembelian_rekap') || canAccess('pembelian_hutang') ||
+          canAccess('produksi_bom') || canAccess('produksi_orders') || canAccess('produksi_bahan_baku') || canAccess('produksi_barang_jadi') ||
+          canAccess('penjualan_sph_out') || canAccess('penjualan_so') || canAccess('penjualan_laporan') ||
+          canAccess('penjualan_piutang') || canAccess('penjualan_pengiriman')) && (
+          <>
+            <SectionLabel label="Data Digit" />
+            <div className="space-y-1">
           {canAccess('sync') && (
             <>
               <Link href="/sync" className={navItemClasses('/sync')} title={!isExpanded ? "Sinkronisasi All Data" : ""}>
@@ -509,6 +516,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
                       items: [{ label: 'Sales Order Barang', href: '/sales-orders', icon: <FileCheck size={12} /> }]
                     }]
                   }] : []),
+
                   ...(canAccess('penjualan_laporan') ? [{
                     label: 'Penjualan Barang',
                     icon: <TrendingUp size={16} />,
@@ -540,7 +548,10 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
               />
             </div>
           )}
-        </div>
+
+            </div>
+          </>
+        )}
 
         {/* KESALAHAN KARYAWAN */}
         {(canAccess('karyawan') || canAccess('hpp_kalkulasi') || canAccess('statistik') || canAccess('catat_kesalahan')) && (
@@ -586,6 +597,19 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
               <Link href="/tracking-manufaktur" className={navItemClasses('/tracking-manufaktur')} title={!isExpanded ? "Tracking Manufaktur" : ""}>
                 <Search size={18} />
                 {isExpanded && <span className="truncate">Tracking Manufaktur</span>}
+              </Link>
+            </div>
+          </>
+        )}
+
+        {/* KALKULASI */}
+        {canAccess('kalkulasi_rekap_so') && (
+          <>
+            <SectionLabel label="Kalkulasi" />
+            <div className="space-y-1">
+              <Link href="/rekap-sales-order" className={navItemClasses('/rekap-sales-order')} title={!isExpanded ? "Rekap Sales Order Barang" : ""}>
+                <Calculator size={18} />
+                {isExpanded && <span className="truncate">Rekap Sales Order Barang</span>}
               </Link>
             </div>
           </>

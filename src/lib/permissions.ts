@@ -9,6 +9,51 @@ import type { PermissionMap, ModuleKey } from './permissions-constants';
 export { MODULE_REGISTRY } from './permissions-constants';
 export type { ModuleKey, PermissionMap } from './permissions-constants';
 
+// ─── Map module key to its primary route ──────────────────────────────────────
+// Ordered by sidebar priority — first accessible route wins.
+const MODULE_TO_ROUTE: Array<{ key: string; route: string }> = [
+  { key: 'dashboard',             route: '/dashboard' },
+  { key: 'sync',                  route: '/sync' },
+  { key: 'pembelian_pr',          route: '/pr' },
+  { key: 'pembelian_spph',        route: '/spph-out' },
+  { key: 'pembelian_sph_in',      route: '/sph-in' },
+  { key: 'pembelian_po',          route: '/purchase-orders' },
+  { key: 'pembelian_penerimaan',  route: '/penerimaan-pembelian' },
+  { key: 'pembelian_rekap',       route: '/rekap-pembelian-barang' },
+  { key: 'pembelian_hutang',      route: '/pelunasan-hutang' },
+  { key: 'produksi_bom',          route: '/bom' },
+  { key: 'produksi_orders',       route: '/orders' },
+  { key: 'produksi_bahan_baku',   route: '/bahan-baku' },
+  { key: 'produksi_barang_jadi',  route: '/barang-jadi' },
+  { key: 'penjualan_sph_out',     route: '/sph-out' },
+  { key: 'penjualan_so',          route: '/sales-orders' },
+  { key: 'penjualan_laporan',     route: '/sales' },
+  { key: 'penjualan_piutang',     route: '/pelunasan-piutang' },
+  { key: 'penjualan_pengiriman',  route: '/pengiriman' },
+  { key: 'kalkulasi_rekap_so',    route: '/rekap-sales-order' },
+  { key: 'karyawan',              route: '/employees' },
+  { key: 'hpp_kalkulasi',         route: '/hpp-kalkulasi' },
+  { key: 'catat_kesalahan',       route: '/records' },
+  { key: 'statistik',             route: '/stats' },
+  { key: 'tracking_manufaktur',   route: '/tracking-manufaktur' },
+];
+
+// ─── Get the first route accessible for a given role ──────────────────────────
+// Used after login and on root redirect so users are never sent to a forbidden page.
+export async function getFirstAccessibleRoute(role: string): Promise<string> {
+  // Super Admin always lands on dashboard
+  if (role === 'Super Admin') return '/dashboard';
+
+  const permissions = await getRolePermissions(role);
+
+  for (const { key, route } of MODULE_TO_ROUTE) {
+    if (permissions[key] === true) return route;
+  }
+
+  // Fallback: no module is accessible — send to profile page
+  return '/profile';
+}
+
 // ─── Fetch all permissions for a given role ────────────────────────────────
 export async function getRolePermissions(role: string): Promise<PermissionMap> {
   // Super Admin always has full access — no DB lookup needed

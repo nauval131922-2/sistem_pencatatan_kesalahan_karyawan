@@ -25,6 +25,8 @@ export const MODULE_REGISTRY = [
   { key: 'penjualan_laporan',      label: 'Laporan Penjualan',                group: 'Penjualan' },
   { key: 'penjualan_piutang',      label: 'Pelunasan Piutang',                group: 'Penjualan' },
   { key: 'penjualan_pengiriman',   label: 'Pengiriman (SJ)',                  group: 'Penjualan' },
+  // Kalkulasi
+  { key: 'kalkulasi_rekap_so',     label: 'Rekap Sales Order Barang',         group: 'Kalkulasi' },
   // Data Master & Kinerja
   { key: 'karyawan',               label: 'Karyawan',                         group: 'Data Master' },
   { key: 'hpp_kalkulasi',          label: 'HPP Kalkulasi',                    group: 'Data Master' },
