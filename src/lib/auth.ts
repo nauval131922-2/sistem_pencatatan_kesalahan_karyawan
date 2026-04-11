@@ -3,8 +3,9 @@
 import db from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { createSession, destroySession, getSession } from '@/lib/session';
+import { getFirstAccessibleRoute } from '@/lib/permissions';
 
-export async function login(username: string, password: string):Promise<{success: boolean, message?: string}> {
+export async function login(username: string, password: string): Promise<{ success: boolean; message?: string; firstRoute?: string }> {
   console.log(`[AUTH] Login attempt for user: ${username}`);
   try {
     const result = await db.execute({
@@ -48,8 +49,11 @@ export async function login(username: string, password: string):Promise<{success
       role: user.role as string,
     });
 
-    console.log(`[AUTH] Login success for user: ${username}`);
-    return { success: true };
+    // Determine the first accessible route so the client redirects to an authorized page
+    const firstRoute = await getFirstAccessibleRoute(user.role as string);
+
+    console.log(`[AUTH] Login success for user: ${username}, redirecting to: ${firstRoute}`);
+    return { success: true, firstRoute };
   } catch (error) {
     console.error('[AUTH] Login error:', error);
     return { success: false, message: 'Terjadi kesalahan saat login.' };
