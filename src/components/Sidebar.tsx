@@ -178,9 +178,9 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
   };
 
   const SectionLabel = ({ label }: { label: string }) => {
-    if (!isExpanded) return <div className="h-px bg-gray-100 mx-2 my-4" />;
+    if (!isExpanded) return <div className="h-px bg-gray-100 mx-2 my-4 first:hidden" />;
     return (
-      <h2 className="px-3 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mt-4 mb-2 truncate">
+      <h2 className="px-3 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mt-4 mb-2 truncate first:mt-0">
         {label}
       </h2>
     );
@@ -188,6 +188,11 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
 
   const [activePath, setActivePath] = useState<string[]>([]);
   const [flyoutPositions, setFlyoutPositions] = useState<Record<string, { top: number, left: number }>>({});
+
+  // Reset menu path on route change
+  useEffect(() => {
+    setActivePath(prev => prev.length > 0 ? [] : prev);
+  }, [pathname]);
 
   const handleItemClick = (label: string, e: React.MouseEvent, level: number) => {
     e.stopPropagation();
@@ -351,7 +356,10 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
       {/* Resizer Handle */}
       {isExpanded && (
         <div 
-          onMouseDown={startResizing}
+          onMouseDown={(e) => {
+            startResizing(e);
+            setActivePath([]);
+          }}
           className={`absolute -right-1.5 top-0 w-3 h-full cursor-col-resize z-30 group`}
         >
           <div className={`w-0.5 h-full mx-auto transition-colors ${isResizing ? 'bg-green-500' : 'group-hover:bg-green-300'}`} />
@@ -359,7 +367,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
       )}
 
       {/* Header */}
-      <div className="p-4 pb-4 relative min-h-[64px] bg-gray-50/50 border-b border-gray-100">
+      <div onClick={() => setActivePath([])} className="p-4 pb-4 relative min-h-[64px] bg-gray-50/50 border-b border-gray-100">
         <div className={`flex items-center ${!isExpanded ? 'justify-center' : 'justify-between'}`}>
           {isExpanded ? (
             <div className="flex flex-col w-full">
@@ -388,6 +396,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
         onClick={() => {
           setIsCollapsed(!isCollapsed);
           setIsHovered(false);
+          setActivePath([]);
         }}
         className={`absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-100 rounded-full flex items-center justify-center text-gray-400 hover:text-green-600 shadow-sm z-50 transition-opacity ${
           !isExpanded && isCollapsed ? 'opacity-0' : 'opacity-100'
@@ -396,10 +405,10 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
         {isCollapsed ? <ChevronRight size={10} /> : <ChevronLeft size={10} />}
       </button>
 
-      <nav ref={navRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-2 custom-scrollbar">
+      <nav ref={navRef} onClick={() => setActivePath([])} className="flex-1 overflow-y-auto overflow-x-hidden px-3 pt-4 pb-2 custom-scrollbar">
         {/* DASHBOARD SECTION */}
         {canAccess('dashboard') && (
-          <div className="space-y-1 mt-2">
+          <div className="space-y-1">
             <Link href="/dashboard" className={navItemClasses('/dashboard')} title={!isExpanded ? "Dashboard" : ""}>
               <LayoutDashboard size={18} />
               {isExpanded && <span className="truncate">Dashboard</span>}
@@ -636,7 +645,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
 
 
       {/* User Focus Footer */}
-      <div className={`mt-auto border-t border-gray-100 p-3 bg-gray-50/50 relative z-10`} ref={profileRef}>
+      <div onClick={() => setActivePath([])} className={`mt-auto border-t border-gray-100 p-3 bg-gray-50/50 relative z-10`} ref={profileRef}>
         {user ? (
           <div className="relative">
             <button
