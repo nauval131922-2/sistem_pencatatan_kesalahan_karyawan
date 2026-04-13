@@ -288,17 +288,18 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
     );
   };
 
-  const FlyoutMenu = ({ label, icon, items }: { label: string, icon: React.ReactNode, items: MenuItem[] }) => {
+  const FlyoutMenu = ({ id, label, icon, items }: { id?: string, label: string, icon: React.ReactNode, items: MenuItem[] }) => {
+    const menuId = id || label;
     const isActive = items.some(item => 
       item.href ? checkIsActive(item.href) : item.items?.some(si => si.href && checkIsActive(si.href))
     );
-    const isOpen = activePath[0] === label;
-    const pos = flyoutPositions[label];
+    const isOpen = activePath[0] === menuId;
+    const pos = flyoutPositions[menuId];
 
     return (
       <div className="relative">
         <button 
-          onClick={(e) => handleItemClick(label, e, 0)}
+          onClick={(e) => handleItemClick(menuId, e, 0)}
           className={`
             group flex items-center gap-3 px-3 h-9 rounded-[8px] transition-all text-[12.5px] font-semibold w-full
             ${!isExpanded ? 'justify-center px-0 w-9 mx-auto' : ''}
@@ -427,13 +428,12 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
             <SectionLabel label="Data Digit" />
             <div className="space-y-1">
           {canAccess('sync') && (
-            <>
+            <div className={`mb-3 p-0.5 rounded-[10px] border border-gray-100 ${!isExpanded ? 'mx-0' : ''}`}>
               <Link href="/sync" className={navItemClasses('/sync')} title={!isExpanded ? "Sinkronisasi All Data" : ""}>
                 <RefreshCw size={18} />
                 {isExpanded && <span className="truncate">Sinkronisasi All Data</span>}
               </Link>
-              <div className={`h-px bg-gray-100 my-2 ${!isExpanded ? 'mx-1' : 'mx-3'}`} />
-            </>
+            </div>
           )}
 
           {/* PEMBELIAN SECTION */}
@@ -562,84 +562,109 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
           </>
         )}
 
-        {/* KESALAHAN KARYAWAN */}
-        {(canAccess('karyawan') || canAccess('hpp_kalkulasi') || canAccess('statistik') || canAccess('catat_kesalahan')) && (
-          <>
-            <SectionLabel label="Kesalahan Karyawan" />
-            <div className="space-y-1">
-              
-              {/* Data Group */}
-              {(canAccess('karyawan') || canAccess('hpp_kalkulasi')) && (
-                <FlyoutMenu
-                  label="Data"
-                  icon={<Database size={18} />}
-                  items={[
-                    ...(canAccess('karyawan') ? [{ label: 'Karyawan', href: '/employees', icon: <Users size={16} /> }] : []),
-                    ...(canAccess('hpp_kalkulasi') ? [{ label: 'HPP Kalkulasi', href: '/hpp-kalkulasi', icon: <Calculator size={16} /> }] : []),
-                  ]}
-                />
-              )}
+        {/* LABEL MULTI-PURPOSE / MANAGEMENT */}
+        <SectionLabel label="Sistem" />
 
-              {canAccess('catat_kesalahan') && (
-                <Link href="/records" className={navItemClasses('/records')} title={!isExpanded ? "Catat Kesalahan" : ""}>
-                  <ClipboardCheck size={18} />
-                  {isExpanded && <span className="truncate">Catat Kesalahan</span>}
-                </Link>
-              )}
-              
-              {canAccess('statistik') && (
-                <Link href="/stats" className={navItemClasses('/stats')} title={!isExpanded ? "Statistik Performa" : ""}>
-                  <BarChart2 size={18} />
-                  {isExpanded && <span className="truncate">Statistik Performa</span>}
-                </Link>
-              )}
-              
-            </div>
-          </>
+        {/* UMUM */}
+        {(canAccess('tracking_manufaktur') || canAccess('karyawan')) && (
+          <div className="space-y-1 mb-1" data-group="Umum">
+            <FlyoutMenu
+              label="Umum"
+              icon={<Monitor size={18} />}
+              items={[
+                ...(canAccess('karyawan') ? [{
+                  label: 'Data',
+                  icon: <Database size={16} />,
+                  items: [
+                    { label: 'Karyawan', href: '/employees', icon: <Users size={14} /> }
+                  ]
+                }] : []),
+                ...(canAccess('tracking_manufaktur') ? [{ label: 'Tracking Manufaktur', href: '/tracking-manufaktur', icon: <Search size={16} /> }] : [])
+              ]}
+            />
+          </div>
         )}
 
-        {/* TRACKING MANUFAKTUR */}
-        {canAccess('tracking_manufaktur') && (
-          <>
-            <SectionLabel label="Tracking Manufaktur" />
-            <div className="space-y-1">
-              <Link href="/tracking-manufaktur" className={navItemClasses('/tracking-manufaktur')} title={!isExpanded ? "Tracking Manufaktur" : ""}>
-                <Search size={18} />
-                {isExpanded && <span className="truncate">Tracking Manufaktur</span>}
-              </Link>
-            </div>
-          </>
+        {/* HRD */}
+        {(canAccess('catat_kesalahan') || canAccess('statistik')) && (
+          <div className="space-y-1 mb-1" data-group="HRD">
+            <FlyoutMenu
+              label="HRD"
+              icon={<Users size={18} />}
+              items={[
+                {
+                  label: 'Kesalahan Karyawan',
+                  icon: <ClipboardCheck size={16} />,
+                  items: [
+                    ...(canAccess('catat_kesalahan') ? [{ label: 'Catat Kesalahan', href: '/records', icon: <ClipboardCheck size={14} /> }] : []),
+                    ...(canAccess('statistik') ? [{ label: 'Statistik Performa', href: '/stats', icon: <BarChart2 size={14} /> }] : []),
+                  ]
+                }
+              ]}
+            />
+          </div>
         )}
 
         {/* KALKULASI */}
-        {canAccess('kalkulasi_rekap_so') && (
-          <>
-            <SectionLabel label="Kalkulasi" />
-            <div className="space-y-1">
-              <Link href="/rekap-sales-order" className={navItemClasses('/rekap-sales-order')} title={!isExpanded ? "Rekap Sales Order Barang" : ""}>
-                <Calculator size={18} />
-                {isExpanded && <span className="truncate">Rekap Sales Order Barang</span>}
-              </Link>
-            </div>
-          </>
+        {(canAccess('kalkulasi_rekap_so') || canAccess('hpp_kalkulasi')) && (
+          <div className="space-y-1 mb-1" data-group="Kalkulasi">
+            <FlyoutMenu
+              label="Kalkulasi"
+              icon={<Calculator size={18} />}
+              items={[
+                ...(canAccess('hpp_kalkulasi') ? [{
+                  label: 'Data',
+                  icon: <Database size={16} />,
+                  items: [
+                    { label: 'HPP Kalkulasi', href: '/hpp-kalkulasi', icon: <Calculator size={14} /> }
+                  ]
+                }] : []),
+                ...(canAccess('kalkulasi_rekap_so') ? [{ label: 'Rekap Sales Order Barang', href: '/rekap-sales-order', icon: <Calculator size={16} /> }] : [])
+              ]}
+            />
+          </div>
         )}
 
-        {/* SISTEM — Super Admin only */}
-        {user?.role === 'Super Admin' && (
-          <>
-            <SectionLabel label="Sistem" />
-            <div className="space-y-1">
-              <Link href="/users" className={navItemClasses('/users')} title={!isExpanded ? "Kelola User" : ""}>
-                <UserCog size={18} />
-                {isExpanded && <span className="truncate">Kelola User</span>}
-              </Link>
-              <Link href="/roles" className={navItemClasses('/roles')} title={!isExpanded ? "Hak Akses" : ""}>
-                <ShieldCheck size={18} />
-                {isExpanded && <span className="truncate">Hak Akses</span>}
-              </Link>
+        {/* PRODUKSI */}
+        {(canAccess('produksi_jhp_sopd') || canAccess('produksi_jhp_stp') || canAccess('produksi_jhp')) && (
+          <div className="space-y-1 mb-1" data-group="Produksi">
+            <FlyoutMenu
+              id="Produksi Jurnal Harian"
+              label="Produksi"
+              icon={<Package size={18} />}
+              items={[
+                {
+                  label: 'Jurnal Harian Produksi',
+                  icon: <ClipboardList size={16} />,
+                  items: [
+                    ...(canAccess('produksi_jhp_sopd') || canAccess('produksi_jhp_stp') ? [{
+                      label: 'Data',
+                      icon: <Database size={14} />,
+                      items: [
+                        ...(canAccess('produksi_jhp_sopd') ? [{ label: 'Excel SOPd', href: '/jurnal-harian-produksi/data/excel-sopd', icon: <FileText size={12} /> }] : []),
+                        ...(canAccess('produksi_jhp_stp') ? [{ label: 'Excel Standart Target Produksi', href: '/jurnal-harian-produksi/data/excel-stp', icon: <FileText size={12} /> }] : []),
+                      ]
+                    }] : []),
+                    ...(canAccess('produksi_jhp') ? [{ label: 'Jurnal Harian Produksi', href: '/jurnal-harian-produksi', icon: <ClipboardList size={14} /> }] : []),
+                  ]
+                }
+              ]}
+            />
+          </div>
+        )}
 
-            </div>
-          </>
+        {/* SISTEM / USER — Super Admin only */}
+        {user?.role === 'Super Admin' && (
+          <div className="space-y-1 mb-1" data-group="User">
+            <FlyoutMenu
+              label="User"
+              icon={<Settings size={18} />}
+              items={[
+                { label: 'Hak Akses', href: '/roles', icon: <ShieldCheck size={16} /> },
+                { label: 'Kelola User', href: '/users', icon: <UserCog size={16} /> }
+              ]}
+            />
+          </div>
         )}
       </nav>
 

@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ShieldCheck, CheckCircle2, XCircle,
-  Loader2, Lock, Info, ChevronRight, UserCog, Plus, Pencil, Save, Trash2
+  Loader2, Lock, ChevronRight, UserCog, Plus, Pencil, Save, Trash2
 } from 'lucide-react';
 import { saveRolePermissions, addRole, updateRole, deleteRole } from '@/lib/permissions-actions';
 import { MODULE_REGISTRY } from '@/lib/permissions-constants';
@@ -25,13 +25,18 @@ interface RolesContentProps {
 }
 
 const GROUP_COLORS: Record<string, { text: string; bg: string; dot: string }> = {
-  'Umum':               { text: 'text-slate-600',   bg: 'bg-slate-100',   dot: 'bg-slate-400' },
-  'Pembelian':          { text: 'text-blue-600',    bg: 'bg-blue-50',     dot: 'bg-blue-400' },
-  'Produksi':           { text: 'text-orange-600',  bg: 'bg-orange-50',   dot: 'bg-orange-400' },
-  'Penjualan':          { text: 'text-emerald-600', bg: 'bg-emerald-50',  dot: 'bg-emerald-400' },
-  'Data Master':        { text: 'text-cyan-600',    bg: 'bg-cyan-50',     dot: 'bg-cyan-400' },
-  'Kesalahan Karyawan': { text: 'text-rose-600',    bg: 'bg-rose-50',     dot: 'bg-rose-400' },
-  'Tracking':           { text: 'text-violet-600',  bg: 'bg-violet-50',   dot: 'bg-violet-400' },
+  'Dashboard':           { text: 'text-indigo-600',  bg: 'bg-indigo-50',   dot: 'bg-indigo-400' },
+  'Data Digit':          { text: 'text-sky-600',     bg: 'bg-sky-50',      dot: 'bg-sky-400' },
+  'Data Digit - Pembelian':  { text: 'text-blue-600',    bg: 'bg-blue-50',     dot: 'bg-blue-400' },
+  'Data Digit - Produksi':   { text: 'text-orange-600',  bg: 'bg-orange-50',   dot: 'bg-orange-400' },
+  'Data Digit - Penjualan':  { text: 'text-emerald-600', bg: 'bg-emerald-50',  dot: 'bg-emerald-400' },
+
+  'Sistem':              { text: 'text-violet-600',  bg: 'bg-violet-50',   dot: 'bg-violet-400' },
+  'Sistem - Umum':       { text: 'text-slate-600',   bg: 'bg-slate-100',   dot: 'bg-slate-400' },
+  'Sistem - HRD':        { text: 'text-rose-600',    bg: 'bg-rose-50',     dot: 'bg-rose-400' },
+  'Sistem - Kalkulasi':  { text: 'text-amber-600',   bg: 'bg-amber-50',    dot: 'bg-amber-400' },
+  'Sistem - Produksi':   { text: 'text-lime-600',    bg: 'bg-lime-50',     dot: 'bg-lime-400' },
+  'Sistem - User':       { text: 'text-purple-600',  bg: 'bg-purple-50',   dot: 'bg-purple-400' },
 };
 
 export default function RolesContent({ allPermissions, customRoles }: RolesContentProps) {
@@ -57,7 +62,7 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
 
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, Record<string, boolean>>>({});
 
   // States for Add/Edit Roles
   const [isAddingRole, setIsAddingRole] = useState(false);
@@ -79,8 +84,11 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
   }, []);
 
   const toggleCollapse = (group: string) => {
+    if (!selectedRole) return;
     setCollapsedGroups(prev => {
-      const next = { ...prev, [group]: !prev[group] };
+      const roleCollapsed = prev[selectedRole] || {};
+      const nextRoleCollapsed = { ...roleCollapsed, [group]: !roleCollapsed[group] };
+      const next = { ...prev, [selectedRole]: nextRoleCollapsed };
       try {
         localStorage.setItem('sintak_roles_collapsed', JSON.stringify(next));
       } catch {}
@@ -162,6 +170,8 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
     return groups;
   }, []);
 
+  const currentRoleCollapsed = collapsedGroups[selectedRole] || {};
+
   const togglePermission = async (moduleKey: string) => {
     const newValue = !(permissions[selectedRole]?.[moduleKey] ?? false);
     
@@ -214,6 +224,48 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
     const keys = (groupedModules[group] || []).map(m => m.key);
     const enabled = keys.filter(k => permissions[role]?.[k]).length;
     return { enabled, total: keys.length };
+  };
+
+  const getMultiGroupStats = (role: string, groups: string[]) => {
+    const keys = groups.flatMap(g => (groupedModules[g] || []).map(m => m.key));
+    const enabled = keys.filter(k => permissions[role]?.[k]).length;
+    return { enabled, total: keys.length };
+  };
+
+  const toggleMultiGroup = async (groups: string[], value: boolean) => {
+    const keys = groups.flatMap(g => (groupedModules[g] || []).map(m => m.key));
+    const updatedRolePerms = { ...permissions[selectedRole] };
+    for (const k of keys) updatedRolePerms[k] = value;
+    const newPermissions = { ...permissions, [selectedRole]: updatedRolePerms };
+    setPermissions(newPermissions);
+    setSaving(true);
+    setResult(null);
+    const res = await saveRolePermissions(selectedRole, updatedRolePerms);
+    setSaving(false);
+    if (!res.success) {
+      setResult({ type: 'error', msg: res.message || 'Gagal menyimpan.' });
+      setPermissions(permissions);
+    } else {
+      setResult({ type: 'success', msg: 'Grup tersimpan' });
+    }
+    setTimeout(() => setResult(null), 3000);
+  };
+
+  const toggleKeysList = async (keys: string[], value: boolean) => {
+    const updatedRolePerms = { ...permissions[selectedRole] };
+    for (const k of keys) updatedRolePerms[k] = value;
+    const newPermissions = { ...permissions, [selectedRole]: updatedRolePerms };
+    setPermissions(newPermissions);
+    setSaving(true); setResult(null);
+    const res = await saveRolePermissions(selectedRole, updatedRolePerms);
+    setSaving(false);
+    if (!res.success) {
+      setResult({ type: 'error', msg: res.message || 'Gagal menyimpan.' });
+      setPermissions(permissions);
+    } else {
+      setResult({ type: 'success', msg: 'Tersimpan' });
+    }
+    setTimeout(() => setResult(null), 3000);
   };
 
   const getTotalStats = (role: string) => {
@@ -395,18 +447,58 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
           {/* Legend */}
           <div className="mt-auto pt-4 border-t border-gray-100">
             <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-2">Grup Modul</p>
-            <div className="flex flex-col gap-1">
-              {Object.entries(GROUP_COLORS).map(([group, color]) => (
-                <div key={group} className="flex items-center gap-1.5">
-                  <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${color.dot}`} />
-                  <span className="text-[10px] font-semibold text-gray-400 truncate">{group}</span>
+            <div className="flex flex-col gap-0.5">
+
+              {/* Dashboard */}
+              {(() => { const c = GROUP_COLORS['Dashboard']; return (
+                <div className="flex items-center gap-1.5">
+                  <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${c?.dot}`} />
+                  <span className="text-[10px] font-semibold text-gray-400 truncate">Dashboard</span>
                 </div>
-              ))}
-              {/* Sistem note */}
-              <div className="flex items-center gap-1.5 mt-1 pt-1 border-t border-gray-100">
-                <div className="w-1.5 h-1.5 rounded-full shrink-0 bg-gray-300" />
-                <span className="text-[10px] font-semibold text-gray-300 truncate">Sistem (Super Admin)</span>
+              ); })()}
+
+              {/* Data Digit */}
+              <div className="mt-1 pt-1 border-t border-gray-100">
+                {(() => { const c = GROUP_COLORS['Data Digit']; return (
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${c?.dot}`} />
+                    <span className="text-[10px] font-bold text-gray-400 truncate">Data Digit</span>
+                  </div>
+                ); })()}
+                {[
+                  { key: 'Data Digit - Pembelian', label: 'Pembelian' },
+                  { key: 'Data Digit - Produksi', label: 'Produksi' },
+                  { key: 'Data Digit - Penjualan', label: 'Penjualan' },
+                ].map(({ key, label }) => { const c = GROUP_COLORS[key]; return (
+                  <div key={key} className="flex items-center gap-1.5 pl-3">
+                    <div className={`w-1 h-1 rounded-full shrink-0 ${c?.dot}`} />
+                    <span className="text-[9.5px] font-semibold text-gray-400 truncate">{label}</span>
+                  </div>
+                ); })}
               </div>
+
+              {/* Sistem */}
+              <div className="mt-1 pt-1 border-t border-gray-100">
+                {(() => { const c = GROUP_COLORS['Sistem']; return (
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${c?.dot}`} />
+                    <span className="text-[10px] font-bold text-gray-400 truncate">Sistem</span>
+                  </div>
+                ); })()}
+                {[
+                  { key: 'Sistem - Umum', label: 'Umum' },
+                  { key: 'Sistem - HRD', label: 'HRD' },
+                  { key: 'Sistem - Kalkulasi', label: 'Kalkulasi' },
+                  { key: 'Sistem - Produksi', label: 'Produksi' },
+                  { key: 'Sistem - User', label: 'User' },
+                ].map(({ key, label }) => { const c = GROUP_COLORS[key]; return (
+                  <div key={key} className="flex items-center gap-1.5 pl-3">
+                    <div className={`w-1 h-1 rounded-full shrink-0 ${c?.dot}`} />
+                    <span className="text-[9.5px] font-semibold text-gray-400 truncate">{label}</span>
+                  </div>
+                ); })}
+              </div>
+
             </div>
           </div>
         </div>
@@ -458,100 +550,407 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
             </div>
           </div>
 
-          {/* Info: Sistem group note */}
-          <div className="shrink-0 flex items-center gap-2 px-3.5 py-2 bg-gray-50 border border-gray-100 rounded-[8px]">
-            <Info size={13} className="text-gray-400 shrink-0" />
-            <p className="text-[11px] text-gray-400 font-semibold">
-              Menu <span className="font-black text-gray-500">Sistem</span> (Kelola User &amp; Hak Akses) selalu eksklusif untuk Super Admin dan tidak tampil di sini.
-            </p>
-          </div>
-
           {/* Module Groups — scrollable */}
           <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-3 pr-1">
-            {Object.entries(groupedModules).map(([group, modules]) => {
-              const { enabled, total } = getGroupStats(selectedRole, group);
-              const gc = GROUP_COLORS[group] || { text: 'text-gray-500', bg: 'bg-gray-100', dot: 'bg-gray-400' };
-              const isCollapsed = collapsedGroups[group];
 
-              return (
-                <div key={group} className="bg-white border border-gray-100 rounded-[10px] overflow-hidden">
-                  {/* Group Header */}
-                  <div 
-                    className="flex items-center justify-between px-4 py-2.5 bg-gray-50/80 border-b border-gray-100 select-none cursor-pointer hover:bg-gray-100/50 transition-colors"
-                    onClick={() => toggleCollapse(group)}
+            {/* Helper to render a single module row */}
+            {(() => {
+              const renderModuleRow = (module: typeof MODULE_REGISTRY[number], gc: { text: string; bg: string; dot: string }, indent = 'px-4') => {
+                const isEnabled = permissions[selectedRole]?.[module.key] ?? false;
+                return (
+                  <div
+                    key={module.key}
+                    onClick={() => togglePermission(module.key)}
+                    className={`flex items-center justify-between ${indent} py-2.5 cursor-pointer hover:bg-gray-50/70 transition-all`}
                   >
-                    <div className="flex items-center gap-2">
-                      <ChevronRight size={14} className={`text-gray-400 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-90'}`} />
-                      <div className={`w-1.5 h-1.5 rounded-full ${gc.dot}`} />
-                      <span className={`px-2 py-0.5 rounded-[4px] text-[9px] font-black uppercase tracking-wider ${gc.bg} ${gc.text}`}>
-                        {group}
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${isEnabled ? gc.dot : 'bg-gray-200'}`} />
+                      <span className={`text-[12.5px] font-semibold truncate transition-colors ${isEnabled ? 'text-gray-700' : 'text-gray-400'}`}>
+                        {module.label}
                       </span>
-                      <span className="text-[11px] font-bold text-gray-400">
-                        {enabled}/{total} aktif
-                      </span>
+                      <code className="hidden sm:block text-[9px] font-mono text-gray-300 bg-gray-50 px-1.5 py-0.5 rounded shrink-0">
+                        {module.key}
+                      </code>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2 shrink-0 ml-3">
                       <button
-                        onClick={(e) => { e.stopPropagation(); toggleGroup(group, true); }}
-                        className="px-2 py-1 text-[10px] font-black text-emerald-600 hover:bg-emerald-50 rounded-[4px] transition-all"
+                        onClick={e => { e.stopPropagation(); togglePermission(module.key); }}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${isEnabled ? 'bg-green-500' : 'bg-gray-200'}`}
                       >
-                        Semua Aktif
+                        <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${isEnabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
                       </button>
-                      <span className="text-gray-200 text-[10px]">|</span>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); toggleGroup(group, false); }}
-                        className="px-2 py-1 text-[10px] font-black text-rose-500 hover:bg-rose-50 rounded-[4px] transition-all"
-                      >
-                        Nonaktifkan
-                      </button>
+                      <span className={`text-[10px] font-black w-14 text-right transition-colors ${isEnabled ? 'text-emerald-600' : 'text-gray-400'}`}>
+                        {isEnabled ? 'Aktif' : 'Nonaktif'}
+                      </span>
                     </div>
                   </div>
+                );
+              };
 
-                  {/* Module Rows */}
-                  {!isCollapsed && (
-                    <div className="divide-y divide-gray-50 animate-in slide-in-from-top-1 fade-in duration-200">
-                    {modules.map(module => {
-                      const isEnabled = permissions[selectedRole]?.[module.key] ?? false;
+
+              return Object.entries(groupedModules).map(([group, modules]) => {
+                // Skip sub-groups — rendered inside their parent tree
+                if (group.startsWith('Data Digit - ') || group.startsWith('Sistem - ')) return null;
+
+                const gc = GROUP_COLORS[group] || { text: 'text-gray-500', bg: 'bg-gray-100', dot: 'bg-gray-400' };
+
+                // DASHBOARD — flat rows, no collapse header
+                if (group === 'Dashboard') {
+                  return (
+                    <div key="Dashboard" className="bg-white border border-gray-100 rounded-[10px] overflow-hidden">
+                      <div className="px-4 py-2 bg-gray-50/80 border-b border-gray-100 flex items-center gap-2">
+                        <div className={`w-1.5 h-1.5 rounded-full ${gc.dot}`} />
+                        <span className={`px-2 py-0.5 rounded-[4px] text-[9px] font-black uppercase tracking-wider ${gc.bg} ${gc.text}`}>Dashboard</span>
+                      </div>
+                      <div className="divide-y divide-gray-50">
+                        {modules.map(m => renderModuleRow(m, gc))}
+                      </div>
+                    </div>
+                  );
+                }
+
+                // DATA DIGIT — tree mirrors sidebar exactly
+                if (group === 'Data Digit') {
+                  type TLeaf = { type: 'leaf'; key: string; label: string };
+                  type TNode = { type: 'node'; label: string; colorKey?: string; children: TItem[] };
+                  type TItem = TLeaf | TNode;
+
+                  const DD_TREE: TItem[] = [
+                    // Sinkronisasi (flat, rendered first from modules)
+                    { type: 'node', label: 'Pembelian', colorKey: 'Data Digit - Pembelian', children: [
+                      { type: 'node', label: 'Purchase Request (PR)', children: [
+                        { type: 'leaf', key: 'pembelian_pr', label: 'Purchase Request (PR)' }
+                      ]},
+                      { type: 'node', label: 'Penawaran', children: [
+                        { type: 'leaf', key: 'pembelian_spph', label: 'SPPH Keluar' },
+                        { type: 'leaf', key: 'pembelian_sph_in', label: 'SPH Masuk' },
+                      ]},
+                      { type: 'node', label: 'Purchase Order (PO)', children: [
+                        { type: 'leaf', key: 'pembelian_po', label: 'Purchase Order (PO)' }
+                      ]},
+                      { type: 'node', label: 'Pembelian Barang', children: [
+                        { type: 'leaf', key: 'pembelian_penerimaan', label: 'Penerimaan Barang' },
+                        { type: 'leaf', key: 'pembelian_rekap', label: 'Laporan Rekap Pembelian Barang' },
+                      ]},
+                      { type: 'node', label: 'Hutang', children: [
+                        { type: 'leaf', key: 'pembelian_hutang', label: 'Pelunasan Hutang' }
+                      ]},
+                    ]},
+                    { type: 'node', label: 'Produksi', colorKey: 'Data Digit - Produksi', children: [
+                      { type: 'leaf', key: 'produksi_bom', label: 'Bill of Material Produksi' },
+                      { type: 'leaf', key: 'produksi_orders', label: 'Order Produksi' },
+                      { type: 'node', label: 'Laporan', children: [
+                        { type: 'leaf', key: 'produksi_bahan_baku', label: 'BBB Produksi' },
+                        { type: 'leaf', key: 'produksi_barang_jadi', label: 'Penerimaan Barang Hasil Produksi' },
+                      ]},
+                    ]},
+                    { type: 'node', label: 'Penjualan', colorKey: 'Data Digit - Penjualan', children: [
+                      { type: 'node', label: 'Penawaran', children: [
+                        { type: 'leaf', key: 'penjualan_sph_out', label: 'SPH Keluar' }
+                      ]},
+                      { type: 'node', label: 'Sales Order (SO)', children: [
+                        { type: 'node', label: 'Laporan', children: [
+                          { type: 'leaf', key: 'penjualan_so', label: 'Sales Order Barang' }
+                        ]}
+                      ]},
+                      { type: 'node', label: 'Penjualan Barang', children: [
+                        { type: 'node', label: 'Laporan', children: [
+                          { type: 'leaf', key: 'penjualan_laporan', label: 'Laporan Penjualan' }
+                        ]}
+                      ]},
+                      { type: 'node', label: 'Piutang', children: [
+                        { type: 'node', label: 'Laporan', children: [
+                          { type: 'leaf', key: 'penjualan_piutang', label: 'Pelunasan Piutang Penjualan' }
+                        ]}
+                      ]},
+                      { type: 'node', label: 'Pengiriman (SJ)', children: [
+                        { type: 'node', label: 'Laporan', children: [
+                          { type: 'leaf', key: 'penjualan_pengiriman', label: 'Pengiriman' }
+                        ]}
+                      ]},
+                    ]},
+                  ];
+
+                  const ddCollectKeys = (items: TItem[]): string[] =>
+                    items.flatMap(item => item.type === 'leaf' ? [item.key] : ddCollectKeys(item.children));
+
+                  // include 'sync' from modules
+                  const syncKeys = modules.map(m => m.key);
+                  const allDDKeys = [...syncKeys, ...ddCollectKeys(DD_TREE)];
+                  const allDDEnabled = allDDKeys.filter(k => permissions[selectedRole]?.[k]).length;
+                  const isParentCollapsed = currentRoleCollapsed['Data Digit'];
+
+                  const renderDDTree = (items: TItem[], depth: number, parentColor?: { text: string; bg: string; dot: string }): React.ReactNode =>
+                    items.map((item, idx) => {
+                      if (item.type === 'leaf') {
+                        const isEnabled = permissions[selectedRole]?.[item.key] ?? false;
+                        return (
+                          <div
+                            key={item.key}
+                            onClick={() => togglePermission(item.key)}
+                            className="flex items-center justify-between py-2.5 pr-4 cursor-pointer hover:bg-gray-50/70 transition-all border-t border-gray-50"
+                            style={{ paddingLeft: `${16 + depth * 14}px` }}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${isEnabled ? (parentColor?.dot || 'bg-gray-400') : 'bg-gray-200'}`} />
+                              <span className={`text-[12.5px] font-semibold truncate transition-colors ${isEnabled ? 'text-gray-700' : 'text-gray-400'}`}>{item.label}</span>
+                              <code className="hidden sm:block text-[9px] font-mono text-gray-300 bg-gray-50 px-1.5 py-0.5 rounded shrink-0">{item.key}</code>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0 ml-3">
+                              <button onClick={e => { e.stopPropagation(); togglePermission(item.key); }} className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${isEnabled ? 'bg-green-500' : 'bg-gray-200'}`}>
+                                <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${isEnabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                              </button>
+                              <span className={`text-[10px] font-black w-14 text-right transition-colors ${isEnabled ? 'text-emerald-600' : 'text-gray-400'}`}>{isEnabled ? 'Aktif' : 'Nonaktif'}</span>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      const nodeColor = item.colorKey ? (GROUP_COLORS[item.colorKey] || parentColor) : parentColor;
+                      const nodeKeys = ddCollectKeys(item.children);
+                      const nodeEnabled = nodeKeys.filter(k => permissions[selectedRole]?.[k]).length;
+                      const collapseKey = `dd-${item.label.replace(/\s+/g, '-').toLowerCase()}-${depth}`;
+                      const isCollapsed = currentRoleCollapsed[collapseKey];
+                      const isTop = depth === 0;
 
                       return (
-                        <div
-                          key={module.key}
-                          onClick={() => togglePermission(module.key)}
-                          className="flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-gray-50/70 transition-all"
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${isEnabled ? gc.dot : 'bg-gray-200'}`} />
-                            <span className={`text-[12.5px] font-semibold truncate transition-colors ${isEnabled ? 'text-gray-700' : 'text-gray-400'}`}>
-                              {module.label}
-                            </span>
-                            <code className="hidden sm:block text-[9px] font-mono text-gray-300 bg-gray-50 px-1.5 py-0.5 rounded shrink-0">
-                              {module.key}
-                            </code>
+                        <div key={`${collapseKey}-${idx}`} className="border-t border-gray-100">
+                          <div
+                            className={`flex items-center justify-between pr-4 ${isTop ? 'py-2.5 bg-gray-50/80' : 'py-1.5 bg-gray-50/40'} select-none cursor-pointer hover:bg-gray-100/40 transition-colors`}
+                            style={{ paddingLeft: `${16 + depth * 14}px` }}
+                            onClick={() => toggleCollapse(collapseKey)}
+                          >
+                            <div className="flex items-center gap-2">
+                              <ChevronRight size={isTop ? 13 : 11} className={`transition-transform duration-200 ${isCollapsed ? 'text-gray-300' : 'rotate-90 text-gray-400'}`} />
+                              {nodeColor && <div className={`${isTop ? 'w-1.5 h-1.5' : 'w-1 h-1'} rounded-full ${nodeColor.dot}`} />}
+                              <span className={`px-1.5 py-0.5 rounded-[4px] ${isTop ? 'text-[9px]' : 'text-[8.5px]'} font-black uppercase tracking-wider ${nodeColor?.bg || 'bg-gray-100'} ${nodeColor?.text || 'text-gray-500'}`}>
+                                {item.label}
+                              </span>
+                              <span className="text-[11px] font-bold text-gray-400">{nodeEnabled}/{nodeKeys.length} aktif</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <button onClick={e => { e.stopPropagation(); toggleKeysList(nodeKeys, true); }} className="px-2 py-1 text-[10px] font-black text-emerald-600 hover:bg-emerald-50 rounded-[4px] transition-all">Semua Aktif</button>
+                              <span className="text-gray-200 text-[10px]">|</span>
+                              <button onClick={e => { e.stopPropagation(); toggleKeysList(nodeKeys, false); }} className="px-2 py-1 text-[10px] font-black text-rose-500 hover:bg-rose-50 rounded-[4px] transition-all">Nonaktifkan</button>
+                            </div>
                           </div>
-
-                          <div className="flex items-center gap-2 shrink-0 ml-3">
-                            <button
-                              onClick={e => { e.stopPropagation(); togglePermission(module.key); }}
-                              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${
-                                isEnabled ? 'bg-green-500' : 'bg-gray-200'
-                              }`}
-                            >
-                              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                                isEnabled ? 'translate-x-4' : 'translate-x-0.5'
-                              }`} />
-                            </button>
-                            <span className={`text-[10px] font-black w-14 text-right transition-colors ${isEnabled ? 'text-emerald-600' : 'text-gray-400'}`}>
-                              {isEnabled ? 'Aktif' : 'Nonaktif'}
-                            </span>
-                          </div>
+                          {!isCollapsed && (
+                            <div className="animate-in slide-in-from-top-1 fade-in duration-200">
+                              {renderDDTree(item.children, depth + 1, nodeColor || parentColor)}
+                            </div>
+                          )}
                         </div>
                       );
-                    })}
+                    });
+
+                  return (
+                    <div key="Data Digit" className="bg-white border border-gray-100 rounded-[10px] overflow-hidden">
+                      <div
+                        className="flex items-center justify-between px-4 py-2.5 bg-gray-50/80 border-b border-gray-100 select-none cursor-pointer hover:bg-gray-100/50 transition-colors"
+                        onClick={() => toggleCollapse('Data Digit')}
+                      >
+                        <div className="flex items-center gap-2">
+                          <ChevronRight size={14} className={`text-gray-400 transition-transform duration-200 ${isParentCollapsed ? '' : 'rotate-90'}`} />
+                          <div className={`w-1.5 h-1.5 rounded-full ${gc.dot}`} />
+                          <span className={`px-2 py-0.5 rounded-[4px] text-[9px] font-black uppercase tracking-wider ${gc.bg} ${gc.text}`}>Data Digit</span>
+                          <span className="text-[11px] font-bold text-gray-400">{allDDEnabled}/{allDDKeys.length} aktif</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button onClick={e => { e.stopPropagation(); toggleKeysList(allDDKeys, true); }} className="px-2 py-1 text-[10px] font-black text-emerald-600 hover:bg-emerald-50 rounded-[4px] transition-all">Semua Aktif</button>
+                          <span className="text-gray-200 text-[10px]">|</span>
+                          <button onClick={e => { e.stopPropagation(); toggleKeysList(allDDKeys, false); }} className="px-2 py-1 text-[10px] font-black text-rose-500 hover:bg-rose-50 rounded-[4px] transition-all">Nonaktifkan</button>
+                        </div>
+                      </div>
+                      {!isParentCollapsed && (
+                        <div className="animate-in slide-in-from-top-1 fade-in duration-200">
+                          {/* Sinkronisasi All Data — flat row */}
+                          {modules.map(m => renderModuleRow(m, gc))}
+                          {/* Sub-trees */}
+                          {renderDDTree(DD_TREE, 0)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                // SISTEM — parent collapse with sub-groups
+                if (group === 'Sistem' || !Object.keys(groupedModules).includes('Sistem') && sistemSubGroups.some(sg => groupedModules[sg]?.length)) {
+                  // render Sistem parent once at the end, skip here
+                  return null;
+                }
+
+                // Regular group
+                const { enabled, total } = getGroupStats(selectedRole, group);
+                const isCollapsed = currentRoleCollapsed[group];
+                return (
+                  <div key={group} className="bg-white border border-gray-100 rounded-[10px] overflow-hidden">
+                    <div
+                      className="flex items-center justify-between px-4 py-2.5 bg-gray-50/80 border-b border-gray-100 select-none cursor-pointer hover:bg-gray-100/50 transition-colors"
+                      onClick={() => toggleCollapse(group)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <ChevronRight size={14} className={`text-gray-400 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-90'}`} />
+                        <div className={`w-1.5 h-1.5 rounded-full ${gc.dot}`} />
+                        <span className={`px-2 py-0.5 rounded-[4px] text-[9px] font-black uppercase tracking-wider ${gc.bg} ${gc.text}`}>{group}</span>
+                        <span className="text-[11px] font-bold text-gray-400">{enabled}/{total} aktif</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button onClick={e => { e.stopPropagation(); toggleGroup(group, true); }} className="px-2 py-1 text-[10px] font-black text-emerald-600 hover:bg-emerald-50 rounded-[4px] transition-all">Semua Aktif</button>
+                        <span className="text-gray-200 text-[10px]">|</span>
+                        <button onClick={e => { e.stopPropagation(); toggleGroup(group, false); }} className="px-2 py-1 text-[10px] font-black text-rose-500 hover:bg-rose-50 rounded-[4px] transition-all">Nonaktifkan</button>
+                      </div>
+                    </div>
+                    {!isCollapsed && (
+                      <div className="divide-y divide-gray-50 animate-in slide-in-from-top-1 fade-in duration-200">
+                        {modules.map(m => renderModuleRow(m, gc))}
+                      </div>
+                    )}
+                  </div>
+                );
+              });
+            })()}
+
+            {/* SISTEM parent collapse — tree mirrors sidebar exactly */}
+            {(() => {
+              type TreeLeaf = { type: 'leaf'; key: string; label: string };
+              type TreeNode = { type: 'node'; label: string; colorKey?: string; children: TreeItem[] };
+              type TreeItem = TreeLeaf | TreeNode;
+
+              const SISTEM_TREE: TreeItem[] = [
+                { type: 'node', label: 'Umum', colorKey: 'Sistem - Umum', children: [
+                  { type: 'node', label: 'Data', children: [
+                    { type: 'leaf', key: 'karyawan', label: 'Karyawan' }
+                  ]},
+                  { type: 'leaf', key: 'tracking_manufaktur', label: 'Tracking Manufaktur' }
+                ]},
+                { type: 'node', label: 'HRD', colorKey: 'Sistem - HRD', children: [
+                  { type: 'node', label: 'Kesalahan Karyawan', children: [
+                    { type: 'leaf', key: 'catat_kesalahan', label: 'Catat Kesalahan' },
+                    { type: 'leaf', key: 'statistik', label: 'Statistik Performa' }
+                  ]}
+                ]},
+                { type: 'node', label: 'Kalkulasi', colorKey: 'Sistem - Kalkulasi', children: [
+                  { type: 'node', label: 'Data', children: [
+                    { type: 'leaf', key: 'hpp_kalkulasi', label: 'HPP Kalkulasi' }
+                  ]},
+                  { type: 'leaf', key: 'kalkulasi_rekap_so', label: 'Rekap Sales Order Barang' }
+                ]},
+                { type: 'node', label: 'Produksi', colorKey: 'Sistem - Produksi', children: [
+                  { type: 'node', label: 'Jurnal Harian Produksi', children: [
+                    { type: 'node', label: 'Data', children: [
+                      { type: 'leaf', key: 'produksi_jhp_sopd', label: 'Excel SOPd' },
+                      { type: 'leaf', key: 'produksi_jhp_stp', label: 'Excel Standart Target Produksi' }
+                    ]},
+                    { type: 'leaf', key: 'produksi_jhp', label: 'Jurnal Harian Produksi' }
+                  ]}
+                ]},
+                { type: 'node', label: 'User', colorKey: 'Sistem - User', children: [
+                  { type: 'leaf', key: 'hak_akses', label: 'Hak Akses' },
+                  { type: 'leaf', key: 'kelola_user', label: 'Kelola User' }
+                ]}
+              ];
+
+              const collectKeys = (items: TreeItem[]): string[] =>
+                items.flatMap(item => item.type === 'leaf' ? [item.key] : collectKeys(item.children));
+
+              const allSistemKeys = collectKeys(SISTEM_TREE);
+              const allEnabled = allSistemKeys.filter(k => permissions[selectedRole]?.[k]).length;
+              const gc = GROUP_COLORS['Sistem'] || { text: 'text-violet-600', bg: 'bg-violet-50', dot: 'bg-violet-400' };
+              const isParentCollapsed = currentRoleCollapsed['Sistem'];
+
+              const renderTree = (items: TreeItem[], depth: number, parentColor?: { text: string; bg: string; dot: string }): React.ReactNode =>
+                items.map((item, idx) => {
+                  if (item.type === 'leaf') {
+                    const isEnabled = permissions[selectedRole]?.[item.key] ?? false;
+                    return (
+                      <div
+                        key={item.key}
+                        onClick={() => togglePermission(item.key)}
+                        className="flex items-center justify-between py-2.5 pr-4 cursor-pointer hover:bg-gray-50/70 transition-all border-t border-gray-50"
+                        style={{ paddingLeft: `${16 + depth * 14}px` }}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className={`w-1.5 h-1.5 rounded-full shrink-0 transition-colors ${isEnabled ? (parentColor?.dot || 'bg-gray-400') : 'bg-gray-200'}`} />
+                          <span className={`text-[12.5px] font-semibold truncate transition-colors ${isEnabled ? 'text-gray-700' : 'text-gray-400'}`}>{item.label}</span>
+                          <code className="hidden sm:block text-[9px] font-mono text-gray-300 bg-gray-50 px-1.5 py-0.5 rounded shrink-0">{item.key}</code>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 ml-3">
+                          <button
+                            onClick={e => { e.stopPropagation(); togglePermission(item.key); }}
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${isEnabled ? 'bg-green-500' : 'bg-gray-200'}`}
+                          >
+                            <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${isEnabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                          </button>
+                          <span className={`text-[10px] font-black w-14 text-right transition-colors ${isEnabled ? 'text-emerald-600' : 'text-gray-400'}`}>{isEnabled ? 'Aktif' : 'Nonaktif'}</span>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  const nodeColor = item.colorKey ? (GROUP_COLORS[item.colorKey] || parentColor) : parentColor;
+                  const nodeKeys = collectKeys(item.children);
+                  const nodeEnabled = nodeKeys.filter(k => permissions[selectedRole]?.[k]).length;
+                  const collapseKey = `sistem-${item.label.replace(/\s+/g, '-').toLowerCase()}`;
+                  const isCollapsed = currentRoleCollapsed[collapseKey];
+                  const isTop = depth === 0;
+
+                  return (
+                    <div key={`${collapseKey}-${idx}`} className="border-t border-gray-100">
+                      <div
+                        className={`flex items-center justify-between pr-4 ${isTop ? 'py-2.5 bg-gray-50/80' : 'py-1.5 bg-gray-50/50'} select-none cursor-pointer hover:bg-gray-100/40 transition-colors`}
+                        style={{ paddingLeft: `${16 + depth * 14}px` }}
+                        onClick={() => toggleCollapse(collapseKey)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <ChevronRight size={isTop ? 13 : 11} className={`transition-transform duration-200 ${isCollapsed ? 'text-gray-300' : 'rotate-90 text-gray-400'}`} />
+                          {nodeColor && <div className={`${isTop ? 'w-1.5 h-1.5' : 'w-1 h-1'} rounded-full ${nodeColor.dot}`} />}
+                          <span className={`px-1.5 py-0.5 rounded-[4px] ${isTop ? 'text-[9px]' : 'text-[8.5px]'} font-black uppercase tracking-wider ${nodeColor?.bg || 'bg-gray-100'} ${nodeColor?.text || 'text-gray-500'}`}>
+                            {item.label}
+                          </span>
+                          <span className="text-[11px] font-bold text-gray-400">{nodeEnabled}/{nodeKeys.length} aktif</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button onClick={e => { e.stopPropagation(); toggleKeysList(nodeKeys, true); }} className="px-2 py-1 text-[10px] font-black text-emerald-600 hover:bg-emerald-50 rounded-[4px] transition-all">Semua Aktif</button>
+                          <span className="text-gray-200 text-[10px]">|</span>
+                          <button onClick={e => { e.stopPropagation(); toggleKeysList(nodeKeys, false); }} className="px-2 py-1 text-[10px] font-black text-rose-500 hover:bg-rose-50 rounded-[4px] transition-all">Nonaktifkan</button>
+                        </div>
+                      </div>
+                      {!isCollapsed && (
+                        <div className="animate-in slide-in-from-top-1 fade-in duration-200">
+                          {renderTree(item.children, depth + 1, nodeColor || parentColor)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                });
+
+              return (
+                <div className="bg-white border border-gray-100 rounded-[10px] overflow-hidden">
+                  <div
+                    className="flex items-center justify-between px-4 py-2.5 bg-gray-50/80 border-b border-gray-100 select-none cursor-pointer hover:bg-gray-100/50 transition-colors"
+                    onClick={() => toggleCollapse('Sistem')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <ChevronRight size={14} className={`text-gray-400 transition-transform duration-200 ${isParentCollapsed ? '' : 'rotate-90'}`} />
+                      <div className={`w-1.5 h-1.5 rounded-full ${gc.dot}`} />
+                      <span className={`px-2 py-0.5 rounded-[4px] text-[9px] font-black uppercase tracking-wider ${gc.bg} ${gc.text}`}>Sistem</span>
+                      <span className="text-[11px] font-bold text-gray-400">{allEnabled}/{allSistemKeys.length} aktif</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button onClick={e => { e.stopPropagation(); toggleKeysList(allSistemKeys, true); }} className="px-2 py-1 text-[10px] font-black text-emerald-600 hover:bg-emerald-50 rounded-[4px] transition-all">Semua Aktif</button>
+                      <span className="text-gray-200 text-[10px]">|</span>
+                      <button onClick={e => { e.stopPropagation(); toggleKeysList(allSistemKeys, false); }} className="px-2 py-1 text-[10px] font-black text-rose-500 hover:bg-rose-50 rounded-[4px] transition-all">Nonaktifkan</button>
+                    </div>
+                  </div>
+                  {!isParentCollapsed && (
+                    <div className="animate-in slide-in-from-top-1 fade-in duration-200">
+                      {renderTree(SISTEM_TREE, 0)}
                     </div>
                   )}
                 </div>
               );
-            })}
+            })()}
+
           </div>
           </>
           )}
