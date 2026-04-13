@@ -164,9 +164,9 @@ export function DataTable<TData extends { id: number | string }>({
           onMouseUp={onMouseUp}
           onMouseMove={onMouseMove}
         >
-        <div style={{ width: totalWidth, minWidth: '100%' }}>
+        <div style={{ width: totalWidth }}>
           <table 
-            className="text-left relative border-separate border-spacing-0 min-w-full"
+            className="text-left relative border-separate border-spacing-0"
             style={{ tableLayout: 'fixed', width: totalWidth }}
           >
             <colgroup>
