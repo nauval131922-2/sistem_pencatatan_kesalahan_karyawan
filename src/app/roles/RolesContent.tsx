@@ -773,9 +773,8 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
                   );
                 }
 
-                // SISTEM — parent collapse with sub-groups
-                if (group === 'Sistem' || !Object.keys(groupedModules).includes('Sistem') && sistemSubGroups.some(sg => groupedModules[sg]?.length)) {
-                  // render Sistem parent once at the end, skip here
+                // SISTEM — handled by tree-based renderer after the loop
+                if (group === 'Sistem' || group.startsWith('Sistem -')) {
                   return null;
                 }
 
