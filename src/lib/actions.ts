@@ -290,6 +290,16 @@ export async function getLastHppImport() {
   }
 }
 
+export async function getLastSopdImport() {
+  try {
+    const result = await db.execute(`SELECT * FROM activity_logs WHERE table_name = 'sopd' AND action_type = 'UPLOAD' ORDER BY id DESC LIMIT 1`);
+    return result.rows.length > 0 ? sanitizeData({ ...result.rows[0] }) : null;
+  } catch (err) {
+    console.error('Failed to get last sopd import log', err);
+    return null;
+  }
+}
+
 
 export async function getActivityLogs(limit = 1000) {
   const [recordsResult] = await db.batch([

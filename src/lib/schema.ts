@@ -464,6 +464,14 @@ export async function initSchema(db: any) {
       recid TEXT UNIQUE NOT NULL,
       raw_data TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS sopd (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      no_sopd TEXT NOT NULL,
+      nama_order TEXT NOT NULL,
+      qty_sopd REAL NOT NULL DEFAULT 0,
+      unit TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`
   ], "write");
 
