@@ -472,6 +472,12 @@ export async function initSchema(db: any) {
       qty_sopd REAL NOT NULL DEFAULT 0,
       unit TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS sopd_harga (
+      no_sopd TEXT PRIMARY KEY,
+      perkiraan_harga TEXT,
+      keterangan TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`
   ], "write");
 
@@ -573,7 +579,11 @@ export async function initSchema(db: any) {
     "ALTER TABLE sales_reports ADD COLUMN gol_barang TEXT;",
     "ALTER TABLE sales_reports ADD COLUMN keterangan_so TEXT;",
     "ALTER TABLE sales_reports ADD COLUMN recid TEXT;",
-    "ALTER TABLE sales_reports ADD COLUMN raw_data TEXT;"
+    "ALTER TABLE sales_reports ADD COLUMN raw_data TEXT;",
+    "CREATE UNIQUE INDEX IF NOT EXISTS idx_sopd_no_sopd ON sopd(no_sopd);",
+    "ALTER TABLE sopd ADD COLUMN tgl TEXT;",
+    "CREATE TABLE IF NOT EXISTS sopd_harga (no_sopd TEXT PRIMARY KEY, perkiraan_harga TEXT, keterangan TEXT, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);",
+    "ALTER TABLE sopd_harga ADD COLUMN keterangan TEXT;"
   ];
 
   const executor = db.client || db;
@@ -1009,10 +1019,15 @@ async function initDynamicTriggers(db: any) {
       const info = await db.execute(`PRAGMA table_info(${table})`);
       const cols = info.rows.map((c: any) => c.name as string);
 
-      let label = "NEW.id";
+      const hasId = cols.includes('id');
+      const newRecordId = hasId ? "NEW.id" : "0";
+      const oldRecordId = hasId ? "OLD.id" : "0";
+
+      let label = hasId ? "NEW.id" : "'NO_ID'";
       if (table === 'infractions') label = "NEW.description || ' (' || NEW.severity || ')'";
       else if (table === 'users') label = "NEW.name";
-      else if (cols.includes('faktur')) label = "IFNULL(NEW.faktur, 'ID:' || NEW.id)";
+      else if (cols.includes('faktur')) label = "IFNULL(NEW.faktur, 'ID:' || " + newRecordId + ")";
+      else if (cols.includes('no_sopd')) label = "NEW.no_sopd";
       else if (cols.includes('nama_barang')) label = "NEW.nama_barang";
       else if (cols.includes('name')) label = "NEW.name";
       else if (cols.includes('nama_prd')) label = "NEW.nama_prd";
@@ -1030,7 +1045,7 @@ async function initDynamicTriggers(db: any) {
 
         `CREATE TRIGGER trg_${table}_insert AFTER INSERT ON ${table} BEGIN
           INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-          VALUES ('CREATE', '${table}', NEW.id, 
+          VALUES ('CREATE', '${table}', ${newRecordId}, 
             CASE 
               WHEN '${table}' = 'users' THEN 'User baru ditambahkan: ' || ${label}
               WHEN '${table}' = 'infractions' THEN 'Pencatatan Kesalahan baru: ' || ${label}
@@ -1043,7 +1058,7 @@ async function initDynamicTriggers(db: any) {
 
         `CREATE TRIGGER trg_${table}_update AFTER UPDATE ON ${table} BEGIN
           INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-          VALUES ('UPDATE', '${table}', NEW.id, 
+          VALUES ('UPDATE', '${table}', ${newRecordId}, 
             CASE 
               WHEN '${table}' = 'users' AND (SELECT last_menu FROM session_context WHERE id = 1) = 'Pengaturan Profil' THEN 'Profil diperbarui'
               ELSE 'Update ' || '${table}' || ': ' || ${label}
@@ -1055,7 +1070,7 @@ async function initDynamicTriggers(db: any) {
 
         `CREATE TRIGGER trg_${table}_delete AFTER DELETE ON ${table} BEGIN
           INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
-          VALUES ('DELETE', '${table}', OLD.id, 
+          VALUES ('DELETE', '${table}', ${oldRecordId}, 
             'Hapus ' || '${table}' || ': ' || ${oldLabel}, 
             json_object(${oldDataCols}), 
             COALESCE((SELECT username FROM session_context WHERE id = 1), 'System')
