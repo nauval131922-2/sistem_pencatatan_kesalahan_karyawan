@@ -41,15 +41,18 @@
     - [x] Implementasi Scraper Order Produksi, BOM, & Bahan Baku
     - [x] Implementasi Scraper Barang Jadi, SO, & Laporan Penjualan
     - [x] Optimalisasi Scraper dengan Month-Batching (Concurrency 10-15)
+- [x] **Jurnal Harian Produksi - SOPd (Module)**
+    - [x] Setup UI & Excel Upload dengan Fuzzy Header Matching
+    - [x] Integrasi Database `sopd_harga` & API CRUD
+    - [x] Fitur **Inline Editing** (Double Click) untuk Harga & Keterangan
+    - [x] Implementasi **Smart Format IDR** & Penanganan Input Desimal Kompatibel
+    - [x] Implementasi **Cross-Tab Sync** via Global Storage Events
 - [x] **Refinement UX & Konsistensi UI**
-    - [x] Kebijakan "Scrape-First" untuk persistensi tanggal (Hanya simpan saat Tarik Data)
-    - [x] Sinkronisasi gaya visual (Header, Font, Icon Color) di seluruh Scraper & Reports
-    - [x] Perbaikan bug double-useEffect & redundant states pada OrderProduksiClient
-    - [x] Penyeleksian tanggal otomatis (Default ke 2026-01-01 pada hari baru)
+    - [x] Kebijakan "Scrape-First" untuk persistensi tanggal
+    - [x] Sinkronisasi gaya visual (Header, Font, Icon Color)
+    - [x] **Standarisasi Card Header Border (1.5px gray-200)** di semua modul
+    - [x] Perbaikan bug audit log trigger (No ID column tables)
 
 - [ ] **Next Steps**
-    - [x] Optimasi Performa Database (FTS5 Advanced Search)
-    - [x] Pure raw_data - Simpan data MDT tanpa transformasi
-    - [x] RenderAllFields untuk Tracking Manufaktur
     - [ ] Penambahan fitur ekspor data ke format JSON (Arsip Digital)
     - [ ] Implementasi PWA untuk akses cepat di perangkat mobile
