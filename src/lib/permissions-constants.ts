@@ -35,7 +35,7 @@ export const MODULE_REGISTRY = [
   { key: 'produksi_barang_jadi',   label: 'Penerimaan Barang Hasil Produksi', group: 'Data Digit - Produksi' },
 
   // Sistem - Produksi
-  { key: 'produksi_jhp_sopd',      label: 'Excel SOPd',                       group: 'Sistem - Produksi' },
+  { key: 'produksi_jhp_sopd',      label: 'SOPd',                             group: 'Sistem - Produksi' },
   { key: 'produksi_jhp_stp',       label: 'Excel Standart Target Produksi',   group: 'Sistem - Produksi' },
   { key: 'produksi_jhp',           label: 'Jurnal Harian Produksi',           group: 'Sistem - Produksi' },
 

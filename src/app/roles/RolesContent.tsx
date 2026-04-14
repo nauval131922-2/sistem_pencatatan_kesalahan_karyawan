@@ -837,7 +837,7 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
                 { type: 'node', label: 'Produksi', colorKey: 'Sistem - Produksi', children: [
                   { type: 'node', label: 'Jurnal Harian Produksi', children: [
                     { type: 'node', label: 'Data', children: [
-                      { type: 'leaf', key: 'produksi_jhp_sopd', label: 'Excel SOPd' },
+                      { type: 'leaf', key: 'produksi_jhp_sopd', label: 'SOPd' },
                       { type: 'leaf', key: 'produksi_jhp_stp', label: 'Excel Standart Target Produksi' }
                     ]},
                     { type: 'leaf', key: 'produksi_jhp', label: 'Jurnal Harian Produksi' }

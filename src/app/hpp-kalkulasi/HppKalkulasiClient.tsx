@@ -188,9 +188,11 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
-      {/* Search Bar Section */}
-      <div className="flex flex-col gap-4 shrink-0">
-        <div className="flex items-center justify-between gap-4 min-h-[32px]">
+      {/* Results View */}
+      <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
+        {/* Search Bar Section */}
+        <div className="flex flex-col gap-4 shrink-0">
+          <div className="flex items-center justify-between gap-4 min-h-[32px]">
           <div className="flex items-center gap-4">
              <h3 className="text-[14px] font-extrabold text-gray-800 flex items-center gap-2.5 leading-none">
                 <Calculator size={18} className="text-green-600" />
@@ -227,10 +229,10 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
             onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }} 
           />
         </div>
-      </div>
+        </div>
 
-      {/* Main Table Context */}
-      <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden relative">
+        {/* Main Table Context */}
+        <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden relative">
          {error ? (
            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-rose-50/10">
               <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mb-4">
@@ -284,7 +286,8 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
                   </div>
               </div>
            </>
-         )}
+          )}
+        </div>
       </div>
     </div>
   );

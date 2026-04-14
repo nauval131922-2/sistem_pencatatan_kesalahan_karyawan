@@ -41,7 +41,7 @@ interface DatePickerProps {
   required?: boolean;
   label?: string;
   onChange?: (date: Date) => void;
-  value?: Date;
+  value?: Date | null;
 }
 
 export default function DatePicker({ name, required, label, onChange, value }: DatePickerProps) {

@@ -196,7 +196,7 @@ export function DataTable<TData extends { id: number | string }>({
                             onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); header.getResizeHandler()(e); }}
                             className={`absolute -right-[4px] top-0 bottom-0 w-[8px] z-50 cursor-col-resize group/resizer transition-opacity ${header.column.getIsResizing() ? 'opacity-100' : 'opacity-0 hover:opacity-100'}`}
                           >
-                            <div className={`mx-auto h-full w-[2px] ${header.column.getIsResizing() ? 'bg-blue-600 w-[3px]' : 'bg-blue-400/50 group-hover/resizer:bg-blue-500'}`} />
+                            <div className={`mx-auto h-full w-[2px] ${header.column.getIsResizing() ? 'bg-green-600 w-[3px]' : 'bg-green-400/50 group-hover/resizer:bg-green-500'}`} />
                           </div>
                         )}
                       </th>);

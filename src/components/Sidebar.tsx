@@ -151,9 +151,10 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
     window.location.href = '/login';
   };
 
-  const checkIsActive = (href: string) => {
+  const checkIsActive = (href: string, exact: boolean = false) => {
     if (!pathname) return false;
     if (href === '/') return pathname === '/';
+    if (exact) return pathname === href;
     return pathname === href || pathname.startsWith(href + '/');
   };
 
@@ -164,6 +165,23 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
     // If permissions not yet loaded or key missing, default to allow
     if (Object.keys(permissions).length === 0) return true;
     return permissions[moduleKey] !== false;
+  };
+
+  interface MenuItem {
+    label: string;
+    href?: string;
+    icon: React.ReactNode;
+    items?: MenuItem[];
+    exact?: boolean;
+  }
+
+  // Recursive child check
+  const isAnyChildActive = (item: MenuItem): boolean => {
+    if (item.href && checkIsActive(item.href, item.exact)) return true;
+    if (item.items && item.items.length > 0) {
+      return item.items.some(child => isAnyChildActive(child));
+    }
+    return false;
   };
 
   const navItemClasses = (href: string) => {
@@ -224,16 +242,10 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  interface MenuItem {
-    label: string;
-    href?: string;
-    icon: React.ReactNode;
-    items?: MenuItem[];
-  }
 
   const FlyoutItem = ({ item, level }: { item: MenuItem, level: number }) => {
     const hasSub = item.items && item.items.length > 0;
-    const itemActive = item.href ? checkIsActive(item.href) : item.items?.some(si => si.href && checkIsActive(si.href));
+    const itemActive = isAnyChildActive(item);
     const isOpen = activePath[level] === item.label;
     const pos = flyoutPositions[item.label];
 
@@ -290,9 +302,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
 
   const FlyoutMenu = ({ id, label, icon, items }: { id?: string, label: string, icon: React.ReactNode, items: MenuItem[] }) => {
     const menuId = id || label;
-    const isActive = items.some(item => 
-      item.href ? checkIsActive(item.href) : item.items?.some(si => si.href && checkIsActive(si.href))
-    );
+    const isActive = items.some(item => isAnyChildActive(item));
     const isOpen = activePath[0] === menuId;
     const pos = flyoutPositions[menuId];
 
@@ -641,11 +651,11 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
                       label: 'Data',
                       icon: <Database size={14} />,
                       items: [
-                        ...(canAccess('produksi_jhp_sopd') ? [{ label: 'Excel SOPd', href: '/jurnal-harian-produksi/data/excel-sopd', icon: <FileText size={12} /> }] : []),
+                        ...(canAccess('produksi_jhp_sopd') ? [{ label: 'SOPd', href: '/jurnal-harian-produksi/data/excel-sopd', icon: <FileText size={12} /> }] : []),
                         ...(canAccess('produksi_jhp_stp') ? [{ label: 'Excel Standart Target Produksi', href: '/jurnal-harian-produksi/data/excel-stp', icon: <FileText size={12} /> }] : []),
                       ]
                     }] : []),
-                    ...(canAccess('produksi_jhp') ? [{ label: 'Jurnal Harian Produksi', href: '/jurnal-harian-produksi', icon: <ClipboardList size={14} /> }] : []),
+                    ...(canAccess('produksi_jhp') ? [{ label: 'Jurnal Harian Produksi', href: '/jurnal-harian-produksi', icon: <ClipboardList size={14} />, exact: true }] : []),
                   ]
                 }
               ]}

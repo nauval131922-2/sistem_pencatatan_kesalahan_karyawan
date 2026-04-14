@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 export const dynamic = 'force-dynamic';
 import db from "@/lib/db";
-import { getCachedSession, setCachedSession, clearCachedSession, getSession as getScraperSession } from "@/lib/session-cache";
+import { clearCachedSession, getSession as getScraperSession } from "@/lib/session-cache";
 import { getSession } from "@/lib/session";
 import { encodeScrapedPeriod, getScrapedPeriodSettingKey } from "@/lib/server-scraped-period";
 
@@ -39,8 +39,6 @@ export async function GET(request: NextRequest) {
 
     const startTime = Date.now();
     console.log(`[SCRAPE] Starting Order Produksi scrape for range: ${startParam} - ${endParam}`);
-
-    const currentUserSession = await getSession();
 
     let cookies = await getScraperSession(async () => {
       const loginReqUrl = BASE_URL + "v1/auth/login";
@@ -117,25 +115,25 @@ export async function GET(request: NextRequest) {
       return match ? parseFloat(match[0]) : 0;
     };
 
-    // Map faktur -> raw record untuk raw_data murni dari MDT
+    // Map faktur -> raw record
     const rawRecordMap = new Map(filteredRecords.map((r: any) => [r.faktur, r]));
 
     const finalRecords = filteredRecords.map((r: any) => {
+      const qty = parseDigitQty(r.qty_so || r.qty_order || r.qty);
+      const hp = parseFloat(r.hp || r.bbb || r.harga || "0") || 0;
       return {
         ...r,
-        qty: parseDigitQty(r.qty_so || r.qty_order || r.qty),
+        qty,
         satuan: r.kd_satuan || r.satuan || r.sat || '',
-        harga: parseFloat(r.hp || r.bbb || r.harga || "0") || 0,
-        jumlah: parseDigitQty(r.qty_so || r.qty_order || r.qty) * (parseFloat(r.hp || r.bbb || r.harga || "0") || 0)
+        harga: hp,
+        jumlah: qty * hp
       };
     });
 
-    // 1. Fetch existing fakturs to calculate new records accurately
+    // 1. Fetch existing fakturs
     const fakturs = finalRecords.map((r: any) => r.faktur).filter(Boolean);
     let existingFakturs = new Set<string>();
     if (fakturs.length > 0) {
-        // Since sqlite IN range might be limited, but small enough here usually. 
-        // For larger data, chunking would be better.
         const placeholders = fakturs.map(() => '?').join(',');
         const existingRes = await db.execute({
             sql: `SELECT faktur FROM orders WHERE faktur IN (${placeholders})`,
@@ -178,9 +176,35 @@ export async function GET(request: NextRequest) {
               JSON.stringify(rawRecordMap.get(record.faktur) || record)
             ]
         });
+
+        // Sync to SOPd if data is from Jan 1, 2026 onwards
+        const tglStr = record.tgl || '';
+        const tglParts = tglStr.split('-');
+        const isFrom2026 = tglParts.length === 3 && parseInt(tglParts[2], 10) >= 2026;
+
+        if (isFrom2026) {
+          batchOps.push({
+            sql: `
+              INSERT INTO sopd (no_sopd, tgl, nama_order, qty_sopd, unit)
+              VALUES (?, ?, ?, ?, ?)
+              ON CONFLICT(no_sopd) DO UPDATE SET
+                tgl = excluded.tgl,
+                nama_order = excluded.nama_order,
+                qty_sopd = excluded.qty_sopd,
+                unit = excluded.unit
+            `,
+            args: [
+              record.faktur,
+              record.tgl || '',
+              (record.nama_prd || '').trim(),
+              record.qty || 0,
+              record.satuan || ''
+            ]
+          });
+        }
     }
 
-    // Process batch in chunks if very large (libsql limit is ~5000 by default)
+    // Process batch in chunks
     const chunkSize = 100;
     for (let i = 0; i < batchOps.length; i += chunkSize) {
         await db.batch(batchOps.slice(i, i + chunkSize), "write");
@@ -188,8 +212,7 @@ export async function GET(request: NextRequest) {
 
     const lastUpdated = new Date().toISOString();
     
-    // 3. Final settings and log
-    const silent = searchParams.get('silent') === 'true';
+    // 3. Update settings
     const finalOps = [
       {
         sql: `
