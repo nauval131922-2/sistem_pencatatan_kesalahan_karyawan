@@ -69,12 +69,40 @@ export default function SopdExcelUpload() {
         };
 
         const keyNoSopd = findKey('No_SOPd');
+        const keyTgl = findKey('Tgl') || findKey('Tanggal');
         const keyNamaOrder = findKey('Nama_Order') || findKey('Nama Order');
         const keyQty = findKey('Qty SOPd') || findKey('Qty');
         const keyUnit = findKey('Unit PO') || findKey('Unit');
 
+        // Format Date if exists
+        let tglValue = "";
+        if (keyTgl && row[keyTgl]) {
+            let rawTgl = row[keyTgl];
+            let dateObj: Date | null = null;
+            
+            if (rawTgl instanceof Date) {
+              dateObj = rawTgl;
+            } else if (typeof rawTgl === 'number') {
+              // Handle Excel Serial Date
+              dateObj = new Date(Math.round((rawTgl - 25569) * 86400 * 1000));
+            } else if (typeof rawTgl === 'string' && /^\d+$/.test(rawTgl)) {
+              // Handle stringified number
+              dateObj = new Date(Math.round((parseInt(rawTgl) - 25569) * 86400 * 1000));
+            }
+
+            if (dateObj && !isNaN(dateObj.getTime())) {
+                const d = dateObj.getDate().toString().padStart(2, '0');
+                const m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+                const y = dateObj.getFullYear();
+                tglValue = `${d}-${m}-${y}`;
+            } else {
+                tglValue = String(rawTgl);
+            }
+        }
+
         return {
           no_sopd: keyNoSopd ? row[keyNoSopd] : "",
+          tgl: tglValue,
           nama_order: keyNamaOrder ? row[keyNamaOrder] : "",
           qty_sopd: keyQty ? row[keyQty] : 0,
           unit: keyUnit ? row[keyUnit] : ""
@@ -140,8 +168,8 @@ export default function SopdExcelUpload() {
   };
 
   return (
-    <div className="shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="bg-white border border-gray-200 shadow-sm rounded-[8px] px-4 py-3 flex items-center justify-between gap-4 relative">
+    <div className="h-full shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="bg-white rounded-[8px] border-[1.5px] border-gray-200 p-5 hover:border-gray-200 hover:shadow-sm transition-all duration-300 flex items-center justify-between gap-4 relative z-50 h-full">
         <div className="flex items-center gap-4 flex-1">
           <div className="w-10 h-10 rounded-[8px] bg-green-50 flex items-center justify-center shrink-0">
             <Upload className="text-green-600" size={20} />
