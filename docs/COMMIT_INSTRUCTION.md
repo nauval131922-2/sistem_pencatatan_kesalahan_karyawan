@@ -5,15 +5,15 @@ Gunakan prompt ini jika Anda ingin saya melakukan commit dan push semua perubaha
 ---
 
 **Prompt:**
+**Tutorial Mandiri**: Jika selama sesi ini (lihat berdasarkan Changes di Source Control) ada perbaikan bug atau penambahan fitur atau perubahan atau penambahan apapun, buatkan/perbarui dokumentasi tutorial *step-by-step* (boleh lebih dari 1 file, tergantung perbaikan bug atau penambahan fitur atau perubahan atau penambahan), agar saya bisa melakukannya secara mandiri di lain waktu.
 "Tolong lakukan commit dan push semua perubahan terbaru. Pastikan:
 1. Kelompokkan commit berdasarkan fitur atau perbaikan (jangan digabung semua jadi satu).
 2. Tulis pesan commit yang deskriptif dalam bahasa Indonesia.
 3. Periksa `.gitignore` agar tidak ada file sampah atau database yang ikut ter-push.
 4. **PENTING**: Periksa pola `.gitignore` yang terlalu serakah (seperti tanda bintang `*`). Pastikan file penting (seperti `.md`) tidak terabaikan secara tidak sengaja seperti kasus sebelumnya.
 5. **Sinkronisasi AI**: Sebelum mengakhiri sesi, minta AI membuat ringkasan status di `docs/AI_SESSION_SUMMARY.md` atau perbarui `task.md` agar progres bisa dilanjutkan di perangkat lain (Rumah/Kantor).
-6. **Tutorial Mandiri**: Jika selama sesi ini ada perbaikan bug atau penambahan fitur, buatkan/perbarui dokumentasi tutorial *step-by-step* (boleh lebih dari 1 file, tergantung perbaikan bug atau penambahan fitur), agar saya bisa melakukannya secara mandiri di lain waktu.
-7. Jangan lupa commit file AI_SESSION_SUMMARY.md dan file-file tutorial yang baru dibuat/diperbarui.
-8. Lakukan push ke branch master."
+6. Jangan lupa commit file AI_SESSION_SUMMARY.md dan file-file tutorial yang baru dibuat/diperbarui.
+7. Lakukan push ke branch master."
 
 ---
 

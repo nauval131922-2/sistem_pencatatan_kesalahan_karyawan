@@ -51,6 +51,7 @@
     - [x] Kebijakan "Scrape-First" untuk persistensi tanggal
     - [x] Sinkronisasi gaya visual (Header, Font, Icon Color)
     - [x] **Standarisasi Card Header Border (1.5px gray-200)** di semua modul
+    - [x] Sinkronisasi UI/UX Master Pekerjaan ke SOPd (Gap, Warna, Logo, Tombol)
     - [x] Perbaikan bug audit log trigger (No ID column tables)
 
 - [ ] **Next Steps**
