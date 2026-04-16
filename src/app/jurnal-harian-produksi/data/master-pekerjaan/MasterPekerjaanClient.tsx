@@ -218,14 +218,14 @@ export default function MasterPekerjaanClient() {
                     <div className="w-[200px] relative category-dropdown-container">
                       <button
                         onClick={() => setIsCategoryDropdownOpen(prev => !prev)}
-                        className="w-full h-9 pl-8 pr-8 bg-white border border-gray-200 rounded-[8px] focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-600 transition-all text-[13px] font-bold text-gray-700 flex items-center justify-between"
+                        className="w-full h-9 pl-9 pr-8 bg-white border border-gray-200 rounded-[8px] focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-600 transition-all text-[13px] font-semibold text-gray-700 flex items-center justify-between"
                       >
                         <span className="truncate">{categoryFilter === '' ? 'SEMUA KATEGORI' : categoryFilter}</span>
-                        <div className="absolute top-1/2 -translate-y-1/2 left-2.5 pointer-events-none text-gray-400">
-                          <Filter size={14} />
+                        <div className="absolute top-1/2 -translate-y-1/2 left-3 pointer-events-none text-gray-400">
+                          <Filter size={15} />
                         </div>
                         <div className="absolute top-1/2 -translate-y-1/2 right-2.5 pointer-events-none text-gray-400">
-                          <ChevronDown size={14} className={`transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} />
+                          <ChevronDown size={16} className={`transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} />
                         </div>
                       </button>
 
@@ -233,8 +233,8 @@ export default function MasterPekerjaanClient() {
                         <div className="absolute top-[calc(100%+6px)] left-0 w-[240px] bg-white border border-gray-100 rounded-[8px] shadow-xl py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[300px]">
                           <div className="px-2.5 pb-2 shrink-0 border-b border-gray-50 mb-1">
                             <div className="relative">
-                              <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-gray-400">
-                                <Search size={12} />
+                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400">
+                                <Search size={14} />
                               </div>
                               <input
                                 type="text"
@@ -242,7 +242,7 @@ export default function MasterPekerjaanClient() {
                                 placeholder="Cari kategori..."
                                 value={categorySearchQuery}
                                 onChange={(e) => setCategorySearchQuery(e.target.value)}
-                                className="w-full pl-7 pr-2.5 py-1.5 text-xs bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-green-500/20 rounded-[6px] placeholder:text-gray-400 font-medium"
+                                className="w-full pl-8 pr-2.5 py-1.5 text-sm bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-green-500/20 rounded-[6px] placeholder:text-gray-400 font-medium"
                               />
                             </div>
                           </div>
@@ -257,7 +257,7 @@ export default function MasterPekerjaanClient() {
                                     setIsCategoryDropdownOpen(false);
                                     setCategorySearchQuery('');
                                   }}
-                                  className={`w-full text-left px-2.5 py-2 text-[12px] font-bold rounded-md transition-colors truncate ${
+                                  className={`w-full text-left px-2.5 py-2 text-[12px] font-semibold rounded-md transition-colors truncate ${
                                     categoryFilter === cat 
                                       ? 'bg-green-50 text-green-700' 
                                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
