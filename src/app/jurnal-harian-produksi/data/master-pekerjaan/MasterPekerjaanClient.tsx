@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Search, Loader2, AlertCircle, ChevronLeft, ChevronRight, RefreshCw, Calculator } from 'lucide-react';
+import { Search, Loader2, AlertCircle, ChevronLeft, ChevronRight, RefreshCw, Calculator, ChevronDown, Filter } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import MasterPekerjaanUpload from './MasterPekerjaanUpload';
 
@@ -48,6 +48,8 @@ export default function MasterPekerjaanClient() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [categorySearchQuery, setCategorySearchQuery] = useState('');
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('master_pekerjaan_columnWidths');
@@ -82,6 +84,18 @@ export default function MasterPekerjaanClient() {
       window.removeEventListener('sintak:data-updated', handler);
       window.removeEventListener('storage', storageHandler);
     };
+  }, []);
+
+  // Handle outside click for custom dropdown
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.category-dropdown-container')) {
+        setIsCategoryDropdownOpen(false);
+      }
+    };
+    window.addEventListener('click', handleGlobalClick);
+    return () => window.removeEventListener('click', handleGlobalClick);
   }, []);
 
   // Fetch data
@@ -201,17 +215,61 @@ export default function MasterPekerjaanClient() {
                <div className="flex flex-col gap-1.5">
                   <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Filter Kategori</span>
                   <div className="flex items-center gap-2">
-                    <select
-                      value={categoryFilter}
-                      onChange={e => setCategoryFilter(e.target.value)}
-                      className="w-[200px] h-9 px-3 bg-white border border-gray-200 rounded-[8px] text-[13px] font-bold text-gray-700 focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-600 transition-all cursor-pointer appearance-none pr-8"
-                      style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
-                    >
-                      <option value="">SEMUA KATEGORI</option>
-                      {CATEGORIES.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
+                    <div className="w-[200px] relative category-dropdown-container">
+                      <button
+                        onClick={() => setIsCategoryDropdownOpen(prev => !prev)}
+                        className="w-full h-9 pl-8 pr-8 bg-white border border-gray-200 rounded-[8px] focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-600 transition-all text-[13px] font-bold text-gray-700 flex items-center justify-between"
+                      >
+                        <span className="truncate">{categoryFilter === '' ? 'SEMUA KATEGORI' : categoryFilter}</span>
+                        <div className="absolute top-1/2 -translate-y-1/2 left-2.5 pointer-events-none text-gray-400">
+                          <Filter size={14} />
+                        </div>
+                        <div className="absolute top-1/2 -translate-y-1/2 right-2.5 pointer-events-none text-gray-400">
+                          <ChevronDown size={14} className={`transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} />
+                        </div>
+                      </button>
+
+                      {isCategoryDropdownOpen && (
+                        <div className="absolute top-[calc(100%+6px)] left-0 w-[240px] bg-white border border-gray-100 rounded-[8px] shadow-xl py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[300px]">
+                          <div className="px-2.5 pb-2 shrink-0 border-b border-gray-50 mb-1">
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-gray-400">
+                                <Search size={12} />
+                              </div>
+                              <input
+                                type="text"
+                                autoFocus
+                                placeholder="Cari kategori..."
+                                value={categorySearchQuery}
+                                onChange={(e) => setCategorySearchQuery(e.target.value)}
+                                className="w-full pl-7 pr-2.5 py-1.5 text-xs bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-green-500/20 rounded-[6px] placeholder:text-gray-400 font-medium"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex-1 overflow-y-auto px-1 scrollbar-thin">
+                            {['', ...CATEGORIES]
+                              .filter(c => c.toLowerCase().includes(categorySearchQuery.toLowerCase()))
+                              .map(cat => (
+                                <button
+                                  key={cat}
+                                  onClick={() => {
+                                    setCategoryFilter(cat);
+                                    setIsCategoryDropdownOpen(false);
+                                    setCategorySearchQuery('');
+                                  }}
+                                  className={`w-full text-left px-2.5 py-2 text-[12px] font-bold rounded-md transition-colors truncate ${
+                                    categoryFilter === cat 
+                                      ? 'bg-green-50 text-green-700' 
+                                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                  }`}
+                                >
+                                  {cat === '' ? 'SEMUA KATEGORI' : cat}
+                                </button>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
                     <div className="w-4 h-[1px] bg-gray-200 mx-1"></div>
 

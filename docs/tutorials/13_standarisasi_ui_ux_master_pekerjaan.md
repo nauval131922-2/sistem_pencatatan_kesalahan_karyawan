@@ -28,6 +28,12 @@ Tombol upload disamakan baik secara dimensi maupun teks indikator prosesnya.
     - Mengubah tinggi tombol dari `h-9` menjadi `h-10`.
     - Mengubah teks status saat memproses dari "Memproses..." menjadi "Mengunggah..." agar konsisten dengan istilah yang digunakan modul lain.
 
+### 5. Custom Searchable Dropdown
+Filter kategori kini menggunakan komponen dropdown kustom yang mendukung pencarian internal, menggantikan elemen `<select>` bawaan browser.
+- **Lokasi**: `MasterPekerjaanClient.tsx`
+- **Tindakan**: Menerapkan tombol trigger dengan ikon `Filter` dan `ChevronDown`, serta menu dropdown dengan input pencarian real-time.
+- **Fitur**: Mendukung pencarian kategori, penanganan klik di luar area (*outside click*), dan transisi animasi yang halus.
+
 ## Mengapa Ini Dilakukan?
 Konsistensi visual sangat penting dalam aplikasi ERP untuk:
 1. Mengurangi beban kognitif pengguna (user tidak perlu belajar pola baru tiap ganti halaman).

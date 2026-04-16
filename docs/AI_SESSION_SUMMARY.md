@@ -13,6 +13,7 @@
    - Menyamakan layout `gap` antara header dan card menjadi `gap-6` (sebelumnya `gap-4`) agar identik dengan halaman SOPd.
    - Mengubah skema warna utama dari **Indigo** menjadi **Green** di seluruh komponen Master Pekerjaan (Button, Icon, Rings, Hovers) untuk konsistensi modul Produksi.
    - Mengganti ikon data utama dari `Database` menjadi `Calculator` agar seragam dengan halaman SOPd.
+   - Implementasi **Custom Searchable Dropdown** pada Filter Kategori (menggantikan `<select>` standar) untuk UI yang lebih modern dan konsisten dengan halaman User Management.
    - Standarisasi tombol upload: Menyesuaikan tinggi (`h-10`) dan mengubah label status menjadi "Mengunggah..." (sebelumnya "Memproses...").
 
 2. **Dokumentasi & Tutorial**:

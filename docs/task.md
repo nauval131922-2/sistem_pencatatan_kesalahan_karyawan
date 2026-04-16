@@ -52,6 +52,7 @@
     - [x] Sinkronisasi gaya visual (Header, Font, Icon Color)
     - [x] **Standarisasi Card Header Border (1.5px gray-200)** di semua modul
     - [x] Sinkronisasi UI/UX Master Pekerjaan ke SOPd (Gap, Warna, Logo, Tombol)
+    - [x] Implementasi Custom Searchable Dropdown pada Filter Kategori Master Pekerjaan
     - [x] Perbaikan bug audit log trigger (No ID column tables)
 
 - [ ] **Next Steps**
