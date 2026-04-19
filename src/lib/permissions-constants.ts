@@ -16,7 +16,7 @@ export const MODULE_REGISTRY = [
   { key: 'statistik',              label: 'Statistik Performa',               group: 'Sistem - HRD' },
 
   // Kalkulasi
-  { key: 'kalkulasi_rekap_so',     label: 'Rekap Sales Order Barang',         group: 'Sistem - Kalkulasi' },
+  { key: 'kalkulasi_rekap_so',     label: 'Rekap Sales Order Barang',         group: 'Sistem - Penjualan' },
   { key: 'hpp_kalkulasi',          label: 'HPP Kalkulasi',                    group: 'Sistem - Kalkulasi' },
 
   // Pembelian
@@ -36,7 +36,8 @@ export const MODULE_REGISTRY = [
 
   // Sistem - Produksi
   { key: 'produksi_jhp_sopd',      label: 'SOPd',                             group: 'Sistem - Produksi' },
-  { key: 'produksi_jhp_stp',       label: 'Excel Standart Target Produksi',   group: 'Sistem - Produksi' },
+  { key: 'produksi_jhp_master_pekerjaan', label: 'Master Pekerjaan',          group: 'Sistem - Produksi' },
+  { key: 'produksi_jhp_target',    label: 'Target Harian',                    group: 'Sistem - Produksi' },
   { key: 'produksi_jhp',           label: 'Jurnal Harian Produksi',           group: 'Sistem - Produksi' },
 
   // Sistem - User

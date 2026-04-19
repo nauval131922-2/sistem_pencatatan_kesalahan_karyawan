@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, createContext, useContext } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -30,11 +30,38 @@ import {
   CreditCard,
   TrendingUp,
   RefreshCw,
-  Database
+  Database,
+  Target
 } from 'lucide-react';
 import Image from 'next/image';
 import logoPic from '../../public/icon.png';
 import type { PermissionMap } from '@/lib/permissions-constants';
+import Portal from './Portal';
+
+// --- Shared types (module-level for stable component references) ---
+export interface MenuItem {
+  label: string;
+  href?: string;
+  icon: React.ReactNode;
+  items?: MenuItem[];
+  exact?: boolean;
+}
+
+interface SidebarContextValue {
+  activePath: string[];
+  flyoutPositions: Record<string, { top: number; left: number }>;
+  handleItemClick: (label: string, e: React.MouseEvent, level: number) => void;
+  setActivePath: React.Dispatch<React.SetStateAction<string[]>>;
+  isAnyChildActive: (item: MenuItem) => boolean;
+  isExpanded: boolean;
+}
+
+const SidebarContext = createContext<SidebarContextValue | null>(null);
+function useSidebarCtx() {
+  const ctx = useContext(SidebarContext);
+  if (!ctx) throw new Error('Missing SidebarContext');
+  return ctx;
+}
 
 interface SidebarProps {
   user: {
@@ -162,18 +189,12 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
   // Super Admin always has full access.
   const canAccess = (moduleKey: string): boolean => {
     if (user?.role === 'Super Admin') return true;
-    // If permissions not yet loaded or key missing, default to allow
-    if (Object.keys(permissions).length === 0) return true;
-    return permissions[moduleKey] !== false;
+    // If permissions not yet loaded, hide everything to prevent "leak by default"
+    if (Object.keys(permissions).length === 0) return false;
+    return permissions[moduleKey] === true;
   };
 
-  interface MenuItem {
-    label: string;
-    href?: string;
-    icon: React.ReactNode;
-    items?: MenuItem[];
-    exact?: boolean;
-  }
+
 
   // Recursive child check
   const isAnyChildActive = (item: MenuItem): boolean => {
@@ -234,133 +255,36 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
-        setActivePath([]);
-      }
+      const target = event.target as HTMLElement;
+      // Don't close if clicking inside a portal-flyout
+      if (target.closest('[data-sidebar-flyout]')) return;
+
+      setActivePath([]);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
 
-  const FlyoutItem = ({ item, level }: { item: MenuItem, level: number }) => {
-    const hasSub = item.items && item.items.length > 0;
-    const itemActive = isAnyChildActive(item);
-    const isOpen = activePath[level] === item.label;
-    const pos = flyoutPositions[item.label];
 
-    return (
-      <div className="relative">
-        {item.href ? (
-          <Link
-            href={item.href}
-            onClick={() => setActivePath([])}
-            className={`
-              flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[12px] font-bold transition-all w-full
-              ${itemActive ? 'bg-green-50 text-green-600 font-black' : 'text-gray-500 hover:bg-gray-50 hover:text-green-600'}
-            `}
-          >
-            <span className={itemActive ? 'text-green-600' : 'text-gray-400'}>{item.icon}</span>
-            <span className="truncate">{item.label}</span>
-          </Link>
-        ) : (
-          <button
-            onClick={(e) => hasSub && handleItemClick(item.label, e, level)}
-            className={`
-              flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[12px] font-bold transition-all cursor-pointer w-full
-              ${isOpen ? 'bg-green-600 text-white shadow-md' : itemActive ? 'bg-green-50 text-green-600' : 'text-gray-500 hover:bg-gray-50 hover:text-green-600'}
-            `}
-          >
-            <span className={isOpen ? 'text-white' : itemActive ? 'text-green-600' : 'text-gray-400'}>{item.icon}</span>
-            <span className="flex-1 text-left truncate">{item.label}</span>
-            {hasSub && <ChevronRight size={12} className={`transition-transform duration-200 ${isOpen ? 'rotate-90 sm:rotate-0' : 'text-gray-300'}`} />}
-          </button>
-        )}
 
-        {/* Nested Flyout (Level 3 or higher) */}
-        {hasSub && isOpen && pos && (
-          <div 
-            className="fixed z-[120] pl-1 animate-in fade-in zoom-in-95 duration-200 slide-in-from-left-2"
-            onClick={(e) => e.stopPropagation()}
-            style={{ 
-              left: `${pos.left - 4}px`,
-              top: `${pos.top - 6}px`
-            }}
-          >
-            <div className="bg-white border-[1.5px] border-gray-100 rounded-[12px] shadow-2xl p-1.5 min-w-[200px]">
-              <div className="flex flex-col gap-1">
-                {item.items?.map((subItem) => (
-                  <FlyoutItem key={subItem.label} item={subItem} level={level + 1} />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
 
-  const FlyoutMenu = ({ id, label, icon, items }: { id?: string, label: string, icon: React.ReactNode, items: MenuItem[] }) => {
-    const menuId = id || label;
-    const isActive = items.some(item => isAnyChildActive(item));
-    const isOpen = activePath[0] === menuId;
-    const pos = flyoutPositions[menuId];
-
-    return (
-      <div className="relative">
-        <button 
-          onClick={(e) => handleItemClick(menuId, e, 0)}
-          className={`
-            group flex items-center gap-3 px-3 h-9 rounded-[8px] transition-all text-[12.5px] font-semibold w-full
-            ${!isExpanded ? 'justify-center px-0 w-9 mx-auto' : ''}
-            ${isActive && !isOpen ? 'bg-green-50 text-green-600' : isOpen ? 'bg-green-600 text-white shadow-lg scale-[1.02]' : 'text-gray-500 hover:bg-green-50 hover:text-green-600'}
-          `}
-        >
-          {icon}
-          {isExpanded && (
-            <>
-              <span className="flex-1 text-left truncate">{label}</span>
-              <ChevronRight size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
-            </>
-          )}
-        </button>
-
-        {/* Level 2 Flyout */}
-        {isOpen && pos && (
-          <div 
-            className={`
-              fixed z-[100] pl-3 animate-in fade-in zoom-in-95 duration-200 slide-in-from-left-2
-              ${!isExpanded ? 'ml-[-8px]' : 'ml-[-2px]'}
-            `}
-            onClick={(e) => e.stopPropagation()}
-            style={{ 
-              left: `${pos.left}px`,
-              top: `${pos.top - 6}px`
-            }}
-          >
-            <div className="bg-white border-[1.5px] border-gray-100 rounded-[12px] shadow-2xl p-1.5 min-w-[190px]">
-              <div className="flex flex-col gap-1">
-                {items.map((item) => (
-                  <FlyoutItem key={item.label} item={item} level={1} />
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
 
   // Removed isMounted skeleton gating to fix hydration mismatch
   // The sidebar will render in its expanded state by default on server and first client pass
 
+  const sidebarCtxValue: SidebarContextValue = {
+    activePath, flyoutPositions, handleItemClick, setActivePath, isAnyChildActive, isExpanded,
+  };
+
   return (
+    <SidebarContext.Provider value={sidebarCtxValue}>
     <aside 
       ref={sidebarRef}
       onMouseEnter={() => isCollapsed && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{ width: currentWidth }}
-      className={`h-screen bg-white border-r border-gray-100 shrink-0 flex flex-col z-30 relative ${
+      className={`h-screen bg-white border-r border-gray-100 shrink-0 flex flex-col z-[50] relative ${
         isResizing ? '' : 'transition-[width] duration-300 ease-in-out'
       }`}
     >
@@ -378,7 +302,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
       )}
 
       {/* Header */}
-      <div onClick={() => setActivePath([])} className="p-4 pb-4 relative min-h-[64px] bg-gray-50/50 border-b border-gray-100">
+      <div className="p-4 pb-4 relative min-h-[64px] bg-gray-50/50 border-b border-gray-100">
         <div className={`flex items-center ${!isExpanded ? 'justify-center' : 'justify-between'}`}>
           {isExpanded ? (
             <div className="flex flex-col w-full">
@@ -416,11 +340,16 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
         {isCollapsed ? <ChevronRight size={10} /> : <ChevronLeft size={10} />}
       </button>
 
-      <nav ref={navRef} onClick={() => setActivePath([])} className="flex-1 overflow-y-auto overflow-x-hidden px-3 pt-4 pb-2 custom-scrollbar">
+      <nav ref={navRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 pt-4 pb-2 custom-scrollbar">
         {/* DASHBOARD SECTION */}
         {canAccess('dashboard') && (
           <div className="space-y-1">
-            <Link href="/dashboard" className={navItemClasses('/dashboard')} title={!isExpanded ? "Dashboard" : ""}>
+            <Link 
+              href="/dashboard" 
+              className={navItemClasses('/dashboard')} 
+              title={!isExpanded ? "Dashboard" : ""}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
               <LayoutDashboard size={18} />
               {isExpanded && <span className="truncate">Dashboard</span>}
             </Link>
@@ -439,7 +368,12 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
             <div className="space-y-1">
           {canAccess('sync') && (
             <div className={`mb-3 p-0.5 rounded-[10px] border border-gray-100 ${!isExpanded ? 'mx-0' : ''}`}>
-              <Link href="/sync" className={navItemClasses('/sync')} title={!isExpanded ? "Sinkronisasi All Data" : ""}>
+              <Link 
+                href="/sync" 
+                className={navItemClasses('/sync')} 
+                title={!isExpanded ? "Sinkronisasi All Data" : ""}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
                 <RefreshCw size={18} />
                 {isExpanded && <span className="truncate">Sinkronisasi All Data</span>}
               </Link>
@@ -518,6 +452,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
             canAccess('penjualan_piutang') || canAccess('penjualan_pengiriman')) && (
             <div data-group="Penjualan">
               <FlyoutMenu
+                id="penjualan_digit"
                 label="Penjualan"
                 icon={<TrendingUp size={18} />}
                 items={[
@@ -616,27 +551,26 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
         )}
 
         {/* KALKULASI */}
-        {(canAccess('kalkulasi_rekap_so') || canAccess('hpp_kalkulasi')) && (
+        {canAccess('hpp_kalkulasi') && (
           <div className="space-y-1 mb-1" data-group="Kalkulasi">
             <FlyoutMenu
               label="Kalkulasi"
               icon={<Calculator size={18} />}
               items={[
-                ...(canAccess('hpp_kalkulasi') ? [{
+                {
                   label: 'Data',
                   icon: <Database size={16} />,
                   items: [
                     { label: 'HPP Kalkulasi', href: '/hpp-kalkulasi', icon: <Calculator size={14} /> }
                   ]
-                }] : []),
-                ...(canAccess('kalkulasi_rekap_so') ? [{ label: 'Rekap Sales Order Barang', href: '/rekap-sales-order', icon: <Calculator size={16} /> }] : [])
+                }
               ]}
             />
           </div>
         )}
 
         {/* PRODUKSI */}
-        {(canAccess('produksi_jhp_sopd') || canAccess('produksi_jhp_stp') || canAccess('produksi_jhp')) && (
+        {(canAccess('produksi_jhp_sopd') || canAccess('produksi_jhp_master_pekerjaan') || canAccess('produksi_jhp') || canAccess('produksi_jhp_target')) && (
           <div className="space-y-1 mb-1" data-group="Produksi">
             <FlyoutMenu
               id="Produksi Jurnal Harian"
@@ -652,12 +586,27 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
                       icon: <Database size={14} />,
                       items: [
                         ...(canAccess('produksi_jhp_sopd') ? [{ label: 'SOPd', href: '/jurnal-harian-produksi/data/excel-sopd', icon: <FileText size={12} /> }] : []),
-                        ...(canAccess('produksi_jhp_stp') ? [{ label: 'Excel Standart Target Produksi', href: '/jurnal-harian-produksi/data/excel-stp', icon: <FileText size={12} /> }] : []),
+                        ...(canAccess('produksi_jhp_master_pekerjaan') ? [{ label: 'Master Pekerjaan', href: '/jurnal-harian-produksi/data/master-pekerjaan', icon: <Database size={12} /> }] : []),
                       ]
                     }] : []),
                     ...(canAccess('produksi_jhp') ? [{ label: 'Jurnal Harian Produksi', href: '/jurnal-harian-produksi', icon: <ClipboardList size={14} />, exact: true }] : []),
+                    ...(canAccess('produksi_jhp_target') ? [{ label: 'Target Harian', href: '/jurnal-harian-produksi/target', icon: <TrendingUp size={14} /> }] : []),
                   ]
                 }
+              ]}
+            />
+          </div>
+        )}
+
+        {/* PENJUALAN */}
+        {canAccess('kalkulasi_rekap_so') && (
+          <div className="space-y-1 mb-1" data-group="Penjualan">
+            <FlyoutMenu
+              id="penjualan_sistem"
+              label="Penjualan"
+              icon={<TrendingUp size={18} />}
+              items={[
+                { label: 'Rekap Sales Order Barang', href: '/rekap-sales-order', icon: <FileCheck size={16} /> }
               ]}
             />
           </div>
@@ -680,11 +629,12 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
 
 
       {/* User Focus Footer */}
-      <div onClick={() => setActivePath([])} className={`mt-auto border-t border-gray-100 p-3 bg-gray-50/50 relative z-10`} ref={profileRef}>
+      <div className={`mt-auto border-t border-gray-100 p-3 bg-gray-50/50 relative z-10`} ref={profileRef}>
         {user ? (
           <div className="relative">
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
+              onMouseDown={(e) => e.stopPropagation()}
               className={`w-full flex items-center gap-3 p-2 rounded-[8px] transition-all hover:bg-white hover:shadow-sm ${
                 isProfileOpen ? 'bg-white shadow-sm ring-1 ring-black/5' : ''
               } ${!isExpanded ? 'justify-center p-1' : ''}`}
@@ -723,10 +673,119 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
         )}
       </div>
     </aside>
+    </SidebarContext.Provider>
   );
 }
 
+// =============================================================================
+// Module-level components — defined OUTSIDE Sidebar so their reference is stable
+// across re-renders. Using SidebarContext to access shared state.
+// =============================================================================
 
+function FlyoutItem({ item, level }: { item: MenuItem; level: number }) {
+  const { activePath, flyoutPositions, handleItemClick, setActivePath, isAnyChildActive } = useSidebarCtx();
+  const hasSub = item.items && item.items.length > 0;
+  const itemActive = isAnyChildActive(item);
+  const isOpen = activePath[level] === item.label;
+  const pos = flyoutPositions[item.label];
 
+  return (
+    <div className="relative">
+      {item.href ? (
+        <Link
+          href={item.href}
+          onClick={() => setActivePath([])}
+          className={`
+            flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[12px] font-bold transition-all w-full
+            ${itemActive ? 'bg-green-50 text-green-600 font-black' : 'text-gray-500 hover:bg-gray-50 hover:text-green-600'}
+          `}
+        >
+          <span className={itemActive ? 'text-green-600' : 'text-gray-400'}>{item.icon}</span>
+          <span className="truncate">{item.label}</span>
+        </Link>
+      ) : (
+        <button
+          onClick={(e) => { e.stopPropagation(); hasSub && handleItemClick(item.label, e, level); }}
+          onMouseDown={(e) => e.stopPropagation()}
+          className={`
+            flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[12px] font-bold transition-all cursor-pointer w-full
+            ${isOpen ? 'bg-green-600 text-white shadow-md' : itemActive ? 'bg-green-50 text-green-600' : 'text-gray-500 hover:bg-gray-50 hover:text-green-600'}
+          `}
+        >
+          <span className={isOpen ? 'text-white' : itemActive ? 'text-green-600' : 'text-gray-400'}>{item.icon}</span>
+          <span className="flex-1 text-left truncate">{item.label}</span>
+          {hasSub && <ChevronRight size={12} className={`transition-transform duration-200 ${isOpen ? 'rotate-90 sm:rotate-0' : 'text-gray-300'}`} />}
+        </button>
+      )}
 
+      {hasSub && isOpen && pos && (
+        <Portal>
+          <div
+            className="fixed z-[10000] pl-1 animate-in fade-in zoom-in-95 duration-200 slide-in-from-left-2"
+            data-sidebar-flyout="true"
+            onClick={(e) => e.stopPropagation()}
+            style={{ left: `${pos.left - 4}px`, top: `${pos.top - 6}px` }}
+          >
+            <div className="bg-white border-[1.5px] border-gray-100 rounded-[12px] shadow-2xl p-1.5 min-w-[200px]">
+              <div className="flex flex-col gap-1">
+                {item.items?.map((subItem) => (
+                  <FlyoutItem key={subItem.label} item={subItem} level={level + 1} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+    </div>
+  );
+}
+
+function FlyoutMenu({ id, label, icon, items }: { id?: string; label: string; icon: React.ReactNode; items: MenuItem[] }) {
+  const { activePath, flyoutPositions, handleItemClick, isAnyChildActive, isExpanded } = useSidebarCtx();
+  const menuId = id || label;
+  const isActive = items.some(item => isAnyChildActive(item));
+  const isOpen = activePath[0] === menuId;
+  const pos = flyoutPositions[menuId];
+
+  return (
+    <div className="relative">
+      <button
+        onClick={(e) => handleItemClick(menuId, e, 0)}
+        onMouseDown={(e) => e.stopPropagation()}
+        className={`
+          group flex items-center gap-3 px-3 h-9 rounded-[8px] transition-all text-[12.5px] font-semibold w-full
+          ${!isExpanded ? 'justify-center px-0 w-9 mx-auto' : ''}
+          ${isActive && !isOpen ? 'bg-green-50 text-green-600' : isOpen ? 'bg-green-600 text-white shadow-lg scale-[1.02]' : 'text-gray-500 hover:bg-green-50 hover:text-green-600'}
+        `}
+      >
+        {icon}
+        {isExpanded && (
+          <>
+            <span className="flex-1 text-left truncate">{label}</span>
+            <ChevronRight size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
+          </>
+        )}
+      </button>
+
+      {isOpen && pos && (
+        <Portal>
+          <div
+            className={`fixed z-[9999] pl-3 animate-in fade-in zoom-in-95 duration-200 slide-in-from-left-2 ${!isExpanded ? 'ml-[-8px]' : 'ml-[-2px]'}`}
+            data-sidebar-flyout="true"
+            onClick={(e) => e.stopPropagation()}
+            style={{ left: `${pos.left}px`, top: `${pos.top - 6}px` }}
+          >
+            <div className="bg-white border-[1.5px] border-gray-100 rounded-[12px] shadow-2xl p-1.5 min-w-[190px]">
+              <div className="flex flex-col gap-1">
+                {items.map((item) => (
+                  <FlyoutItem key={item.label} item={item} level={1} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </Portal>
+      )}
+    </div>
+  );
+}
 
