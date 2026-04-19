@@ -36,6 +36,7 @@ const GROUP_COLORS: Record<string, { text: string; bg: string; dot: string }> = 
   'Sistem - HRD':        { text: 'text-rose-600',    bg: 'bg-rose-50',     dot: 'bg-rose-400' },
   'Sistem - Kalkulasi':  { text: 'text-amber-600',   bg: 'bg-amber-50',    dot: 'bg-amber-400' },
   'Sistem - Produksi':   { text: 'text-lime-600',    bg: 'bg-lime-50',     dot: 'bg-lime-400' },
+  'Sistem - Penjualan':  { text: 'text-emerald-600', bg: 'bg-emerald-50',  dot: 'bg-emerald-400' },
   'Sistem - User':       { text: 'text-purple-600',  bg: 'bg-purple-50',   dot: 'bg-purple-400' },
 };
 
@@ -490,6 +491,7 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
                   { key: 'Sistem - HRD', label: 'HRD' },
                   { key: 'Sistem - Kalkulasi', label: 'Kalkulasi' },
                   { key: 'Sistem - Produksi', label: 'Produksi' },
+                  { key: 'Sistem - Penjualan', label: 'Penjualan' },
                   { key: 'Sistem - User', label: 'User' },
                 ].map(({ key, label }) => { const c = GROUP_COLORS[key]; return (
                   <div key={key} className="flex items-center gap-1.5 pl-3">
@@ -831,17 +833,21 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
                 { type: 'node', label: 'Kalkulasi', colorKey: 'Sistem - Kalkulasi', children: [
                   { type: 'node', label: 'Data', children: [
                     { type: 'leaf', key: 'hpp_kalkulasi', label: 'HPP Kalkulasi' }
-                  ]},
-                  { type: 'leaf', key: 'kalkulasi_rekap_so', label: 'Rekap Sales Order Barang' }
+                  ]}
                 ]},
                 { type: 'node', label: 'Produksi', colorKey: 'Sistem - Produksi', children: [
                   { type: 'node', label: 'Jurnal Harian Produksi', children: [
                     { type: 'node', label: 'Data', children: [
                       { type: 'leaf', key: 'produksi_jhp_sopd', label: 'SOPd' },
-                      { type: 'leaf', key: 'produksi_jhp_stp', label: 'Excel Standart Target Produksi' }
+                      { type: 'leaf', key: 'produksi_jhp_master_pekerjaan', label: 'Master Pekerjaan' },
+                      { type: 'leaf', key: 'produksi_jhp_master_target', label: 'Master Target Pekerjaan' }
                     ]},
-                    { type: 'leaf', key: 'produksi_jhp', label: 'Jurnal Harian Produksi' }
+                    { type: 'leaf', key: 'produksi_jhp', label: 'Jurnal Harian Produksi' },
+                    { type: 'leaf', key: 'produksi_jhp_target', label: 'Target Harian' }
                   ]}
+                ]},
+                { type: 'node', label: 'Penjualan', colorKey: 'Sistem - Penjualan', children: [
+                  { type: 'leaf', key: 'kalkulasi_rekap_so', label: 'Rekap Sales Order Barang' }
                 ]},
                 { type: 'node', label: 'User', colorKey: 'Sistem - User', children: [
                   { type: 'leaf', key: 'hak_akses', label: 'Hak Akses' },

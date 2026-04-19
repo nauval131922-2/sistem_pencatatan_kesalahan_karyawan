@@ -300,6 +300,16 @@ export async function getLastSopdImport() {
   }
 }
 
+export async function getLastMasterPekerjaanImport() {
+  try {
+    const result = await db.execute(`SELECT * FROM activity_logs WHERE table_name = 'master_pekerjaan' AND action_type = 'UPLOAD' ORDER BY id DESC LIMIT 1`);
+    return result.rows.length > 0 ? sanitizeData({ ...result.rows[0] }) : null;
+  } catch (err) {
+    console.error('Failed to get last master pekerjaan import log', err);
+    return null;
+  }
+}
+
 
 export async function getActivityLogs(limit = 1000) {
   const [recordsResult] = await db.batch([

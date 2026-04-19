@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Calendar } from 'lucide-react';
 
 const MONTHS_ID = [
@@ -42,9 +42,11 @@ interface DatePickerProps {
   label?: string;
   onChange?: (date: Date) => void;
   value?: Date | null;
+  customTrigger?: (toggle: () => void) => React.ReactNode;
+  popupAlign?: 'left' | 'right';
 }
 
-export default function DatePicker({ name, required, label, onChange, value }: DatePickerProps) {
+export default function DatePicker({ name, required, label, onChange, value, customTrigger, popupAlign = 'left' }: DatePickerProps) {
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -229,18 +231,20 @@ export default function DatePicker({ name, required, label, onChange, value }: D
       )}
       <input type="hidden" name={name} value={valueStr} required={required} />
 
-      <div
-        onClick={() => setOpen(o => !o)}
-        className="w-full bg-white border border-slate-200 rounded-[8px] px-3 py-1.5 text-sm cursor-pointer flex items-center justify-between hover:border-emerald-500 transition-all shadow-sm"
-      >
-        <span className={formatted ? 'text-slate-700 font-medium' : 'text-slate-400'}>
-          {formatted || 'Pilih tanggal...'}
-        </span>
-        <Calendar size={14} className="text-slate-400 group-hover:text-emerald-500" />
-      </div>
+      {customTrigger ? customTrigger(() => setOpen(o => !o)) : (
+        <div
+          onClick={() => setOpen(o => !o)}
+          className="w-full bg-white border border-slate-200 rounded-[8px] px-3 py-1.5 text-sm cursor-pointer flex items-center justify-between hover:border-emerald-500 transition-all shadow-sm"
+        >
+          <span className={formatted ? 'text-slate-700 font-medium' : 'text-slate-400'}>
+            {formatted || 'Pilih tanggal...'}
+          </span>
+          <Calendar size={14} className="text-slate-400 group-hover:text-emerald-500" />
+        </div>
+      )}
 
       {open && (
-        <div className="absolute z-50 mt-1 bg-white border border-slate-200 rounded shadow-[0_3px_12px_rgba(0,0,0,0.15)] p-2 w-[260px] font-sans">
+        <div className={`absolute z-50 mt-1 bg-white border border-slate-200 rounded shadow-[0_3px_12px_rgba(0,0,0,0.15)] p-2 w-[260px] font-sans ${popupAlign === 'right' ? 'right-0' : 'left-0'}`}>
           {/* Header */}
           <div className="flex items-center justify-between mb-2 px-1">
             <button type="button" onClick={prevView} className="px-2 py-1 rounded hover:bg-slate-200 text-slate-800 text-lg font-bold transition-colors leading-none">

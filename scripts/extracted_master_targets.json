@@ -1,0 +1,1866 @@
+[
+  {
+    "name": "Backup File Order",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak",
+    "target": 100
+  },
+  {
+    "name": "Belajar Pekerjaan Setting",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Almanak",
+    "target": 100
+  },
+  {
+    "name": "Box Kardus Al Qur'an Al Quddus",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Cover",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 01",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 01 A",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 01 B",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 01-02",
+    "target": 100
+  },
+  {
+    "name": "Cek File",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 02",
+    "target": 100
+  },
+  {
+    "name": "Cleaning Area Setting",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 02 A",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 02 B",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 03",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 03 A",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 03 B",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 03-04",
+    "target": 100
+  },
+  {
+    "name": "Isi Toner Mesin Fotocopy",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 04",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 04 A",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 04 B",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 05",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 05 A",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 05 B",
+    "target": 100
+  },
+  {
+    "name": "Kirim Email",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 05-06",
+    "target": 100
+  },
+  {
+    "name": "Kirim File",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 06",
+    "target": 100
+  },
+  {
+    "name": "Kirim Plate",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 06 A",
+    "target": 100
+  },
+  {
+    "name": "Kirim Plate Cover",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 06 B",
+    "target": 100
+  },
+  {
+    "name": "Kirim Plate Isi",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 07",
+    "target": 100
+  },
+  {
+    "name": "Kirim Print",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 07 A",
+    "target": 100
+  },
+  {
+    "name": "Koordinasi Setting",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 07 B",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 07-08",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 08",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 08 A",
+    "target": 100
+  },
+  {
+    "name": "Cetak Cover",
+    "target": 4
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 08 B",
+    "target": 100
+  },
+  {
+    "name": "Cetak Cover (Insheet Register)",
+    "target": 4
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 09",
+    "target": 100
+  },
+  {
+    "name": "Cetak Cover Mesin KORS",
+    "target": 4
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 09 A",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 09 B",
+    "target": 100
+  },
+  {
+    "name": "Cetak Cover Mesin Oliver 272E",
+    "target": 4
+  },
+  {
+    "name": "Mencari File",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 09-10",
+    "target": 100
+  },
+  {
+    "name": "Menyiapkan File",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 1/2 A",
+    "target": 100
+  },
+  {
+    "name": "Cetak Cover Mesin Oliver 72E",
+    "target": 4
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 1/4",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 1/4 A",
+    "target": 100
+  },
+  {
+    "name": "Cetak Cover Mesin SM 102",
+    "target": 4
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 1/4 B",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 10",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 10 A",
+    "target": 100
+  },
+  {
+    "name": "Cetak Isi Cut. 01",
+    "target": 4
+  },
+  {
+    "name": "Pendampingan Plate",
+    "target": 0
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 10 B",
+    "target": 100
+  },
+  {
+    "name": "Pendampingan Setting",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 10-20 KF 1/2",
+    "target": 100
+  },
+  {
+    "name": "Pengenalan & Penyesuaian Sistem Kerja",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 11",
+    "target": 100
+  },
+  {
+    "name": "Print",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 11-12",
+    "target": 100
+  },
+  {
+    "name": "Print Cover",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 12",
+    "target": 100
+  },
+  {
+    "name": "Cetak Isi Cut. 02",
+    "target": 4
+  },
+  {
+    "name": "Print Cover Intermedia",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 12 B",
+    "target": 100
+  },
+  {
+    "name": "Print Imposisi",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 13",
+    "target": 100
+  },
+  {
+    "name": "Print Isi",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 13-14",
+    "target": 100
+  },
+  {
+    "name": "Print Mockup",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 14",
+    "target": 100
+  },
+  {
+    "name": "Print Proof",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 15",
+    "target": 100
+  },
+  {
+    "name": "Cetak Isi Cut. 03",
+    "target": 4
+  },
+  {
+    "name": "Print Sisipan",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 15 B",
+    "target": 100
+  },
+  {
+    "name": "Print Skiblat",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 15-16",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 16",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 17",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 17-18",
+    "target": 100
+  },
+  {
+    "name": "Cetak Isi Cut. 04",
+    "target": 4
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 18",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 19",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 19 KFA",
+    "target": 100
+  },
+  {
+    "name": "Revisi Imposisi",
+    "target": 0
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 19 KFB",
+    "target": 100
+  },
+  {
+    "name": "Cetak Isi Cut. 05",
+    "target": 4
+  },
+  {
+    "name": "revisi Mokup",
+    "target": 0
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 19 Sisipan KF-1/8",
+    "target": 100
+  },
+  {
+    "name": "Revisi Plate",
+    "target": 0
+  },
+  {
+    "name": "Acc Cetak Isi Cut. 20",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi KF-1/13",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi KF-1/2",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Isi KF-1/4",
+    "target": 100
+  },
+  {
+    "name": "Cetak Isi Cut. 06",
+    "target": 4
+  },
+  {
+    "name": "Acc Cetak Isi KF-1/8",
+    "target": 100
+  },
+  {
+    "name": "acc cetak kors/oliver",
+    "target": 19.5
+  },
+  {
+    "name": "acc cetak ryobi",
+    "target": 39
+  },
+  {
+    "name": "Cetak Isi Cut. 07",
+    "target": 4
+  },
+  {
+    "name": "Setting Alternatif",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Sisipan Cut. 01 A",
+    "target": 100
+  },
+  {
+    "name": "Setting Alternatif Cover",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Sisipan Cut. 01 B",
+    "target": 100
+  },
+  {
+    "name": "Setting Cover",
+    "target": 100
+  },
+  {
+    "name": "Acc Cetak Skiblat",
+    "target": 100
+  },
+  {
+    "name": "Cetak Isi Cut. 08",
+    "target": 4
+  },
+  {
+    "name": "Setting File Qur'an Baru",
+    "target": 100
+  },
+  {
+    "name": "acc cetak sm",
+    "target": 13
+  },
+  {
+    "name": "Setting Imposisi",
+    "target": 100
+  },
+  {
+    "name": "Acc Di perc muria",
+    "target": 100
+  },
+  {
+    "name": "Setting Imposisi + Plat",
+    "target": 100
+  },
+  {
+    "name": "Setting Imposisi Almanak",
+    "target": 100
+  },
+  {
+    "name": "setting imposisi buku, majalah",
+    "target": 19.5
+  },
+  {
+    "name": "Cetak Isi Cut. 09",
+    "target": 4
+  },
+  {
+    "name": "Setting Imposisi Cover",
+    "target": 100
+  },
+  {
+    "name": "setting imposisi form, nota, kwitansi, label, brosur, kop, kartu stock, bloknote",
+    "target": 6.5
+  },
+  {
+    "name": "Setting Imposisi Isi",
+    "target": 100
+  },
+  {
+    "name": "Cetak Isi Cut. 10",
+    "target": 4
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 01",
+    "target": 100
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 02",
+    "target": 100
+  },
+  {
+    "name": "Cek Nomerator",
+    "target": 100
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 03",
+    "target": 100
+  },
+  {
+    "name": "Cleaning Area QC",
+    "target": 100
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 04",
+    "target": 100
+  },
+  {
+    "name": "Cetak Isi Cut. 11",
+    "target": 4
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 05",
+    "target": 100
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 06",
+    "target": 100
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 07",
+    "target": 100
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 08",
+    "target": 100
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 09",
+    "target": 100
+  },
+  {
+    "name": "Istirahat Perdin",
+    "target": 100
+  },
+  {
+    "name": "Cetak Isi Cut. 12",
+    "target": 4
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 10",
+    "target": 100
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 11",
+    "target": 100
+  },
+  {
+    "name": "Cetak Isi Cut. 13",
+    "target": 4
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 12",
+    "target": 100
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 13",
+    "target": 100
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 14",
+    "target": 100
+  },
+  {
+    "name": "Cetak Isi Cut. 14",
+    "target": 4
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 15",
+    "target": 100
+  },
+  {
+    "name": "Mendata Dan Penataan WIP alqur'an",
+    "target": 100
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 16",
+    "target": 100
+  },
+  {
+    "name": "Cetak Isi Cut. 15",
+    "target": 4
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 17",
+    "target": 100
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 18",
+    "target": 100
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 19",
+    "target": 100
+  },
+  {
+    "name": "Cetak Isi Cut. 16",
+    "target": 4
+  },
+  {
+    "name": "Setting Imposisi Isi Cut. 20",
+    "target": 100
+  },
+  {
+    "name": "setting imposisi kalender",
+    "target": 15.6
+  },
+  {
+    "name": "Pendampingan Plate",
+    "target": 0
+  },
+  {
+    "name": "Cetak Isi Cut. 17",
+    "target": 4
+  },
+  {
+    "name": "setting imposisi kitab, qur'an",
+    "target": 19.5
+  },
+  {
+    "name": "Pendampingan Plate Cover",
+    "target": 100
+  },
+  {
+    "name": "Setting Imposisi Skiblat",
+    "target": 100
+  },
+  {
+    "name": "Pendampingan Plate Cut. 1",
+    "target": 100
+  },
+  {
+    "name": "setting imposisi stopmap, box",
+    "target": 4.3
+  },
+  {
+    "name": "Pendampingan Plate Cut. 2",
+    "target": 100
+  },
+  {
+    "name": "Cetak Isi Cut. 18",
+    "target": 4
+  },
+  {
+    "name": "Setting Isi",
+    "target": 100
+  },
+  {
+    "name": "Pendampingan Plate Cut. 3",
+    "target": 100
+  },
+  {
+    "name": "Cetak Isi Cut. 19",
+    "target": 4
+  },
+  {
+    "name": "Setting Mockup",
+    "target": 100
+  },
+  {
+    "name": "Pendampingan Plate Cut. 4",
+    "target": 100
+  },
+  {
+    "name": "setting mockup box",
+    "target": 1.3
+  },
+  {
+    "name": "Pendampingan Plate Isi",
+    "target": 100
+  },
+  {
+    "name": "setting mockup brosur, poster",
+    "target": 1.3
+  },
+  {
+    "name": "Pendampingan Print",
+    "target": 100
+  },
+  {
+    "name": "setting mockup buku arab ketik ulang",
+    "target": 8.66
+  },
+  {
+    "name": "Perdin Macanan",
+    "target": 100
+  },
+  {
+    "name": "Cetak Isi Cut. 19 KF-1/8",
+    "target": 4
+  },
+  {
+    "name": "setting mockup buku buku standar isi rgb 1 warna",
+    "target": 195
+  },
+  {
+    "name": "Perdin Tiga Serangkai",
+    "target": 100
+  },
+  {
+    "name": "Cetak Isi Cut. 19 Sisipan KF-1/8",
+    "target": 4
+  },
+  {
+    "name": "setting mockup buku buku standar isi rgb full colour",
+    "target": 26
+  },
+  {
+    "name": "setting mockup buku resize ukuran / buku standar",
+    "target": 390
+  },
+  {
+    "name": "Setting Mockup Cover",
+    "target": 4.3
+  },
+  {
+    "name": "Setting Mockup Cover & Isi",
+    "target": 100
+  },
+  {
+    "name": "setting mockup form, nota, kwitansi, kop, kartu stock, isi bloknote",
+    "target": 6.5
+  },
+  {
+    "name": "Setting Mockup Isi",
+    "target": 100
+  },
+  {
+    "name": "setting mockup kalender (data banyak)",
+    "target": 2.16
+  },
+  {
+    "name": "qc imposisi buku, majalah",
+    "target": 19.5
+  },
+  {
+    "name": "setting mockup kalender (data ringan)",
+    "target": 15.6
+  },
+  {
+    "name": "qc imposisi form, nota, kwitansi, label, brosur, kop, kartu stock, bloknote",
+    "target": 6.5
+  },
+  {
+    "name": "setting mockup label kh-q, amplop",
+    "target": 8.66
+  },
+  {
+    "name": "qc imposisi kalender",
+    "target": 15.6
+  },
+  {
+    "name": "setting mockup majalah warna",
+    "target": 8.66
+  },
+  {
+    "name": "qc imposisi kitab, qur'an",
+    "target": 19.5
+  },
+  {
+    "name": "setting mockup qur'an",
+    "target": 300
+  },
+  {
+    "name": "qc imposisi stopmap, box",
+    "target": 4.3
+  },
+  {
+    "name": "Setting Mockup Skiblat",
+    "target": 100
+  },
+  {
+    "name": "Qc Isi",
+    "target": 100
+  },
+  {
+    "name": "setting mockup stopmap",
+    "target": 6.5
+  },
+  {
+    "name": "qc mockup buku, majalah",
+    "target": 65
+  },
+  {
+    "name": "Setting Pisau Pounce",
+    "target": 100
+  },
+  {
+    "name": "qc mockup form, nota, kwitansi, label, brosur, kop, kartu stock, bloknote",
+    "target": 6.5
+  },
+  {
+    "name": "Setting Plate",
+    "target": 100
+  },
+  {
+    "name": "qc mockup kalender",
+    "target": 15.6
+  },
+  {
+    "name": "setting plate buku, majalah",
+    "target": 13
+  },
+  {
+    "name": "qc mockup kitab, qur'an",
+    "target": 130
+  },
+  {
+    "name": "Setting Plate Cover",
+    "target": 100
+  },
+  {
+    "name": "qc mockup stopmap, box",
+    "target": 4.3
+  },
+  {
+    "name": "Setting Plate Cover di Dampingi Qc",
+    "target": 100
+  },
+  {
+    "name": "qc plate buku, majalah",
+    "target": 13
+  },
+  {
+    "name": "Setting Plate di Dampingi Qc",
+    "target": 100
+  },
+  {
+    "name": "qc plate form, nota, kwitansi, label, brosur, kop, kartu stock, bloknote",
+    "target": 19.5
+  },
+  {
+    "name": "setting plate form, nota, kwitansi, label, brosur, kop, kartu stock, bloknote",
+    "target": 19.5
+  },
+  {
+    "name": "qc plate kalender",
+    "target": 13
+  },
+  {
+    "name": "Setting Plate Isi",
+    "target": 100
+  },
+  {
+    "name": "qc plate kitab, qur'an",
+    "target": 9.75
+  },
+  {
+    "name": "Setting Plate Isi Cut. 01",
+    "target": 100
+  },
+  {
+    "name": "qc plate stopmap, box",
+    "target": 13
+  },
+  {
+    "name": "Setting Plate Isi Cut. 02",
+    "target": 100
+  },
+  {
+    "name": "Qc Print Skiblat",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi Cut. 03",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi Cut. 04",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Cover",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi Cut. 05",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Isi",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi Cut. 06",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Isi Cut. 01",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi Cut. 07",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Isi Cut. 03",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi Cut. 08",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Isi Cut. 04",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi Cut. 09",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Isi Cut. 05",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi Cut. 10",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Isi Cut. 06",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi Cut. 11",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Isi Cut. 07",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi Cut. 12",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Isi Cut. 09",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi Cut. 13",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Isi Cut. 10",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi Cut. 14",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Isi Cut. 11",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi Cut. 15",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Isi Cut. 12",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi Cut. 16",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Isi Cut. 13",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi Cut. 17",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Isi Cut. 14",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi Cut. 18",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Isi Cut. 15",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi Cut. 19",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Isi Cut. 16",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi Cut. 20",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Isi Cut. 17",
+    "target": 100
+  },
+  {
+    "name": "Setting Plate Isi di Dampingi Qc",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Isi Cut. 18",
+    "target": 100
+  },
+  {
+    "name": "setting plate kalender",
+    "target": 13
+  },
+  {
+    "name": "Qc. Imposisi Isi Cut. 19",
+    "target": 100
+  },
+  {
+    "name": "setting plate kitab, qur'an",
+    "target": 9.75
+  },
+  {
+    "name": "Qc. Imposisi Isi Cut. 20",
+    "target": 100
+  },
+  {
+    "name": "Cetak KORS, Cetak 1 Warna",
+    "target": 1
+  },
+  {
+    "name": "Setting Plate Skiblat",
+    "target": 100
+  },
+  {
+    "name": "Qc. Imposisi Skiblat",
+    "target": 100
+  },
+  {
+    "name": "Cetak KORS, Cetak 2 Warna",
+    "target": 2
+  },
+  {
+    "name": "setting plate stopmap, box",
+    "target": 13
+  },
+  {
+    "name": "Qc. Imposisi Skiblat",
+    "target": 100
+  },
+  {
+    "name": "Cetak KORS, Cetak 3 Warna",
+    "target": 3
+  },
+  {
+    "name": "Setting Revisi Imposisi",
+    "target": 100
+  },
+  {
+    "name": "Qc. Isi",
+    "target": 100
+  },
+  {
+    "name": "Cetak KORS, Cetak 4 Warna",
+    "target": 4
+  },
+  {
+    "name": "Setting Revisi Imposisi Cover",
+    "target": 100
+  },
+  {
+    "name": "Qc. Isi Jumlah",
+    "target": 100
+  },
+  {
+    "name": "Cetak Line Cover",
+    "target": 1
+  },
+  {
+    "name": "Setting Revisi Mockup",
+    "target": 100
+  },
+  {
+    "name": "Qc. Mockup",
+    "target": 100
+  },
+  {
+    "name": "Cetak Line Skiblat",
+    "target": 1
+  },
+  {
+    "name": "Setting Revisi Mockup Cover",
+    "target": 100
+  },
+  {
+    "name": "Qc. Mockup Cover",
+    "target": 100
+  },
+  {
+    "name": "Setting Revisi Mockup Cover & Isi",
+    "target": 100
+  },
+  {
+    "name": "Qc. Mockup Cover & Isi",
+    "target": 100
+  },
+  {
+    "name": "Setting Revisi Mockup Isi",
+    "target": 100
+  },
+  {
+    "name": "Qc. Mockup Isi",
+    "target": 100
+  },
+  {
+    "name": "Setting Revisi Plate",
+    "target": 100
+  },
+  {
+    "name": "Qc. Mockup Skiblat",
+    "target": 100
+  },
+  {
+    "name": "Setting Revisi Proof",
+    "target": 100
+  },
+  {
+    "name": "Qc. Nomerator",
+    "target": 100
+  },
+  {
+    "name": "Setting Template",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Cover",
+    "target": 10
+  },
+  {
+    "name": "Qc. Plate Cover Lama",
+    "target": 100
+  },
+  {
+    "name": "Cetak OLIVER 72E, 1 W, Cetak 1 Warna",
+    "target": 1
+  },
+  {
+    "name": "Qc. Plate Isi",
+    "target": 10
+  },
+  {
+    "name": "Cetak OLIVER 72E, 1 W, Cetak 2 Warna",
+    "target": 2
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 01",
+    "target": 10
+  },
+  {
+    "name": "Cetak OLIVER 72E, 1 W, Cetak 3 Warna",
+    "target": 3
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 01 A",
+    "target": 100
+  },
+  {
+    "name": "Cetak OLIVER 72E, 1 W, Cetak 4 Warna",
+    "target": 4
+  },
+  {
+    "name": "Training Anak Baru",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 01 AB",
+    "target": 100
+  },
+  {
+    "name": "Cetak OLIVER II72E, 2 W, Cetak 1 Warna",
+    "target": 1
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 01 B",
+    "target": 100
+  },
+  {
+    "name": "Cetak OLIVER II72E, 2 W, Cetak 2 Warna",
+    "target": 2
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 01-02",
+    "target": 100
+  },
+  {
+    "name": "Cetak OLIVER II72E, 2 W, Cetak 3 Warna",
+    "target": 3
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 02",
+    "target": 10
+  },
+  {
+    "name": "Cetak OLIVER II72E, 2 W, Cetak 4 Warna",
+    "target": 4
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 02 A",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 02 AB",
+    "target": 100
+  },
+  {
+    "name": "Cetak RYOBI, Cetak 1 Plate",
+    "target": 1
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 02 B",
+    "target": 100
+  },
+  {
+    "name": "Cetak Skiblat",
+    "target": 4
+  },
+  {
+    "name": "Update Aplikasi",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 03",
+    "target": 10
+  },
+  {
+    "name": "Cetak Skiblat (Insheet Register)",
+    "target": 4
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 03 A",
+    "target": 100
+  },
+  {
+    "name": "Cetak Skiblat Mesin KORS",
+    "target": 4
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 03 B",
+    "target": 100
+  },
+  {
+    "name": "Cetak Skiblat Mesin Oliver 272E",
+    "target": 4
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 03-04",
+    "target": 100
+  },
+  {
+    "name": "Cetak Skiblat Mesin Oliver 72E",
+    "target": 4
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 04",
+    "target": 10
+  },
+  {
+    "name": "Cetak Skiblat Mesin SM 102",
+    "target": 4
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 04 A",
+    "target": 100
+  },
+  {
+    "name": "Cetak SM, Cetak 1/1 Perfecting",
+    "target": 2
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 04 AB",
+    "target": 100
+  },
+  {
+    "name": "Cetak SM, Cetak 2/2 Perfecting",
+    "target": 4
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 04 B",
+    "target": 100
+  },
+  {
+    "name": "Cetak SM, Cetak 4/0 Straight",
+    "target": 4
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 05",
+    "target": 10
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 05 A",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 05 AB",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 05 B",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 05-06",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 05A",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 06",
+    "target": 10
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 06 A",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 06 AB",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 06 B",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 07",
+    "target": 10
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 07 A",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 07 AB",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 07 B",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 07-08",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 08",
+    "target": 10
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 08 A",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 08 AB",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 08 B",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 09",
+    "target": 10
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 09 A",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 09 AB",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 09 B",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 09-11",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 1/4",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 10",
+    "target": 10
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 10 A",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 10 B",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 10-20 KF 1/2",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 11",
+    "target": 10
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 11 A",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 11 AB",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 11 B",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 12",
+    "target": 10
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 12 A",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 12 AB",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 12 B",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 12-13",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 13",
+    "target": 10
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 13 A",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 13 AB",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 13 B",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 14",
+    "target": 10
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 14 A",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 14 AB",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 14 B",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 14-15",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 15",
+    "target": 10
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 15 A",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 15 AB",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 15 B",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 16",
+    "target": 10
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 16 A",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 16 AB",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 16 B",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 16-17",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 17",
+    "target": 10
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 17 A",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 17 AB",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 17 B",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 18",
+    "target": 10
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 18 A",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 18 AB",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 18 B",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 18-19",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 19",
+    "target": 10
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 19 A",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 19 AB",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 19 B",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 19 KF-1/8",
+    "target": 10
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 20",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 20 A",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 20 B",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 20_KF Sisipan",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. 21 B",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. KF 1/13",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. KF 1/2",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. KF 1/4",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Cut. KF 1/8",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi KF 1/2",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Isi Lama",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Lama",
+    "target": 100
+  },
+  {
+    "name": "Qc. Plate Skiblat",
+    "target": 10
+  },
+  {
+    "name": "Qc. Print",
+    "target": 100
+  },
+  {
+    "name": "Qc. Print Cover",
+    "target": 100
+  },
+  {
+    "name": "Qc. Print Isi",
+    "target": 100
+  },
+  {
+    "name": "Qc. Print Skiblat",
+    "target": 100
+  },
+  {
+    "name": "Qc. Revisi",
+    "target": 100
+  },
+  {
+    "name": "Qc. Revisi Imposisi",
+    "target": 100
+  },
+  {
+    "name": "Qc. Revisi Isi",
+    "target": 100
+  },
+  {
+    "name": "Qc. Revisi Mockup",
+    "target": 100
+  },
+  {
+    "name": "Qc. Revisi Mockup Isi",
+    "target": 100
+  },
+  {
+    "name": "Rapat Produksi",
+    "target": 100
+  },
+  {
+    "name": "Revisi Imposisi",
+    "target": 0
+  },
+  {
+    "name": "revisi Mokup",
+    "target": 0
+  },
+  {
+    "name": "Revisi Plate",
+    "target": 0
+  },
+  {
+    "name": "Sortir Barang Jadi",
+    "target": 300
+  },
+  {
+    "name": "Sortir Barang Setengah Jadi",
+    "target": 300
+  },
+  {
+    "name": "Sortir Barang Setengah Jadi Jilid 1",
+    "target": 400
+  },
+  {
+    "name": "Sortir Barang Setengah Jadi Jilid 2",
+    "target": 400
+  },
+  {
+    "name": "Sortir Barang Setengah Jadi Perbaikan",
+    "target": 300
+  },
+  {
+    "name": "Sortir Cover",
+    "target": 2500
+  },
+  {
+    "name": "Sortir Isi",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 01",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 02",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 03",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 04",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 05",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 06",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 07",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 08",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 09",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 10",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 10-19 KF-1/2",
+    "target": 100
+  },
+  {
+    "name": "Sortir Isi Cut. 11",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 12",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 13",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 14",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 15",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 16",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 17",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 18",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 19",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 19 KF-1/8",
+    "target": 10000
+  },
+  {
+    "name": "Sortir Isi Cut. 20 KF",
+    "target": 100
+  },
+  {
+    "name": "Sortir Isi KF-1/2",
+    "target": 100
+  },
+  {
+    "name": "Sortir Isi KF-1/4",
+    "target": 100
+  },
+  {
+    "name": "Sortir Isi KF-1/8",
+    "target": 100
+  },
+  {
+    "name": "Sortir Setelah Susun",
+    "target": 100
+  },
+  {
+    "name": "Sortir Skiblat",
+    "target": 2500
+  }
+]

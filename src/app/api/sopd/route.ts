@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       const ordersWhere = `WHERE ${ordersWhereParts.join(' AND ')}`;
 
       sqlData = `
-        SELECT u.*, h.perkiraan_harga, h.keterangan FROM (
+        SELECT u.*, h.perkiraan_harga, h.keterangan, h.deadline_date, h.finished_date FROM (
           SELECT s.id, s.no_sopd, s.tgl, s.nama_order, s.qty_sopd, s.unit, 'sopd' as src FROM sopd s ${sopdWhere}
           UNION ALL
           SELECT o.id, o.faktur as no_sopd, o.tgl, o.nama_prd as nama_order, o.qty as qty_sopd, o.satuan as unit, 'orders' as src FROM orders o ${ordersWhere}
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
       const where = whereParts.length ? `WHERE ${whereParts.join(' AND ')}` : '';
       const whereCount = where.replace(/s\./g, '');
 
-      sqlData = `SELECT s.id, s.no_sopd, s.tgl, s.nama_order, s.qty_sopd, s.unit, 'sopd' as src, h.perkiraan_harga, h.keterangan FROM sopd s LEFT JOIN sopd_harga h ON h.no_sopd = s.no_sopd ${where} ${ORDER_BY} LIMIT ? OFFSET ?`;
+      sqlData = `SELECT s.id, s.no_sopd, s.tgl, s.nama_order, s.qty_sopd, s.unit, 'sopd' as src, h.perkiraan_harga, h.keterangan, h.deadline_date, h.finished_date FROM sopd s LEFT JOIN sopd_harga h ON h.no_sopd = s.no_sopd ${where} ${ORDER_BY} LIMIT ? OFFSET ?`;
       sqlTotal = `SELECT COUNT(*) as count FROM sopd ${whereCount}`;
 
       const a: any[] = [];
@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
       const where = whereParts.length ? `WHERE ${whereParts.join(' AND ')}` : '';
       const whereCount = where.replace(/o\./g, '');
 
-      sqlData = `SELECT o.id, o.faktur as no_sopd, o.tgl, o.nama_prd as nama_order, o.qty as qty_sopd, o.satuan as unit, 'orders' as src, h.perkiraan_harga, h.keterangan FROM orders o LEFT JOIN sopd_harga h ON h.no_sopd = o.faktur ${where} ${ORDER_BY} LIMIT ? OFFSET ?`;
+      sqlData = `SELECT o.id, o.faktur as no_sopd, o.tgl, o.nama_prd as nama_order, o.qty as qty_sopd, o.satuan as unit, 'orders' as src, h.perkiraan_harga, h.keterangan, h.deadline_date, h.finished_date FROM orders o LEFT JOIN sopd_harga h ON h.no_sopd = o.faktur ${where} ${ORDER_BY} LIMIT ? OFFSET ?`;
       sqlTotal = `SELECT COUNT(*) as count FROM orders ${whereCount}`;
 
       const a: any[] = [];
@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { no_sopd, perkiraan_harga, keterangan } = body;
+    const { no_sopd, perkiraan_harga, keterangan, deadline_date, finished_date } = body;
 
     if (!no_sopd) {
       return NextResponse.json({ error: 'no_sopd diperlukan' }, { status: 400 });
@@ -246,6 +246,26 @@ export async function PATCH(request: NextRequest) {
           args: [no_sopd, keterangan]
         });
         return NextResponse.json({ success: true, no_sopd, keterangan });
+    }
+
+    if (deadline_date !== undefined) {
+        await db.execute({
+          sql: `INSERT INTO sopd_harga (no_sopd, deadline_date, updated_at)
+                VALUES (?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(no_sopd) DO UPDATE SET deadline_date = excluded.deadline_date, updated_at = CURRENT_TIMESTAMP`,
+          args: [no_sopd, deadline_date]
+        });
+        return NextResponse.json({ success: true, no_sopd, deadline_date });
+    }
+
+    if (finished_date !== undefined) {
+        await db.execute({
+          sql: `INSERT INTO sopd_harga (no_sopd, finished_date, updated_at)
+                VALUES (?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(no_sopd) DO UPDATE SET finished_date = excluded.finished_date, updated_at = CURRENT_TIMESTAMP`,
+          args: [no_sopd, finished_date]
+        });
+        return NextResponse.json({ success: true, no_sopd, finished_date });
     }
 
     return NextResponse.json({ error: 'Data tidak valid' }, { status: 400 });

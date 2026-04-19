@@ -78,6 +78,10 @@ export function DataTable<TData extends { id: number | string }>({
     // Only drag if it's the left mouse button
     if (e.button !== 0) return;
 
+    // IMPORTANT: If user is clicking on text to select it, do NOT start dragging
+    const target = e.target as HTMLElement;
+    if (target.closest('.select-text')) return;
+
     setIsPointerDown(true);
     startX.current = e.pageX - parentRef.current.offsetLeft;
     startY.current = e.pageY - parentRef.current.offsetTop;
@@ -283,7 +287,7 @@ const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick, onRowDoubleCl
     >{row.getVisibleCells().map((cell: any) => {
         const meta = cell.column.columnDef.meta as any;
         const alignClass = meta?.align === 'right' ? 'justify-end text-right font-mono' : meta?.align === 'center' ? 'justify-center text-center' : 'justify-start text-left';
-        const wrapClass = meta?.wrap ? 'whitespace-normal' : 'truncate';
+        const wrapClass = meta?.wrap ? 'whitespace-normal' : meta?.overflowVisible ? 'whitespace-nowrap !overflow-visible' : 'truncate';
         const vAlignClass = meta?.valign === 'top' ? 'items-start py-3' : 'items-center';
         return (
           <td 
