@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Search, Loader2, AlertCircle, Clock, FileSpreadsheet, Users } from 'lucide-react';
+import ImportInfo from '@/components/ImportInfo';
+import SearchAndReload from '@/components/SearchAndReload';
 import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
 
@@ -178,18 +180,7 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
                 <Users size={18} className="text-emerald-500" />
                 <span>Data Karyawan</span>
              </h3>
-             {importInfo && (
-                <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none" style={{ color: '#99a1af' }}>
-                    <span className="opacity-40">|</span>
-                    <div className="flex items-center gap-1.5 transition-colors">
-                        <span className="cursor-help hover:text-emerald-500" title={importInfo.fileName}>
-                            {importInfo.fileName}
-                        </span>
-                        <span className="opacity-30">|</span>
-                        <span>Diperbarui: {importInfo.time}</span>
-                    </div>
-                </div>
-             )}
+             <ImportInfo info={importInfo} />
           </div>
           {loading && (data?.length || 0) > 0 && (
               <div className="text-[11px] font-bold text-emerald-600 flex items-center gap-2 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 animate-pulse uppercase tracking-tighter leading-none">
@@ -199,16 +190,13 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
           )}
         </div>
 
-        <div className="relative w-full group">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-emerald-500 transition-colors" />
-          <input 
-            type="text" 
-            placeholder="Cari nama, jabatan, atau ID karyawan..." 
-            className="w-full pl-12 pr-4 h-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm" 
-            value={searchQuery} 
-            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }} 
-          />
-        </div>
+        <SearchAndReload 
+          searchQuery={searchQuery}
+          setSearchQuery={(v) => { setSearchQuery(v); setPage(1); }}
+          onReload={() => setRefreshKey(k => k + 1)}
+          loading={loading}
+          placeholder="Cari nama, jabatan, atau ID karyawan..."
+        />
       </div>
 
       {/* Main Table - Let DataTable handle border and rounding */}

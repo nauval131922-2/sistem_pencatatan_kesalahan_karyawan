@@ -7,6 +7,7 @@ import {
   ChevronLeft, ChevronRight, SlidersHorizontal, X
 } from 'lucide-react';
 import DatePicker from '@/components/DatePicker';
+import SearchAndReload from '@/components/SearchAndReload';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { splitDateRangeIntoMonths } from '@/lib/date-utils';
 import { DataTable } from '@/components/ui/DataTable';
@@ -508,17 +509,13 @@ export default function RekapSalesOrderClient() {
             )}
           </div>
 
-          {/* Search bar */}
-          <div className="relative w-full group">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-green-500 transition-colors" />
-            <input
-              type="text"
-              placeholder="Cari faktur SPH, faktur SO, kode barang, faktur PRD, nama produk..."
-              className="w-full pl-12 pr-4 h-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+          <SearchAndReload 
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            onReload={() => setRefreshKey(k => k + 1)}
+            loading={loading}
+            placeholder="Cari faktur SPH, faktur SO, kode barang, faktur PRD, nama produk..."
+          />
         </div>
 
         {/* Table */}

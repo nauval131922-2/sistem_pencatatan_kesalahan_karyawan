@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Search, Loader2, AlertCircle, Calculator, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Loader2, AlertCircle, ChevronLeft, ChevronRight, RefreshCw, Calculator, Pencil, Check, X, Calendar } from 'lucide-react';
+import ImportInfo from '@/components/ImportInfo';
 import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
 import { useTableSelection } from '@/lib/hooks/useTableSelection';
 import SopdExcelUpload from './SopdExcelUpload';
 import DatePicker from '@/components/DatePicker';
+import SearchAndReload from '@/components/SearchAndReload';
 
 interface SopdRecord {
   id: number;
@@ -17,6 +19,8 @@ interface SopdRecord {
   unit: string;
   perkiraan_harga: number | null;
   keterangan: string | null;
+  deadline_date: string | null;
+  finished_date: string | null;
 }
 
 interface SopdClientProps {
@@ -83,6 +87,7 @@ const EditableCell = ({
   const [value, setValue] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const isSavingGuard = useRef(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   const initialVal = row[field];
   const [localVal, setLocalVal] = useState<any>(initialVal);
@@ -118,6 +123,17 @@ const EditableCell = ({
     setTimeout(() => { isSavingGuard.current = false; }, 300);
   };
 
+  useEffect(() => {
+    if (!isEditing) return;
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        handleSave();
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [isEditing, value]);
+
   const smartFormatInput = (val: string) => {
     if (isNumericOnly) return formatIDR(val);
     if (/[a-zA-Z]/.test(val)) return val;
@@ -126,26 +142,59 @@ const EditableCell = ({
 
   if (isEditing) {
     return (
-        <input
-            type="text"
-            autoFocus
-            value={value}
-            onChange={e => setValue(smartFormatInput(e.target.value))}
-            onBlur={handleSave}
-            onClick={e => e.stopPropagation()}
-            onKeyDown={e => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleSave();
-                }
-                if (e.key === 'Escape') {
-                    isSavingGuard.current = true;
-                    setIsEditing(false);
-                    setTimeout(() => { isSavingGuard.current = false; }, 300);
-                }
-            }}
-            className="w-full text-right font-mono text-[13px] font-black text-green-700 bg-green-50 z-50 relative border border-green-300 rounded-[4px] px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-green-400/40"
-        />
+        <div ref={wrapperRef} className="relative w-full group/input z-[999]">
+            <input
+                type="text"
+                autoFocus
+                value={value}
+                onChange={e => setValue(smartFormatInput(e.target.value))}
+                onClick={e => e.stopPropagation()}
+                onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSave();
+                    }
+                    if (e.key === 'Escape') {
+                        isSavingGuard.current = true;
+                        setIsEditing(false);
+                        setTimeout(() => { isSavingGuard.current = false; }, 300);
+                    }
+                }}
+                className={`w-full text-right font-mono text-[13px] font-black text-green-700 bg-green-50 z-50 relative border border-green-300 rounded-[4px] py-0.5 focus:outline-none focus:ring-2 focus:ring-green-400/40 ${(field === 'deadline_date' || field === 'finished_date') ? 'pr-8 pl-2' : 'px-2'}`}
+            />
+            {(field === 'deadline_date' || field === 'finished_date') && (
+                <div className="absolute right-1 top-1/2 -translate-y-1/2 z-[60] flex items-center">
+                    <DatePicker 
+                        name="cellDatePicker"
+                        value={
+                            value && value.split('-').length === 3 
+                              ? new Date(Number(value.split('-')[2]), Number(value.split('-')[1]) - 1, Number(value.split('-')[0])) 
+                              : null
+                        }
+                        onChange={(d: Date) => {
+                            const y = d.getFullYear();
+                            const m = String(d.getMonth() + 1).padStart(2, '0');
+                            const day = String(d.getDate()).padStart(2, '0');
+                            setValue(`${day}-${m}-${y}`);
+                        }}
+                        popupAlign="right"
+                        customTrigger={(toggle) => (
+                            <button 
+                                type="button"
+                                tabIndex={-1}
+                                onMouseDown={(e) => {
+                                  e.preventDefault(); 
+                                  toggle();
+                                }}
+                                className="p-1 px-1.5 hover:bg-green-100 rounded text-green-600 transition-colors"
+                            >
+                                <Calendar size={14} />
+                            </button>
+                        )}
+                    />
+                </div>
+            )}
+        </div>
     );
   }
 
@@ -245,7 +294,9 @@ export default function SopdClient({ importInfo }: SopdClientProps) {
       'qty_sopd': 150,
       'unit': 120,
       'perkiraan_harga': 180,
-      'keterangan': 250
+      'keterangan': 250,
+      'deadline_date': 180,
+      'finished_date': 180
     };
   });
 
@@ -407,12 +458,9 @@ export default function SopdClient({ importInfo }: SopdClientProps) {
                 const num = Number(value.replace(/\./g, "").replace(',', '.'));
                 if (!isNaN(num)) parsedVal = num;
              }
-          } else if (field === 'keterangan') {
-             // If numeric-like, store as number in state for formatting, otherwise string
-             if (value !== '' && !/[a-zA-Z]/.test(value)) {
-                const num = Number(value.replace(/\./g, "").replace(',', '.'));
-                if (!isNaN(num)) parsedVal = num;
-             }
+          } else if (field === 'keterangan' || field === 'deadline_date' || field === 'finished_date') {
+             // Strings stay as strings
+             parsedVal = value;
           }
           
           return { ...row, [field]: parsedVal };
@@ -535,6 +583,26 @@ export default function SopdClient({ importInfo }: SopdClientProps) {
             const row = info.row.original as SopdRecord;
             return <EditableCell row={row} field="keterangan" onSave={handleSaveRecord} placeholder="klik 2x untuk ket." />;
         }
+    },
+    {
+        accessorKey: 'deadline_date',
+        header: 'Tanggal Deadline',
+        size: 180,
+        meta: { align: 'right', overflowVisible: true },
+        cell: (info: any) => {
+            const row = info.row.original as SopdRecord;
+            return <EditableCell row={row} field="deadline_date" onSave={handleSaveRecord} placeholder="klik 2x untuk deadline" />;
+        }
+    },
+    {
+        accessorKey: 'finished_date',
+        header: 'Tanggal Selesai',
+        size: 180,
+        meta: { align: 'right', overflowVisible: true },
+        cell: (info: any) => {
+            const row = info.row.original as SopdRecord;
+            return <EditableCell row={row} field="finished_date" onSave={handleSaveRecord} placeholder="klik 2x untuk selesai" />;
+        }
     }
   ], [page, handleSaveRecord]);
 
@@ -605,18 +673,7 @@ export default function SopdClient({ importInfo }: SopdClientProps) {
                 <Calculator size={18} className="text-green-600" />
                 <span>Data SOPd</span>
              </h3>
-             {importInfo && (
-                <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none" style={{ color: '#99a1af' }}>
-                    <span className="opacity-40">|</span>
-                    <div className="flex items-center gap-1.5 transition-colors">
-                        <span className="cursor-help hover:text-green-600" title={importInfo.fileName}>
-                            {importInfo.fileName}
-                        </span>
-                        <span className="opacity-30">|</span>
-                        <span>Diperbarui: {importInfo.time}</span>
-                    </div>
-                </div>
-             )}
+             <ImportInfo info={importInfo} />
           </div>
           {loading && (data?.length || 0) > 0 && (
               <div className="text-[11px] font-bold text-green-600 flex items-center gap-2 bg-green-50 px-2.5 py-1 rounded-full border border-green-100 animate-pulse uppercase tracking-tighter leading-none">
@@ -626,16 +683,14 @@ export default function SopdClient({ importInfo }: SopdClientProps) {
           )}
         </div>
 
-        <div className="relative w-full group">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-green-600 transition-colors" />
-          <input 
-            type="text" 
-            placeholder="Cari berdasarkan nama order..." 
-            className="w-full pl-12 pr-4 h-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-600 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm" 
-            value={searchQuery} 
-            onChange={(e) => setSearchQuery(e.target.value)} 
-          />
-        </div>
+
+        <SearchAndReload 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          onReload={() => setRefreshKey(k => k + 1)}
+          loading={loading}
+          placeholder="Cari berdasarkan nama order..."
+        />
         </div>
 
         {/* Main Table Context */}

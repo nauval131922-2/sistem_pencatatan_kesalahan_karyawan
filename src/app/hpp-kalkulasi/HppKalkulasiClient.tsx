@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Search, Loader2, AlertCircle, Clock, FileSpreadsheet, Calculator } from 'lucide-react';
+import ImportInfo from '@/components/ImportInfo';
+import SearchAndReload from '@/components/SearchAndReload';
 import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
 import { useTableSelection } from '@/lib/hooks/useTableSelection';
@@ -198,18 +200,7 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
                 <Calculator size={18} className="text-green-600" />
                 <span>Data HPP Kalkulasi</span>
              </h3>
-             {importInfo && (
-                <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none" style={{ color: '#99a1af' }}>
-                    <span className="opacity-40">|</span>
-                    <div className="flex items-center gap-1.5 transition-colors">
-                        <span className="cursor-help hover:text-green-600" title={importInfo.fileName}>
-                            {importInfo.fileName}
-                        </span>
-                        <span className="opacity-30">|</span>
-                        <span>Diperbarui: {importInfo.time}</span>
-                    </div>
-                </div>
-             )}
+             <ImportInfo info={importInfo} />
           </div>
           {loading && (data?.length || 0) > 0 && (
               <div className="text-[11px] font-bold text-green-600 flex items-center gap-2 bg-green-50 px-2.5 py-1 rounded-full border border-green-100 animate-pulse uppercase tracking-tighter leading-none">
@@ -219,16 +210,13 @@ export default function HppKalkulasiClient({ importInfo }: HppKalkulasiClientPro
           )}
         </div>
 
-        <div className="relative w-full group">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-green-600 transition-colors" />
-          <input 
-            type="text" 
-            placeholder="Cari berdasarkan nama order..." 
-            className="w-full pl-12 pr-4 h-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-600 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm" 
-            value={searchQuery} 
-            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }} 
-          />
-        </div>
+        <SearchAndReload 
+          searchQuery={searchQuery}
+          setSearchQuery={(v) => { setSearchQuery(v); setPage(1); }}
+          onReload={() => setRefreshKey(k => k + 1)}
+          loading={loading}
+          placeholder="Cari berdasarkan nama order..."
+        />
         </div>
 
         {/* Main Table Context */}
