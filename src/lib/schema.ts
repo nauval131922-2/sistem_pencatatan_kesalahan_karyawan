@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'path'; // Fixed duplicate
 import { initIndexing } from './db-indexing';
 
 export async function initSchema(db: any) {
@@ -9,6 +9,69 @@ export async function initSchema(db: any) {
       await executor.execute("PRAGMA busy_timeout = 5000;");
       await executor.execute("PRAGMA journal_mode = WAL;");
     }
+
+    // --- AUTO MIGRATION BLOCK (FIX SPACES & ADD MISSING) ---
+    const fixColumns = [
+      { table: 'master_pekerjaan', old: 'target value', new: 'target_value' },
+      { table: 'master_pekerjaan', old: 'standart target', new: 'standart_target' },
+      { table: 'master_pekerjaan', old: 'target per hari', new: 'target_per_hari' },
+      { table: 'master_pekerjaan', old: 'target per jam', new: 'target_per_jam' },
+      { table: 'master_pekerjaan', old: 'efektif jam kerja', new: 'efektif_jam_kerja' },
+      { table: 'master_pekerjaan', old: 'jumlah plate', new: 'jumlah_plate' },
+      { table: 'master_pekerjaan', old: 'target per jam plate', new: 'target_per_jam_plate' },
+      { table: 'master_pekerjaan', old: 'persiapan mesin', new: 'persiapan_mesin' },
+      { table: 'master_pekerjaan', old: 'waktu ganti plate', new: 'waktu_ganti_plate' },
+      { table: 'master_pekerjaan', old: 'jml gosok plate', new: 'jml_gosok_plate' },
+      { table: 'master_pekerjaan', old: 'waktu gosok plate', new: 'waktu_gosok_plate' },
+      { table: 'master_pekerjaan', old: 'asumsi target per hari', new: 'asumsi_target_per_hari' },
+    ];
+
+    for (const col of fixColumns) {
+      try {
+        const check = await executor.execute(`PRAGMA table_info(${col.table})`);
+        const columns = (check.rows as any[]).map(r => r.name);
+        if (columns.includes(col.old) && !columns.includes(col.new)) {
+          console.log(`[DB] Renaming column ${col.old} to ${col.new}...`);
+          await executor.execute(`ALTER TABLE ${col.table} RENAME COLUMN "${col.old}" TO ${col.new}`);
+        }
+      } catch (e) {
+        console.error(`[DB] Failed to fix column ${col.old}:`, e);
+      }
+    }
+
+    const columns = [
+      { table: 'master_pekerjaan', column: 'sub_category', type: 'TEXT' },
+      { table: 'master_pekerjaan', column: 'group_pekerjaan', type: 'TEXT' },
+      { table: 'master_pekerjaan', column: 'target_value', type: 'REAL' },
+      { table: 'master_pekerjaan', column: 'standart_target', type: 'REAL' },
+      { table: 'master_pekerjaan', column: 'unit_mesin', type: 'TEXT' },
+      { table: 'master_pekerjaan', column: 'jumlah_plate', type: 'REAL' },
+      { table: 'master_pekerjaan', column: 'target_per_jam_plate', type: 'REAL' },
+      { table: 'master_pekerjaan', column: 'persiapan_mesin', type: 'REAL' },
+      { table: 'master_pekerjaan', column: 'waktu_ganti_plate', type: 'REAL' },
+      { table: 'master_pekerjaan', column: 'jml_gosok_plate', type: 'REAL' },
+      { table: 'master_pekerjaan', column: 'waktu_gosok_plate', type: 'REAL' },
+      { table: 'master_pekerjaan', column: 'asumsi_target_per_hari', type: 'REAL' },
+      { table: 'master_pekerjaan', column: 'target_per_hari', type: 'REAL' },
+      { table: 'master_pekerjaan', column: 'target_per_jam', type: 'REAL' },
+      { table: 'master_pekerjaan', column: 'efektif_jam_kerja', type: 'REAL' },
+      { table: 'master_pekerjaan', column: 'keterangan', type: 'TEXT' }
+    ];
+
+    for (const col of columns) {
+      try {
+        await db.execute(`ALTER TABLE ${col.table} ADD COLUMN ${col.column} ${col.type}`);
+        console.log(`[DB] Migration: Added column ${col.column} to ${col.table}`);
+      } catch (e) {}
+    }
+
+    for (let i = 1; i <= 7; i++) {
+      try {
+        await db.execute(`ALTER TABLE master_pekerjaan ADD COLUMN ket_${i} TEXT`);
+      } catch (e) {}
+    }
+    // ----------------------------
+
   } catch (e) {
     // Ignore pragma errors
   }
@@ -477,7 +540,33 @@ export async function initSchema(db: any) {
       no_sopd TEXT PRIMARY KEY,
       perkiraan_harga TEXT,
       keterangan TEXT,
+      deadline_date TEXT,
+      finished_date TEXT,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS master_pekerjaan (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      category TEXT,
+      sub_category TEXT,
+      group_pekerjaan TEXT,
+      target_value REAL,
+      standart_target REAL,
+      ket_1 TEXT, ket_2 TEXT, ket_3 TEXT, ket_4 TEXT, ket_5 TEXT, ket_6 TEXT, ket_7 TEXT,
+      unit_mesin TEXT,
+      jumlah_plate REAL,
+      target_per_jam_plate REAL,
+      persiapan_mesin REAL,
+      waktu_ganti_plate REAL,
+      jml_gosok_plate REAL,
+      waktu_gosok_plate REAL,
+      asumsi_target_per_hari REAL,
+      target_per_hari REAL,
+      target_per_jam REAL,
+      efektif_jam_kerja REAL,
+      keterangan TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`
   ], "write");
 
@@ -582,8 +671,62 @@ export async function initSchema(db: any) {
     "ALTER TABLE sales_reports ADD COLUMN raw_data TEXT;",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_sopd_no_sopd ON sopd(no_sopd);",
     "ALTER TABLE sopd ADD COLUMN tgl TEXT;",
-    "CREATE TABLE IF NOT EXISTS sopd_harga (no_sopd TEXT PRIMARY KEY, perkiraan_harga TEXT, keterangan TEXT, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);",
-    "ALTER TABLE sopd_harga ADD COLUMN keterangan TEXT;"
+    "ALTER TABLE sopd_harga ADD COLUMN keterangan TEXT;",
+    "ALTER TABLE sopd_harga ADD COLUMN deadline_date TEXT;",
+    "ALTER TABLE sopd_harga ADD COLUMN finished_date TEXT;",
+    `CREATE TABLE IF NOT EXISTS master_pekerjaan (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code TEXT UNIQUE NOT NULL,
+      name TEXT NOT NULL,
+      category TEXT,
+      sub_category TEXT,
+      group_pekerjaan TEXT,
+      target_value REAL,
+      standart_target REAL,
+      ket_1 REAL, ket_2 REAL, ket_3 REAL, ket_4 REAL, ket_5 REAL, ket_6 REAL, ket_7 REAL,
+      unit_mesin TEXT,
+      jumlah_plate REAL,
+      target_per_jam_plate REAL,
+      persiapan_mesin REAL,
+      waktu_ganti_plate REAL,
+      jml_gosok_plate REAL,
+      waktu_gosok_plate REAL,
+      asumsi_target_per_hari REAL,
+      target_per_hari REAL,
+      target_per_jam REAL,
+      efektif_jam_kerja REAL,
+      keterangan TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS master_target_pekerjaan (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      target_value REAL,
+      unit TEXT DEFAULT 'Unit/Jam',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    "ALTER TABLE master_pekerjaan ADD COLUMN target_value REAL;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN keterangan TEXT;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN target_per_hari REAL;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN target_per_jam REAL;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN efektif_jam_kerja REAL;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN standart_target REAL;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN ket_1 TEXT;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN ket_2 TEXT;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN ket_3 TEXT;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN ket_4 TEXT;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN ket_5 TEXT;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN ket_6 TEXT;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN ket_7 TEXT;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN unit_mesin TEXT;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN jumlah_plate REAL;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN target_per_jam_plate REAL;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN persiapan_mesin REAL;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN waktu_ganti_plate REAL;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN jml_gosok_plate REAL;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN waktu_gosok_plate REAL;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN asumsi_target_per_hari REAL;",
+    "ALTER TABLE master_pekerjaan ADD COLUMN group_pekerjaan TEXT;",
   ];
 
   const executor = db.client || db;

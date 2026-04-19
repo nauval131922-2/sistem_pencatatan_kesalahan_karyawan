@@ -2,9 +2,11 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Search, Loader2, AlertCircle, ChevronLeft, ChevronRight, RefreshCw, Calculator, ChevronDown, Filter } from 'lucide-react';
+import { Search, Loader2, AlertCircle, ChevronLeft, ChevronRight, RefreshCw, Calculator, ChevronDown, Filter, Database, RotateCcw } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import MasterPekerjaanUpload from './MasterPekerjaanUpload';
+import ImportInfo from '@/components/ImportInfo';
+import SearchAndReload from '@/components/SearchAndReload';
 
 interface PekerjaanRecord {
   id: number;
@@ -12,30 +14,53 @@ interface PekerjaanRecord {
   name: string;
   category: string;
   sub_category: string;
+  group_pekerjaan: string;
   target_value: number | null;
+  standart_target: number | null;
+  ket_1: number | null; ket_2: number | null; ket_3: number | null;
+  ket_4: number | null; ket_5: number | null; ket_6: number | null; ket_7: number | null;
+  unit_mesin: string | null;
+  jumlah_plate: number | null;
+  target_per_jam_plate: number | null;
+  persiapan_mesin: number | null;
+  waktu_ganti_plate: number | null;
+  jml_gosok_plate: number | null;
+  waktu_gosok_plate: number | null;
+  asumsi_target_per_hari: number | null;
+  target_per_hari: number | null;
+  target_per_jam: number | null;
+  efektif_jam_kerja: number | null;
+  keterangan: string | null;
 }
 
 const PAGE_SIZE = 100;
 
 const CATEGORIES = [
-  'PRA CETAK',
-  'QUALITY CONTROL',
-  'CETAK',
-  'PASCA CETAK',
-  'GUDANG',
-  'TEHNISI',
+  'A. PRA CETAK',
+  'B. QUALITY CONTROL',
+  'C. CETAK',
+  'D. PASCA CETAK',
+  'E. GUDANG',
+  'F. TEHNISI',
 ];
 
 const CATEGORY_COLORS: Record<string, string> = {
-  'PRA CETAK':       'bg-blue-50 text-blue-700 border-blue-200',
-  'QUALITY CONTROL': 'bg-purple-50 text-purple-700 border-purple-200',
-  'CETAK':           'bg-orange-50 text-orange-700 border-orange-200',
-  'PASCA CETAK':     'bg-green-50 text-green-700 border-green-200',
-  'GUDANG':          'bg-yellow-50 text-yellow-700 border-yellow-200',
-  'TEHNISI':         'bg-red-50 text-red-700 border-red-200',
+  'A. PRA CETAK':       'bg-blue-50 text-blue-700 border-blue-200',
+  'B. QUALITY CONTROL': 'bg-purple-50 text-purple-700 border-purple-200',
+  'C. CETAK':           'bg-orange-50 text-orange-700 border-orange-200',
+  'D. PASCA CETAK':     'bg-green-50 text-green-700 border-green-200',
+  'E. GUDANG':          'bg-yellow-50 text-yellow-700 border-yellow-200',
+  'F. TEHNISI':         'bg-red-50 text-red-700 border-red-200',
 };
 
-export default function MasterPekerjaanClient() {
+interface MasterPekerjaanClientProps {
+  importInfo?: {
+    fileName: string;
+    time: string;
+  };
+}
+
+export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanClientProps) {
   const [data, setData] = useState<PekerjaanRecord[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -43,24 +68,37 @@ export default function MasterPekerjaanClient() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [subCategoryFilter, setSubCategoryFilter] = useState('');
+  const [groupFilter, setGroupFilter] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [isSubCategoryDropdownOpen, setIsSubCategoryDropdownOpen] = useState(false);
+  const [isGroupDropdownOpen, setIsGroupDropdownOpen] = useState(false);
   const [categorySearchQuery, setCategorySearchQuery] = useState('');
+  const [subCategorySearchQuery, setSubCategorySearchQuery] = useState('');
+  const [groupSearchQuery, setGroupSearchQuery] = useState('');
+  const [availableSubs, setAvailableSubs] = useState<string[]>([]);
+  const [availableGroups, setAvailableGroups] = useState<string[]>([]);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('master_pekerjaan_columnWidths');
       if (saved) return JSON.parse(saved);
     }
     return {
-      'code': 200,
-      'name': 420,
-      'category': 160,
-      'sub_category': 200,
-      'target_value': 110,
+      'code': 180, 'name': 320, 'category': 140,
+      'target_value': 90, 'standart_target': 120,
+      'ket_1': 80, 'ket_2': 80, 'ket_3': 80, 'ket_4': 80,
+      'ket_5': 80, 'ket_6': 80, 'ket_7': 80,
+      'unit_mesin': 110, 'jumlah_plate': 100, 'target_per_jam_plate': 150,
+      'persiapan_mesin': 120, 'waktu_ganti_plate': 120,
+      'jml_gosok_plate': 120, 'waktu_gosok_plate': 130,
+      'asumsi_target_per_hari': 150, 'target_per_hari': 110,
+      'target_per_jam': 110, 'efektif_jam_kerja': 130, 'keterangan': 200,
     };
   });
 
@@ -70,7 +108,7 @@ export default function MasterPekerjaanClient() {
     return () => clearTimeout(t);
   }, [searchQuery]);
 
-  useEffect(() => { setPage(1); }, [categoryFilter]);
+  useEffect(() => { setPage(1); }, [categoryFilter, subCategoryFilter, groupFilter]);
 
   // Listen for cross-tab refresh
   useEffect(() => {
@@ -90,13 +128,29 @@ export default function MasterPekerjaanClient() {
   useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('.category-dropdown-container')) {
-        setIsCategoryDropdownOpen(false);
-      }
+      if (!target.closest('.category-dropdown-container')) setIsCategoryDropdownOpen(false);
+      if (!target.closest('.subcategory-dropdown-container')) setIsSubCategoryDropdownOpen(false);
+      if (!target.closest('.group-dropdown-container')) setIsGroupDropdownOpen(false);
     };
     window.addEventListener('click', handleGlobalClick);
     return () => window.removeEventListener('click', handleGlobalClick);
   }, []);
+
+  // Fetch filter values
+  const loadFilters = useCallback(async () => {
+    try {
+      const params = new URLSearchParams({ category: categoryFilter });
+      if (subCategoryFilter) params.append('sub_category', subCategoryFilter);
+      
+      const res = await fetch(`/api/master-pekerjaan/filters?${params.toString()}`);
+      if (!res.ok) return;
+      const json = await res.json();
+      setAvailableSubs(json.subCategories || []);
+      setAvailableGroups(json.groups || []);
+    } catch (e) {}
+  }, [categoryFilter, subCategoryFilter, refreshKey]);
+
+  useEffect(() => { loadFilters(); }, [loadFilters]);
 
   // Fetch data
   const loadData = useCallback(async () => {
@@ -110,6 +164,8 @@ export default function MasterPekerjaanClient() {
       });
       if (debouncedQuery) params.set('search', debouncedQuery);
       if (categoryFilter) params.set('category', categoryFilter);
+      if (subCategoryFilter) params.set('sub_category', subCategoryFilter);
+      if (groupFilter) params.set('group', groupFilter);
 
       const res = await fetch(`/api/master-pekerjaan?${params}`);
       if (!res.ok) throw new Error('Gagal memuat data.');
@@ -124,73 +180,48 @@ export default function MasterPekerjaanClient() {
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedQuery, categoryFilter, refreshKey]);
+  }, [page, debouncedQuery, categoryFilter, subCategoryFilter, groupFilter, refreshKey]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const columns = useMemo(() => [
-    {
-      accessorKey: 'no',
-      header: 'No.',
-      cell: (info: any) => (page - 1) * PAGE_SIZE + info.row.index + 1,
-      size: columnWidths['no'] ?? 60,
-      meta: { align: 'center' },
-    },
-    {
-      accessorKey: 'code',
-      header: 'Kode',
-      cell: (info: any) => (
-        <span className="font-mono text-[12px] font-bold text-gray-700 tracking-tight">
-          {info.getValue()}
-        </span>
-      ),
-      size: columnWidths['code'] ?? 200,
-    },
-    {
-      accessorKey: 'name',
-      header: 'Nama Pekerjaan',
-      cell: (info: any) => (
-        <span className="text-[13px] text-gray-800 font-medium">{info.getValue()}</span>
-      ),
-      size: columnWidths['name'] ?? 420,
-    },
-    {
-      accessorKey: 'category',
-      header: 'Kategori',
-      cell: (info: any) => {
-        const cat = info.getValue() as string;
-        const cls = CATEGORY_COLORS[cat] || 'bg-gray-50 text-gray-600 border-gray-200';
-        return cat ? (
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-[4px] text-[10px] font-bold tracking-wider border ${cls}`}>
-            {cat}
-          </span>
-        ) : <span className="text-gray-300 text-[12px]">—</span>;
-      },
-      size: columnWidths['category'] ?? 160,
-    },
-    {
-      accessorKey: 'sub_category',
-      header: 'Sub Kategori',
-      cell: (info: any) => (
-        <span className="text-[12px] text-gray-500 font-medium">{info.getValue() || '—'}</span>
-      ),
-      size: columnWidths['sub_category'] ?? 200,
-    },
-    {
-      accessorKey: 'target_value',
-      header: 'Target',
-      cell: (info: any) => {
-        const val = info.getValue();
-        return val != null ? (
-          <span className="font-mono text-[13px] font-bold text-green-700">
-            {Number(val).toLocaleString('id-ID')}
-          </span>
-        ) : <span className="text-gray-300 text-[12px]">—</span>;
-      },
-      size: columnWidths['target_value'] ?? 110,
-      meta: { align: 'right' },
-    },
-  ], [page, columnWidths]);
+  const numCell = (val: any, cls = 'text-gray-700') =>
+    val != null && val !== '' ? <span className={`font-mono text-[12px] font-semibold ${cls}`}>{Number(val).toLocaleString('id-ID', { maximumFractionDigits: 2 })}</span>
+                : <span className="text-gray-200 text-[11px]">—</span>;
+
+  const textCell = (val: any, cls = 'text-slate-600') =>
+    val != null && val !== '' ? <span className={`text-[12px] font-medium ${cls}`}>{val}</span>
+                : <span className="text-gray-200 text-[11px]">—</span>;
+
+  const columns = useMemo(() => {
+    const cw = (k: string, def: number) => columnWidths[k] ?? def;
+    return [
+      { accessorKey: 'no',      header: 'No.',           cell: (i: any) => (page-1)*PAGE_SIZE + i.row.index + 1, size: cw('no',50), meta:{align:'center'} },
+      { accessorKey: 'code',    header: 'Kode',          cell: (i: any) => <span className="font-mono text-[12px] font-bold text-gray-700 tracking-tight">{i.getValue()}</span>, size: cw('code',180) },
+      { accessorKey: 'name',    header: 'Nama Pekerjaan',cell: (i: any) => <span className="text-[12px] text-gray-800 font-medium">{i.getValue()}</span>, size: cw('name',320) },
+      { accessorKey: 'target_value',         header: 'Target',                        cell: (i: any) => numCell(i.getValue(), 'text-green-700'),  size: cw('target_value',90),         meta:{align:'right'} },
+      { accessorKey: 'standart_target',      header: 'Standart Target',               cell: (i: any) => numCell(i.getValue(), 'text-amber-700'),  size: cw('standart_target',120),     meta:{align:'right'} },
+      { accessorKey: 'ket_1',                header: 'Ket-1',                         cell: (i: any) => textCell(i.getValue(), 'text-slate-600'),  size: cw('ket_1',80),                meta:{align:'left'} },
+      { accessorKey: 'ket_2',                header: 'Ket-2',                         cell: (i: any) => textCell(i.getValue(), 'text-slate-600'),  size: cw('ket_2',80),                meta:{align:'left'} },
+      { accessorKey: 'ket_3',                header: 'Ket-3',                         cell: (i: any) => textCell(i.getValue(), 'text-slate-600'),  size: cw('ket_3',80),                meta:{align:'left'} },
+      { accessorKey: 'ket_4',                header: 'Ket-4',                         cell: (i: any) => textCell(i.getValue(), 'text-slate-600'),  size: cw('ket_4',80),                meta:{align:'left'} },
+      { accessorKey: 'ket_5',                header: 'Ket-5',                         cell: (i: any) => textCell(i.getValue(), 'text-slate-600'),  size: cw('ket_5',80),                meta:{align:'left'} },
+      { accessorKey: 'ket_6',                header: 'Ket-6',                         cell: (i: any) => textCell(i.getValue(), 'text-slate-600'),  size: cw('ket_6',80),                meta:{align:'left'} },
+      { accessorKey: 'ket_7',                header: 'Ket-7',                         cell: (i: any) => textCell(i.getValue(), 'text-slate-600'),  size: cw('ket_7',80),                meta:{align:'left'} },
+      { accessorKey: 'unit_mesin',           header: 'Unit Mesin',                    cell: (i: any) => <span className="text-[12px] text-gray-600">{i.getValue()||'—'}</span>,       size: cw('unit_mesin',110) },
+      { accessorKey: 'jumlah_plate',         header: 'Jumlah Plate',                  cell: (i: any) => numCell(i.getValue(), 'text-gray-600'),   size: cw('jumlah_plate',100),        meta:{align:'right'} },
+      { accessorKey: 'target_per_jam_plate', header: 'Target/Jam Per Plate',          cell: (i: any) => numCell(i.getValue(), 'text-indigo-700'), size: cw('target_per_jam_plate',150),meta:{align:'right'} },
+      { accessorKey: 'persiapan_mesin',      header: 'Persiapan Mesin',               cell: (i: any) => numCell(i.getValue(), 'text-gray-600'),   size: cw('persiapan_mesin',120),     meta:{align:'right'} },
+      { accessorKey: 'waktu_ganti_plate',    header: 'Waktu Ganti Plate',             cell: (i: any) => numCell(i.getValue(), 'text-gray-600'),   size: cw('waktu_ganti_plate',120),   meta:{align:'right'} },
+      { accessorKey: 'jml_gosok_plate',      header: 'Jml. Gosok Plate',              cell: (i: any) => numCell(i.getValue(), 'text-gray-600'),   size: cw('jml_gosok_plate',120),     meta:{align:'right'} },
+      { accessorKey: 'waktu_gosok_plate',    header: 'Waktu Gosok Plate',             cell: (i: any) => numCell(i.getValue(), 'text-gray-600'),   size: cw('waktu_gosok_plate',130),   meta:{align:'right'} },
+      { accessorKey: 'asumsi_target_per_hari',header:'Asumsi Target/Hari',            cell: (i: any) => numCell(i.getValue(), 'text-blue-600'),   size: cw('asumsi_target_per_hari',150),meta:{align:'right'} },
+      { accessorKey: 'target_per_hari',      header: 'Target Per Hari',               cell: (i: any) => numCell(i.getValue(), 'text-blue-700'),   size: cw('target_per_hari',110),     meta:{align:'right'} },
+      { accessorKey: 'target_per_jam',       header: 'Target Per Jam',                cell: (i: any) => numCell(i.getValue(), 'text-indigo-700'), size: cw('target_per_jam',110),      meta:{align:'right'} },
+      { accessorKey: 'efektif_jam_kerja',    header: 'Efektif Jam Kerja',             cell: (i: any) => numCell(i.getValue(), 'text-teal-700'),   size: cw('efektif_jam_kerja',130),   meta:{align:'right'} },
+      { accessorKey: 'keterangan',           header: 'Keterangan',                    cell: (i: any) => <span className="text-[12px] text-gray-500 italic">{i.getValue()||'—'}</span>, size: cw('keterangan',200) },
+    ];
+  }, [page, columnWidths]);
+
 
   const canPrev = page > 1;
   const canNext = page < totalPages;
@@ -209,23 +240,26 @@ export default function MasterPekerjaanClient() {
          {/* Upload Card */}
          <MasterPekerjaanUpload />
 
-         {/* Category Filter Card */}
-         <div className="bg-white rounded-[8px] border-[1.5px] border-gray-200 p-4 lg:p-5 hover:border-gray-200 hover:shadow-sm transition-all duration-300 flex flex-col justify-center relative z-50 h-full overflow-hidden">
-            <div className="flex flex-wrap items-center gap-6">
-               <div className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Filter Kategori</span>
+         {/* Filters Card */}
+         <div className="bg-white rounded-[8px] border-[1.5px] border-gray-200 p-5 hover:border-gray-200 hover:shadow-sm transition-all duration-300 flex flex-col justify-center relative z-50 h-[97px]">
+            <div className="flex items-end gap-3">
+               {/* Category Filter */}
+               <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Kategori</span>
                   <div className="flex items-center gap-2">
-                    <div className="w-[200px] relative category-dropdown-container">
+                    <div className="w-[180px] relative category-dropdown-container">
                       <button
                         onClick={() => setIsCategoryDropdownOpen(prev => !prev)}
-                        className="w-full h-9 pl-9 pr-8 bg-white border border-gray-200 rounded-[8px] focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-600 transition-all text-[13px] font-semibold text-gray-700 flex items-center justify-between"
+                        className="w-full h-9 pl-8 pr-8 bg-white border border-gray-200 rounded-[8px] focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-600 transition-all text-sm font-semibold text-gray-700 flex items-center justify-between"
                       >
-                        <span className="truncate">{categoryFilter === '' ? 'SEMUA KATEGORI' : categoryFilter}</span>
-                        <div className="absolute top-1/2 -translate-y-1/2 left-3 pointer-events-none text-gray-400">
-                          <Filter size={15} />
+                        <span className="truncate" title={categoryFilter === '' ? 'Semua Kategori' : categoryFilter}>
+                          {categoryFilter === '' ? 'Semua Kategori' : categoryFilter}
+                        </span>
+                        <div className="absolute top-1/2 -translate-y-1/2 left-2.5 pointer-events-none text-gray-400">
+                          <Filter size={14} />
                         </div>
                         <div className="absolute top-1/2 -translate-y-1/2 right-2.5 pointer-events-none text-gray-400">
-                          <ChevronDown size={16} className={`transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} />
+                          <ChevronDown size={14} className={`transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} />
                         </div>
                       </button>
 
@@ -233,16 +267,13 @@ export default function MasterPekerjaanClient() {
                         <div className="absolute top-[calc(100%+6px)] left-0 w-[240px] bg-white border border-gray-100 rounded-[8px] shadow-xl py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[300px]">
                           <div className="px-2.5 pb-2 shrink-0 border-b border-gray-50 mb-1">
                             <div className="relative">
-                              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400">
-                                <Search size={14} />
+                              <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-gray-400">
+                                <Search size={12} />
                               </div>
                               <input
-                                type="text"
-                                autoFocus
-                                placeholder="Cari kategori..."
-                                value={categorySearchQuery}
-                                onChange={(e) => setCategorySearchQuery(e.target.value)}
-                                className="w-full pl-8 pr-2.5 py-1.5 text-sm bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-green-500/20 rounded-[6px] placeholder:text-gray-400 font-medium"
+                                type="text" autoFocus placeholder="Cari..."
+                                value={categorySearchQuery} onChange={(e) => setCategorySearchQuery(e.target.value)}
+                                className="w-full pl-7 pr-2.5 py-1.5 text-xs bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-green-500/20 rounded-[6px] placeholder:text-gray-400 font-medium"
                               />
                             </div>
                           </div>
@@ -252,36 +283,156 @@ export default function MasterPekerjaanClient() {
                               .map(cat => (
                                 <button
                                   key={cat}
-                                  onClick={() => {
-                                    setCategoryFilter(cat);
-                                    setIsCategoryDropdownOpen(false);
-                                    setCategorySearchQuery('');
+                                  onClick={() => { 
+                                    setCategoryFilter(cat); 
+                                    setSubCategoryFilter(''); // Reset sub-category
+                                    setGroupFilter('');       // Reset group
+                                    setPage(1); 
+                                    setIsCategoryDropdownOpen(false); 
+                                    setCategorySearchQuery(''); 
                                   }}
-                                  className={`w-full text-left px-2.5 py-2 text-[12px] font-semibold rounded-md transition-colors truncate ${
-                                    categoryFilter === cat 
-                                      ? 'bg-green-50 text-green-700' 
-                                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                                  }`}
+                                  className={`w-full text-left px-2.5 py-2 text-sm font-medium rounded-md transition-colors truncate ${categoryFilter === cat ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
                                 >
-                                  {cat === '' ? 'SEMUA KATEGORI' : cat}
+                                  {cat === '' ? 'Semua Kategori' : cat}
                                 </button>
                               ))}
                           </div>
                         </div>
                       )}
                     </div>
-
-                    <div className="w-4 h-[1px] bg-gray-200 mx-1"></div>
-
-                    <button
-                      onClick={() => setRefreshKey(k => k + 1)}
-                      disabled={loading}
-                      className="h-9 px-4 bg-white border border-gray-200 rounded-[8px] text-gray-500 hover:text-green-600 hover:border-green-300 hover:bg-green-50 flex items-center justify-center transition-all disabled:opacity-50 shrink-0"
-                      title="Refresh Data"
-                    >
-                      <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-                    </button>
                   </div>
+               </div>
+
+               {/* Sub Category Filter */}
+               <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Sub Kategori</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-[180px] relative subcategory-dropdown-container">
+                      <button
+                        onClick={() => setIsSubCategoryDropdownOpen(prev => !prev)}
+                        className="w-full h-9 pl-8 pr-8 bg-white border border-gray-200 rounded-[8px] focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-600 transition-all text-sm font-semibold text-gray-700 flex items-center justify-between"
+                      >
+                        <span className="truncate" title={subCategoryFilter === '' ? 'Semua Sub' : subCategoryFilter}>
+                          {subCategoryFilter === '' ? 'Semua Sub' : subCategoryFilter}
+                        </span>
+                        <div className="absolute top-1/2 -translate-y-1/2 left-2.5 pointer-events-none text-gray-400">
+                          <Filter size={14} />
+                        </div>
+                        <div className="absolute top-1/2 -translate-y-1/2 right-2.5 pointer-events-none text-gray-400">
+                          <ChevronDown size={14} className={`transition-transform duration-200 ${isSubCategoryDropdownOpen ? 'rotate-180' : ''}`} />
+                        </div>
+                      </button>
+
+                      {isSubCategoryDropdownOpen && (
+                        <div className="absolute top-[calc(100%+6px)] left-0 w-[240px] bg-white border border-gray-100 rounded-[8px] shadow-xl py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[300px]">
+                          <div className="px-2.5 pb-2 shrink-0 border-b border-gray-50 mb-1">
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-gray-400">
+                                <Search size={12} />
+                              </div>
+                              <input
+                                type="text" autoFocus placeholder="Cari..."
+                                value={subCategorySearchQuery} onChange={(e) => setSubCategorySearchQuery(e.target.value)}
+                                className="w-full pl-7 pr-2.5 py-1.5 text-xs bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-green-500/20 rounded-[6px] placeholder:text-gray-400 font-medium"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex-1 overflow-y-auto px-1 scrollbar-thin">
+                            {['', ...availableSubs]
+                              .filter(c => c.toLowerCase().includes(subCategorySearchQuery.toLowerCase()))
+                              .map(sub => (
+                                <button
+                                  key={sub}
+                                  onClick={() => { 
+                                    setSubCategoryFilter(sub); 
+                                    setGroupFilter(''); // Reset group
+                                    setPage(1);
+                                    setIsSubCategoryDropdownOpen(false); 
+                                    setSubCategorySearchQuery(''); 
+                                  }}
+                                  className={`w-full text-left px-2.5 py-2 text-sm font-medium rounded-md transition-colors truncate ${subCategoryFilter === sub ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                                  title={sub === '' ? 'Semua Sub Kategori' : sub}
+                                >
+                                  {sub === '' ? 'Semua Sub Kategori' : sub}
+                                </button>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+               </div>
+
+               {/* Group Filter */}
+               <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Grup</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-[180px] relative group-dropdown-container">
+                      <button
+                        onClick={() => setIsGroupDropdownOpen(prev => !prev)}
+                        className="w-full h-9 pl-8 pr-8 bg-white border border-gray-200 rounded-[8px] focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-600 transition-all text-sm font-semibold text-gray-700 flex items-center justify-between"
+                      >
+                        <span className="truncate" title={groupFilter === '' ? 'Semua Grup' : groupFilter}>
+                          {groupFilter === '' ? 'Semua Grup' : groupFilter}
+                        </span>
+                        <div className="absolute top-1/2 -translate-y-1/2 left-2.5 pointer-events-none text-gray-400">
+                          <Filter size={14} />
+                        </div>
+                        <div className="absolute top-1/2 -translate-y-1/2 right-2.5 pointer-events-none text-gray-400">
+                          <ChevronDown size={14} className={`transition-transform duration-200 ${isGroupDropdownOpen ? 'rotate-180' : ''}`} />
+                        </div>
+                      </button>
+
+                      {isGroupDropdownOpen && (
+                        <div className="absolute top-[calc(100%+6px)] left-0 w-[240px] bg-white border border-gray-100 rounded-[8px] shadow-xl py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[300px]">
+                          <div className="px-2.5 pb-2 shrink-0 border-b border-gray-50 mb-1">
+                            <div className="relative">
+                              <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-gray-400">
+                                <Search size={12} />
+                              </div>
+                              <input
+                                type="text" autoFocus placeholder="Cari..."
+                                value={groupSearchQuery} onChange={(e) => setGroupSearchQuery(e.target.value)}
+                                className="w-full pl-7 pr-2.5 py-1.5 text-xs bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-green-500/20 rounded-[6px] placeholder:text-gray-400 font-medium"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex-1 overflow-y-auto px-1 scrollbar-thin">
+                            {['', ...availableGroups]
+                              .filter(c => c.toLowerCase().includes(groupSearchQuery.toLowerCase()))
+                              .map(grp => (
+                                <button
+                                  key={grp}
+                                  onClick={() => { setGroupFilter(grp); setIsGroupDropdownOpen(false); setGroupSearchQuery(''); }}
+                                  className={`w-full text-left px-2.5 py-2 text-sm font-medium rounded-md transition-colors truncate ${groupFilter === grp ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                                  title={grp === '' ? 'Semua Grup' : grp}
+                                >
+                                  {grp === '' ? 'Semua Grup' : grp}
+                                </button>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+               </div>
+
+               {/* Reset Filter Button */}
+               <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold text-transparent uppercase tracking-widest ml-1 select-none">Reset</span>
+                  <button
+                    onClick={() => {
+                      setCategoryFilter('');
+                      setSubCategoryFilter('');
+                      setGroupFilter('');
+                      setSearchQuery('');
+                      setPage(1);
+                    }}
+                    className="h-9 px-4 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900 border border-gray-200 rounded-[8px] text-[12px] font-bold transition-all flex items-center gap-2"
+                  >
+                    <RotateCcw size={14} />
+                    Reset Filter
+                  </button>
                </div>
             </div>
          </div>
@@ -297,16 +448,8 @@ export default function MasterPekerjaanClient() {
                   <Calculator size={18} className="text-green-600" />
                   <span>Data Master Pekerjaan</span>
                </h3>
-               {!loading && data !== null && (
-                  <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none text-gray-400">
-                      <span className="opacity-40">|</span>
-                      <div className="flex items-center gap-1.5 transition-colors">
-                          <span>{totalCount.toLocaleString('id-ID')} items</span>
-                          <span className="opacity-30">|</span>
-                          <span>{loadTime !== null ? `${loadTime}ms` : ''}</span>
-                      </div>
-                  </div>
-               )}
+               <ImportInfo info={importInfo} />
+
             </div>
             {loading && (data?.length || 0) > 0 && (
                 <div className="text-[11px] font-bold text-green-600 flex items-center gap-2 bg-green-50 px-2.5 py-1 rounded-full border border-green-100 animate-pulse uppercase tracking-tighter leading-none">
@@ -316,16 +459,14 @@ export default function MasterPekerjaanClient() {
             )}
           </div>
 
-          <div className="relative w-full group">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-green-600 transition-colors" />
-            <input 
-              type="text" 
-              placeholder="Cari berdasarkan kode atau nama pekerjaan..." 
-              className="w-full pl-12 pr-4 h-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-600 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm" 
-              value={searchQuery} 
-              onChange={(e) => setSearchQuery(e.target.value)} 
-            />
-          </div>
+
+          <SearchAndReload 
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            onReload={() => setRefreshKey(k => k + 1)}
+            loading={loading}
+            placeholder="Cari berdasarkan kode atau nama pekerjaan..."
+          />
         </div>
 
         {/* Main Table Context */}
@@ -352,9 +493,15 @@ export default function MasterPekerjaanClient() {
                   ? 'Coba ubah kata kunci pencarian atau filter kategori.'
                   : 'Belum ada data. Upload file Excel Master Pekerjaan untuk memulai.'}
               </p>
-              {(debouncedQuery || categoryFilter) && (
+              {(debouncedQuery || categoryFilter || subCategoryFilter || groupFilter) && (
                 <button
-                  onClick={() => { setSearchQuery(''); setCategoryFilter(''); }}
+                  onClick={() => { 
+                    setSearchQuery(''); 
+                    setCategoryFilter(''); 
+                    setSubCategoryFilter(''); 
+                    setGroupFilter('');
+                    setPage(1);
+                  }}
                   className="mt-2 px-6 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 text-[12px] font-bold rounded-[6px] transition-colors border border-gray-200"
                 >
                   Reset Filter
@@ -370,6 +517,8 @@ export default function MasterPekerjaanClient() {
                 onColumnWidthChange={handleColumnWidthChange}
                 isLoading={loading && data === null}
                 rowHeight="h-10"
+                selectedIds={selectedId ? new Set([selectedId]) : undefined}
+                onRowClick={(id) => setSelectedId(id === selectedId ? null : id)}
               />
 
               {/* Pagination Controls */}
