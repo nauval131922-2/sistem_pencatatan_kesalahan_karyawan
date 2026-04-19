@@ -1,36 +1,37 @@
-# 📝 AI Session Summary
+# AI Session Summary - 19 April 2026
 
-> **Dokumen ini otomatis diperbarui oleh AI di setiap akhir sesi.**
-> Berfungsi untuk merekam status sistem, progress development terakhir, dan instruksi tertunda. Berguna jika Anda (*User*) berpindah PC.
+## Konteks Terakhir
+Sesi ini berfokus pada standarisasi UI/UX khususnya pada fitur pencarian dan refresh data, perbaikan keamanan sidebar, serta optimalisasi pembacaan data Excel.
 
----
+## Progres & Perubahan Utama
 
-### 🕒 Update Terakhir
-**Tanggal & Waktu:** 16 April 2026 (Sesi Pagi)
+### 1. Standarisasi UI (Search & Reload)
+- **Komponen Baru**: `src/components/SearchAndReload.tsx`.
+- **Implementasi**: Telah diterapkan di 5 modul utama:
+    - Master Pekerjaan
+    - SOPd
+    - Karyawan
+    - HPP Kalkulasi
+    - Rekap Sales Order
+- **Tujuan**: Menghilangkan redundansi kode dan memberikan tampilan yang konsisten (tombol reload selalu ada di samping search bar).
 
-### 🚀 Progress Development Terakhir
-1. **Standarisasi UI/UX Master Pekerjaan**:
-   - Menyamakan layout `gap` antara header dan card menjadi `gap-6` (sebelumnya `gap-4`) agar identik dengan halaman SOPd.
-   - Mengubah skema warna utama dari **Indigo** menjadi **Green** di seluruh komponen Master Pekerjaan (Button, Icon, Rings, Hovers) untuk konsistensi modul Produksi.
-   - Mengganti ikon data utama dari `Database` menjadi `Calculator` agar seragam dengan halaman SOPd.
-   - Implementasi **Custom Searchable Dropdown** pada Filter Kategori (menggantikan `<select>` standar) untuk UI yang lebih modern dan konsisten dengan halaman User Management.
-   - Standarisasi tombol upload: Menyesuaikan tinggi (`h-10`) dan mengubah label status menjadi "Mengunggah..." (sebelumnya "Memproses...").
+### 2. Perbaikan Sidebar (UX & Keamanan)
+- **Interaksi**: Menu flyout sekarang otomatis tertutup jika pengguna mengklik area kosong di dalam sidebar. Menggunakan teknik `e.stopPropagation()` pada elemen interaktif untuk mencegah konflik.
+- **Keamanan**: Kebijakan *deny-by-default* diterapkan. Modul hanya muncul jika izin eksplisit bernilai `true`.
+- **Pembersihan**: Menu "Master Target Pekerjaan" telah dihapus sesuai permintaan karena tidak digunakan.
 
-2. **Dokumentasi & Tutorial**:
-   - Membuat tutorial baru: `docs/tutorials/13_standarisasi_ui_ux_master_pekerjaan.md` yang menjelaskan langkah-langkah sinkronisasi UI/UX antar modul.
-   - Memperbarui `COMMIT_INSTRUCTION.md` dengan penekanan pada pembuatan tutorial mandiri untuk setiap perubahan.
+### 3. Optimalisasi Master Pekerjaan
+- **Excel Parsing**: Library `xlsx` dikonfigurasi dengan `cellNF: true` dan `cellText: true` untuk menangkap teks terformat (misal: "19 Cut" alih-alih hanya "19").
+- **Fix Bug**: Perbaikan error `SearchAndReload is not defined` karena import yang tertinggal di `MasterPekerjaanClient.tsx`.
 
-3. **Infrastruktur & Maintenance**:
-   - Memperbarui `task.md` untuk mencatat penyelesaian standarisasi UI/UX pada modul Master Data Produksi.
+## Status Task (`task.md`)
+- [x] Ekstraksi Search Bar & Reload Button ke komponen reusable.
+- [x] Terapkan `SearchAndReload` ke semua modul data utama.
+- [x] Perbaiki UX Sidebar (klik area kosong menutup menu).
+- [x] Hapus menu Master Target Pekerjaan.
+- [x] Fix parsing Excel Master Pekerjaan untuk data terformat.
 
-### 📋 Status Environment
-- Modul **Master Pekerjaan** kini memiliki tampilan dan nuansa (Look & Feel) yang identik dengan modul **SOPd**.
-- Konsistensi warna hijau (Green) telah diterapkan sebagai standar untuk sub-modul Data Produksi.
-- Dokumentasi tutorial mandiri telah disiapkan untuk referensi pengembangan di masa mendatang.
-
-### ⚠️ Saran / Catatan untuk Sesi Selanjutnya
-- Pertimbangkan untuk menerapkan standarisasi yang sama pada modul **Master Target** jika dirasa perlu keseragaman penuh di kategori Master Data.
-- Lanjutkan dengan penambahan fitur ekspor data JSON (Arsip Digital) sesuai rencana di `task.md`.
-
----
-*Dokumen ini diperbarui oleh Antigravity AI sesuai protokol akhir sesi.*
+## Catatan untuk Sesi Berikutnya
+- Jika ingin menambah modul data baru, gunakan komponen `SearchAndReload`.
+- Periksa folder `docs/tutorials/` untuk panduan pengembangan mandiri terkait fitur yang baru dibuat.
+- Struktur database untuk `master_pekerjaan` sudah stabil dengan kolom `ket_1` s.d `ket_7`.
