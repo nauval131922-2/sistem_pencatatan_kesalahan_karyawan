@@ -247,13 +247,13 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
                 </div>
             )}
             {loadTime !== null && (
-               <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
-                loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
-                'bg-red-50 text-red-600 border-red-100'
+               <span className={`text-[10px] px-2 py-0.5 rounded-none font-black flex items-center gap-1.5 shadow-[2px_2px_0_0_#000] border-[2px] border-black uppercase tracking-tight ${
+                loadTime < 300 ? 'bg-[#93c5fd] text-black' : 
+                loadTime < 1000 ? 'bg-[#fde047] text-black' : 
+                'bg-[#ff5e5e] text-white'
               }`}>
                   <span className="animate-pulse">⚡</span>
-                  <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
+                  <span className="leading-none">{(loadTime / 1000).toFixed(2)}S</span>
                </span>
             )}
           </div>

@@ -144,8 +144,8 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
             </h3>
             {filteredLogs.length !== initialLogs.length && (
               <div className="flex items-center gap-3">
-                <span className="text-gray-200 text-xs mx-1">|</span>
-                <span className="text-[10px] bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full font-black uppercase tracking-wider border border-amber-100/50 animate-in fade-in zoom-in-95">
+                <span className="text-black/20 text-xs mx-1">|</span>
+                <span className="text-[10px] bg-[#fde047] text-black px-2.5 py-1 rounded-none font-black uppercase tracking-wider border-2 border-black shadow-[2px_2px_0_0_#000] animate-in fade-in zoom-in-95">
                   {filteredLogs.length} HASIL
                 </span>
               </div>
@@ -198,13 +198,13 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                         </span>
                         {log.record_id > 0 && (
                            <>
-                             <span className="w-1 h-1 rounded-full bg-gray-200"></span>
-                             <span className="text-gray-500">ID: {log.record_id}</span>
+                             <span className="w-1.5 h-1.5 bg-black/20 shrink-0"></span>
+                             <span className="text-black/50">ID: {log.record_id}</span>
                            </>
                         )}
-                        <span className="w-1 h-1 rounded-full bg-gray-200"></span>
-                        <span className="flex items-center gap-1.5 text-gray-500">
-                           Oleh: <span className="font-bold text-gray-700">@{log.recorded_by || 'system'}</span>
+                        <span className="w-1.5 h-1.5 bg-black/20 shrink-0"></span>
+                        <span className="flex items-center gap-1.5 text-black/50">
+                           Oleh: <span className="font-black text-black">@{log.recorded_by || 'system'}</span>
                         </span>
                       </div>
                       {/* Snapshot match hints */}
@@ -258,11 +258,13 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
             : `Menampilkan ${Math.min(visibleCount, filteredLogs.length)} dari ${filteredLogs.length} total aktivitas`}
         </span>
         {loadTime !== null && (
-          <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
-            loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'
+          <span className={`text-[10px] px-2 py-0.5 rounded-none font-black flex items-center gap-1.5 shadow-[2px_2px_0_0_#000] border-[2px] border-black uppercase tracking-tight ${
+            loadTime < 300 ? 'bg-[#93c5fd] text-black' : 
+            loadTime < 1000 ? 'bg-[#fde047] text-black' : 
+            'bg-[#ff5e5e] text-white'
           }`}>
             <span className="animate-pulse">⚡</span>
-            <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
+            <span className="leading-none">{(loadTime / 1000).toFixed(2)}S</span>
           </span>
         )}
       </div>

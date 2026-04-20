@@ -258,15 +258,16 @@ export function DataTable<TData extends { id: number | string }>({
         
         {/* Minimalist Loading Overlay */}
         {isLoading && (
-          <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-white/30 backdrop-blur-[1.5px] animate-in fade-in duration-500">
-             <div className="flex flex-col items-center gap-3">
+          <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-white/40 backdrop-blur-none animate-in fade-in duration-300">
+             <div className="flex flex-col items-center gap-4 bg-white p-6 border-[4px] border-black shadow-[8px_8px_0_0_#000]">
                 <div className="relative">
-                   <div className="w-10 h-10 border-2 border-green-100 rounded-full" />
-                   <Loader2 className="text-green-600 animate-spin absolute inset-0 m-auto" size={20} />
+                   <div className="w-12 h-12 border-4 border-black bg-[#fde047] flex items-center justify-center">
+                      <Loader2 className="text-black animate-spin" size={24} strokeWidth={3} />
+                   </div>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                   <span className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] animate-pulse">Memproses</span>
-                   <span className="text-[10px] text-gray-300 font-bold italic">Sedang mengambil data terbaru...</span>
+                   <span className="text-[12px] font-black text-black uppercase tracking-[0.2em] animate-pulse">Memproses Data</span>
+                   <span className="text-[10px] text-black/40 font-bold uppercase">SINTAK Engine is working...</span>
                 </div>
              </div>
           </div>
