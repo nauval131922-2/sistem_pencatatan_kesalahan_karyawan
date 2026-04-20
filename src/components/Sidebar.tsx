@@ -208,18 +208,18 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
   const navItemClasses = (href: string) => {
     const isActive = checkIsActive(href);
     return `
-      group flex items-center gap-3 px-3 h-9 rounded-none transition-all text-[12.5px] font-bold border-2
-      ${!isExpanded ? 'justify-center px-0 w-9 mx-auto' : 'w-full'}
+      group flex items-center gap-3 px-3 h-10 rounded-none transition-all text-[12.5px] font-black border-2 uppercase tracking-tight
+      ${!isExpanded ? 'justify-center px-0 w-10 mx-auto' : 'w-full'}
       ${isActive 
-        ? 'bg-[var(--accent-primary)] text-white border-black shadow-[3px_3px_0_0_#000] -translate-y-[1px] -translate-x-[1px]' 
-        : 'border-transparent text-gray-700 hover:bg-[#fde047] hover:border-black hover:shadow-[3px_3px_0_0_#000] hover:-translate-y-[1px] hover:-translate-x-[1px]'}
+        ? 'bg-[#fde047] text-black border-black shadow-[3px_3px_0_0_#000] -translate-y-[1px] -translate-x-[1px]' 
+        : 'border-transparent text-black/60 hover:bg-[#fde047] hover:text-black hover:border-black hover:shadow-[3px_3px_0_0_#000] hover:-translate-y-[1px] hover:-translate-x-[1px]'}
     `;
   };
 
   const SectionLabel = ({ label }: { label: string }) => {
-    if (!isExpanded) return <div className="h-px bg-gray-100 mx-2 my-4 first:hidden" />;
+    if (!isExpanded) return <div className="h-px bg-black opacity-10 mx-2 my-4 first:hidden" />;
     return (
-      <h2 className="px-3 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mt-4 mb-2 truncate first:mt-0">
+      <h2 className="px-3 text-[10px] font-black text-black opacity-30 uppercase tracking-[0.2em] mt-6 mb-2 truncate first:mt-0">
         {label}
       </h2>
     );
@@ -307,7 +307,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
           {isExpanded ? (
             <div className="flex flex-col w-full">
               <div className="flex items-center gap-3 overflow-hidden">
-                <div className="w-8 h-8 rounded-none overflow-hidden shrink-0 bg-[var(--accent-primary)] border-2 border-black">
+                <div className="w-8 h-8 rounded-none overflow-hidden shrink-0 bg-[#fde047] border-2 border-black">
                   <Image src={logoPic} alt="SINTAK" className="w-full h-full object-contain p-0.5" />
                 </div>
                 <div className="min-w-0 flex flex-col">
@@ -320,7 +320,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
               </div>
             </div>
           ) : (
-            <div className="w-8 h-8 rounded-none overflow-hidden mx-auto bg-[var(--accent-primary)] border-2 border-black">
+            <div className="w-8 h-8 rounded-none overflow-hidden mx-auto bg-[#fde047] border-2 border-black">
                <Image src={logoPic} alt="SINTAK" className="w-full h-full object-contain p-0.5" />
             </div>
           )}
@@ -639,12 +639,12 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
                 isProfileOpen ? 'bg-[#fde047] border-black shadow-[3px_3px_0_0_#000] -translate-y-[1px] -translate-x-[1px]' : ''
               } ${!isExpanded ? 'justify-center p-1' : ''}`}
             >
-              <div className="w-8 h-8 rounded-none bg-[var(--accent-primary)] flex items-center justify-center overflow-hidden shrink-0 border-2 border-black">
+              <div className="w-8 h-8 rounded-none bg-black flex items-center justify-center overflow-hidden shrink-0 border-2 border-black">
                 {user.photo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
                 ) : (
-                  <User size={16} className="text-white" strokeWidth={2.5} />
+                  <User size={16} className="text-[#fde047]" strokeWidth={3} />
                 )}
               </div>
               {isExpanded && (
@@ -657,12 +657,12 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
 
             {isProfileOpen && (
               <div className="absolute left-0 bottom-full mb-3 w-full bg-white rounded-none border-[3px] border-black shadow-[5px_5px_0_0_#000] p-1.5 animate-in fade-in slide-in-from-bottom-2 z-50">
-                <Link href="/profile" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-2 px-3 py-2 text-[12px] font-bold text-black border-2 border-transparent hover:bg-[#fde047] hover:border-black transition-all">
-                  <Settings size={14} strokeWidth={2.5} />
+                <Link href="/profile" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-2 px-3 py-2 text-[12px] font-black text-black border-2 border-transparent hover:bg-[#fde047] hover:border-black transition-all uppercase tracking-tight">
+                  <Settings size={14} strokeWidth={3} />
                   <span>Pengaturan Profil</span>
                 </Link>
-                <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 text-[12px] font-bold text-black border-2 border-transparent hover:bg-[var(--accent-primary)] hover:text-white hover:border-black transition-all">
-                  <LogOut size={14} strokeWidth={2.5} />
+                <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 text-[12px] font-black text-black border-2 border-transparent hover:bg-[#ff5e5e] hover:text-white hover:border-black transition-all uppercase tracking-tight">
+                  <LogOut size={14} strokeWidth={3} />
                   <span>Keluar Sistem</span>
                 </button>
               </div>
@@ -696,11 +696,13 @@ function FlyoutItem({ item, level }: { item: MenuItem; level: number }) {
           href={item.href}
           onClick={() => setActivePath([])}
           className={`
-            flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[12px] font-bold transition-all w-full
-            ${itemActive ? 'bg-green-50 text-green-600 font-black' : 'text-gray-500 hover:bg-gray-50 hover:text-green-600'}
+            flex items-center gap-3 px-3 py-2.5 rounded-none text-[12px] font-black transition-all w-full border-2 border-transparent uppercase tracking-tight
+            ${itemActive 
+              ? 'bg-[#fde047] text-black border-black shadow-[3px_3px_0_0_#000] -translate-x-[1px] -translate-y-[1px]' 
+              : 'text-black/60 hover:bg-black hover:text-white hover:border-black'}
           `}
         >
-          <span className={itemActive ? 'text-green-600' : 'text-gray-400'}>{item.icon}</span>
+          <span className={itemActive ? 'text-black' : 'text-black/40 group-hover:text-white'}>{item.icon}</span>
           <span className="truncate">{item.label}</span>
         </Link>
       ) : (
@@ -708,13 +710,17 @@ function FlyoutItem({ item, level }: { item: MenuItem; level: number }) {
           onClick={(e) => { e.stopPropagation(); hasSub && handleItemClick(item.label, e, level); }}
           onMouseDown={(e) => e.stopPropagation()}
           className={`
-            flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[12px] font-bold transition-all cursor-pointer w-full
-            ${isOpen ? 'bg-green-600 text-white shadow-md' : itemActive ? 'bg-green-50 text-green-600' : 'text-gray-500 hover:bg-gray-50 hover:text-green-600'}
+            flex items-center gap-3 px-3 py-2.5 rounded-none text-[12px] font-black transition-all cursor-pointer w-full border-2 border-transparent uppercase tracking-tight
+            ${isOpen 
+              ? 'bg-black text-white border-black shadow-[4px_4px_0_0_#000]' 
+              : itemActive 
+                ? 'bg-[#fde047] text-black border-black shadow-[2px_2px_0_0_#000]' 
+                : 'text-black/60 hover:bg-[#fde047] hover:text-black hover:border-black'}
           `}
         >
-          <span className={isOpen ? 'text-white' : itemActive ? 'text-green-600' : 'text-gray-400'}>{item.icon}</span>
+          <span className={isOpen ? 'text-white' : itemActive ? 'text-black' : 'text-black/40'}>{item.icon}</span>
           <span className="flex-1 text-left truncate">{item.label}</span>
-          {hasSub && <ChevronRight size={12} className={`transition-transform duration-200 ${isOpen ? 'rotate-90 sm:rotate-0' : 'text-gray-300'}`} />}
+          {hasSub && <ChevronRight size={14} strokeWidth={3} className={`transition-transform duration-200 ${isOpen ? 'rotate-90 sm:rotate-0' : 'text-black/20'}`} />}
         </button>
       )}
 
@@ -753,16 +759,20 @@ function FlyoutMenu({ id, label, icon, items }: { id?: string; label: string; ic
         onClick={(e) => handleItemClick(menuId, e, 0)}
         onMouseDown={(e) => e.stopPropagation()}
         className={`
-          group flex items-center gap-3 px-3 h-9 rounded-[8px] transition-all text-[12.5px] font-semibold w-full
-          ${!isExpanded ? 'justify-center px-0 w-9 mx-auto' : ''}
-          ${isActive && !isOpen ? 'bg-green-50 text-green-600' : isOpen ? 'bg-green-600 text-white shadow-lg scale-[1.02]' : 'text-gray-500 hover:bg-green-50 hover:text-green-600'}
+          group flex items-center gap-3 px-3 h-10 rounded-none transition-all text-[12.5px] font-black w-full border-2 uppercase tracking-tighter
+          ${!isExpanded ? 'justify-center px-0 w-10 mx-auto' : ''}
+          ${isActive && !isOpen 
+            ? 'bg-[#fde047] text-black border-black shadow-[3px_3px_0_0_#000] -translate-y-[1px] -translate-x-[1px]' 
+            : isOpen 
+              ? 'bg-black text-white border-black shadow-[4px_4px_0_0_#000] -translate-y-[2px] -translate-x-[2px]' 
+              : 'text-black/60 border-transparent hover:bg-[#fde047] hover:text-black hover:border-black hover:shadow-[3px_3px_0_0_#000] hover:-translate-y-[1px] hover:-translate-x-[1px]'}
         `}
       >
-        {icon}
+        <span className={isOpen ? 'text-white' : isActive ? 'text-black' : 'text-black/60'}>{icon}</span>
         {isExpanded && (
           <>
             <span className="flex-1 text-left truncate">{label}</span>
-            <ChevronRight size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
+            <ChevronRight size={14} strokeWidth={3} className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
           </>
         )}
       </button>

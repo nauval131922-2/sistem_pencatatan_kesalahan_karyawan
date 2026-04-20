@@ -5,27 +5,28 @@
   --color-bg-deep: #fdfae5; /* Soft yellow/cream retro background */
   --color-bg-surface: #ffffff; /* White cards */
   --color-bg-elevated: #f4f4f5; 
-  --color-accent-primary: #ff5e5e; /* Bright Neo-red/pink */
+  --color-accent-primary: #fde047; /* Mechanical Yellow - Primary Action */
+  --color-accent-danger: #ff5e5e; /* Neo Red - Danger Action */
   --color-accent-secondary: #000000; /* Black borders/shadows */
   --color-text-main: #000000; /* Pure black text */
   --color-text-muted: #333333; /* Dark gray for muted */
   --color-border-glass: #000000; /* Solid black instead of glass */
   
-  --color-severity-low: #4ade80; /* Neo green */
+  --color-severity-low: #93c5fd; /* Neo blue (soft) */
   --color-severity-medium: #fde047; /* Neo yellow */
   --color-severity-high: #ff5e5e; /* Neo red */
 
   --spacing-sidebar: 210px;
   --spacing-sidebar-collapsed: 80px;
-  --transition-speed: 0.15s; /* Snappier transitions for neobrutalism */
+  --transition-speed: 0.15s;
 
-  /* Global Corner Rounding Overrides - sharp or slightly rounded is fine, but neo usually uses harsh corners */
+  /* Strict Neobrutalism - No Rounded Corners */
   --radius-sm: 0px; 
-  --radius-md: 4px;  
-  --radius-lg: 4px; 
-  --radius-xl: 4px;   
-  --radius-2xl: 4px; 
-  --radius-3xl: 4px;    
+  --radius-md: 0px;  
+  --radius-lg: 0px; 
+  --radius-xl: 0px;   
+  --radius-2xl: 0px; 
+  --radius-3xl: 0px;    
 }
 
 :root {
@@ -92,7 +93,7 @@ body {
   .card {
     background: var(--bg-surface);
     border: 3px solid #000; 
-    border-radius: 4px;
+    border-radius: 0px;
     padding: 18px;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
     box-shadow: 5px 5px 0px 0px #000;
@@ -105,10 +106,10 @@ body {
 
   .btn-primary {
     background: var(--accent-primary);
-    color: #fff;
+    color: #000;
     border: 3px solid #000;
     padding: 10px 20px;
-    border-radius: 4px;
+    border-radius: 0px;
     cursor: pointer;
     font-weight: 800;
     text-transform: uppercase;
