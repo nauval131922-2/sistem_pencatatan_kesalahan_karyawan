@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import DatePicker from '@/components/DatePicker';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { formatLastUpdate } from '@/lib/date-utils';
 import { formatScrapedPeriodDate, getDefaultScraperDateRange, persistScraperPeriod, hydrateScraperPeriod } from '@/lib/scraper-period';
 
 const MODULE_GROUPS = [
