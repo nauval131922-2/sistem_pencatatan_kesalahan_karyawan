@@ -32,6 +32,9 @@ Contoh format:
 - [x] Analisis arsitektur sistem (Tech Stack, Vercel, Turso, Skema) — 2026-04-20
 - [x] Pembuatan panduan `BUILD_FROM_SCRATCH.md` dari nol — 2026-04-20
 - [x] Integrasi pola implementasi JWT, Scraper, Fuzzy Excel, dan Audit Log ke panduan — 2026-04-20
+- [x] Migrasi visual seluruh modul ke sistem desain Neobrutalism (Boxy, Mechanical Yellow) — 2026-04-20
+- [x] Standarisasi badge loadTime dan count badge di seluruh modul tabel — 2026-04-20
+- [x] Perbaikan bug parsing JSX pada Profile page pasca-migrasi — 2026-04-20
 
 <!--
 Contoh format:
@@ -72,8 +75,8 @@ Contoh format:
 ## 📊 Statistik
 
 ```
-Total task    : 3
-Selesai       : 3
+Total task    : 6
+Selesai       : 6
 In progress   : 0
 Backlog       : 0
 Bug diketahui : 0

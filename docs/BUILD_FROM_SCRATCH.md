@@ -9,7 +9,7 @@ Sistem ini adalah aplikasi Enterprise Resource Planning (ERP) kustom yang diranc
 
 **Tech Stack:**
 - **Framework Utama**: Next.js 16.1.6 (App Router) & React 19.2.3.
-- **Styling**: TailwindCSS v4.
+- **Styling**: TailwindCSS v4 dengan sistem desain **Neobrutalism** (Boxy, Border 3px, Hard Shadows).
 - **Database**: LibSQL (SQLite) yang kompatibel dengan Turso Cloud. Library: `@libsql/client`.
 - **Autentikasi**: Custom JWT menggunakan `jose` & `bcryptjs`.
 - **UI Components**: `@tanstack/react-table`, `lucide-react`, `recharts`, `jspdf`, `xlsx`.
@@ -33,6 +33,18 @@ Jalankan perintah ini di terminal:
 node -v # Harus v20+
 npm -v
 ```
+
+---
+
+## 📌 Bagian 3: Sistem Desain (Neobrutalism)
+SINTAK ERP menggunakan identitas visual **Neobrutalism** untuk memberikan kesan taktil, berani, dan fungsional.
+
+**Aturan Utama:**
+1. **Geometry**: Gunakan `rounded-none` pada semua elemen (Button, Card, Input, Modal).
+2. **Border**: Gunakan border hitam solid minimal `3px` (atau `border-black border-[3px]`).
+3. **Shadow**: Gunakan shadow solid tanpa blur dengan offset kaku (contoh: `shadow-[4px_4px_0_0_#000]`).
+4. **Warna**: Aksen utama menggunakan Mechanical Yellow (`#fde047`) dan aksen bahaya menggunakan Red Neo (`#ff5e5e`).
+5. **Tipografi**: Label utama, judul, dan tombol wajib menggunakan `uppercase` dan `font-black`.
 
 ---
 
