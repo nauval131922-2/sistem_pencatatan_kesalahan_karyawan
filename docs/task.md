@@ -29,7 +29,9 @@ Contoh format:
 
 ## ✅ Selesai (Done)
 
-> _Belum ada task yang selesai._
+- [x] Analisis arsitektur sistem (Tech Stack, Vercel, Turso, Skema) — 2026-04-20
+- [x] Pembuatan panduan `BUILD_FROM_SCRATCH.md` dari nol — 2026-04-20
+- [x] Integrasi pola implementasi JWT, Scraper, Fuzzy Excel, dan Audit Log ke panduan — 2026-04-20
 
 <!--
 Contoh format:
@@ -70,11 +72,12 @@ Contoh format:
 ## 📊 Statistik
 
 ```
-Total task    : 0
-Selesai       : 0  (0%)
+Total task    : 3
+Selesai       : 3
 In progress   : 0
 Backlog       : 0
 Bug diketahui : 0
+Progress      : 100%
 ```
 
 ---
