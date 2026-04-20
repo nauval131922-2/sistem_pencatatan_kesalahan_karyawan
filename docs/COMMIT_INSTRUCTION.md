@@ -1,3 +1,13 @@
+# 📋 COMMIT_INSTRUCTION.md
+
+## 🚀 Prompt: Commit & Push Semua Perubahan
+
+Gunakan prompt ini di akhir sesi untuk menyimpan semua perubahan ke GitHub.
+Cukup copy-paste prompt di bawah ini ke AI agent.
+
+---
+
+```
 Tolong lakukan commit dan push semua perubahan terbaru. Ikuti langkah-langkah berikut secara berurutan:
 
 ---
@@ -5,12 +15,15 @@ Tolong lakukan commit dan push semua perubahan terbaru. Ikuti langkah-langkah be
 ### 🗂️ LANGKAH 1 — Pastikan Struktur Dokumentasi
 Pastikan struktur folder dokumentasi berikut sudah ada, buat jika belum:
 docs/
-├── AI_SESSION_SUMMARY.md   # Ringkasan & status sesi terakhir
-├── task.md                 # Backlog, in-progress, done
+├── COMMIT_INSTRUCTION.md      ← panduan akhir sesi
+├── RESUME_SESSION.md          ← panduan awal sesi di PC baru
+├── BUILD_FROM_SCRATCH.md      ← tutorial rebuild sistem dari nol
+├── AI_SESSION_SUMMARY.md      ← ringkasan sesi terakhir
+├── task.md                    ← backlog & progress
 └── tutorials/
     ├── 01-setup.md
     ├── 02-fitur-[nama].md
-    └── ...                 # Satu file per fitur/perbaikan
+    └── ...                    ← satu file per fitur/perbaikan
 
 ---
 
@@ -22,37 +35,58 @@ Satu file per fitur atau perbaikan, dengan penamaan:
 
 ---
 
-### 🔍 LANGKAH 3 — Audit .gitignore
-Periksa file `.gitignore`:
-- Pastikan tidak ada file sampah, cache, log, atau database yang ikut ter-push.
-- Periksa pola yang terlalu luas seperti wildcard `*` atau ekstensi terlalu
-  umum yang bisa secara tidak sengaja mengabaikan file penting seperti
-  `.md`, `.env.example`, atau file konfigurasi lainnya.
-- Jika ada masalah, perbaiki dan jelaskan perubahannya ke saya.
+### 🔄 LANGKAH 3 — Perbarui BUILD_FROM_SCRATCH.md
+Ini wajib dilakukan setiap sesi. Tinjau seluruh perubahan di sesi ini, lalu
+perbarui `docs/BUILD_FROM_SCRATCH.md` agar selalu mencerminkan kondisi sistem
+terkini secara lengkap.
+
+Yang harus diperbarui:
+  - Jika ada fitur baru       → tambahkan langkah pembuatannya secara kronologis
+  - Jika ada bug fix          → perbarui langkah yang berubah cara kerjanya
+  - Jika ada perubahan folder → perbarui bagian struktur proyek
+  - Jika ada dependency baru  → perbarui bagian instalasi & konfigurasi
+  - Jika ada perubahan skema  → perbarui bagian setup database
+  - Jika ada env var baru     → perbarui bagian konfigurasi .env
+
+Prinsip utama:
+  ⚠️ BUILD_FROM_SCRATCH.md harus selalu bisa digunakan oleh siapapun
+     untuk membangun ulang sistem ini dari nol dan menghasilkan sistem
+     yang IDENTIK dengan kondisi saat ini.
 
 ---
 
-### 👥 LANGKAH 4 — Tanya Dulu Sebelum Push
+### 🔍 LANGKAH 4 — Audit .gitignore
+Periksa file `.gitignore`:
+  - Pastikan tidak ada file sampah, cache, log, atau database yang ikut ter-push.
+  - Periksa pola yang terlalu luas seperti wildcard `*` atau ekstensi terlalu
+    umum yang bisa secara tidak sengaja mengabaikan file penting seperti
+    `.md`, `.env.example`, atau file konfigurasi lainnya.
+  - Jika ada masalah, perbaiki dan jelaskan perubahannya ke saya.
+
+---
+
+### 👥 LANGKAH 5 — Tanya Dulu Sebelum Push
 Sebelum melanjutkan, **tanyakan ke saya**:
 "Apakah kamu sedang bekerja sendiri atau dalam tim?"
   - Jika **sendiri** → push langsung ke branch `master` (atau branch aktif saat ini).
-  - Jika **tim** → push ke branch `dev` atau branch fitur, JANGAN langsung ke `master`.
+  - Jika **tim**     → push ke branch `dev` atau branch fitur, JANGAN langsung ke `master`.
 Tunggu jawaban saya sebelum melanjutkan ke langkah berikutnya.
 
 ---
 
-### ✅ LANGKAH 5 — Review Sebelum Commit
+### ✅ LANGKAH 6 — Review Sebelum Commit
 Jalankan perintah berikut dan tampilkan hasilnya ke saya:
   git status
   git diff --staged
+
 Tinjau output-nya bersama saya:
-- Pastikan tidak ada file yang tidak sengaja ikut ter-staged.
-- Pastikan tidak ada file penting yang terlewat (belum di-staged).
-- Jika ada yang perlu diperbaiki, lakukan dulu sebelum commit.
+  - Pastikan tidak ada file yang tidak sengaja ikut ter-staged.
+  - Pastikan tidak ada file penting yang terlewat (belum di-staged).
+  - Jika ada yang perlu diperbaiki, lakukan dulu sebelum commit.
 
 ---
 
-### 📦 LANGKAH 6 — Kelompokkan & Commit
+### 📦 LANGKAH 7 — Kelompokkan & Commit
 Kelompokkan perubahan berdasarkan fitur atau perbaikan (jangan digabung jadi satu).
 Gunakan format Conventional Commits untuk setiap pesan commit:
 
@@ -76,24 +110,48 @@ Gunakan format Conventional Commits untuk setiap pesan commit:
 
 ---
 
-### 📋 LANGKAH 7 — Perbarui Ringkasan Sesi AI
+### 📋 LANGKAH 8 — Perbarui Ringkasan Sesi AI
 Buat atau perbarui file berikut:
-  - `docs/AI_SESSION_SUMMARY.md` → ringkasan lengkap sesi ini:
-      * Tanggal & waktu sesi
-      * Fitur/perbaikan yang dikerjakan
-      * Keputusan teknis penting yang diambil
-      * Hal yang belum selesai / perlu dilanjutkan
-  - `docs/task.md` → perbarui status task:
-      * ✅ Selesai
-      * 🔄 Sedang berjalan
-      * 📌 Akan datang / backlog
+
+  `docs/AI_SESSION_SUMMARY.md` → ringkasan lengkap sesi ini:
+    * Tanggal & waktu sesi
+    * PC yang digunakan (Rumah / Kantor)
+    * Fitur/perbaikan yang dikerjakan
+    * Keputusan teknis penting yang diambil
+    * Hal yang belum selesai / perlu dilanjutkan
+
+  `docs/task.md` → perbarui status task:
+    * ✅ Selesai (dengan tanggal)
+    * 🔄 Sedang berjalan
+    * 📌 Akan datang / backlog
+    * 📊 Perbarui statistik di bagian bawah
 
 ---
 
-### 🚀 LANGKAH 8 — Commit Dokumentasi & Push
-Commit semua file dokumentasi (AI_SESSION_SUMMARY.md, task.md, semua
-tutorial baru/diperbarui) dengan pesan:
-  docs: perbarui ringkasan sesi dan dokumentasi tutorial
+### 🚀 LANGKAH 9 — Commit Semua Dokumentasi & Push
+Commit semua file dokumentasi berikut dalam satu commit:
+  - `docs/AI_SESSION_SUMMARY.md`
+  - `docs/task.md`
+  - `docs/BUILD_FROM_SCRATCH.md`
+  - semua file baru/diperbarui di `docs/tutorials/`
 
-Kemudian push sesuai keputusan di Langkah 4.
+Dengan pesan commit:
+  docs: perbarui ringkasan sesi, tutorial, dan BUILD_FROM_SCRATCH
+
+Kemudian push sesuai keputusan di Langkah 5.
 Tampilkan konfirmasi hasil push ke saya.
+```
+
+---
+
+## 💡 Referensi Cepat Format Commit
+
+| Tipe | Kapan Digunakan | Contoh |
+|------|----------------|--------|
+| `feat:` | Fitur baru | `feat: tambah halaman profil pengguna` |
+| `fix:` | Perbaikan bug | `fix: perbaiki crash saat upload foto` |
+| `docs:` | Dokumentasi | `docs: perbarui README instalasi` |
+| `refactor:` | Refaktor kode | `refactor: pisahkan logika auth ke service` |
+| `chore:` | Maintenance | `chore: update dependency ke versi terbaru` |
+| `test:` | Penambahan test | `test: tambah unit test untuk user model` |
+| `style:` | Formatting/style | `style: rapikan indentasi file controller` |

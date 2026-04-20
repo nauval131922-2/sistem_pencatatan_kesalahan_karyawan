@@ -1,70 +1,89 @@
-# Task List
+# 📋 task.md
 
-- [x] Research database initialization and locking issues
-- [x] Investigate `/api/bahan-baku` implementation
-- [x] Check for background processes using the database
-- [x] Implement fix (e.g., WAL mode, busy timeout, or build-time optimization)
-- [x] Fix import/export mismatch in init-db.ts
-- [x] Verify database initialization manually
-- [x] Verify fix by running build again
-- [x] Update sync documentation dengan langkah `git pull`
-- [x] Sinkronisasi status sesi untuk environment PC baru
-- [x] **Migrasi ke Cloud (Turso + Vercel)**
-    - [x] Refactor database driver ke LibSQL (Async)
-    - [x] Refactor seluruh API & Actions ke Async
-    - [x] Integrasi `db.batch()` untuk bulk ops
-    - [x] Inisialisasi Remote Database (Turso)
-    - [x] Hapus dependency `better-sqlite3` (fix Vercel 500 error)
-    - [x] Migrasi data produksi lokal ke Cloud (Turso)
-- [x] **Optimasi Sinkronisasi & Ketangguhan API**
-    - [x] Perbaikan Cross-Tab Sync di Produksi (Vercel Edge Caching)
-    - [x] Penambahan Cache-Buster (`_t`) pada fetch client-side
-    - [x] Force Dynamic pada seluruh API pendukung (GET)
-    - [x] Proteksi NaN dan validasi input pada API Infractions
-- [x] **Debugging Manajemen User**
-    - [x] Perbaikan logika tombol "Hapus" pada user sendiri (via User ID)
-    - [x] Sinkronisasi sesi instan setelah edit data diri sendiri
-    - [x] Perbaikan pelabelan log aktivitas (Admin vs Profile context)
-    - [x] Implementasi Triple-Tier Database Isolation (Sandbox vs Production)
-- [x] **Penyempurnaan Panduan Manual (ManualModal.tsx)**
-    - [x] Sinkronisasi Panduan Dashboard, Karyawan, & Order
-    - [x] Sinkronisasi Panduan Bahan Baku, Barang Jadi, & Sales
-    - [x] Sinkronisasi Panduan HPP Kalkulasi (Data Replacement Alert)
-    - [x] Harmonisasi Istilah (Match UI Labels)
-- [x] **Analisis & Dokumentasi Infrastruktur**
-    - [x] Evaluasi Penggunaan Turso & Vercel Free Tiers
-    - [x] Pembuatan Prompt Sinkronisasi Otomatis (`docs/MANUAL_SYNC_PROMPT.md`)
+## 🔄 Sedang Dikerjakan (In Progress)
 
-- [x] **Ekspansi Modul Scraping (Digit Suite)**
-    - [x] Implementasi Scraper SPH In, SPH Out, & SPPH Out
-    - [x] Implementasi Scraper Purchase Request (PR) & Purchase Order (PO)
-    - [x] Implementasi Scraper Order Produksi, BOM, & Bahan Baku
-    - [x] Implementasi Scraper Barang Jadi, SO, & Laporan Penjualan
-    - [x] Optimalisasi Scraper dengan Month-Batching (Concurrency 10-15)
-- [x] **Jurnal Harian Produksi - SOPd (Module)**
-    - [x] Setup UI & Excel Upload dengan Fuzzy Header Matching
-    - [x] Integrasi Database `sopd_harga` & API CRUD
-    - [x] Fitur **Inline Editing** (Double Click) untuk Harga & Keterangan
-    - [x] Implementasi **Smart Format IDR** & Penanganan Input Desimal Kompatibel
-    - [x] Implementasi **Cross-Tab Sync** via Global Storage Events
-- [x] **Refinement UX & Konsistensi UI**
-    - [x] Kebijakan "Scrape-First" untuk persistensi tanggal
-    - [x] Sinkronisasi gaya visual (Header, Font, Icon Color)
-    - [x] **Standarisasi Card Header Border (1.5px gray-200)** di semua modul
-    - [x] Sinkronisasi UI/UX Master Pekerjaan ke SOPd (Gap, Warna, Logo, Tombol)
-    - [x] Implementasi Custom Searchable Dropdown pada Filter Kategori Master Pekerjaan
-    - [x] Perbaikan bug audit log trigger (No ID column tables)
-- [x] **Perbaikan Bug Produksi (Hotfix)**
-    - [x] Fix Timezone "Terakhir Diperbarui" (WIB Force) di SOPd & Master Pekerjaan
-    - [x] Sinkronisasi format tanggal server-side di Seluruh Modul Data
-    - [x] Penanganan timezone eksplisit pada Server Actions (Pencatatan Kesalahan)
-- [x] **Standardisasi Dokumentasi & Manual (SOPd & Master Pekerjaan)**
-    - [x] Sinkronisasi Manual SOPd (Inline Edit & Terminology)
-    - [x] Sinkronisasi Manual Master Pekerjaan (Filters & Integration)
-    - [x] Perbaikan Copywriting UI (Professional Tone, Non-destructive)
-    - [x] Pembuatan Tutorial 15 & 16 (Manual Modal & Metadata Scraper)
+> _Belum ada task yang sedang dikerjakan._
 
-- [ ] **Next Steps**
-    - [ ] Penambahan fitur ekspor data ke format JSON (Arsip Digital)
-    - [ ] Implementasi PWA untuk akses cepat di perangkat mobile
-    - [ ] Audit menyeluruh penggunaan `new Date()` untuk memastikan semua menggunakan `Asia/Jakarta`
+<!--
+Contoh format:
+- [ ] Implementasi fitur login Google OAuth
+      → Sudah: setup library, buat route
+      → Belum: callback handler, simpan ke database
+      → Catatan: gunakan passport.js
+-->
+
+---
+
+## 📌 Akan Dikerjakan (Backlog)
+
+> _Belum ada task dalam backlog._
+
+<!--
+Contoh format:
+- [ ] Buat halaman dashboard admin
+- [ ] Integrasi payment gateway Midtrans
+- [ ] Setup email notification
+-->
+
+---
+
+## ✅ Selesai (Done)
+
+> _Belum ada task yang selesai._
+
+<!--
+Contoh format:
+- [x] Inisialisasi proyek — 2024-01-15
+- [x] Setup database & migration — 2024-01-15
+- [x] Implementasi autentikasi JWT — 2024-01-16
+-->
+
+---
+
+## 🐛 Bug Diketahui (Known Bugs)
+
+> _Belum ada bug yang tercatat._
+
+<!--
+Contoh format:
+- [ ] Form validasi tidak muncul di mobile Safari
+      → Ditemukan: 2024-01-16
+      → Prioritas: Medium
+      → Catatan: kemungkinan masalah CSS flex
+-->
+
+---
+
+## 💡 Ide & Improvement (Someday)
+
+> _Belum ada ide yang tercatat._
+
+<!--
+Contoh format:
+- [ ] Tambah fitur dark mode
+- [ ] Optimasi query database dengan indexing
+- [ ] Buat unit test untuk semua endpoint
+-->
+
+---
+
+## 📊 Statistik
+
+```
+Total task    : 0
+Selesai       : 0  (0%)
+In progress   : 0
+Backlog       : 0
+Bug diketahui : 0
+```
+
+---
+
+<!--
+CATATAN UNTUK AI:
+Setiap memperbarui file ini:
+1. Pindahkan task selesai ke bagian ✅ Selesai dengan tanggal penyelesaian
+2. Perbarui bagian 📊 Statistik
+3. Tambahkan catatan progres jika task belum 100% selesai
+4. Urutkan Backlog berdasarkan prioritas (paling penting di atas)
+-->
