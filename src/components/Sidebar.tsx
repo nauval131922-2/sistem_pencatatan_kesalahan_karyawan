@@ -208,11 +208,11 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
   const navItemClasses = (href: string) => {
     const isActive = checkIsActive(href);
     return `
-      group flex items-center gap-3 px-3 h-9 rounded-[8px] transition-all text-[12.5px] font-semibold
+      group flex items-center gap-3 px-3 h-9 rounded-none transition-all text-[12.5px] font-bold border-2
       ${!isExpanded ? 'justify-center px-0 w-9 mx-auto' : 'w-full'}
       ${isActive 
-        ? 'bg-green-600 text-white shadow-md' 
-        : 'text-gray-500 hover:bg-green-50 hover:text-green-600'}
+        ? 'bg-[var(--accent-primary)] text-white border-black shadow-[3px_3px_0_0_#000] -translate-y-[1px] -translate-x-[1px]' 
+        : 'border-transparent text-gray-700 hover:bg-[#fde047] hover:border-black hover:shadow-[3px_3px_0_0_#000] hover:-translate-y-[1px] hover:-translate-x-[1px]'}
     `;
   };
 
@@ -284,7 +284,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
       onMouseEnter={() => isCollapsed && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{ width: currentWidth }}
-      className={`h-screen bg-white border-r border-gray-100 shrink-0 flex flex-col z-[50] relative ${
+      className={`h-screen bg-[var(--bg-surface)] border-r-[3px] border-black shrink-0 flex flex-col z-[50] relative ${
         isResizing ? '' : 'transition-[width] duration-300 ease-in-out'
       }`}
     >
@@ -302,26 +302,26 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
       )}
 
       {/* Header */}
-      <div className="p-4 pb-4 relative min-h-[64px] bg-gray-50/50 border-b border-gray-100">
+      <div className="p-4 pb-4 relative min-h-[64px] bg-[var(--bg-deep)] border-b-[3px] border-black">
         <div className={`flex items-center ${!isExpanded ? 'justify-center' : 'justify-between'}`}>
           {isExpanded ? (
             <div className="flex flex-col w-full">
               <div className="flex items-center gap-3 overflow-hidden">
-                <div className="w-8 h-8 rounded-[8px] overflow-hidden shrink-0 bg-[#16a34a]">
-                  <Image src={logoPic} alt="SINTAK" className="w-full h-full object-contain" />
+                <div className="w-8 h-8 rounded-none overflow-hidden shrink-0 bg-[var(--accent-primary)] border-2 border-black">
+                  <Image src={logoPic} alt="SINTAK" className="w-full h-full object-contain p-0.5" />
                 </div>
                 <div className="min-w-0 flex flex-col">
-                  <h1 className="text-[14px] font-black text-[#1e293b] tracking-tight leading-none uppercase">SINTAK</h1>
-                  <p className="text-[10px] text-gray-400 font-bold mt-1 tracking-wide truncate">PT. Buya Barokah</p>
+                  <h1 className="text-[15px] font-black text-black tracking-tight leading-none uppercase">SINTAK</h1>
+                  <p className="text-[10px] text-gray-700 font-bold mt-1 tracking-wide truncate">PT. Buya Barokah</p>
                 </div>
               </div>
-              <div className="mt-4 px-3.5 py-1 rounded-[4px] border border-green-200 inline-flex w-fit bg-white">
-                <span className="text-[9px] font-black text-[#008d4c] tracking-wider uppercase">Div. Percetakan</span>
+              <div className="mt-4 px-3.5 py-1 rounded-none border-2 border-black inline-flex w-fit bg-[#fde047] shadow-[2px_2px_0_0_#000]">
+                <span className="text-[10px] font-black text-black tracking-wider uppercase">Div. Percetakan</span>
               </div>
             </div>
           ) : (
-            <div className="w-8 h-8 rounded-[8px] overflow-hidden mx-auto bg-[#16a34a]">
-               <Image src={logoPic} alt="SINTAK" className="w-full h-full object-contain" />
+            <div className="w-8 h-8 rounded-none overflow-hidden mx-auto bg-[var(--accent-primary)] border-2 border-black">
+               <Image src={logoPic} alt="SINTAK" className="w-full h-full object-contain p-0.5" />
             </div>
           )}
         </div>
@@ -333,11 +333,11 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
           setIsHovered(false);
           setActivePath([]);
         }}
-        className={`absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-100 rounded-full flex items-center justify-center text-gray-400 hover:text-green-600 shadow-sm z-50 transition-opacity ${
+        className={`absolute -right-3.5 top-1/2 -translate-y-1/2 w-7 h-7 bg-[#fde047] border-[2px] border-black rounded-none flex items-center justify-center text-black shadow-[2px_2px_0_0_#000] hover:bg-[var(--accent-primary)] hover:text-white z-50 transition-all active:translate-y-[-40%] active:translate-x-[2px] active:shadow-none ${
           !isExpanded && isCollapsed ? 'opacity-0' : 'opacity-100'
         }`}
       >
-        {isCollapsed ? <ChevronRight size={10} /> : <ChevronLeft size={10} />}
+        {isCollapsed ? <ChevronRight size={14} strokeWidth={3} /> : <ChevronLeft size={14} strokeWidth={3} />}
       </button>
 
       <nav ref={navRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 pt-4 pb-2 custom-scrollbar">
@@ -629,47 +629,47 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
 
 
       {/* User Focus Footer */}
-      <div className={`mt-auto border-t border-gray-100 p-3 bg-gray-50/50 relative z-10`} ref={profileRef}>
+      <div className={`mt-auto border-t-[3px] border-black p-3 bg-[var(--bg-deep)] relative z-10`} ref={profileRef}>
         {user ? (
           <div className="relative">
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               onMouseDown={(e) => e.stopPropagation()}
-              className={`w-full flex items-center gap-3 p-2 rounded-[8px] transition-all hover:bg-white hover:shadow-sm ${
-                isProfileOpen ? 'bg-white shadow-sm ring-1 ring-black/5' : ''
+              className={`w-full flex items-center gap-3 p-2 border-2 border-transparent transition-all hover:bg-[#fde047] hover:border-black hover:shadow-[3px_3px_0_0_#000] hover:-translate-y-[1px] hover:-translate-x-[1px] ${
+                isProfileOpen ? 'bg-[#fde047] border-black shadow-[3px_3px_0_0_#000] -translate-y-[1px] -translate-x-[1px]' : ''
               } ${!isExpanded ? 'justify-center p-1' : ''}`}
             >
-              <div className="w-8 h-8 rounded-[8px] bg-green-100 flex items-center justify-center overflow-hidden shrink-0 border border-green-200">
+              <div className="w-8 h-8 rounded-none bg-[var(--accent-primary)] flex items-center justify-center overflow-hidden shrink-0 border-2 border-black">
                 {user.photo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
                 ) : (
-                  <User size={14} className="text-green-600" />
+                  <User size={16} className="text-white" strokeWidth={2.5} />
                 )}
               </div>
               {isExpanded && (
                 <div className="flex flex-col min-w-0 text-left">
-                  <p className="text-[12px] font-bold text-gray-700 truncate leading-none">{user.name}</p>
-                  <p className="text-[10px] text-gray-400 font-bold mt-1 truncate">{user.role}</p>
+                  <p className="text-[13px] font-black text-black truncate leading-none">{user.name}</p>
+                  <p className="text-[11px] text-gray-800 font-bold mt-1.5 truncate">{user.role}</p>
                 </div>
               )}
             </button>
 
             {isProfileOpen && (
-              <div className="absolute left-0 bottom-full mb-2 w-full bg-white rounded-[8px] shadow-xl border border-gray-100 p-1.5 animate-in fade-in slide-in-from-bottom-2 z-50">
-                <Link href="/profile" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-2 px-3 py-2 text-[11px] font-bold text-gray-600 hover:bg-gray-50 rounded-[8px] transition-colors">
-                  <Settings size={14} />
+              <div className="absolute left-0 bottom-full mb-3 w-full bg-white rounded-none border-[3px] border-black shadow-[5px_5px_0_0_#000] p-1.5 animate-in fade-in slide-in-from-bottom-2 z-50">
+                <Link href="/profile" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-2 px-3 py-2 text-[12px] font-bold text-black border-2 border-transparent hover:bg-[#fde047] hover:border-black transition-all">
+                  <Settings size={14} strokeWidth={2.5} />
                   <span>Pengaturan Profil</span>
                 </Link>
-                <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-bold text-red-500 hover:bg-red-50 rounded-[8px] transition-colors">
-                  <LogOut size={14} />
+                <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 text-[12px] font-bold text-black border-2 border-transparent hover:bg-[var(--accent-primary)] hover:text-white hover:border-black transition-all">
+                  <LogOut size={14} strokeWidth={2.5} />
                   <span>Keluar Sistem</span>
                 </button>
               </div>
             )}
           </div>
         ) : (
-          <div className="h-10 bg-gray-200 rounded-[8px] animate-pulse" />
+          <div className="h-10 border-2 border-black bg-gray-200 rounded-none animate-pulse" />
         )}
       </div>
     </aside>
@@ -726,7 +726,7 @@ function FlyoutItem({ item, level }: { item: MenuItem; level: number }) {
             onClick={(e) => e.stopPropagation()}
             style={{ left: `${pos.left - 4}px`, top: `${pos.top - 6}px` }}
           >
-            <div className="bg-white border-[1.5px] border-gray-100 rounded-[12px] shadow-2xl p-1.5 min-w-[200px]">
+            <div className="bg-white border-[3px] border-black rounded-none shadow-[6px_6px_0_0_#000] p-1.5 min-w-[200px]">
               <div className="flex flex-col gap-1">
                 {item.items?.map((subItem) => (
                   <FlyoutItem key={subItem.label} item={subItem} level={level + 1} />
@@ -775,7 +775,7 @@ function FlyoutMenu({ id, label, icon, items }: { id?: string; label: string; ic
             onClick={(e) => e.stopPropagation()}
             style={{ left: `${pos.left}px`, top: `${pos.top - 6}px` }}
           >
-            <div className="bg-white border-[1.5px] border-gray-100 rounded-[12px] shadow-2xl p-1.5 min-w-[190px]">
+            <div className="bg-white border-[3px] border-black rounded-none shadow-[6px_6px_0_0_#000] p-1.5 min-w-[220px]">
               <div className="flex flex-col gap-1">
                 {items.map((item) => (
                   <FlyoutItem key={item.label} item={item} level={1} />

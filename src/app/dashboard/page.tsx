@@ -20,7 +20,7 @@ async function DashboardStats() {
       title: "Karyawan Aktif",
       value: summary.activeEmployees,
       icon: Users,
-      classes: "bg-blue-50 text-blue-500",
+      iconBg: "bg-[#93c5fd]",
       href: "/employees",
       subtitle: "Snapshot Sistem",
     },
@@ -28,7 +28,7 @@ async function DashboardStats() {
       title: "Kesalahan Bulan Ini",
       value: summary.infractionsThisMonth,
       icon: AlertTriangle,
-      classes: "bg-amber-50 text-amber-500",
+      iconBg: "bg-[#fde047]",
       href: "/stats",
       subtitle: `${new Date().toLocaleString("id-ID", { month: "long", timeZone: "Asia/Jakarta" })}`,
     },
@@ -36,7 +36,7 @@ async function DashboardStats() {
       title: "Kesalahan Hari Ini",
       value: summary.infractionsToday,
       icon: CalendarDays,
-      classes: "bg-red-50 text-red-500",
+      iconBg: "bg-[var(--accent-primary)]",
       href: "/records",
       subtitle: "Real-time",
     },
@@ -48,23 +48,23 @@ async function DashboardStats() {
         <Link
           key={card.title}
           href={card.href}
-          className="group bg-white border-[1.5px] border-gray-200 rounded-[8px] p-5 h-[100px] flex items-center gap-4 hover:border-gray-300 hover:shadow-sm transition-all duration-300 active:scale-[0.98]"
+          className="group bg-white border-[3px] border-black rounded-none p-5 h-[110px] flex items-center gap-4 shadow-[5px_5px_0_0_#000] hover:shadow-[7px_7px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[3px] active:translate-x-[3px] active:shadow-none transition-all duration-150"
         >
           <div
-            className={`w-12 h-12 rounded-[8px] flex items-center justify-center shrink-0 transition-colors ${card.classes}`}
+            className={`w-12 h-12 rounded-none border-[2px] border-black shadow-[2px_2px_0_0_#000] flex items-center justify-center shrink-0 ${card.iconBg}`}
           >
-            <card.icon size={24} />
+            <card.icon size={22} strokeWidth={2.5} className="text-black" />
           </div>
           <div className="flex flex-col">
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-gray-800 tracking-tight leading-none">
+              <span className="text-3xl font-black text-black tracking-tight leading-none">
                 {card.value}
               </span>
-              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+              <span className="text-[10px] text-black/50 font-black uppercase tracking-widest">
                 {card.subtitle}
               </span>
             </div>
-            <span className="text-[12px] text-[#9ca3af] font-bold tracking-tight mt-1.5">
+            <span className="text-[12px] text-black font-black tracking-tight mt-2 uppercase">
               {card.title}
             </span>
           </div>
@@ -85,7 +85,7 @@ function StatSkeleton() {
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="bg-gray-50 border border-gray-100 rounded-[8px] p-5 h-[100px] animate-pulse"
+          className="bg-white border-[3px] border-black rounded-none p-5 h-[110px] animate-pulse shadow-[5px_5px_0_0_#000]"
         ></div>
       ))}
     </div>
@@ -108,7 +108,7 @@ export default async function Home() {
       <div className="flex-1 overflow-hidden flex flex-col">
         <Suspense
           fallback={
-            <div className="h-full bg-gray-50 rounded-[8px] animate-pulse border border-gray-100"></div>
+            <div className="h-full bg-white border-[3px] border-black rounded-none animate-pulse shadow-[5px_5px_0_0_#000]"></div>
           }
         >
           <DashboardLogs />

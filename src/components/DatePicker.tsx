@@ -141,9 +141,9 @@ export default function DatePicker({ name, required, label, onChange, value, cus
     const cells = getCalendarDays(viewYear, viewMonth);
     return (
       <>
-        <div className="grid grid-cols-7 mb-2">
+        <div className="grid grid-cols-7 mb-2 border-b-[2px] border-black pb-1">
           {DAYS_SHORT.map(d => (
-            <div key={d} className="text-center text-sm font-semibold text-slate-800 py-1">{d}</div>
+            <div key={d} className="text-center text-[11px] font-black text-black py-1 uppercase tracking-widest">{d}</div>
           ))}
         </div>
         <div className="grid grid-cols-7 gap-y-1 gap-x-0">
@@ -157,11 +157,11 @@ export default function DatePicker({ name, required, label, onChange, value, cus
                 type="button"
                 onClick={() => selectDay(cell)}
                 className={`
-                  h-8 w-8 mx-auto rounded text-sm transition-colors flex items-center justify-center
-                  ${sel ? 'bg-[#337ab7] text-white' : ''}
-                  ${!sel && tod && !dim ? 'bg-slate-100 text-slate-800 font-semibold' : ''}
-                  ${!sel && !tod && dim ? 'text-slate-400 font-light' : ''}
-                  ${!sel && !tod && !dim ? 'text-slate-700 hover:bg-slate-200' : ''}
+                  h-8 w-8 mx-auto rounded-none text-sm font-bold transition-all flex items-center justify-center border-2
+                  ${sel ? 'bg-[var(--accent-primary)] text-white border-black shadow-[2px_2px_0_0_#000]' : ''}
+                  ${!sel && tod && !dim ? 'bg-[#fde047] text-black border-black font-black' : ''}
+                  ${!sel && !tod && dim ? 'text-gray-400 border-transparent font-normal' : ''}
+                  ${!sel && !tod && !dim ? 'text-black hover:bg-[#fde047] hover:border-black border-transparent' : ''}
                 `}
               >
                 {cell.day}
@@ -185,8 +185,8 @@ export default function DatePicker({ name, required, label, onChange, value, cus
               type="button"
               onClick={() => { setViewMonth(i); setViewMode('days'); }}
               className={`
-                h-10 rounded text-sm transition-colors
-                ${sel ? 'bg-[#337ab7] text-white' : 'text-slate-800 hover:bg-slate-200'}
+                h-10 rounded-none text-sm font-bold transition-all border-2
+                ${sel ? 'bg-[var(--accent-primary)] text-white border-black shadow-[2px_2px_0_0_#000]' : 'text-black border-transparent hover:bg-[#fde047] hover:border-black'}
               `}
             >
               {m}
@@ -210,10 +210,10 @@ export default function DatePicker({ name, required, label, onChange, value, cus
               type="button"
               onClick={() => { setViewYear(y); setViewMode('months'); }}
               className={`
-                h-10 rounded text-sm transition-colors
-                ${sel ? 'bg-[#337ab7] text-white' : ''}
-                ${!sel && isEdge ? 'text-slate-400 bg-slate-100 font-light hover:bg-slate-200' : ''}
-                ${!sel && !isEdge ? 'text-slate-800 hover:bg-slate-200' : ''}
+                h-10 rounded-none text-sm font-bold transition-all border-2
+                ${sel ? 'bg-[var(--accent-primary)] text-white border-black shadow-[2px_2px_0_0_#000]' : ''}
+                ${!sel && isEdge ? 'text-gray-400 bg-gray-100 font-normal border-transparent hover:bg-[#fde047] hover:border-black' : ''}
+                ${!sel && !isEdge ? 'text-black border-transparent hover:bg-[#fde047] hover:border-black' : ''}
               `}
             >
               {y}
@@ -227,28 +227,28 @@ export default function DatePicker({ name, required, label, onChange, value, cus
   return (
     <div ref={ref} className="relative">
       {label && (
-        <label className="block text-xs font-semibold text-slate-500 mb-1.5">{label}</label>
+        <label className="block text-xs font-black text-black mb-1.5 uppercase tracking-wide">{label}</label>
       )}
       <input type="hidden" name={name} value={valueStr} required={required} />
 
       {customTrigger ? customTrigger(() => setOpen(o => !o)) : (
         <div
           onClick={() => setOpen(o => !o)}
-          className="w-full bg-white border border-slate-200 rounded-[8px] px-3 py-1.5 text-sm cursor-pointer flex items-center justify-between hover:border-emerald-500 transition-all shadow-sm"
+          className="w-full bg-white border-[3px] border-black rounded-none px-3 py-1.5 text-sm cursor-pointer flex items-center justify-between shadow-[3px_3px_0_0_#000] hover:-translate-y-[1px] hover:-translate-x-[1px] hover:shadow-[4px_4px_0_0_#000] transition-all"
         >
-          <span className={formatted ? 'text-slate-700 font-medium' : 'text-slate-400'}>
+          <span className={`font-bold ${formatted ? 'text-black' : 'text-gray-400'}`}>
             {formatted || 'Pilih tanggal...'}
           </span>
-          <Calendar size={14} className="text-slate-400 group-hover:text-emerald-500" />
+          <Calendar size={14} strokeWidth={2.5} className="text-black" />
         </div>
       )}
 
       {open && (
-        <div className={`absolute z-50 mt-1 bg-white border border-slate-200 rounded shadow-[0_3px_12px_rgba(0,0,0,0.15)] p-2 w-[260px] font-sans ${popupAlign === 'right' ? 'right-0' : 'left-0'}`}>
+        <div className={`absolute z-50 mt-2 bg-white border-[3px] border-black rounded-none shadow-[6px_6px_0_0_#000] p-3 w-[268px] font-sans ${popupAlign === 'right' ? 'right-0' : 'left-0'}`}>
           {/* Header */}
-          <div className="flex items-center justify-between mb-2 px-1">
-            <button type="button" onClick={prevView} className="px-2 py-1 rounded hover:bg-slate-200 text-slate-800 text-lg font-bold transition-colors leading-none">
-              &laquo;
+          <div className="flex items-center justify-between mb-3 border-b-[3px] border-black pb-2">
+            <button type="button" onClick={prevView} className="w-8 h-8 border-[2px] border-black rounded-none bg-white hover:bg-[#fde047] text-black font-black transition-all leading-none flex items-center justify-center shadow-[2px_2px_0_0_#000] active:shadow-none active:translate-y-[2px] active:translate-x-[2px]">
+              ‹
             </button>
             <button 
               type="button" 
@@ -256,15 +256,15 @@ export default function DatePicker({ name, required, label, onChange, value, cus
                 if (viewMode === 'days') setViewMode('months');
                 else if (viewMode === 'months') setViewMode('years');
               }}
-              className="text-[15px] font-semibold text-slate-800 hover:bg-slate-100 px-4 py-1.5 rounded transition-colors tracking-tight"
+              className="text-[13px] font-black text-black hover:bg-[#fde047] px-3 py-1.5 transition-all border-2 border-transparent hover:border-black uppercase tracking-tight"
               disabled={viewMode === 'years'}
             >
               {viewMode === 'days' && `${MONTHS_ID[viewMonth]} ${viewYear}`}
               {viewMode === 'months' && `${viewYear}`}
               {viewMode === 'years' && `${startDecade}-${startDecade + 9}`}
             </button>
-            <button type="button" onClick={nextView} className="px-2 py-1 rounded hover:bg-slate-200 text-slate-800 text-lg font-bold transition-colors leading-none">
-              &raquo;
+            <button type="button" onClick={nextView} className="w-8 h-8 border-[2px] border-black rounded-none bg-white hover:bg-[#fde047] text-black font-black transition-all leading-none flex items-center justify-center shadow-[2px_2px_0_0_#000] active:shadow-none active:translate-y-[2px] active:translate-x-[2px]">
+              ›
             </button>
           </div>
 

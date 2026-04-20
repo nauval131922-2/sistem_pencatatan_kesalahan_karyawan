@@ -35,66 +35,74 @@ export default function LoginContent() {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center bg-[#f3f4f6] p-4 min-h-screen animate-in fade-in duration-700">
-      <div className="w-full max-w-[340px]">
+    <div className="flex-1 flex flex-col items-center justify-center bg-[var(--bg-deep)] p-4 min-h-screen animate-in fade-in duration-700">
+      <div className="w-full max-w-[360px]">
         {/* Logo/Brand Header */}
-        <div className="text-center mb-6 flex flex-col items-center">
-          <div className="inline-flex items-center justify-center mb-6">
-            <Image
-              src={logoPic}
-              alt="SINTAK Logo"
-              className="w-12 h-12 object-contain rounded-[8px]"
-              priority
-            />
+        <div className="text-center mb-8 flex flex-col items-center">
+          <div className="inline-flex items-center justify-center mb-5">
+            <div className="w-16 h-16 bg-[var(--accent-primary)] border-[4px] border-black shadow-[6px_6px_0_0_#000] flex items-center justify-center rounded-none">
+              <Image
+                src={logoPic}
+                alt="SINTAK Logo"
+                className="w-10 h-10 object-contain"
+                priority
+              />
+            </div>
           </div>
           <div className="text-center px-4">
-            <h1 className="text-xl font-extrabold text-gray-800 tracking-tight leading-none">SINTAK Login</h1>
-            <p className="text-[11px] text-gray-400 font-semibold mt-3 uppercase tracking-wide">
-              Sistem Informasi Cetak
-            </p>
+            <h1 className="text-3xl font-black text-black tracking-tight leading-none uppercase">SINTAK</h1>
+            <div className="mt-3 inline-block border-[3px] border-black bg-[#fde047] px-3 py-1 shadow-[3px_3px_0_0_#000]">
+              <p className="text-[11px] font-black text-black uppercase tracking-[0.2em]">
+                Sistem Informasi Cetak
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Login Form Card */}
-        <div className="bg-white rounded-[8px] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] border border-gray-100 border-t-4 border-t-green-600 overflow-hidden">
-          <form onSubmit={handleSubmit} className="p-5 pt-6 flex flex-col gap-4">
+        <div className="bg-white border-[4px] border-black shadow-[10px_10px_0_0_#000] rounded-none overflow-hidden">
+          {/* Card header stripe */}
+          <div className="bg-[#fde047] border-b-[4px] border-black px-5 py-3">
+            <p className="text-[12px] font-black text-black uppercase tracking-widest">— Masuk ke Sistem —</p>
+          </div>
+          <form onSubmit={handleSubmit} className="p-5 pt-5 flex flex-col gap-4">
             {error && (
-              <div className="p-2.5 bg-red-50 border border-red-100 rounded-[8px] flex items-start gap-2 text-red-600 text-xs animate-in shake duration-300">
-                <AlertCircle size={14} className="mt-0.5 shrink-0" />
-                <span className="font-medium">{error}</span>
+              <div className="p-3 bg-[var(--accent-primary)] border-[3px] border-black rounded-none flex items-start gap-2 text-white text-xs shadow-[3px_3px_0_0_#000]">
+                <AlertCircle size={14} strokeWidth={3} className="mt-0.5 shrink-0" />
+                <span className="font-black">{error}</span>
               </div>
             )}
 
-            <div className="flex flex-col gap-3.5">
+            <div className="flex flex-col gap-4">
               <div className="relative group">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1 mb-1 block">Username</label>
+                <label className="text-[11px] font-black text-black uppercase tracking-wider mb-2 block">Username</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User size={14} className="text-gray-300 group-focus-within:text-green-500 transition-colors" />
+                    <User size={14} strokeWidth={2.5} className="text-gray-500" />
                   </div>
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="block w-full h-9 pl-9 pr-3 border border-gray-100 rounded-[8px] text-sm focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all bg-white hover:border-gray-300 text-gray-700 placeholder:text-gray-300"
-                    placeholder="Username"
+                    className="block w-full h-11 pl-10 pr-3 border-[3px] border-black rounded-none text-sm font-bold focus:outline-none shadow-[3px_3px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[5px_5px_0_0_#000] transition-transform bg-white text-black placeholder:text-gray-400"
+                    placeholder="username..."
                     required
                   />
                 </div>
               </div>
 
               <div className="relative group">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider ml-1 mb-1 block">Password</label>
+                <label className="text-[11px] font-black text-black uppercase tracking-wider mb-2 block">Password</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <KeyRound size={14} className="text-gray-300 group-focus-within:text-green-500 transition-colors" />
+                    <KeyRound size={14} strokeWidth={2.5} className="text-gray-500" />
                   </div>
                   <input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full h-9 pl-9 pr-3 border border-gray-100 rounded-[8px] text-sm focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all bg-white hover:border-gray-300 text-gray-700 placeholder:text-gray-300"
-                    placeholder="Password"
+                    className="block w-full h-11 pl-10 pr-3 border-[3px] border-black rounded-none text-sm font-bold focus:outline-none shadow-[3px_3px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[5px_5px_0_0_#000] transition-transform bg-white text-black placeholder:text-gray-400"
+                    placeholder="password..."
                     required
                   />
                 </div>
@@ -104,13 +112,13 @@ export default function LoginContent() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-10 mt-1 flex items-center justify-center gap-2 px-4 rounded-[8px] shadow-sm text-sm font-bold text-white bg-green-600 hover:bg-green-700 active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-green-500/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full h-12 mt-2 flex items-center justify-center gap-2 px-4 rounded-none border-[3px] border-black font-black text-white uppercase tracking-wide bg-[var(--accent-primary)] hover:bg-[#ff4444] shadow-[5px_5px_0_0_#000] hover:shadow-[7px_7px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[3px] active:translate-x-[3px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-5 h-5 border-[3px] border-white/50 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  <LogIn size={16} />
+                  <LogIn size={18} strokeWidth={2.5} />
                   <span>Masuk Sistem</span>
                 </>
               )}
@@ -120,9 +128,8 @@ export default function LoginContent() {
         
         {/* Small Muted Footer */}
         <div className="mt-6 text-center">
-          <p className="text-[11px] font-medium text-gray-400 opacity-80 leading-relaxed max-w-[200px] mx-auto">
-            &copy; {new Date().getFullYear()} PT. Buya Barokah<br/>
-            <span className="text-[10px] opacity-60">Div. Percetakan</span>
+          <p className="text-[11px] font-bold text-black/60 leading-relaxed">
+            &copy; {new Date().getFullYear()} PT. Buya Barokah &mdash; Div. Percetakan
           </p>
         </div>
       </div>

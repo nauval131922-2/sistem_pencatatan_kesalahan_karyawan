@@ -25,23 +25,23 @@ export default function Error({ error, reset }: ErrorProps) {
   }, [error]);
 
   return (
-    <div className="min-h-[400px] flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full bg-white rounded-[8px] shadow-lg p-8 text-center">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <AlertTriangle size={32} className="text-red-600" />
+    <div className="min-h-[400px] flex items-center justify-center bg-[var(--bg-deep)] px-4">
+      <div className="max-w-md w-full bg-white border-[4px] border-black shadow-[10px_10px_0_0_#000] rounded-none p-8 text-center">
+        <div className="w-16 h-16 bg-[var(--accent-primary)] border-[3px] border-black shadow-[4px_4px_0_0_#000] rounded-none flex items-center justify-center mx-auto mb-6">
+          <AlertTriangle size={32} strokeWidth={2.5} className="text-white" />
         </div>
 
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <h2 className="text-2xl font-black text-black uppercase tracking-tight mb-2">
           Terjadi Kesalahan
         </h2>
         
-        <p className="text-gray-600 mb-6">
+        <p className="text-gray-700 font-bold mb-6 text-sm">
           Halaman ini mengalami masalah. Berikut adalah informasi teknis:
         </p>
 
         {process.env.NODE_ENV === 'development' && (
-          <div className="bg-red-50 border border-red-200 rounded-[8px] p-4 mb-6 text-left overflow-auto max-h-48">
-            <p className="text-xs font-mono text-red-800 whitespace-pre-wrap break-words">
+          <div className="bg-black border-[3px] border-black rounded-none p-4 mb-6 text-left overflow-auto max-h-48 shadow-[4px_4px_0_0_#555]">
+            <p className="text-xs font-mono text-green-400 whitespace-pre-wrap break-words">
               {error.message}
               {error.stack && `\n\n${error.stack}`}
               {error.digest && `\n\nDigest: ${error.digest}`}
@@ -52,24 +52,24 @@ export default function Error({ error, reset }: ErrorProps) {
         <div className="space-y-3">
           <button
             onClick={reset}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 px-4 rounded-[8px] transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-[var(--accent-primary)] hover:bg-[#ff4444] text-white font-black py-3 px-4 rounded-none border-[3px] border-black transition-all flex items-center justify-center gap-2 shadow-[4px_4px_0_0_#000] hover:shadow-[6px_6px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none uppercase tracking-wide"
           >
-            <RefreshCw size={16} />
+            <RefreshCw size={16} strokeWidth={2.5} />
             Coba Muat Ulang
           </button>
 
           <button
             onClick={() => window.location.href = '/'}
-            className="w-full border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-4 rounded-[8px] transition-colors"
+            className="w-full border-[3px] border-black bg-[#fde047] hover:bg-[#facc15] text-black font-black py-3 px-4 rounded-none transition-all shadow-[4px_4px_0_0_#000] hover:shadow-[6px_6px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none uppercase tracking-wide"
           >
             Kembali ke Dashboard
           </button>
         </div>
 
         {process.env.NODE_ENV === 'production' && (
-          <p className="text-xs text-gray-500 mt-6">
+          <p className="text-xs font-bold text-black/50 mt-6 uppercase tracking-wide">
             Jika masalah terus berlanjut, hubungi administrator.
-            {error.digest && `\nID Error: ${error.digest}`}
+            {error.digest && ` ID: ${error.digest}`}
           </p>
         )}
       </div>

@@ -380,27 +380,27 @@ export default function ManualModal() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
-            className="relative w-full max-w-lg bg-white rounded-[8px] shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300"
+            className="relative w-full max-w-lg bg-white rounded-none shadow-[12px_12px_0_0_#000] border-[4px] border-black overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300"
           >
             {/* Header */}
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-emerald-50/50">
+            <div className="p-5 border-b-[4px] border-black flex items-center justify-between bg-[#fde047]">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-600 text-white rounded-[8px] shadow-sm">
-                  <currentGuide.icon size={18} />
+                <div className="p-2 bg-white text-black border-[2px] border-black shadow-[2px_2px_0_0_#000] rounded-none">
+                  <currentGuide.icon size={20} strokeWidth={2.5} />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-emerald-600 mb-0.5">Detail Menu {currentGuide.title}</span>
-                  <h2 id="modal-title" className="text-lg font-extrabold text-slate-800 flex items-center gap-2">
+                  <span className="text-[10px] font-black text-black uppercase tracking-widest mb-0.5">Detail Menu {currentGuide.title}</span>
+                  <h2 id="modal-title" className="text-xl font-black text-black uppercase tracking-tight flex items-center gap-2">
                     Bantuan & Panduan
                   </h2>
                 </div>
               </div>
               <button 
                 onClick={() => setIsOpen(false)}
-                className="p-2 hover:bg-white rounded-full text-slate-400 hover:text-red-500 transition-all"
+                className="w-10 h-10 border-[2px] border-black bg-white rounded-none flex items-center justify-center text-black shadow-[2px_2px_0_0_#000] hover:bg-black hover:text-white transition-all active:translate-y-[2px] active:translate-x-[2px] active:shadow-none"
                 aria-label="Tutup Panduan"
               >
-                <X size={18} />
+                <X size={20} strokeWidth={3} />
               </button>
             </div>
 
@@ -442,15 +442,15 @@ export default function ManualModal() {
                         const cleanText = isSubStep ? step.trimStart().replace(/^[•\s]+/, '') : step;
                         
                         return (
-                          <div key={index} className={`flex ${isHeader ? 'mt-3 first:mt-0' : 'gap-3'} ${isSubStep ? 'pl-8 py-0.5' : 'pl-2'} group items-start`}>
+                          <div key={index} className={`flex ${isHeader ? 'mt-4 first:mt-0' : 'gap-3'} ${isSubStep ? 'pl-8 py-0.5' : 'pl-2'} group items-start`}>
                             {isHeader ? null : isSubStep ? (
-                              <div className="flex-shrink-0 w-1 h-1 mt-2 rounded-full border border-emerald-400 bg-white" />
+                              <div className="flex-shrink-0 w-1.5 h-1.5 mt-2 rounded-none border-[1.5px] border-black bg-white" />
                             ) : (
-                              <div className="flex-shrink-0 w-1.5 h-1.5 mt-2 rounded-full bg-emerald-500 group-hover:scale-125 transition-all shadow-sm" />
+                              <div className="flex-shrink-0 w-2.5 h-2.5 mt-1.5 rounded-none border-[2px] border-black bg-[var(--accent-primary)] group-hover:scale-125 transition-all shadow-[1px_1px_0_0_#000]" />
                             )}
                             <p className={`text-sm leading-relaxed ${
-                              isHeader ? 'font-bold text-slate-800 text-xs' : 
-                              isSubStep ? 'text-slate-500 text-[13px]' : 'text-slate-600'
+                              isHeader ? 'font-black text-black text-xs uppercase underline underline-offset-4 decoration-[2px]' : 
+                              isSubStep ? 'text-gray-700 text-[13px] font-bold' : 'text-black font-bold'
                             }`}>
                               {renderText(cleanText)}
                             </p>
@@ -460,11 +460,11 @@ export default function ManualModal() {
                     </div>
 
                     {(currentGuide as any).tips && (
-                      <div className="p-4 bg-amber-50 border border-amber-100 rounded-[8px] flex gap-3">
-                        <Info size={18} className="text-amber-500 shrink-0 mt-0.5" />
+                      <div className="p-4 bg-[var(--accent-primary)] border-[3px] border-black rounded-none flex gap-3 shadow-[4px_4px_0_0_#000]">
+                        <Info size={20} className="text-white shrink-0 mt-0.5" strokeWidth={2.5} />
                         <div>
-                          <p className="text-[10px] font-bold text-amber-600 mb-1">Tips Berguna:</p>
-                          <p className="text-xs text-amber-700 leading-relaxed italic">
+                          <p className="text-[11px] font-black text-white uppercase tracking-wider mb-1">Tips Berguna:</p>
+                          <p className="text-sm font-bold text-white leading-relaxed">
                             "{renderText((currentGuide as any).tips)}"
                           </p>
                         </div>
@@ -476,8 +476,8 @@ export default function ManualModal() {
             </div>
 
             {/* Footer */}
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-center">
-              <p className="text-[10px] text-slate-400 font-medium italic">Panduan Penggunaan SINTAK</p>
+            <div className="p-4 bg-[var(--bg-deep)] border-t-[4px] border-black flex items-center justify-center">
+              <p className="text-[11px] font-bold text-black uppercase tracking-widest">Panduan Penggunaan SINTAK</p>
             </div>
           </div>
         </div>

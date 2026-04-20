@@ -154,35 +154,35 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
           </div>
         </div>
         <div className="relative w-full shrink-0 group">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-green-500 transition-colors" />
+          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-black transition-colors z-10" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari menu, user, atau keterangan..."
-            className="w-full pl-12 pr-4 h-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
+            className="w-full pl-12 pr-4 h-12 bg-white border-[3px] border-black rounded-none focus:outline-none transition-transform text-[13px] font-bold placeholder:text-gray-400 shadow-[4px_4px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[6px_6px_0_0_#000]"
           />
         </div>
       </div>
 
-      <div className="bg-white rounded-[8px] border border-gray-100 shadow-sm overflow-hidden flex-1 flex flex-col relative">
+      <div className="bg-[var(--bg-surface)] rounded-none border-[3px] border-black shadow-[6px_6px_0_0_#000] overflow-hidden flex-1 flex flex-col relative">
         <div className="overflow-auto flex-1 p-2">
           {filteredLogs.length === 0 ? (
             <div className="p-8 flex items-center justify-center text-gray-400 text-[13px] font-bold">
                Tidak ada histori log yang sesuai pencarian.
             </div>
           ) : (
-            <div className="w-full space-y-2">
+            <div className="w-full space-y-3">
               {displayedLogs.map((log) => (
                 <div 
                   key={log.id} 
                   onClick={() => setSelectedLog(log)}
-                  className="group flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-[8px] border border-gray-100 hover:border-green-200 bg-white hover:bg-green-50/30 transition-all cursor-pointer"
+                  className="group flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-none border-[3px] border-black shadow-[4px_4px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] hover:shadow-[6px_6px_0_0_#000] bg-white transition-all cursor-pointer"
                 >
                   
                   <div className="flex gap-4 items-start min-w-0">
                     <div className="shrink-0 mt-1">
-                      <span className={`inline-flex items-center justify-center px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider rounded-md border ${getActionColor(log.action_type)}`}>
+                      <span className={`inline-flex items-center justify-center px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-none border-2 border-black shadow-[2px_2px_0_0_#000] ${getActionColor(log.action_type)}`}>
                         {log.action_type}
                       </span>
                     </div>
@@ -228,11 +228,11 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                   </div>
 
                   <div className="shrink-0 flex items-center gap-3">
-                    <button className="opacity-0 group-hover:opacity-100 px-3 py-1 text-[11px] font-extrabold text-[#16a34a] border border-[#16a34a]/30 bg-white hover:bg-[#16a34a] hover:text-white rounded-[8px] transition-all leading-none">
+                    <button className="opacity-0 group-hover:opacity-100 px-3 py-1 text-[11px] font-black text-black border-2 border-black bg-[#fde047] hover:bg-[var(--accent-primary)] hover:text-white rounded-none shadow-[2px_2px_0_0_#000] transition-all leading-none">
                       Detail
                     </button>
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
-                       <Clock size={12} className="text-gray-400" />
+                    <div className="flex items-center gap-2 text-[11px] font-bold text-black bg-white px-3 py-1.5 rounded-none border-[2px] border-black shadow-[2px_2px_0_0_#000]">
+                       <Clock size={12} className="text-black" strokeWidth={3} />
                        {formatLastUpdate(log.created_at)}
                     </div>
                   </div>
@@ -268,38 +268,38 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
       </div>
 
       {selectedLog && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[2px] animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-none animate-in fade-in duration-200">
           <div
-            className="bg-white rounded-[8px] shadow-2xl border border-slate-200 w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
+            className="bg-white rounded-none shadow-[12px_12px_0_0_#000] border-[4px] border-black w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-6 py-3 border-b border-slate-100 bg-slate-50/50">
+            <div className="flex items-center justify-between px-6 py-4 border-b-[3px] border-black bg-[var(--accent-primary)]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-[8px] bg-green-500/10 flex items-center justify-center text-green-600">
-                  <Cpu size={20} />
+                <div className="w-10 h-10 rounded-none bg-white border-2 border-black shadow-[2px_2px_0_0_#000] flex items-center justify-center text-black">
+                  <Cpu size={20} strokeWidth={2.5} />
                 </div>
                 <div>
-                  <h4 className="text-base font-bold text-slate-800">Detail Log Aktivitas</h4>
-                  <p className="text-[11px] text-slate-400 font-medium">Informasi audit sistem & sinkronisasi data real-time</p>
+                  <h4 className="text-lg font-black text-white uppercase tracking-wide">Detail Log Aktivitas</h4>
+                  <p className="text-[11px] text-white/90 font-bold">Informasi audit sistem & sinkronisasi data real-time</p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
-                className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400 hover:text-slate-600"
+                className="w-10 h-10 bg-white border-2 border-black rounded-none shadow-[2px_2px_0_0_#000] flex items-center justify-center hover:bg-[#fde047] hover:translate-y-[-1px] hover:translate-x-[-1px] hover:shadow-[3px_3px_0_0_#000] transition-all text-black active:translate-y-[2px] active:translate-x-[2px] active:shadow-none"
               >
-                <X size={20} />
+                <X size={20} strokeWidth={3} />
               </button>
             </div>
 
             <div className="p-6 overflow-y-auto custom-scrollbar bg-white flex-1">
               {/* Top Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-slate-50 rounded-[8px] p-3 border border-slate-100">
+                <div className="bg-[#fde047] rounded-none p-3 border-[3px] border-black shadow-[4px_4px_0_0_#000]">
                   <div className="flex items-center gap-2 mb-1">
-                    <UserIcon size={14} className="text-slate-400" />
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Pelaku (recorded_by)</span>
+                    <UserIcon size={14} className="text-black" strokeWidth={3} />
+                    <span className="text-[10px] text-black font-black uppercase tracking-wider">Pelaku (recorded_by)</span>
                   </div>
-                  <p className="text-sm font-bold text-slate-700">{selectedLog.recorded_by || 'System'}</p>
+                  <p className="text-sm font-black text-black">{selectedLog.recorded_by || 'System'}</p>
                 </div>
                 <div className="bg-slate-50 rounded-[8px] p-3 border border-slate-100">
                   <div className="flex items-center gap-2 mb-1">

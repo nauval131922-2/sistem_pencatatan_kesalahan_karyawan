@@ -157,7 +157,7 @@ export function DataTable<TData extends { id: number | string }>({
 
   return (
     <ScrollContext.Provider value={parentRef}>
-      <div className={`bg-white border-[1.5px] border-gray-200 hover:border-gray-300 transition-all duration-300 rounded-[8px] overflow-hidden flex flex-col min-h-0 relative ${height} ${className} ${isResizingColumn ? 'is-resizing' : ''}`}>
+      <div className={`bg-white border-[3px] border-black shadow-[6px_6px_0_0_#000] rounded-none overflow-hidden flex flex-col min-h-0 relative ${height} ${className} ${isResizingColumn ? 'is-resizing' : ''}`}>
         <style dangerouslySetInnerHTML={{ __html: `.is-resizing * { user-select: none !important; transition: none !important; cursor: col-resize !important; } .is-resizing th > div { cursor: col-resize !important; }` }} />
         <div 
           ref={parentRef}
@@ -176,17 +176,17 @@ export function DataTable<TData extends { id: number | string }>({
             <colgroup>
                 {headers.map((header) => (<col key={header.id} style={{ width: columnSizing[header.id] || (header.column.columnDef as any).size || 150 }} />))}
             </colgroup>
-            <thead className="sticky top-0 z-20 bg-gray-50/95 backdrop-blur-sm shadow-[0_1px_2px_rgba(0,0,0,0.08)]">
+            <thead className="sticky top-0 z-20 bg-[#fde047] shadow-[0_3px_0_0_#000]">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
                     const sortingState = sorting.find((s) => s.id === header.id);
-                    return (<th key={header.id} className="p-0 border-b border-r border-gray-200 relative group transition-colors overflow-hidden">
+                    return (<th key={header.id} className="p-0 border-b-[3px] border-r-[2px] border-black relative group transition-colors overflow-hidden last:border-r-0">
                         <div 
-                          className={`px-4 py-3 flex items-center gap-2 transition-colors select-none ${!hideSorting ? 'cursor-pointer hover:bg-gray-100/80' : ''} ${(header.column.columnDef.meta as any)?.align === 'right' ? 'justify-end flex-row-reverse' : (header.column.columnDef.meta as any)?.align === 'center' ? 'justify-center' : 'justify-start'}`}
+                          className={`px-4 py-3 flex items-center gap-2 transition-colors select-none ${!hideSorting ? 'cursor-pointer hover:bg-black/5' : ''} ${(header.column.columnDef.meta as any)?.align === 'right' ? 'justify-end flex-row-reverse' : (header.column.columnDef.meta as any)?.align === 'center' ? 'justify-center' : 'justify-start'}`}
                           onClick={!hideSorting ? header.column.getToggleSortingHandler() : undefined}
                         >
-                            <span className="text-[12px] font-bold text-gray-700 tracking-tight whitespace-nowrap overflow-hidden truncate">
+                            <span className="text-[12px] font-black text-black tracking-tight uppercase whitespace-nowrap overflow-hidden truncate">
                                 {flexRender(header.column.columnDef.header, header.getContext())}
                             </span>
                             {!hideSorting && (
@@ -200,7 +200,7 @@ export function DataTable<TData extends { id: number | string }>({
                             onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); header.getResizeHandler()(e); }}
                             className={`absolute -right-[4px] top-0 bottom-0 w-[8px] z-50 cursor-col-resize group/resizer transition-opacity ${header.column.getIsResizing() ? 'opacity-100' : 'opacity-0 hover:opacity-100'}`}
                           >
-                            <div className={`mx-auto h-full w-[2px] ${header.column.getIsResizing() ? 'bg-green-600 w-[3px]' : 'bg-green-400/50 group-hover/resizer:bg-green-500'}`} />
+                            <div className={`mx-auto h-full w-[4px] ${header.column.getIsResizing() ? 'bg-black' : 'bg-black/50 group-hover/resizer:bg-black'}`} />
                           </div>
                         )}
                       </th>);
@@ -213,8 +213,8 @@ export function DataTable<TData extends { id: number | string }>({
                 <tr key="empty-row">
                   <td key="empty-cell" colSpan={headers.length} className="p-0 border-none">
                       <div className="flex flex-col items-center justify-center py-24 text-center">
-                         <div className="w-16 h-16 bg-gray-50 rounded-[8px] flex items-center justify-center mb-4 ring-1 ring-gray-100 shadow-sm">
-                            <AlertCircle className="text-gray-200" size={32} />
+                         <div className="w-16 h-16 bg-white border-[3px] border-black shadow-[4px_4px_0_0_#000] rounded-none flex items-center justify-center mb-4">
+                            <AlertCircle className="text-black" size={32} strokeWidth={3} />
                          </div>
                          <h3 className="text-[14px] font-bold text-gray-800 mb-1">Data Tidak Ditemukan</h3>
                          <p className="text-[12px] text-gray-400 font-medium max-w-[240px] leading-relaxed">
@@ -281,9 +281,9 @@ const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick, onRowDoubleCl
     <tr
       onClick={(e) => onRowClick && onRowClick(row.original.id, e)}
       onDoubleClick={(e) => onRowDoubleClick && onRowDoubleClick(row.original.id, e)}
-      className={`${rowHeight} ${rowCursor} group border-b border-gray-200 transition-colors ${
-        isSelected ? 'bg-green-50 is-selected shadow-[inset_4px_0_0_0_#16a34a]' : isOdd ? 'bg-slate-50/30' : 'bg-white'
-      } ${!disableHover ? 'hover:bg-green-50/50' : ''} text-[13px]`}
+      className={`${rowHeight} ${rowCursor} group border-b-[2px] border-black transition-colors ${
+        isSelected ? 'bg-[var(--accent-primary)] is-selected shadow-[inset_6px_0_0_0_#000]' : isOdd ? 'bg-[#f4f4f5]' : 'bg-white'
+      } ${!disableHover && !isSelected ? 'hover:bg-[#fde047]' : ''} text-[13px]`}
     >{row.getVisibleCells().map((cell: any) => {
         const meta = cell.column.columnDef.meta as any;
         const alignClass = meta?.align === 'right' ? 'justify-end text-right font-mono' : meta?.align === 'center' ? 'justify-center text-center' : 'justify-start text-left';
@@ -292,10 +292,10 @@ const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick, onRowDoubleCl
         return (
           <td 
             key={cell.id} 
-            className="p-0 border-r border-gray-200"
+            className="p-0 border-r-[2px] border-black last:border-r-0"
             style={meta?.valign === 'top' ? { verticalAlign: 'top' } : {}}
           >
-            <div className={`px-4 ${meta?.valign === 'top' ? '' : rowHeight} flex ${vAlignClass} text-[12px] leading-snug font-medium ${wrapClass} ${alignClass} ${isSelected ? 'text-green-700 font-bold' : 'text-[#364153]'} select-text`}>
+            <div className={`px-4 ${meta?.valign === 'top' ? '' : rowHeight} flex ${vAlignClass} text-[12px] leading-snug font-bold ${wrapClass} ${alignClass} ${isSelected ? 'text-white font-black' : 'text-black'} select-text`}>
               {flexRender(cell.column.columnDef.cell, cell.getContext())}
             </div>
           </td>

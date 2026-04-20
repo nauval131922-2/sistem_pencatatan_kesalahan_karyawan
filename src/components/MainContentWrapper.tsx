@@ -85,11 +85,10 @@ export default function MainContentWrapper({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-[var(--bg-deep)]">
       <Sidebar user={user} permissions={permissions} />
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        {/* Changed from main to div with standardized classes to reduce hydration mismatch risk */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar bg-slate-50 px-6 md:px-8 py-8">
+        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar bg-[var(--bg-deep)] px-6 md:px-8 py-8">
           {children}
         </div>
       </div>
