@@ -4,6 +4,7 @@ import ExcelUpload from "@/components/ExcelUpload";
 import EmployeeTable from "@/components/EmployeeTable";
 import { FileSpreadsheet, Clock } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
+import { formatLastUpdate } from "@/lib/date-utils";
 import { requirePermission } from "@/lib/permissions";
 
 export const metadata: Metadata = {
