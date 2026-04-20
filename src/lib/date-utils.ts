@@ -48,6 +48,7 @@ export function formatLastUpdate(dateInput: Date | string | null | undefined): s
   let date: Date;
   if (typeof dateInput === 'string') {
     let validStr = dateInput;
+    // Handle cases where SQLite/libsql might return space instead of T, and lack timezone
     if (!validStr.includes('Z') && !validStr.includes('+')) {
       validStr = validStr.replace(' ', 'T') + 'Z';
     }
@@ -58,14 +59,45 @@ export function formatLastUpdate(dateInput: Date | string | null | undefined): s
   
   if (isNaN(date.getTime())) return '';
 
-  const day = String(date.getDate()).padStart(2, '0');
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-  const month = months[date.getMonth()];
-  const year = date.getFullYear();
+  // Use Intl.DateTimeFormat to force Asia/Jakarta timezone (WIB)
+  // this ensures consistency between server-side rendering and client-side hydration
+  // and fixes the issue where production servers (usually UTC) show wrong time.
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false,
+  };
 
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', options);
+    const parts = formatter.formatToParts(date);
+    const findPart = (type: string) => parts.find(p => p.type === type)?.value || '';
 
-  return `${day} ${month} ${year}, ${hours}.${minutes}.${seconds}`;
+    const day = findPart('day').padStart(2, '0');
+    const monthIdx = parseInt(findPart('month')) - 1;
+    const year = findPart('year');
+    const hours = findPart('hour').padStart(2, '0');
+    const minutes = findPart('minute').padStart(2, '0');
+    const seconds = findPart('second').padStart(2, '0');
+
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const month = months[monthIdx];
+
+    return `${day} ${month} ${year}, ${hours}.${minutes}.${seconds}`;
+  } catch (e) {
+    // Fallback to basic formatting if Intl fails (unlikely)
+    const day = String(date.getDate()).padStart(2, '0');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${day} ${month} ${year}, ${hours}.${minutes}.${seconds}`;
+  }
 }

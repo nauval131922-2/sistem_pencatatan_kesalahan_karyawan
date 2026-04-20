@@ -100,7 +100,13 @@ export const getInfractions = cache(async (startDate?: string, endDate?: string)
 export async function addInfraction(employeeId: number, description: string, severity: string, date: string, recordedById: number|string, orderName?: string) {
   let fullDate = date;
   if (date.length === 10) {
-    const time = new Date().toLocaleTimeString('en-GB', { hour12: false });
+    const time = new Intl.DateTimeFormat('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+      timeZone: 'Asia/Jakarta'
+    }).format(new Date());
     fullDate = `${date} ${time}`;
   }
 
