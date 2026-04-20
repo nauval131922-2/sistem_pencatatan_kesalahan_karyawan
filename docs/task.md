@@ -54,7 +54,12 @@
     - [x] Sinkronisasi UI/UX Master Pekerjaan ke SOPd (Gap, Warna, Logo, Tombol)
     - [x] Implementasi Custom Searchable Dropdown pada Filter Kategori Master Pekerjaan
     - [x] Perbaikan bug audit log trigger (No ID column tables)
+- [x] **Perbaikan Bug Produksi (Hotfix)**
+    - [x] Fix Timezone "Terakhir Diperbarui" (WIB Force) di SOPd & Master Pekerjaan
+    - [x] Sinkronisasi format tanggal server-side di Seluruh Modul Data
+    - [x] Penanganan timezone eksplisit pada Server Actions (Pencatatan Kesalahan)
 
 - [ ] **Next Steps**
     - [ ] Penambahan fitur ekspor data ke format JSON (Arsip Digital)
     - [ ] Implementasi PWA untuk akses cepat di perangkat mobile
+    - [ ] Audit menyeluruh penggunaan `new Date()` untuk memastikan semua menggunakan `Asia/Jakarta`
