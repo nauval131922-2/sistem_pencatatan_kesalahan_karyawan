@@ -401,9 +401,12 @@ export default function OrderProduksiClient() {
     let lastUpdatedFromScrape: string | null = null;
     let completedChunks = 0;
 
+    const fullStart = `${String(startDate.getDate()).padStart(2, '0')}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${startDate.getFullYear()}`;
+    const fullEnd = `${String(endDate.getDate()).padStart(2, '0')}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${endDate.getFullYear()}`;
+
     const processChunk = async (chunk: any) => {
       try {
-        const res = await fetch(`/api/scrape-orders?start=${chunk.start}&end=${chunk.end}&silent=true`);
+        const res = await fetch(`/api/scrape-orders?start=${chunk.start}&end=${chunk.end}&metaStart=${fullStart}&metaEnd=${fullEnd}&silent=true`);
         if (res.ok) {
           successCount++;
           const json = await res.json();
@@ -470,12 +473,7 @@ export default function OrderProduksiClient() {
         if (lastUpdatedFromScrape) {
           const latestDate = new Date(lastUpdatedFromScrape);
           if (!isNaN(latestDate.getTime())) {
-            const timestamp = latestDate.toLocaleString('id-ID', {
-              day: '2-digit', month: 'short', year: 'numeric',
-              hour: '2-digit', minute: '2-digit', second: '2-digit',
-              timeZone: 'Asia/Jakarta'
-            });
-            setLastUpdated(timestamp);
+            setLastUpdated(formatLastUpdate(latestDate));
           }
         }
       } else {

@@ -342,7 +342,7 @@ export default function BarangJadiClient() {
 
     const processChunk = async (chunk: any) => {
       try {
-        const res = await fetch(`/api/scrape-barang-jadi?start=${chunk.start}&end=${chunk.end}&silent=true`);
+        const res = await fetch(`/api/scrape-barang-jadi?start=${chunk.start}&end=${chunk.end}&silent=true&metaStart=${startStr}&metaEnd=${endStr}`);
         if (res.ok) {
           successCount++;
           const json = await res.json();

@@ -220,7 +220,9 @@ export default function BOMClient() {
     setData([]);
     setSearchQuery('');
 
-    const chunks = splitDateRangeIntoMonths(formatDateToYYYYMMDD(startDate), formatDateToYYYYMMDD(endDate));
+    const startStr = formatDateToYYYYMMDD(startDate);
+    const endStr = formatDateToYYYYMMDD(endDate);
+    const chunks = splitDateRangeIntoMonths(startStr, endStr);
     setIsBatching(true);
     setLoading(true);
     setBatchProgress(0);
@@ -232,7 +234,7 @@ export default function BOMClient() {
 
     const processChunk = async (chunk: any) => {
       try {
-        const res = await fetch(`/api/scrape-bom?start=${chunk.start}&end=${chunk.end}`);
+        const res = await fetch(`/api/scrape-bom?start=${chunk.start}&end=${chunk.end}&metaStart=${startStr}&metaEnd=${endStr}`);
         if (res.ok) {
           successCount++;
           const json = await res.json();

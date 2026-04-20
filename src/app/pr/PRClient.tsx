@@ -207,7 +207,9 @@ export default function PRClient() {
     setPage(1);
     setSearchQuery('');
 
-    const chunks = splitDateRangeIntoMonths(formatDateToYYYYMMDD(startDate), formatDateToYYYYMMDD(endDate));
+    const startStr = formatDateToYYYYMMDD(startDate);
+    const endStr = formatDateToYYYYMMDD(endDate);
+    const chunks = splitDateRangeIntoMonths(startStr, endStr);
     setIsBatching(true);
     setLoading(true);
     setBatchProgress(0);
@@ -218,7 +220,7 @@ export default function PRClient() {
 
     const processChunk = async (chunk: any) => {
       try {
-        const res = await fetch(`/api/scrape-pr?start=${chunk.start}&end=${chunk.end}`);
+        const res = await fetch(`/api/scrape-pr?start=${chunk.start}&end=${chunk.end}&metaStart=${startStr}&metaEnd=${endStr}`);
         if (res.ok) {
           successCount++;
           const json = await res.json();

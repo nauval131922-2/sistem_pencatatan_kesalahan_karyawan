@@ -237,7 +237,7 @@ export default function SalesReportClient() {
 
     const processChunk = async (chunk: any) => {
       try {
-        const res = await fetch(`/api/scrape-sales?start=${chunk.start}&end=${chunk.end}`);
+        const res = await fetch(`/api/scrape-sales?start=${chunk.start}&end=${chunk.end}&metaStart=${startStr}&metaEnd=${endStr}`);
         if (res.ok) {
           successCount++;
           const json = await res.json();

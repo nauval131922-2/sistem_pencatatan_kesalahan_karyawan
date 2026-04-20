@@ -227,9 +227,9 @@ export default function RekapSalesOrderClient() {
     }));
 
     setError(''); setData([]); setPage(1); setSearchQuery('');
-    const chunks = splitDateRangeIntoMonths(
-      formatDateToYYYYMMDD(startDate), formatDateToYYYYMMDD(endDate)
-    );
+    const startStr = formatDateToYYYYMMDD(startDate);
+    const endStr = formatDateToYYYYMMDD(endDate);
+    const chunks = splitDateRangeIntoMonths(startStr, endStr);
     setIsBatching(true); setBatchProgress(0);
 
     let successCount = 0;
@@ -243,7 +243,7 @@ export default function RekapSalesOrderClient() {
         const chunk = queue.shift();
         if (!chunk) break;
         try {
-          const res = await fetch(`/api/scrape-sales-orders?start=${chunk.start}&end=${chunk.end}`);
+          const res = await fetch(`/api/scrape-sales-orders?start=${chunk.start}&end=${chunk.end}&metaStart=${startStr}&metaEnd=${endStr}`);
           if (res.ok) {
             successCount++;
             const j = await res.json();
@@ -274,6 +274,7 @@ export default function RekapSalesOrderClient() {
         });
         localStorage.setItem('sintak_data_updated', Date.now().toString());
         setRefreshKey(prev => prev + 1);
+        setLastUpdated(formatLastUpdate(new Date()));
       } else {
         setError('Gagal menarik data. Cek koneksi.');
       }

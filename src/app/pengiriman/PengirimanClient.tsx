@@ -192,14 +192,16 @@ export default function PengirimanClient() {
     setSearchQuery('');
     setBatchProgress(0);
 
-    const chunks = splitDateRangeIntoMonths(formatDateToYYYYMMDD(startDate), formatDateToYYYYMMDD(endDate));
+    const startStr = formatDateToYYYYMMDD(startDate);
+    const endStr = formatDateToYYYYMMDD(endDate);
+    const chunks = splitDateRangeIntoMonths(startStr, endStr);
     let successCount = 0;
     let totalScraped = 0;
     let completedChunks = 0;
 
     const processChunk = async (chunk: any) => {
       try {
-        const res = await fetch(`/api/scrape-pengiriman?start=${chunk.start}&end=${chunk.end}`);
+        const res = await fetch(`/api/scrape-pengiriman?start=${chunk.start}&end=${chunk.end}&metaStart=${startStr}&metaEnd=${endStr}`);
         if (res.ok) {
           successCount++;
           const json = await res.json();

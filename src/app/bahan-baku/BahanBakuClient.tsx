@@ -196,7 +196,7 @@ export default function BahanBakuClient() {
 
     const processChunk = async (chunk: any) => {
       try {
-        const res = await fetch(`/api/scrape-bahan-baku?start=${chunk.start}&end=${chunk.end}&silent=true`);
+        const res = await fetch(`/api/scrape-bahan-baku?start=${chunk.start}&end=${chunk.end}&silent=true&metaStart=${startStr}&metaEnd=${endStr}`);
         if (res.ok) {
           successCount++;
           const json = await res.json();

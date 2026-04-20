@@ -164,16 +164,7 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
 
               if (lastUpdatedTimestamp) {
                 const date = new Date(lastUpdatedTimestamp);
-                const formattedNow = date.toLocaleDateString('id-ID', { 
-                  day: '2-digit', 
-                  month: 'short', 
-                  year: 'numeric' 
-                }) + ', ' + date.toLocaleTimeString('id-ID', { 
-                  hour: '2-digit', 
-                  minute: '2-digit', 
-                  second: '2-digit',
-                  hour12: false
-                }).replace(/\./g, ':');
+                const formattedNow = formatLastUpdate(date);
 
                 newState[modId] = {
                   ...newState[modId],
@@ -213,23 +204,14 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
 
       const startStr = formatDate(startDate);
       const endStr = formatDate(endDate);
-      const url = `${mod.endpoint}?start=${startStr}&end=${endStr}`;
+      const url = `${mod.endpoint}?start=${startStr}&end=${endStr}&metaStart=${startStr}&metaEnd=${endStr}`;
 
       const response = await fetch(url, { method: 'GET', cache: 'no-store' });
       const data = await response.json();
 
       if (data.success || !data.error) {
         const now = new Date();
-        const formattedNow = now.toLocaleDateString('id-ID', { 
-          day: '2-digit', 
-          month: 'short', 
-          year: 'numeric' 
-        }) + ', ' + now.toLocaleTimeString('id-ID', { 
-          hour: '2-digit', 
-          minute: '2-digit', 
-          second: '2-digit',
-          hour12: false
-        }).replace(/\./g, ':');
+        const formattedNow = formatLastUpdate(now);
 
         const keys = PERSISTENCE_KEYS[modId];
         if (keys) {

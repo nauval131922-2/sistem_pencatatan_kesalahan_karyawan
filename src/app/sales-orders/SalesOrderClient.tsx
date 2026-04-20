@@ -295,7 +295,7 @@ export default function SalesOrderClient() {
 
     const processChunk = async (chunk: any) => {
       try {
-        const res = await fetch(`/api/scrape-sales-orders?start=${chunk.start}&end=${chunk.end}`);
+        const res = await fetch(`/api/scrape-sales-orders?start=${chunk.start}&end=${chunk.end}&metaStart=${startStr}&metaEnd=${endStr}`);
         if (res.ok) {
           successCount++;
           const json = await res.json();
@@ -320,7 +320,7 @@ export default function SalesOrderClient() {
           const chunk = queue.shift();
           if (chunk) {
             try {
-              const res = await fetch(`/api/scrape-sales-orders?start=${chunk.start}&end=${chunk.end}`);
+              const res = await fetch(`/api/scrape-sales-orders?start=${chunk.start}&end=${chunk.end}&metaStart=${startStr}&metaEnd=${endStr}`);
               if (res.ok) {
                 successCount++;
                 const json = await res.json();
@@ -352,10 +352,7 @@ export default function SalesOrderClient() {
         if (lastUpdatedScrape) {
           const date = new Date(lastUpdatedScrape);
           if (!isNaN(date.getTime())) {
-            setLastUpdated(date.toLocaleString('id-ID', { 
-                day: '2-digit', month: 'short', year: 'numeric', 
-                hour: '2-digit', minute: '2-digit', second: '2-digit' 
-            }));
+            setLastUpdated(formatLastUpdate(date));
           }
         }
 
