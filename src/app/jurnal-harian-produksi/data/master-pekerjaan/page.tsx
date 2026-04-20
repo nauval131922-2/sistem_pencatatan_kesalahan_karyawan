@@ -33,7 +33,7 @@ export default async function MasterPekerjaanPage() {
     <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700">
       <PageHeader
         title="Master Pekerjaan"
-        description="Referensi kode dan nama pekerjaan untuk Jurnal Harian Produksi."
+        description="Manajemen database referensi kode dan nama pekerjaan untuk pencatatan target dan realisasi pada Jurnal Harian Produksi."
       />
       <MasterPekerjaanClient 
         importInfo={

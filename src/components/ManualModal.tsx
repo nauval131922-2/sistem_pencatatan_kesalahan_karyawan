@@ -140,6 +140,40 @@ export default function ManualModal() {
       ],
       tips: 'Lakukan penarikan data secara berkala untuk memastikan nomor faktur terbaru dari Digit tersedia di sistem.'
     },
+    '/jurnal-harian-produksi/data/excel-sopd': {
+      title: 'SOPd',
+      icon: Calculator,
+      description: 'Manajemen database Order Produksi (SOPd) yang diunggah melalui file Excel untuk referensi Jurnal Harian Produksi.',
+      steps: [
+        'Klik tombol **Pilih & Upload Excel** pada panel **Upload Data SOPd** untuk memperbarui database SOPd.',
+        'Pantau informasi **Nama File** dan status **Diperbarui** pada header halaman untuk memastikan data yang tampil adalah versi terbaru.',
+        'Gunakan filter **Rentang Tanggal** (Mulai & Akhir) untuk menampilkan data SOPd berdasarkan periode tertentu.',
+        'Gunakan **Kotak Pencarian** untuk memfilter data berdasarkan **Nama Order**.',
+        'Fitur **Inline Editing** (Klik 2x pada sel tabel untuk mengedit):',
+        '  • **Perkiraan Harga**: Masukkan estimasi harga (format ribuan akan menyesuaikan otomatis).',
+        '  • **Keterangan**: Tambahkan catatan tambahan untuk baris order tersebut.',
+        '  • **Tanggal Deadline**: Pilih tanggal tenggat waktu menggunakan picker kalender.',
+        '  • **Tanggal Selesai**: Pilih tanggal realisasi penyelesaian order.',
+        'Data di sini akan terintegrasi secara otomatis sebagai referensi pada menu **Jurnal Harian Produksi**.'
+      ]
+    },
+    '/jurnal-harian-produksi/data/master-pekerjaan': {
+      title: 'Master Pekerjaan',
+      icon: Calculator,
+      description: 'Manajemen database referensi kode dan nama pekerjaan untuk pencatatan target dan realisasi pada Jurnal Harian Produksi.',
+      steps: [
+        'Klik tombol **Pilih & Upload Excel** pada panel **Upload Master Pekerjaan** untuk memperbarui database.',
+        'Pantau informasi **Nama File** dan status **Diperbarui** pada header halaman untuk memastikan data yang tampil adalah versi terbaru.',
+        'Gunakan fitur **Filter** untuk mempersempit tampilan data:',
+        '  • **Kategori**: Pilih departemen utama (misal: **PRA CETAK**, **CETAK**, **PASCA CETAK**).',
+        '  • **Sub Kategori**: Filter berdasarkan sub-bagian dari kategori yang dipilih.',
+        '  • **Grup**: Filter lebih spesifik berdasarkan grup pekerjaan.',
+        'Klik tombol **Reset Filter** untuk mengembalikan semua pilihan filter ke kondisi awal.',
+        'Gunakan **Kotak Pencarian** untuk mencari pekerjaan berdasarkan **Kode** atau **Nama Pekerjaan** secara spesifik.',
+        'Lihat rincian metrik target (seperti **Target Per Jam**, **Efektif Jam Kerja**, dll) pada kolom tabel yang tersedia.',
+        'Data di sini akan terintegrasi secara otomatis sebagai referensi pada menu **Jurnal Harian Produksi**.'
+      ]
+    },
     '/purchase-orders': {
       title: 'Purchase Order (PO)',
       icon: ShoppingCart,

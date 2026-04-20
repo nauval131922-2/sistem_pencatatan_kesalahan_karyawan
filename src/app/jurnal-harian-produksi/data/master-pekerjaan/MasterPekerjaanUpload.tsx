@@ -412,7 +412,7 @@ export default function MasterPekerjaanUpload() {
           <div className="min-w-0">
             <h3 className="text-sm font-bold text-gray-800 leading-none mb-1">Upload Master Pekerjaan</h3>
             <p className="text-[11px] text-gray-400 font-medium leading-tight">
-              Unggah file Excel <strong>060105 MASTER PEKERJAAN.xlsm</strong> — sheet <strong>Pekerjaan-Kode</strong>. Data lama akan digantikan.
+              Unggah file Excel Master Pekerjaan untuk sinkronisasi database. Sistem akan memperbarui daftar pekerjaan berdasarkan versi file terbaru.
             </p>
           </div>
         </div>

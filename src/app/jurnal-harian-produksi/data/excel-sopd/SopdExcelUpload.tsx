@@ -177,7 +177,7 @@ export default function SopdExcelUpload() {
           <div className="min-w-0">
             <h3 className="text-sm font-bold text-gray-800 leading-none mb-1">Upload Data SOPd</h3>
             <p className="text-[11px] text-gray-400 font-medium leading-tight">
-              Unggah file Excel yang berisi Data Sisa Order Produksi. Data yang lama akan dihapus dan digantikan seluruhnya.
+              Unggah file Excel untuk sinkronisasi Data Order Produksi. Sistem akan memperbarui daftar order berdasarkan versi file terbaru.
             </p>
           </div>
         </div>
