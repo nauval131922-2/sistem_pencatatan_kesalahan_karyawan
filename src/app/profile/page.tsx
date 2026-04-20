@@ -145,32 +145,27 @@ export default function ProfilePage() {
       />
 
       <div className="flex-1 overflow-y-auto flex flex-col items-center">
-        <div className="w-full max-w-4xl bg-white border border-[#e5e7eb] rounded-[12px] shadow-sm overflow-hidden">
+        <div className="w-full max-w-4xl bg-white border-[3px] border-black rounded-none shadow-[8px_8px_0_0_#000] overflow-hidden mb-8">
           <form onSubmit={handleSubmit}>
             <div className="p-8">
               {isInitialLoading ? (
                 <div className="animate-pulse space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-12">
                     <div className="flex flex-col items-center">
-                      <div className="w-32 h-32 rounded-[8px] bg-gray-100 mb-4" />
-                      <div className="h-2 w-24 bg-gray-100 rounded" />
+                      <div className="w-32 h-32 rounded-none bg-black/5 mb-4 border-2 border-black/10" />
+                      <div className="h-2 w-24 bg-black/5" />
                     </div>
                     <div className="space-y-8">
-                      <div className="h-4 w-32 bg-gray-100 rounded" />
+                      <div className="h-4 w-32 bg-black/5" />
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div className="space-y-2">
-                          <div className="h-2 w-20 bg-gray-100 rounded mb-1" />
-                          <div className="h-11 bg-gray-50 rounded-[8px]" />
+                          <div className="h-2 w-20 bg-black/5 mb-1" />
+                          <div className="h-11 bg-black/5 border-2 border-black/10" />
                         </div>
                         <div className="space-y-2">
-                          <div className="h-2 w-20 bg-gray-100 rounded mb-1" />
-                          <div className="h-11 bg-gray-50 rounded-[8px]" />
+                          <div className="h-2 w-20 bg-black/5 mb-1" />
+                          <div className="h-11 bg-black/5 border-2 border-black/10" />
                         </div>
-                      </div>
-                      <div className="h-4 w-32 bg-gray-100 rounded" />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <div className="h-11 bg-gray-50 rounded-[8px]" />
-                        <div className="h-11 bg-gray-50 rounded-[8px]" />
                       </div>
                     </div>
                   </div>
@@ -178,9 +173,9 @@ export default function ProfilePage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-12">
                   {/* Avatar Column */}
-                  <div className="flex flex-col items-center">
+                   <div className="flex flex-col items-center">
                     <div className="relative group">
-                      <div className="w-32 h-32 rounded-3xl bg-slate-50 flex items-center justify-center overflow-hidden ring-4 ring-slate-100 group-hover:ring-green-100 transition-all shadow-inner relative z-0">
+                      <div className="w-32 h-32 rounded-none bg-black flex items-center justify-center overflow-hidden border-[3px] border-black shadow-[4px_4px_0_0_#000] relative z-0">
                         {photoUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -189,15 +184,16 @@ export default function ProfilePage() {
                             className="w-full h-full object-cover animate-in fade-in duration-500"
                           />
                         ) : (
-                          <User size={48} className="text-slate-200" />
+                          <User size={48} className="text-[#fde047]" strokeWidth={3} />
                         )}
                         <div
-                          className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+                          className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
                           onClick={() => fileInputRef.current?.click()}
                         >
                           <Camera
-                            size={24}
-                            className="text-white transform scale-90 group-hover:scale-100 transition-transform"
+                            size={32}
+                            className="text-[#fde047] transform scale-90 group-hover:scale-100 transition-transform"
+                            strokeWidth={3}
                           />
                         </div>
                       </div>
@@ -205,11 +201,11 @@ export default function ProfilePage() {
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="absolute -bottom-2 -right-2 w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-[8px] flex items-center justify-center shadow-lg transition-all hover:scale-110 active:scale-95 border-4 border-white z-20"
+                        className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#fde047] hover:bg-black text-black hover:text-[#fde047] rounded-none flex items-center justify-center shadow-[2px_2px_0_0_#000] transition-all border-[3px] border-black z-20"
                         title="Ubah Foto"
                         aria-label="Ubah Foto Profil"
                       >
-                        <Camera size={18} />
+                        <Camera size={18} strokeWidth={3} />
                       </button>
                       <input
                         type="file"
@@ -233,36 +229,38 @@ export default function ProfilePage() {
                   <div className="space-y-8">
                     {message && (
                       <div
-                        className={`p-4 rounded-[8px] flex items-start gap-3 text-sm border animate-in slide-in-from-top-2 duration-300 ${
+                        className={`p-4 rounded-none flex items-start gap-4 text-sm border-[3px] border-black animate-in slide-in-from-top-2 duration-300 shadow-[4px_4px_0_0_#000] ${
                           message.type === "success"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                            : "bg-red-50 text-red-700 border-red-100"
+                            ? "bg-[#fde047] text-black"
+                            : "bg-[#ff5e5e] text-white"
                         }`}
                       >
                         {message.type === "success" ? (
-                          <CheckCircle2 size={18} className="shrink-0 mt-0.5" />
+                          <CheckCircle2 size={20} strokeWidth={3} className="shrink-0 mt-0.5" />
                         ) : (
-                          <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                          <AlertCircle size={20} strokeWidth={3} className="shrink-0 mt-0.5" />
                         )}
-                        <span className="font-medium text-[13px]">
+                        <span className="font-black uppercase tracking-tight leading-tight">
                           {message.text}
                         </span>
                         <button
                           type="button"
                           onClick={() => setMessage(null)}
-                          className="ml-auto opacity-40 hover:opacity-100"
+                          className="ml-auto opacity-40 hover:opacity-100 transition-opacity"
                         >
-                          <X size={14} />
+                          <X size={18} strokeWidth={3} />
                         </button>
                       </div>
                     )}
 
                     <div className="grid gap-8">
                       {/* Basic Info */}
-                      <div className="space-y-5">
-                        <div className="flex items-center gap-2 pb-2 border-b border-gray-50">
-                          <User size={14} className="text-gray-400" />
-                          <h3 className="text-[12px] font-extrabold text-gray-700 uppercase tracking-wider">
+                      <div className="space-y-6">
+                        <div className="flex items-center gap-3 pb-3 border-b-2 border-black/5">
+                          <div className="w-8 h-8 bg-black text-white flex items-center justify-center border-2 border-black">
+                            <User size={16} strokeWidth={3} />
+                          </div>
+                          <h3 className="text-[12px] font-black text-black uppercase tracking-widest">
                             Informasi Dasar
                           </h3>
                         </div>
@@ -271,7 +269,7 @@ export default function ProfilePage() {
                           <div className="grid gap-2 group/field">
                             <label
                               htmlFor="name"
-                              className="text-[11px] font-bold text-gray-400 ml-1 uppercase tracking-tight group-focus-within/field:text-green-600 transition-colors"
+                              className="text-[11px] font-black text-black/40 ml-1 uppercase tracking-widest group-focus-within/field:text-black transition-colors"
                             >
                               Nama Lengkap
                             </label>
@@ -282,16 +280,16 @@ export default function ProfilePage() {
                               onChange={(e) => setName(e.target.value)}
                               required
                               placeholder="Administrator"
-                              className="w-full h-11 px-4 bg-slate-50/30 border border-gray-100 rounded-[8px] text-[13px] font-semibold focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 focus:bg-white transition-all text-gray-700 placeholder:text-gray-300 shadow-sm shadow-black/[0.02]"
+                              className="w-full h-12 px-4 bg-white border-[3px] border-black rounded-none text-[13px] font-black focus:outline-none shadow-[4px_4px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[6px_6px_0_0_#000] transition-all text-black placeholder:text-black/20 uppercase tracking-tighter"
                             />
                           </div>
 
                           <div className="grid gap-2 group/field">
                             <label
                               htmlFor="username"
-                              className="text-[11px] font-bold text-gray-400 ml-1 uppercase tracking-tight group-focus-within/field:text-green-600 transition-colors"
+                              className="text-[11px] font-black text-black/40 ml-1 uppercase tracking-widest group-focus-within/field:text-black transition-colors"
                             >
-                              Username
+                              ID Pengguna (Username)
                             </label>
                             <input
                               id="username"
@@ -300,17 +298,19 @@ export default function ProfilePage() {
                               onChange={(e) => setUsername(e.target.value)}
                               required
                               placeholder="admin"
-                              className="w-full h-11 px-4 bg-slate-50/30 border border-gray-100 rounded-[8px] text-[13px] font-semibold focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 focus:bg-white transition-all text-gray-700 placeholder:text-gray-300 shadow-sm shadow-black/[0.02]"
+                              className="w-full h-12 px-4 bg-white border-[3px] border-black rounded-none text-[13px] font-black focus:outline-none shadow-[4px_4px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[6px_6px_0_0_#000] transition-all text-black placeholder:text-black/20 uppercase tracking-tighter"
                             />
                           </div>
                         </div>
                       </div>
 
                       {/* Security */}
-                      <div className="space-y-5">
-                        <div className="flex items-center gap-2 pb-2 border-b border-gray-50">
-                          <Lock size={14} className="text-gray-400" />
-                          <h3 className="text-[12px] font-extrabold text-gray-700 uppercase tracking-wider">
+                      <div className="space-y-6">
+                        <div className="flex items-center gap-3 pb-3 border-b-2 border-black/5">
+                          <div className="w-8 h-8 bg-black text-white flex items-center justify-center border-2 border-black">
+                            <Lock size={16} strokeWidth={3} />
+                          </div>
+                          <h3 className="text-[12px] font-black text-black uppercase tracking-widest">
                             Keamanan Akun
                           </h3>
                         </div>
@@ -319,9 +319,9 @@ export default function ProfilePage() {
                           <div className="grid gap-2 group/field">
                             <label
                               htmlFor="password"
-                              className="text-[11px] font-bold text-gray-400 ml-1 uppercase tracking-tight group-focus-within/field:text-green-600 transition-colors"
+                              className="text-[11px] font-black text-black/40 ml-1 uppercase tracking-widest group-focus-within/field:text-black transition-colors"
                             >
-                              Password Baru (Opsional)
+                              Sandi Baru (Opsional)
                             </label>
                             <input
                               id="password"
@@ -330,16 +330,16 @@ export default function ProfilePage() {
                               onChange={(e) => setPassword(e.target.value)}
                               placeholder="••••••••"
                               autoComplete="new-password"
-                              className="w-full h-11 px-4 bg-slate-50/30 border border-gray-100 rounded-[8px] text-[13px] font-semibold focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500 focus:bg-white transition-all text-gray-700 placeholder:text-gray-300 shadow-sm shadow-black/[0.02]"
+                              className="w-full h-12 px-4 bg-white border-[3px] border-black rounded-none text-[13px] font-black focus:outline-none shadow-[4px_4px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[6px_6px_0_0_#000] transition-all text-black placeholder:text-black/20"
                             />
                           </div>
 
                           <div className="grid gap-2 group/field">
                             <label
                               htmlFor="confirmPassword"
-                              className="text-[11px] font-bold text-gray-400 ml-1 uppercase tracking-tight group-focus-within/field:text-green-600 transition-colors"
+                              className="text-[11px] font-black text-black/40 ml-1 uppercase tracking-widest group-focus-within/field:text-black transition-colors"
                             >
-                              Konfirmasi Password
+                              Ulangi Sandi
                             </label>
                             <input
                               id="confirmPassword"
@@ -350,40 +350,40 @@ export default function ProfilePage() {
                               }
                               placeholder="••••••••"
                               autoComplete="new-password"
-                              className={`w-full h-11 px-4 bg-slate-50/30 border rounded-[8px] text-[13px] font-semibold focus:outline-none focus:ring-4 transition-all text-gray-700 placeholder:text-gray-300 shadow-sm shadow-black/[0.02] ${
+                              className={`w-full h-12 px-4 bg-white border-[3px] rounded-none text-[13px] font-black focus:outline-none shadow-[4px_4px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[6px_6px_0_0_#000] transition-all text-black placeholder:text-black/20 ${
                                 password && confirmPassword
                                   ? password === confirmPassword
-                                    ? "border-green-500 focus:ring-green-500/10"
-                                    : "border-red-500 focus:ring-red-500/10"
-                                  : "border-gray-200 focus:ring-green-500/10 focus:border-green-500 focus:bg-white"
+                                    ? "border-black"
+                                    : "border-[#ff5e5e]"
+                                  : "border-black"
                               }`}
                             />
                             {password && confirmPassword && (
                               <p
-                                className={`text-[10px] font-bold ml-1 ${password === confirmPassword ? "text-green-600" : "text-red-500"}`}
+                                className={`text-[10px] font-black ml-1 uppercase tracking-tight ${password === confirmPassword ? "text-black/40" : "text-[#ff5e5e]"}`}
                               >
                                 {password === confirmPassword
-                                  ? "Password cocok!"
-                                  : "Password tidak cocok."}
+                                  ? "SANDI COCOK!"
+                                  : "SANDI TIDAK COCOK."}
                               </p>
                             )}
-                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
             </div>
 
             {/* Sticky Actions Footer */}
-            <div className="bg-slate-50/50 border-t border-gray-100 p-6 flex justify-end gap-3">
+            <div className="bg-black/5 border-t-[3px] border-black p-6 flex justify-end gap-4">
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="h-11 px-6 text-[13px] font-bold text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-[8px] transition-all active:scale-95"
+                className="h-12 px-6 text-[12px] font-black text-black/40 hover:text-black uppercase tracking-widest transition-all"
               >
-                Batal
+                BATALKAN
               </button>
               <button
                 type="submit"
@@ -392,15 +392,15 @@ export default function ProfilePage() {
                   isPending ||
                   (password !== "" && password !== confirmPassword)
                 }
-                className="h-11 px-8 text-[13px] bg-green-600 hover:bg-green-700 text-white rounded-[8px] flex items-center gap-2.5 transition-all hover:shadow-lg hover:shadow-green-600/20 active:scale-[0.95] disabled:opacity-50 disabled:cursor-not-allowed font-extrabold"
+                className="h-12 px-10 text-[13px] bg-[#fde047] hover:bg-black hover:text-[#fde047] text-black rounded-none border-[3px] border-black flex items-center gap-3 transition-all shadow-[4px_4px_0_0_#000] hover:shadow-[6px_6px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed font-black uppercase tracking-widest"
               >
                 {isLoading || isPending ? (
-                  <RefreshCw size={18} className="animate-spin" />
+                  <RefreshCw size={18} className="animate-spin" strokeWidth={3} />
                 ) : (
-                  <Save size={18} />
+                  <Save size={18} strokeWidth={3} />
                 )}
                 <span>
-                  {isLoading || isPending ? "Menyimpan..." : "Simpan Perubahan"}
+                  {isLoading || isPending ? "PROSES..." : "SIMPAN PROFIL"}
                 </span>
               </button>
             </div>

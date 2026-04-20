@@ -67,42 +67,42 @@ export default function LoginContent() {
           </div>
           <form onSubmit={handleSubmit} className="p-5 pt-5 flex flex-col gap-4">
             {error && (
-              <div className="p-3 bg-[var(--accent-primary)] border-[3px] border-black rounded-none flex items-start gap-2 text-white text-xs shadow-[3px_3px_0_0_#000]">
-                <AlertCircle size={14} strokeWidth={3} className="mt-0.5 shrink-0" />
-                <span className="font-black">{error}</span>
+              <div className="p-4 bg-[#ff5e5e] border-[3px] border-black rounded-none flex items-start gap-3 text-white text-xs shadow-[4px_4px_0_0_#000]">
+                <AlertCircle size={16} strokeWidth={3} className="mt-0.5 shrink-0" />
+                <span className="font-black uppercase tracking-tight">{error}</span>
               </div>
             )}
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-5">
               <div className="relative group">
-                <label className="text-[11px] font-black text-black uppercase tracking-wider mb-2 block">Username</label>
+                <label className="text-[11px] font-black text-black uppercase tracking-widest mb-2 block">ID Pengguna</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User size={14} strokeWidth={2.5} className="text-gray-500" />
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <User size={16} strokeWidth={3} className="text-black/40" />
                   </div>
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="block w-full h-11 pl-10 pr-3 border-[3px] border-black rounded-none text-sm font-bold focus:outline-none shadow-[3px_3px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[5px_5px_0_0_#000] transition-transform bg-white text-black placeholder:text-gray-400"
-                    placeholder="username..."
+                    className="block w-full h-12 pl-12 pr-4 border-[3px] border-black rounded-none text-[13px] font-black focus:outline-none shadow-[4px_4px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[6px_6px_0_0_#000] transition-all bg-white text-black placeholder:text-black/20 uppercase tracking-tighter"
+                    placeholder="Masukkan username..."
                     required
                   />
                 </div>
               </div>
 
               <div className="relative group">
-                <label className="text-[11px] font-black text-black uppercase tracking-wider mb-2 block">Password</label>
+                <label className="text-[11px] font-black text-black uppercase tracking-widest mb-2 block">Kata Sandi</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <KeyRound size={14} strokeWidth={2.5} className="text-gray-500" />
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <KeyRound size={16} strokeWidth={3} className="text-black/40" />
                   </div>
                   <input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full h-11 pl-10 pr-3 border-[3px] border-black rounded-none text-sm font-bold focus:outline-none shadow-[3px_3px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[5px_5px_0_0_#000] transition-transform bg-white text-black placeholder:text-gray-400"
-                    placeholder="password..."
+                    className="block w-full h-12 pl-12 pr-4 border-[3px] border-black rounded-none text-[13px] font-black focus:outline-none shadow-[4px_4px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[6px_6px_0_0_#000] transition-all bg-white text-black placeholder:text-black/20 uppercase tracking-tighter"
+                    placeholder="••••••••"
                     required
                   />
                 </div>
@@ -112,13 +112,13 @@ export default function LoginContent() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-12 mt-2 flex items-center justify-center gap-2 px-4 rounded-none border-[3px] border-black font-black text-white uppercase tracking-wide bg-[var(--accent-primary)] hover:bg-[#ff4444] shadow-[5px_5px_0_0_#000] hover:shadow-[7px_7px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[3px] active:translate-x-[3px] active:shadow-none transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full h-14 mt-4 flex items-center justify-center gap-3 px-6 rounded-none border-[3px] border-black font-black text-black uppercase tracking-widest bg-[#fde047] hover:bg-black hover:text-[#fde047] shadow-[6px_6px_0_0_#000] hover:shadow-[8px_8px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[4px] active:translate-x-[4px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-[3px] border-white/50 border-t-white rounded-full animate-spin" />
+                <div className="w-6 h-6 border-[4px] border-black/20 border-t-black rounded-none animate-spin" />
               ) : (
                 <>
-                  <LogIn size={18} strokeWidth={2.5} />
+                  <LogIn size={20} strokeWidth={3} />
                   <span>Masuk Sistem</span>
                 </>
               )}

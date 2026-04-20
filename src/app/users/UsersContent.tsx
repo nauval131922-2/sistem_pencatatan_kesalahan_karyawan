@@ -166,15 +166,15 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
         const user = info.row.original as User;
         return (
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-[8px] bg-green-500 flex items-center justify-center text-white font-black text-[10px] shadow-sm shrink-0 overflow-hidden ring-1 ring-black/5">
+            <div className="w-10 h-10 rounded-none bg-black flex items-center justify-center text-[#fde047] font-black text-[11px] shadow-[2px_2px_0_0_#000] shrink-0 overflow-hidden border-2 border-black">
               {user.photo ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
               ) : getInitials(user.name)}
             </div>
             <div className="flex flex-col min-w-0 leading-tight">
-              <span className="text-[13px] font-extrabold text-gray-700 truncate mb-0.5">{user.name}</span>
-              <span className="text-[11px] text-gray-400 font-medium truncate">@{user.username}</span>
+              <span className="text-[13px] font-black text-black truncate mb-0.5 uppercase tracking-tighter">{user.name}</span>
+              <span className="text-[11px] text-black/40 font-bold truncate">@{user.username}</span>
             </div>
           </div>
         );
@@ -187,12 +187,12 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
       cell: (info: any) => {
         const role = info.getValue() as string;
         return (
-          <span className={`px-2.5 py-1 rounded-[8px] text-[10px] font-black uppercase tracking-tight inline-flex items-center gap-1.5 leading-none ${
+          <span className={`px-2.5 py-1 rounded-none text-[10px] font-black uppercase tracking-tight inline-flex items-center gap-1.5 leading-none border-2 border-black shadow-[2px_2px_0_0_#000] ${
             role === 'Super Admin' 
-              ? 'bg-purple-50 text-purple-600 border border-purple-100/50' 
-              : 'bg-indigo-50 text-indigo-600 border border-indigo-100/50'
+              ? 'bg-black text-[#fde047]' 
+              : 'bg-[#fde047] text-black'
           }`}>
-            {role === 'Super Admin' ? <ShieldCheck size={10} /> : <UserCog size={10} />}
+            {role === 'Super Admin' ? <ShieldCheck size={12} strokeWidth={3} /> : <UserCog size={12} strokeWidth={3} />}
             {role}
           </span>
         );
@@ -206,21 +206,21 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
       cell: (info: any) => {
         const user = info.row.original as User;
         return (
-          <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 group-[.is-selected]:opacity-100 transition-opacity">
+          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 group-[.is-selected]:opacity-100 transition-opacity">
             <button 
               onClick={(e) => { e.stopPropagation(); handleEdit(user); }}
-              className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-[8px] transition-all"
+              className="p-1.5 text-black hover:bg-[#fde047] border-2 border-transparent hover:border-black rounded-none transition-all"
               title="Edit User"
             >
-              <Edit2 size={15} />
+              <Edit2 size={16} strokeWidth={3} />
             </button>
             {user.id !== currentUserId && (
               <button 
                 onClick={(e) => { e.stopPropagation(); handleDelete(user.id, user.username); }}
-                className="p-1.5 text-red-400 hover:bg-red-50 rounded-[8px] transition-all"
+                className="p-1.5 text-black hover:bg-[#ff5e5e] hover:text-white border-2 border-transparent hover:border-black rounded-none transition-all"
                 title="Hapus User"
               >
-                <Trash2 size={15} />
+                <Trash2 size={16} strokeWidth={3} />
               </button>
             )}
           </div>
@@ -279,26 +279,26 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
     <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
       {/* Top Controls Row */}
       <div className="shrink-0 flex items-center justify-between gap-4 z-50">
-        <div className="flex-1 max-w-[250px] relative role-dropdown-container z-50">
+        <div className="flex-1 max-w-[280px] relative role-dropdown-container z-50">
           <button
             onClick={() => setIsRoleDropdownOpen(prev => !prev)}
-            className="w-full h-[52px] pl-10 pr-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-sm font-semibold text-gray-700 shadow-sm flex items-center justify-between"
+            className="w-full h-[52px] pl-10 pr-10 bg-white border-[3px] border-black rounded-none focus:outline-none transition-all text-[13px] font-black text-black shadow-[4px_4px_0_0_#000] flex items-center justify-between uppercase tracking-tighter hover:-translate-y-[1px] hover:-translate-x-[1px] hover:shadow-[6px_6px_0_0_#000]"
           >
-            <span className="truncate">{roleFilter === 'Semua Jabatan' ? 'Semua Role' : roleFilter}</span>
-            <div className="absolute top-1/2 -translate-y-1/2 left-3 pointer-events-none text-gray-400">
-              <Users size={16} />
+            <span className="truncate">{roleFilter === 'Semua Jabatan' ? 'Filter Jabatan' : roleFilter}</span>
+            <div className="absolute top-1/2 -translate-y-1/2 left-3.5 pointer-events-none text-black">
+              <Users size={18} strokeWidth={3} />
             </div>
-            <div className="absolute top-1/2 -translate-y-1/2 right-3 pointer-events-none text-gray-400">
-              <ChevronDown size={16} className={`transition-transform duration-200 ${isRoleDropdownOpen ? 'rotate-180' : ''}`} />
+            <div className="absolute top-1/2 -translate-y-1/2 right-3.5 pointer-events-none text-black">
+              <ChevronDown size={18} strokeWidth={3} className={`transition-transform duration-200 ${isRoleDropdownOpen ? 'rotate-180' : ''}`} />
             </div>
           </button>
 
           {isRoleDropdownOpen && (
-            <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-gray-100 rounded-[8px] shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[300px]">
-              <div className="px-3 pb-2 shrink-0 border-b border-gray-50 mb-1">
+            <div className="absolute top-[calc(100%+10px)] left-0 w-full bg-white border-[3px] border-black rounded-none shadow-[8px_8px_0_0_#000] py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[350px]">
+              <div className="px-3 pb-2 shrink-0 border-b-[2px] border-black/10 mb-2">
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400">
-                    <Search size={14} />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-black/40">
+                    <Search size={14} strokeWidth={3} />
                   </div>
                   <input
                     type="text"
@@ -306,11 +306,11 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
                     placeholder="Cari role..."
                     value={roleSearchQuery}
                     onChange={(e) => setRoleSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-green-500/20 rounded-[6px] placeholder:text-gray-400 font-medium"
+                    className="w-full pl-9 pr-3 py-2 text-[12px] bg-black/5 border-none focus:outline-none rounded-none placeholder:text-black/30 font-black uppercase tracking-tighter"
                   />
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto px-1.5 scrollbar-thin">
+              <div className="flex-1 overflow-y-auto px-2 custom-scrollbar">
                 {['Semua Jabatan', ...customRoles]
                   .filter(r => r.toLowerCase().includes(roleSearchQuery.toLowerCase()))
                   .map(role => (
@@ -321,20 +321,15 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
                         setIsRoleDropdownOpen(false);
                         setRoleSearchQuery('');
                       }}
-                      className={`w-full text-left px-3 py-2 text-sm font-medium rounded-md transition-colors truncate ${
+                      className={`w-full text-left px-3 py-2.5 text-[12px] font-black rounded-none transition-all uppercase tracking-tighter mb-1 ${
                         roleFilter === role 
-                          ? 'bg-green-50 text-green-700' 
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                          ? 'bg-black text-[#fde047]' 
+                          : 'text-black hover:bg-[#fde047]'
                       }`}
                     >
-                      {role === 'Semua Jabatan' ? 'Semua Role' : role}
+                      {role === 'Semua Jabatan' ? 'Semua Jabatan' : role}
                     </button>
                   ))}
-                  {['Semua Jabatan', ...customRoles].filter(r => r.toLowerCase().includes(roleSearchQuery.toLowerCase())).length === 0 && (
-                    <div className="px-3 py-4 text-center text-xs text-gray-400 font-medium">
-                      Pencarian tidak ditemukan.
-                    </div>
-                  )}
               </div>
             </div>
           )}
@@ -342,10 +337,10 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
 
         <button 
           onClick={handleCreate}
-          className="px-6 h-[52px] bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-[8px] transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-green-600/10 active:scale-95 whitespace-nowrap"
+          className="px-8 h-[52px] bg-[#fde047] hover:bg-black hover:text-[#fde047] text-black text-[13px] font-black rounded-none transition-all flex items-center justify-center gap-3 shadow-[6px_6px_0_0_#000] hover:shadow-[8px_8px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[3px] active:translate-x-[3px] active:shadow-none border-[3px] border-black uppercase tracking-widest"
         >
-          <Plus size={20} />
-          <span className="hidden sm:inline">Tambah User Baru</span>
+          <Plus size={22} strokeWidth={4} />
+          <span className="hidden sm:inline">Tambah Akun Baru</span>
           <span className="sm:hidden">Tambah</span>
         </button>
       </div>
@@ -354,35 +349,35 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
       <div className="shrink-0 relative group">
         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
           {isSearching || isPending ? (
-            <RefreshCw size={18} className="text-green-500 animate-spin" />
+            <RefreshCw size={18} className="text-black animate-spin" strokeWidth={3} />
           ) : (
-            <Search size={18} className="text-gray-400 group-focus-within:text-green-500 transition-colors" />
+            <Search size={18} className="text-black/30 group-focus-within:text-black transition-colors" strokeWidth={3} />
           )}
         </div>
         <input 
           type="text" 
-          placeholder="Cari user berdasarkan nama lengkap atau username sistem..." 
-          className="w-full pl-12 pr-12 h-[56px] bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-sm font-semibold placeholder:text-gray-300 shadow-sm"
+          placeholder="CARI USER BERDASARKAN NAMA ATAU USERNAME..." 
+          className="w-full pl-12 pr-12 h-[56px] bg-white border-[3px] border-black rounded-none focus:outline-none transition-all text-[13px] font-black placeholder:text-black/20 shadow-[4px_4px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[6px_6px_0_0_#000] uppercase tracking-tighter"
           value={searchImmediate}
           onChange={(e) => setSearchImmediate(e.target.value)}
         />
         {searchImmediate && (
           <button 
             onClick={() => setSearchImmediate('')}
-            className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-gray-100 rounded-full text-gray-400 transition-colors"
+            className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-black hover:text-white transition-all text-black border-2 border-transparent hover:border-black"
           >
-            <X size={16} />
+            <X size={16} strokeWidth={3} />
           </button>
         )}
       </div>
 
       {message && (
-        <div className={`p-4 rounded-[8px] flex items-center gap-3 text-sm animate-in slide-in-from-top-2 border ${
-          message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'
+        <div className={`p-4 rounded-none flex items-center gap-4 text-sm animate-in slide-in-from-top-2 border-[3px] border-black shadow-[4px_4px_0_0_#000] ${
+          message.type === 'success' ? 'bg-[#fde047] text-black' : 'bg-[#ff5e5e] text-white'
         }`}>
-          {message.type === 'success' ? <BadgeCheck size={18} /> : <AlertCircle size={18} />}
-          <span className="font-bold">{message.text}</span>
-          <button onClick={() => setMessage(null)} className="ml-auto opacity-50 hover:opacity-100"><X size={16} /></button>
+          {message.type === 'success' ? <BadgeCheck size={20} strokeWidth={3} /> : <AlertCircle size={20} strokeWidth={3} />}
+          <span className="font-black uppercase tracking-tight">{message.text}</span>
+          <button onClick={() => setMessage(null)} className="ml-auto opacity-50 hover:opacity-100 transition-opacity"><X size={18} strokeWidth={3} /></button>
         </div>
       )}
 
@@ -430,29 +425,29 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
 
         {/* Footer Info Banner */}
         <div className="flex items-center justify-between px-1 shrink-0 mt-1">
-          <span className="text-[12px] leading-none font-bold text-gray-400">
+          <span className="text-[12px] leading-none font-black text-black/30 uppercase tracking-tighter">
             Menampilkan {filteredUsers.length} dari {users.length} total pengguna sistem
           </span>
           <div className="flex items-center gap-4">
             {selectedIds.size > 0 && (
               <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                <span className="text-[12px] leading-none font-bold text-gray-400">{selectedIds.size} dipilih</span>
+                <span className="text-[12px] leading-none font-black text-black/30 uppercase tracking-tighter">{selectedIds.size} dipilih</span>
                 <button 
                   onClick={() => setSelectedIds(new Set())}
-                  className="text-[12px] leading-none font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
+                  className="text-[12px] leading-none font-black text-[#ff5e5e] hover:text-black underline underline-offset-4 uppercase"
                 >
                   Batal
                 </button>
               </div>
             )}
             {loadTime !== null && (
-              <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
-                loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 
-                'bg-red-50 text-red-600 border-red-100'
+              <span className={`text-[10px] px-2 py-0.5 rounded-none font-black flex items-center gap-1.5 shadow-[2px_2px_0_0_#000] border-[2px] border-black uppercase tracking-tight ${
+                loadTime < 300 ? 'bg-[#93c5fd] text-black' : 
+                loadTime < 1000 ? 'bg-[#fde047] text-black' : 
+                'bg-[#ff5e5e] text-white'
               }`}>
                 <span className="animate-pulse">⚡</span>
-                <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
+                <span className="leading-none">{(loadTime / 1000).toFixed(2)}S</span>
               </span>
             )}
           </div>
