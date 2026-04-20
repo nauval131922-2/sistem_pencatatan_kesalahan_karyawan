@@ -1,29 +1,31 @@
-# AI Session Summary: Standardizing Scraper Metadata & Update Labels
+# AI Session Summary: Standardizing Documentation & UI Refinement (SOPd & Master Pekerjaan)
 
-## Objective
-Resolving "label drift" where the "Diperbarui" date range showed incorrect values (e.g., reverting to the 1st of the month) and standardizing the update timestamp formatting across all scraper modules to ensure consistent WIB (Asia/Jakarta) display.
+## Tanggal & Waktu Sesi
+20 April 2026 | 09:50 WIB
 
-## Key Changes
-1.  **Refined `formatLastUpdate` Utility**:
-    - Updated `src/lib/date-utils.ts` to be more robust.
-    - Explicitly forces `Asia/Jakarta` timezone for consistent display between server and client.
-    - Added fallback manual UTC+7 shift logic for environments where `Intl` behaves unexpectedly.
-    - Improved month name resolution to handle both numeric and locale-specific string outputs.
-2.  **Fixed Metadata Propagation**:
-    - Audited multiple scraper clients (`SalesOrderClient.tsx`, `RekapSalesOrderClient.tsx`, etc.).
-    - Fixed `SalesOrderClient.tsx` which was missing `metaStart` and `metaEnd` parameters.
-    - Ensured all batch scraping loops pass the full user-selected range to the backend.
-3.  **Standardized UI Labels**:
-    - Replaced disparate `toLocaleString` calls in `OrderProduksiClient.tsx`, `SyncClient.tsx`, and others with the unified `formatLastUpdate` helper.
-    - Manually triggered `lastUpdated` state updates after successful scrapes for better UI responsiveness.
+## Fitur & Perbaikan yang Dikerjakan
+1.  **Standardisasi Manual Modal**:
+    - Menambahkan panduan lengkap untuk **SOPd** dan **Master Pekerjaan** di `src/components/ManualModal.tsx`.
+    - Menyelaraskan label manual dengan implementasi UI terbaru (misal: **Klik 2x** untuk edit).
+2.  **Penyempurnaan UI/UX SOPd**:
+    - Menghapus terminologi "Sisa" pada header dan kartu upload sesuai permintaan user.
+    - Memperbarui deskripsi kartu upload menjadi lebih profesional dan tidak destruktif.
+3.  **Penyempurnaan UI/UX Master Pekerjaan**:
+    - Memperbarui deskripsi header untuk mencakup "pencatatan target dan realisasi".
+    - Menyederhanakan kartu upload dengan menghapus referensi file spesifik agar lebih fleksibel.
+4.  **Date Utility Refinement**:
+    - Memperkuat `formatLastUpdate` di `src/lib/date-utils.ts` untuk konsistensi zona waktu WIB.
+5.  **Metadata Scraper Standardization**:
+    - Memastikan parameter `metaStart` dan `metaEnd` diteruskan di semua modul scraper untuk menghindari "label drift" pada keterangan diperbarui.
 
-## Technical Context
-- **Issue**: The system uses monthly chunking. If metadata isn't explicitly passed, the backend only knows the current chunk's date, causing the UI label to reset to the start of the month.
-- **Solution**: Explicitly propagation of `metaStart` and `metaEnd` throughout the scraping lifecycle (Client -> API -> Database -> UI).
+## Keputusan Teknis Penting
+- **Pemisahan Logika Data & Metadata**: Menghapus detail teknis seperti nama sheet Excel dari manual pengguna agar dokumentasi tetap relevan meskipun ada perubahan minor di file Excel.
+- **Tone of Voice**: Mengubah pesan destruktif ("Data akan dihapus") menjadi informatif ("Sistem akan memperbarui...") untuk meningkatkan kepercayaan pengguna.
 
-## Deliverables
-- **Tutorial**: Created `scraper_metadata_standardization.md` artifact with step-by-step instructions for implementing this pattern in future modules.
+## Deliverables & Tutorials
+- **Tutorial 15**: `15_standardisasi_manual_modal_dan_sopd.md` (Panduan menyelaraskan manual dengan UI).
+- **Tutorial 16**: `16_standardisasi_metadata_scraper.md` (Panduan penanganan label "Diperbarui" agar tidak bergeser).
 
-## Next Steps
-- **Monitoring**: Verify in production if the "Diperbarui" label accurately reflects the full requested date range after a fresh scrape.
-- **Global Sync**: Continue using the standardized pattern for any new data-centric modules.
+## Hal yang Belum Selesai / Perlu Dilanjutkan
+- **Audit Manual Lainnya**: Masih ada beberapa menu di `ManualModal.tsx` yang perlu diaudit labelnya (seperti PR, PO, dan BBB Produksi) untuk memastikan konsistensi 100% dengan UI terbaru.
+- **Testing Metadata di Prod**: Memastikan label range tanggal tetap konsisten di lingkungan produksi setelah proses scrape berjalan.

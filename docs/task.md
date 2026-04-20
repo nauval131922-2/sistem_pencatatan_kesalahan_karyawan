@@ -58,6 +58,11 @@
     - [x] Fix Timezone "Terakhir Diperbarui" (WIB Force) di SOPd & Master Pekerjaan
     - [x] Sinkronisasi format tanggal server-side di Seluruh Modul Data
     - [x] Penanganan timezone eksplisit pada Server Actions (Pencatatan Kesalahan)
+- [x] **Standardisasi Dokumentasi & Manual (SOPd & Master Pekerjaan)**
+    - [x] Sinkronisasi Manual SOPd (Inline Edit & Terminology)
+    - [x] Sinkronisasi Manual Master Pekerjaan (Filters & Integration)
+    - [x] Perbaikan Copywriting UI (Professional Tone, Non-destructive)
+    - [x] Pembuatan Tutorial 15 & 16 (Manual Modal & Metadata Scraper)
 
 - [ ] **Next Steps**
     - [ ] Penambahan fitur ekspor data ke format JSON (Arsip Digital)
