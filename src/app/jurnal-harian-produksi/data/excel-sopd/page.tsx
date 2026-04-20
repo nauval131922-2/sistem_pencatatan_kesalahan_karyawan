@@ -23,14 +23,7 @@ export default async function SopdPage() {
     try {
       const raw = JSON.parse(lastImport.raw_data as string);
       importFileName = raw.fileName || "";
-
-      let dateString = lastImport.created_at as string;
-      if (!dateString.includes("T")) dateString = dateString.replace(" ", "T");
-      if (!dateString.endsWith("Z")) dateString += "Z";
-
-      const d = new Date(dateString);
-
-      importTime = formatLastUpdate(d);
+      importTime = formatLastUpdate(lastImport.created_at as string);
     } catch (e) {
       console.warn("Failed to parse SOPD import metadata");
     }
