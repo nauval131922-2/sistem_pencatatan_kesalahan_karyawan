@@ -1,32 +1,99 @@
-# Instruksi Commit & Push (Prompt Template)
-
-Gunakan prompt ini jika Anda ingin saya melakukan commit dan push semua perubahan yang telah kita buat ke GitHub:
+Tolong lakukan commit dan push semua perubahan terbaru. Ikuti langkah-langkah berikut secara berurutan:
 
 ---
 
-**Prompt:**
-**Tutorial Mandiri**: Jika selama sesi ini (lihat berdasarkan Changes di Source Control) ada perbaikan bug atau penambahan fitur atau perubahan atau penambahan apapun, buatkan/perbarui dokumentasi tutorial *step-by-step* (boleh lebih dari 1 file, tergantung perbaikan bug atau penambahan fitur atau perubahan atau penambahan), agar saya bisa melakukannya secara mandiri di lain waktu.
-"Tolong lakukan commit dan push semua perubahan terbaru. Pastikan:
-1. Kelompokkan commit berdasarkan fitur atau perbaikan (jangan digabung semua jadi satu).
-2. Tulis pesan commit yang deskriptif dalam bahasa Indonesia.
-3. Periksa `.gitignore` agar tidak ada file sampah atau database yang ikut ter-push.
-4. **PENTING**: Periksa pola `.gitignore` yang terlalu serakah (seperti tanda bintang `*`). Pastikan file penting (seperti `.md`) tidak terabaikan secara tidak sengaja seperti kasus sebelumnya.
-5. **Sinkronisasi AI**: Sebelum mengakhiri sesi, minta AI membuat ringkasan status di `docs/AI_SESSION_SUMMARY.md` atau perbarui `task.md` agar progres bisa dilanjutkan di perangkat lain (Rumah/Kantor).
-6. Jangan lupa commit file AI_SESSION_SUMMARY.md dan file-file tutorial yang baru dibuat/diperbarui.
-7. Lakukan push ke branch master."
+### 🗂️ LANGKAH 1 — Pastikan Struktur Dokumentasi
+Pastikan struktur folder dokumentasi berikut sudah ada, buat jika belum:
+docs/
+├── AI_SESSION_SUMMARY.md   # Ringkasan & status sesi terakhir
+├── task.md                 # Backlog, in-progress, done
+└── tutorials/
+    ├── 01-setup.md
+    ├── 02-fitur-[nama].md
+    └── ...                 # Satu file per fitur/perbaikan
 
 ---
 
-## Cara Melanjutkan Sesi di PC Lain (Rumah/Kantor)
-
-Saat Anda berpindah PC dan membuka chat baru, gunakan prompt ini agar saya langsung paham konteks terakhir:
-
-**Prompt:**
-"Saya baru pindah PC. Tolong lakukan `git pull` terlebih dahulu, lalu baca `docs/AI_SESSION_SUMMARY.md` dan `docs/task.md` (jika ada) untuk memahami progres terakhir, lalu tunjukkan ke saya."
+### 📝 LANGKAH 2 — Buat/Perbarui Dokumentasi Tutorial Mandiri
+Berdasarkan semua perubahan di sesi ini (lihat Changes di Source Control),
+buatkan atau perbarui file tutorial step-by-step di dalam `docs/tutorials/`.
+Satu file per fitur atau perbaikan, dengan penamaan:
+  - `01-nama-fitur.md`, `02-nama-fitur.md`, dst.
 
 ---
 
-## Ringkasan Perubahan Sesi Ini
-- **Optimasi Performa**: Upload data karyawan lebih cepat, penanganan timeout SQLite, dan penyederhanaan log aktivitas.
-- **Perbaikan Bug & UI**: Sinkronisasi HPP Kalkulasi, perbaikan logic HPP vs Barang Jadi, dan sticky sidebar.
-- **Fitur Baru**: Total keseluruhan di laporan PDF, script migrasi saldo 2025, dan dokumentasi operasional/database.
+### 🔍 LANGKAH 3 — Audit .gitignore
+Periksa file `.gitignore`:
+- Pastikan tidak ada file sampah, cache, log, atau database yang ikut ter-push.
+- Periksa pola yang terlalu luas seperti wildcard `*` atau ekstensi terlalu
+  umum yang bisa secara tidak sengaja mengabaikan file penting seperti
+  `.md`, `.env.example`, atau file konfigurasi lainnya.
+- Jika ada masalah, perbaiki dan jelaskan perubahannya ke saya.
+
+---
+
+### 👥 LANGKAH 4 — Tanya Dulu Sebelum Push
+Sebelum melanjutkan, **tanyakan ke saya**:
+"Apakah kamu sedang bekerja sendiri atau dalam tim?"
+  - Jika **sendiri** → push langsung ke branch `master` (atau branch aktif saat ini).
+  - Jika **tim** → push ke branch `dev` atau branch fitur, JANGAN langsung ke `master`.
+Tunggu jawaban saya sebelum melanjutkan ke langkah berikutnya.
+
+---
+
+### ✅ LANGKAH 5 — Review Sebelum Commit
+Jalankan perintah berikut dan tampilkan hasilnya ke saya:
+  git status
+  git diff --staged
+Tinjau output-nya bersama saya:
+- Pastikan tidak ada file yang tidak sengaja ikut ter-staged.
+- Pastikan tidak ada file penting yang terlewat (belum di-staged).
+- Jika ada yang perlu diperbaiki, lakukan dulu sebelum commit.
+
+---
+
+### 📦 LANGKAH 6 — Kelompokkan & Commit
+Kelompokkan perubahan berdasarkan fitur atau perbaikan (jangan digabung jadi satu).
+Gunakan format Conventional Commits untuk setiap pesan commit:
+
+  Tipe yang tersedia:
+  - feat     → fitur baru
+  - fix      → perbaikan bug
+  - docs     → perubahan dokumentasi
+  - refactor → refaktor kode tanpa mengubah fungsi
+  - chore    → tugas maintenance (update dependency, konfigurasi, dll)
+  - test     → menambah atau memperbaiki test
+  - style    → perubahan formatting/style (tidak mengubah logika)
+
+  Format: <tipe>: <deskripsi singkat dalam bahasa Indonesia>
+
+  Contoh:
+  - feat: tambah fitur login dengan Google OAuth
+  - fix: perbaiki bug validasi form registrasi
+  - docs: perbarui README dan tutorial onboarding
+  - refactor: sederhanakan logika kalkulasi harga
+  - chore: update versi dependency axios dan tailwind
+
+---
+
+### 📋 LANGKAH 7 — Perbarui Ringkasan Sesi AI
+Buat atau perbarui file berikut:
+  - `docs/AI_SESSION_SUMMARY.md` → ringkasan lengkap sesi ini:
+      * Tanggal & waktu sesi
+      * Fitur/perbaikan yang dikerjakan
+      * Keputusan teknis penting yang diambil
+      * Hal yang belum selesai / perlu dilanjutkan
+  - `docs/task.md` → perbarui status task:
+      * ✅ Selesai
+      * 🔄 Sedang berjalan
+      * 📌 Akan datang / backlog
+
+---
+
+### 🚀 LANGKAH 8 — Commit Dokumentasi & Push
+Commit semua file dokumentasi (AI_SESSION_SUMMARY.md, task.md, semua
+tutorial baru/diperbarui) dengan pesan:
+  docs: perbarui ringkasan sesi dan dokumentasi tutorial
+
+Kemudian push sesuai keputusan di Langkah 4.
+Tampilkan konfirmasi hasil push ke saya.

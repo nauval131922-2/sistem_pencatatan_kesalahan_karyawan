@@ -1,30 +1,29 @@
-# AI Session Summary - 20 April 2026
+# AI Session Summary: Standardizing Scraper Metadata & Update Labels
 
-## Konteks Terakhir
-Sesi ini berfokus pada perbaikan masalah zona waktu (timezone) dan format tanggal "Terakhir Diperbarui" pada halaman SOPd dan Master Pekerjaan di lingkungan produksi.
+## Objective
+Resolving "label drift" where the "Diperbarui" date range showed incorrect values (e.g., reverting to the 1st of the month) and standardizing the update timestamp formatting across all scraper modules to ensure consistent WIB (Asia/Jakarta) display.
 
-## Progres & Perubahan Utama
+## Key Changes
+1.  **Refined `formatLastUpdate` Utility**:
+    - Updated `src/lib/date-utils.ts` to be more robust.
+    - Explicitly forces `Asia/Jakarta` timezone for consistent display between server and client.
+    - Added fallback manual UTC+7 shift logic for environments where `Intl` behaves unexpectedly.
+    - Improved month name resolution to handle both numeric and locale-specific string outputs.
+2.  **Fixed Metadata Propagation**:
+    - Audited multiple scraper clients (`SalesOrderClient.tsx`, `RekapSalesOrderClient.tsx`, etc.).
+    - Fixed `SalesOrderClient.tsx` which was missing `metaStart` and `metaEnd` parameters.
+    - Ensured all batch scraping loops pass the full user-selected range to the backend.
+3.  **Standardized UI Labels**:
+    - Replaced disparate `toLocaleString` calls in `OrderProduksiClient.tsx`, `SyncClient.tsx`, and others with the unified `formatLastUpdate` helper.
+    - Manually triggered `lastUpdated` state updates after successful scrapes for better UI responsiveness.
 
-### 1. Perbaikan Timezone & Format Tanggal
-- **Masalah**: Waktu pembaruan meleset karena perbedaan zona waktu server (UTC) dan lokal (WIB).
-- **Solusi**: 
-    - Memperbarui `src/lib/date-utils.ts` (fungsi `formatLastUpdate`) untuk memaksa format menggunakan zona waktu `Asia/Jakarta`.
-    - Menggunakan `Intl.DateTimeFormat` untuk mendapatkan komponen tanggal/waktu yang akurat dari objek `Date` tanpa terpengaruh zona waktu lingkungan eksekusi (server/client).
-    - Menyederhanakan parsing tanggal di semua `page.tsx` terkait (Master Pekerjaan, SOPd, HPP Kalkulasi, Karyawan).
-- **Dampak**: Waktu "Diperbarui" sekarang konsisten 100% di WIB baik saat di-render oleh server (SSR) maupun saat hidrasi di browser pengguna.
+## Technical Context
+- **Issue**: The system uses monthly chunking. If metadata isn't explicitly passed, the backend only knows the current chunk's date, causing the UI label to reset to the start of the month.
+- **Solution**: Explicitly propagation of `metaStart` and `metaEnd` throughout the scraping lifecycle (Client -> API -> Database -> UI).
 
-### 2. Perbaikan Konsistensi Waktu di Server Actions
-- **Modul**: `src/lib/actions.ts` (fungsi `addInfraction`).
-- **Perubahan**: Penambahan waktu saat ini pada pencatatan kesalahan (infraction) sekarang menggunakan zona waktu `Asia/Jakarta` secara eksplisit, mencegah pergeseran tanggal jika server berjalan dalam UTC.
+## Deliverables
+- **Tutorial**: Created `scraper_metadata_standardization.md` artifact with step-by-step instructions for implementing this pattern in future modules.
 
-## Status Task (`task.md`)
-- [x] Perbaikan bug timezone tanggal diperbarui (Master Pekerjaan & SOPd).
-- [x] Standarisasi fungsi `formatLastUpdate` di seluruh aplikasi.
-- [x] Update dokumentasi tutorial perbaikan timezone.
-
-## Dokumentasi Baru
-- `docs/tutorials/14_perbaikan_timezone_dan_format_tanggal.md`: Panduan teknis penanganan zona waktu di aplikasi SINTAK.
-
-## Catatan untuk Sesi Berikutnya
-- Semua fungsi pemformatan tanggal yang melibatkan jam sebaiknya menggunakan `formatLastUpdate` atau mengikuti pola `Intl.DateTimeFormat` dengan `timeZone: 'Asia/Jakarta'`.
-- Struktur parsing tanggal di `page.tsx` sudah sangat bersih, cukup panggil `formatLastUpdate(lastImport.created_at)`.
+## Next Steps
+- **Monitoring**: Verify in production if the "Diperbarui" label accurately reflects the full requested date range after a fresh scrape.
+- **Global Sync**: Continue using the standardized pattern for any new data-centric modules.
