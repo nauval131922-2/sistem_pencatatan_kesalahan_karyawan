@@ -62,6 +62,10 @@ export async function GET(request: NextRequest) {
     const startStr = formatDate(startDate);
     const endStr = formatDate(endDate);
     
+    // Support custom metadata period (useful for chunked requests)
+    const metaStart = searchParams.get("metaStart") || startStr;
+    const metaEnd = searchParams.get("metaEnd") || endStr;
+    
     const reqData = {
       limit: 10000,
       offset: 0,
@@ -168,11 +172,11 @@ export async function GET(request: NextRequest) {
           VALUES (?, ?, CURRENT_TIMESTAMP)
           ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
         `,
-        args: [getScrapedPeriodSettingKey('last_scrape_sph_in'), encodeScrapedPeriod({ start: startStr, end: endStr })]
+        args: [getScrapedPeriodSettingKey('last_scrape_sph_in'), encodeScrapedPeriod({ start: metaStart, end: metaEnd })]
       }
     ], "write");
 
-    return NextResponse.json({ success: true, total: allRecords.length, lastUpdated, scrapedPeriod: { start: startStr, end: endStr } });
+    return NextResponse.json({ success: true, total: allRecords.length, lastUpdated, scrapedPeriod: { start: metaStart, end: metaEnd } });
 
   } catch (error: any) {
     console.error("Scrape SPH In Error:", error);

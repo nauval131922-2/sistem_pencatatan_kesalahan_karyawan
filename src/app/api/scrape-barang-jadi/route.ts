@@ -66,6 +66,10 @@ export async function GET(request: NextRequest) {
 
     const startStr = formatDate(startDate);
     const endStr = formatDate(endDate);
+
+    // Support custom metadata period (useful for chunked requests)
+    const metaStart = searchParams.get("metaStart") || startStr;
+    const metaEnd = searchParams.get("metaEnd") || endStr;
     
     const reqData = {
       limit: 10000,
@@ -231,7 +235,7 @@ export async function GET(request: NextRequest) {
           VALUES (?, ?, CURRENT_TIMESTAMP)
           ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
         `,
-        args: [getScrapedPeriodSettingKey('last_scrape_barang_jadi'), encodeScrapedPeriod({ start: startStr, end: endStr })]
+        args: [getScrapedPeriodSettingKey('last_scrape_barang_jadi'), encodeScrapedPeriod({ start: metaStart, end: metaEnd })]
       }
     ];
 
@@ -243,7 +247,7 @@ export async function GET(request: NextRequest) {
       newly_inserted: 0,
       data: finalRecords,
       lastUpdated,
-      scrapedPeriod: { start: startStr, end: endStr }
+      scrapedPeriod: { start: metaStart, end: metaEnd }
     }, {
       headers: { "Cache-Control": "no-store, max-age=0" }
     });

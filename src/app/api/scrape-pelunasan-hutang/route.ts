@@ -32,6 +32,10 @@ export async function GET(req: NextRequest) {
     const startIndo = formatDate(startDate);
     const endIndo = formatDate(endDate);
 
+    // Support custom metadata period (useful for chunked requests)
+    const metaStart = searchParams.get("metaStart") || startIndo;
+    const metaEnd = searchParams.get("metaEnd") || endIndo;
+
     let cookies = await getScraperSession(async () => {
       const loginRes = await fetch(BASE_URL + "v1/auth/login", {
         method: "POST",
@@ -156,7 +160,7 @@ export async function GET(req: NextRequest) {
       },
       {
         sql: "INSERT INTO system_settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP",
-        args: [getScrapedPeriodSettingKey('last_scrape_pelunasan_hutang'), encodeScrapedPeriod({ start: startIndo, end: endIndo })]
+        args: [getScrapedPeriodSettingKey('last_scrape_pelunasan_hutang'), encodeScrapedPeriod({ start: metaStart, end: metaEnd })]
       }
     ], "write");
 
@@ -164,7 +168,7 @@ export async function GET(req: NextRequest) {
       success: true,
       total: filteredRows.length,
       lastUpdated,
-      scrapedPeriod: { start: startIndo, end: endIndo }
+      scrapedPeriod: { start: metaStart, end: metaEnd }
     });
   } catch (err: any) {
     console.error("Scrape Pelunasan Hutang Error:", err);

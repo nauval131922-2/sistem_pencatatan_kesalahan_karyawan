@@ -57,6 +57,10 @@ export async function GET(req: NextRequest) {
     const startStr = formatIndoDate(startDate);
     const endStr = formatIndoDate(endDate);
 
+    // Support custom metadata period (useful for chunked requests)
+    const metaStart = searchParams.get("metaStart") || startStr;
+    const metaEnd = searchParams.get("metaEnd") || endStr;
+
     const payload = {
       limit: 5000,
       offset: 0,
@@ -172,7 +176,7 @@ export async function GET(req: NextRequest) {
           VALUES (?, ?, CURRENT_TIMESTAMP)
           ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
         `,
-        args: [getScrapedPeriodSettingKey('last_scrape_sales_orders'), encodeScrapedPeriod({ start: startStr, end: endStr })]
+        args: [getScrapedPeriodSettingKey('last_scrape_sales_orders'), encodeScrapedPeriod({ start: metaStart, end: metaEnd })]
       }
     ], "write");
 
@@ -180,7 +184,7 @@ export async function GET(req: NextRequest) {
       success: true, 
       total: finalRecords.length,
       lastUpdated,
-      scrapedPeriod: { start: startStr, end: endStr }
+      scrapedPeriod: { start: metaStart, end: metaEnd }
     });
 
   } catch (error: any) {
