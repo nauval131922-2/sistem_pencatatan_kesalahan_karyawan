@@ -2,12 +2,12 @@ import React from 'react';
 
 export function CardSkeleton() {
   return (
-    <div className="bg-white border border-gray-100 p-5 rounded-[8px] shadow-sm animate-pulse">
+    <div className="bg-white border-[3px] border-black/30 p-5 rounded-none shadow-[4px_4px_0_0_rgba(0,0,0,0.15)] animate-pulse">
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-gray-100 rounded-[8px] shrink-0"></div>
+        <div className="w-12 h-12 bg-[#fde047]/50 border-[2px] border-black/20 rounded-none shrink-0"></div>
         <div className="flex flex-col gap-2 flex-1">
-          <div className="h-3 w-20 bg-gray-100 rounded"></div>
-          <div className="h-8 w-16 bg-gray-100 rounded"></div>
+          <div className="h-3 w-20 bg-black/10 rounded-none"></div>
+          <div className="h-8 w-16 bg-black/15 rounded-none"></div>
         </div>
       </div>
     </div>
@@ -16,31 +16,31 @@ export function CardSkeleton() {
 
 export function ChartSkeleton({ height = "400px" }: { height?: string }) {
   return (
-    <div className={`bg-white border border-gray-100 p-6 rounded-[8px] shadow-sm animate-pulse flex flex-col`} style={{ minHeight: height }}>
+    <div className={`bg-white border-[3px] border-black/30 p-6 rounded-none shadow-[4px_4px_0_0_rgba(0,0,0,0.15)] animate-pulse flex flex-col`} style={{ minHeight: height }}>
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gray-100 rounded-[8px]"></div>
+          <div className="w-10 h-10 bg-[#fde047]/50 border-[2px] border-black/20 rounded-none"></div>
           <div className="flex flex-col gap-2">
-            <div className="h-4 w-32 bg-gray-100 rounded"></div>
-            <div className="h-3 w-48 bg-gray-50 rounded"></div>
+            <div className="h-4 w-32 bg-black/15 rounded-none"></div>
+            <div className="h-3 w-48 bg-black/8 rounded-none"></div>
           </div>
         </div>
       </div>
-      <div className="flex-1 w-full bg-gray-50/50 rounded-[8px] border border-dashed border-gray-100"></div>
+      <div className="flex-1 w-full bg-[#fde047]/20 rounded-none border-[2px] border-dashed border-black/20"></div>
     </div>
   );
 }
 
 export function InsightSkeleton() {
   return (
-    <div className="bg-gray-100 border border-gray-100 p-8 rounded-3xl animate-pulse flex flex-col items-center text-center justify-center min-h-[400px]">
-      <div className="w-16 h-16 bg-white/50 rounded-[8px] mb-6"></div>
-      <div className="h-6 w-48 bg-white/50 rounded-[8px] mb-4"></div>
-      <div className="h-4 w-64 bg-white/30 rounded-md mb-2"></div>
-      <div className="h-4 w-56 bg-white/30 rounded-md mb-8"></div>
+    <div className="bg-[#fde047]/30 border-[3px] border-black/30 p-8 rounded-none animate-pulse flex flex-col items-center text-center justify-center min-h-[400px]">
+      <div className="w-16 h-16 bg-white/70 border-[2px] border-black/20 rounded-none mb-6"></div>
+      <div className="h-6 w-48 bg-black/15 rounded-none mb-4"></div>
+      <div className="h-4 w-64 bg-black/10 rounded-none mb-2"></div>
+      <div className="h-4 w-56 bg-black/10 rounded-none mb-8"></div>
       <div className="flex gap-2">
-        <div className="h-8 w-24 bg-white/40 rounded-[8px]"></div>
-        <div className="h-8 w-24 bg-white/40 rounded-[8px]"></div>
+        <div className="h-8 w-24 bg-white/60 border-[2px] border-black/20 rounded-none"></div>
+        <div className="h-8 w-24 bg-white/60 border-[2px] border-black/20 rounded-none"></div>
       </div>
     </div>
   );
@@ -48,19 +48,19 @@ export function InsightSkeleton() {
 
 export function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="bg-white border border-gray-100 rounded-[8px] shadow-sm overflow-hidden animate-pulse">
-      <div className="h-12 bg-gray-50 border-b border-gray-100"></div>
-      <div className="p-4 space-y-4">
+    <div className="bg-white border-[3px] border-black/30 rounded-none shadow-[4px_4px_0_0_rgba(0,0,0,0.15)] overflow-hidden animate-pulse">
+      <div className="h-12 bg-[#fde047]/40 border-b-[3px] border-black/20"></div>
+      <div className="p-4 space-y-3">
         {[...Array(rows)].map((_, i) => (
-          <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+          <div key={i} className="flex items-center justify-between py-2 border-b-[2px] border-black/10 last:border-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-100 rounded-[8px]"></div>
+              <div className="w-10 h-10 bg-black/10 rounded-none border-[2px] border-black/15"></div>
               <div className="flex flex-col gap-2">
-                <div className="h-4 w-32 bg-gray-100 rounded"></div>
-                <div className="h-3 w-20 bg-gray-50 rounded"></div>
+                <div className="h-4 w-32 bg-black/15 rounded-none"></div>
+                <div className="h-3 w-20 bg-black/8 rounded-none"></div>
               </div>
             </div>
-            <div className="h-6 w-12 bg-gray-100 rounded-full"></div>
+            <div className="h-6 w-12 bg-[#fde047]/50 border-[2px] border-black/20 rounded-none"></div>
           </div>
         ))}
       </div>

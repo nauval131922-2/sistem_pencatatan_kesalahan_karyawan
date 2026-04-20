@@ -12,32 +12,22 @@ export default function Loading() {
       
       <div className="flex-1 flex flex-col gap-6 pb-10 overflow-y-auto custom-scrollbar">
         {/* Year Selector Skeleton */}
-        <div className="shrink-0 h-[72px] bg-white border border-gray-100 rounded-[8px] animate-pulse"></div>
+        <div className="shrink-0 h-[75px] bg-white border-[3px] border-black rounded-none shadow-[4px_4px_0_0_#000] opacity-30 animate-pulse"></div>
 
-        {/* Cards Skeleton */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <CardSkeleton />
-          <CardSkeleton />
-          <CardSkeleton />
-          <CardSkeleton />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <ChartSkeleton height="400px" />
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
+          {/* Main Chart Skeleton */}
+          <div className="lg:col-span-3">
+            <ChartSkeleton height="500px" />
           </div>
+          {/* Pie Chart Skeleton */}
           <div className="lg:col-span-1">
             <ChartSkeleton height="400px" />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <InsightSkeleton />
-          </div>
-          <div className="lg:col-span-2">
-            <TableSkeleton rows={5} />
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <TableSkeleton rows={6} />
+          <InsightSkeleton />
         </div>
       </div>
     </div>

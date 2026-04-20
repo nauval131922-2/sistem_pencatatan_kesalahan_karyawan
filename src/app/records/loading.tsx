@@ -3,24 +3,24 @@ import { Loader2 } from 'lucide-react';
 export default function Loading() {
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden animate-pulse">
-      <header className="flex flex-col shrink-0 mb-2">
-        <div className="h-8 w-64 bg-black/20 rounded-none mb-2"></div>
-        <div className="h-4 w-96 bg-black/10 rounded-none ml-2"></div>
+      <header className="flex flex-col shrink-0 mb-4">
+        <div className="h-9 w-72 bg-black rounded-none mb-3 opacity-20"></div>
+        <div className="h-5 w-[500px] bg-black rounded-none ml-2 opacity-10"></div>
       </header>
       
-      <div className="flex-1 bg-white border-[3px] border-black/30 rounded-none shadow-[4px_4px_0_0_rgba(0,0,0,0.15)] overflow-hidden flex flex-col p-6">
-        <div className="flex gap-3 mb-6">
-          <div className="h-10 w-32 bg-black/10 rounded-none border-[2px] border-black/20"></div>
-          <div className="h-10 w-32 bg-black/10 rounded-none border-[2px] border-black/20"></div>
+      <div className="flex-1 bg-white border-[3px] border-black rounded-none shadow-[6px_6px_0_0_#000] overflow-hidden flex flex-col p-8 opacity-40">
+        <div className="flex gap-4 mb-8">
+          <div className="h-12 w-40 bg-[#fde047] border-[3px] border-black rounded-none shadow-[3px_3px_0_0_#000]"></div>
+          <div className="h-12 w-40 bg-white border-[3px] border-black rounded-none shadow-[3px_3px_0_0_#000]"></div>
         </div>
         
-        <div className="grid grid-cols-12 gap-6">
-          <div className="col-span-5 space-y-4">
-            <div className="h-64 bg-[#fde047]/30 rounded-none border-[3px] border-black/20"></div>
-            <div className="h-12 bg-black/5 rounded-none border-[2px] border-black/15"></div>
+        <div className="grid grid-cols-12 gap-8">
+          <div className="col-span-5 space-y-6">
+            <div className="h-72 bg-white border-[3px] border-black rounded-none shadow-[4px_4px_0_0_#000]"></div>
+            <div className="h-14 bg-white border-[3px] border-black rounded-none shadow-[4px_4px_0_0_#000]"></div>
           </div>
           <div className="col-span-7">
-            <div className="h-full bg-[#fde047]/20 rounded-none border-[3px] border-black/20 min-h-[400px]"></div>
+            <div className="h-full bg-white border-[3px] border-black rounded-none shadow-[4px_4px_0_0_#000] min-h-[400px]"></div>
           </div>
         </div>
       </div>

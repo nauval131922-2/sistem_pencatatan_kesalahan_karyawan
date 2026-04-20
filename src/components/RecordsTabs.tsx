@@ -75,38 +75,32 @@ export default function RecordsTabs({ employees, orders, infractions: initialInf
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden min-h-0">
-      {/* Tab Navigation - Minimalist Underline Style */}
-      <div className="flex items-center gap-8 border-b border-gray-100 mb-6 shrink-0">
+      {/* Tab Navigation - Neo-brutalist Style */}
+      <div className="flex items-center gap-3 mb-8 shrink-0">
         <button
           onClick={() => {
             setActiveTab('list');
             handleCancelEdit();
           }}
-          className={`flex items-center gap-2 pb-4 text-[13px] font-bold transition-all relative ${
+          className={`flex items-center gap-2 px-6 py-3 text-[13px] font-black uppercase tracking-widest border-[3px] transition-all relative ${
             activeTab === 'list'
-              ? 'text-emerald-600'
-              : 'text-gray-400 hover:text-gray-600'
+              ? 'bg-[#fde047] text-black border-black shadow-[4px_4px_0_0_#000] z-10 translate-x-[-2px] translate-y-[-2px]'
+              : 'bg-white text-gray-500 border-gray-200 hover:border-black hover:text-black'
           }`}
         >
-          <ClipboardList size={18} />
+          <ClipboardList size={18} strokeWidth={2.5} />
           <span>Daftar Kesalahan</span>
-          {activeTab === 'list' && (
-            <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-emerald-500 rounded-full" />
-          )}
         </button>
         <button
           onClick={() => { setActiveTab('form'); handleCancelEdit(); }}
-          className={`flex items-center gap-2 pb-4 text-[13px] font-bold transition-all relative ${
+          className={`flex items-center gap-2 px-6 py-3 text-[13px] font-black uppercase tracking-widest border-[3px] transition-all relative ${
             activeTab === 'form'
-              ? 'text-emerald-600'
-              : 'text-gray-400 hover:text-gray-600'
+              ? 'bg-[#fde047] text-black border-black shadow-[4px_4px_0_0_#000] z-10 translate-x-[-2px] translate-y-[-2px]'
+              : 'bg-white text-gray-500 border-gray-200 hover:border-black hover:text-black'
           }`}
         >
-          {editingInfraction ? <Pencil size={18} /> : <PlusCircle size={18} />}
+          {editingInfraction ? <Pencil size={18} strokeWidth={2.5} /> : <PlusCircle size={18} strokeWidth={2.5} />}
           <span>{editingInfraction ? 'Edit Data' : 'Tambah Data'}</span>
-          {activeTab === 'form' && (
-            <div className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-emerald-500 rounded-full" />
-          )}
         </button>
       </div>
 

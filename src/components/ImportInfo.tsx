@@ -19,14 +19,14 @@ export default function ImportInfo({ info, className = '', showPrefix = true }: 
   if (!info) return null;
 
   return (
-    <div className={`flex items-center gap-1.5 text-[12px] font-medium leading-none ${className}`} style={{ color: '#99a1af' }}>
-      {showPrefix && <span className="opacity-40">|</span>}
-      <div className="flex items-center gap-1.5 transition-colors">
-        <span title={info.fileName}>
+    <div className={`flex items-center gap-2 text-[10px] font-black leading-none uppercase tracking-widest text-black/40 ${className}`}>
+      {showPrefix && <span className="text-black/20 font-light">|</span>}
+      <div className="flex items-center gap-2">
+        <span title={info.fileName} className="text-black/60 truncate max-w-[200px]">
           {info.fileName}
         </span>
-        <span className="opacity-40">&bull;</span>
-        <span>Diperbarui {info.time}</span>
+        <span className="text-black/20">&bull;</span>
+        <span>{info.time}</span>
       </div>
     </div>
   );

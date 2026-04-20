@@ -130,7 +130,7 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
         header: 'Jabatan',
         size: 250,
         cell: (info: any) => (
-            <span className="text-[11px] font-bold bg-slate-100/60 px-2.5 py-1 rounded-md border border-gray-100/50 block w-fit truncate">
+            <span className="text-[11px] font-black bg-white px-2.5 py-1 border-[2px] border-black shadow-[2px_2px_0_0_#000] block w-fit truncate uppercase tracking-tight">
               {info.getValue()}
             </span>
         )
@@ -141,7 +141,7 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
         size: 180,
         meta: { align: 'right' },
         cell: (info: any) => (
-            <span className="font-mono font-black text-emerald-600">
+            <span className="font-mono font-black text-black">
                 {info.getValue() || '---'}
             </span>
         )
@@ -176,15 +176,15 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
       <div className="flex flex-col gap-4 shrink-0">
         <div className="flex items-center justify-between gap-4 min-h-[32px]">
           <div className="flex items-center gap-4">
-             <h3 className="text-[15px] font-extrabold text-gray-800 flex items-center gap-2 leading-none">
-                <Users size={18} className="text-emerald-500" />
+             <h3 className="text-sm font-black text-black flex items-center gap-2.5 leading-none uppercase tracking-widest">
+                <Users size={20} strokeWidth={3} className="text-black" />
                 <span>Data Karyawan</span>
              </h3>
              <ImportInfo info={importInfo} />
           </div>
           {loading && (data?.length || 0) > 0 && (
-              <div className="text-[11px] font-bold text-emerald-600 flex items-center gap-2 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 animate-pulse uppercase tracking-tighter leading-none">
-                <Loader2 size={12} className="animate-spin" />
+              <div className="text-[10px] font-black text-black flex items-center gap-2 bg-[#fde047] px-3 py-1.5 border-[2px] border-black animate-pulse uppercase tracking-[0.2em] shadow-[2px_2px_0_0_#000]">
+                <Loader2 size={12} strokeWidth={3} className="animate-spin" />
                 <span>Memproses...</span>
               </div>
           )}
@@ -202,14 +202,14 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
       {/* Main Table - Let DataTable handle border and rounding */}
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
          {error ? (
-           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-rose-50/10">
-              <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mb-4">
-                  <AlertCircle className="text-rose-500" size={32} />
+           <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-white border-[4px] border-black shadow-[8px_8px_0_0_#000]">
+              <div className="w-20 h-20 bg-[#ff5e5e] border-[3px] border-black flex items-center justify-center mb-6 shadow-[4px_4px_0_0_#000]">
+                  <AlertCircle className="text-white" size={40} strokeWidth={3} />
               </div>
-              <p className="text-sm font-black text-gray-800">{error}</p>
+              <p className="text-lg font-black text-black uppercase tracking-tight mb-6">{error}</p>
               <button 
                 onClick={() => setRefreshKey(k => k + 1)}
-                className="mt-4 px-6 py-2 bg-white border border-rose-200 text-rose-600 rounded-[8px] text-xs font-black hover:bg-rose-50 transition-colors"
+                className="px-8 py-3 bg-[#fde047] border-[3px] border-black text-black font-black uppercase tracking-widest text-xs shadow-[4px_4px_0_0_#000] hover:shadow-[6px_6px_0_0_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all"
               >
                 Coba Lagi
               </button>
@@ -230,17 +230,17 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
 
       {/* Footer info Banner - Updated to match Laporan Penjualan styles */}
       <div className="flex items-center justify-between shrink-0 px-1 mt-1">
-          <span className="text-[12px] leading-none font-bold text-gray-400">
-             {totalCount === 0 ? 'Tidak ada data karyawan' : `Menampilkan ${data?.length || 0} dari ${totalCount} Karyawan`}
+          <span className="text-[12px] leading-none font-black text-black/50 uppercase tracking-widest">
+             {totalCount === 0 ? 'Data Kosong' : `Menampilkan ${data?.length || 0} dari ${totalCount} Karyawan`}
           </span>
           
           <div className="flex items-center gap-4">
             {selectedIds.size > 0 && (
                 <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                   <span className="text-[12px] leading-none font-bold text-gray-400">{selectedIds.size} dipilih</span>
+                   <span className="text-[12px] leading-none font-black text-black/40 uppercase tracking-widest">{selectedIds.size} dipilih</span>
                    <button 
                     onClick={() => setSelectedIds(new Set())}
-                    className="text-[12px] leading-none font-black text-rose-500 hover:text-rose-600 underline underline-offset-4"
+                    className="text-[12px] leading-none font-black text-black bg-[#fde047] border-[2px] border-black px-3 py-1 shadow-[2px_2px_0_0_#000] hover:bg-black hover:text-white transition-all active:translate-x-[1px] active:translate-y-[1px] active:shadow-none uppercase tracking-[0.2em]"
                    >
                      BATAL
                    </button>

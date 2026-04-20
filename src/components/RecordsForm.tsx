@@ -105,61 +105,61 @@ function SearchableSelect({
 
   return (
     <div ref={ref} className="relative">
-      {label && <label className="flex items-center gap-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">{label}{required && <span className="text-red-500 font-black">*</span>}</label>}
+      {label && <label className="flex items-center gap-1.5 text-[11px] font-black text-black uppercase tracking-[0.15em] mb-2 ml-1">{label}{required && <span className="text-red-500 font-black">*</span>}</label>}
       <input type="hidden" name={name} value={selected ? String(valueFn(selected)) : ''} />
       <div
-        className={`w-full bg-gray-50/50 border border-gray-100 rounded-[8px] px-4 h-11 text-sm flex items-center justify-between transition-all text-gray-800 ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:border-gray-300 hover:bg-gray-100/50'}`}
+        className={`w-full bg-white border-[3px] border-black rounded-none px-4 h-11 text-sm flex items-center justify-between transition-all text-black shadow-[3px_3px_0_0_#000] ${disabled ? 'opacity-50 cursor-not-allowed shadow-none' : 'cursor-pointer hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0_0_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none'}`}
         onClick={() => { if (!disabled) { setOpen((o) => !o); setQuery(''); } }}
       >
-        <span className={selected ? 'text-gray-700 truncate font-bold' : 'text-gray-400 font-medium truncate'}>
+        <span className={selected ? 'text-black truncate font-black' : 'text-gray-400 font-bold truncate'}>
           {selected ? displayFn(selected) : placeholder}
         </span>
-        <ChevronDown size={16} className={`text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown size={16} strokeWidth={3} className={`text-black transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </div>
 
       {open && !disabled && (
-        <div className={`absolute z-[200] w-full bg-white border border-gray-100 rounded-[8px] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${
-          dropdownPos === 'up' ? 'bottom-full mb-3' : 'top-full mt-3'
+        <div className={`absolute z-[200] w-full bg-white border-[3px] border-black rounded-none shadow-[8px_8px_0_0_#000] overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${
+          dropdownPos === 'up' ? 'bottom-full mb-4' : 'top-full mt-4'
         }`}>
-          <div className="p-3 border-b border-gray-50 bg-gray-50/50">
+          <div className="p-3 border-b-[3px] border-black bg-[#fde047]">
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={14} strokeWidth={3} className="absolute left-3 top-1/2 -translate-y-1/2 text-black" />
               <input
                 autoFocus
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Cari..."
-                className="w-full pl-9 pr-3 h-10 text-sm border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 bg-white"
+                className="w-full pl-9 pr-3 h-10 text-sm border-[2px] border-black rounded-none focus:outline-none bg-white font-bold"
               />
             </div>
           </div>
-          <ul className="max-h-60 overflow-y-auto custom-scrollbar px-1 py-1">
+          <ul className="max-h-60 overflow-y-auto custom-scrollbar p-1">
             {!required && (
               <li
-                className="px-3 py-2 text-[11px] text-gray-400 hover:bg-gray-50 cursor-pointer italic rounded-[8px] font-medium"
+                className="px-3 py-2 text-[11px] text-gray-500 hover:bg-gray-100 cursor-pointer italic font-black uppercase tracking-widest border-b border-black/10 mb-1"
                 onClick={() => handleSelect(null)}
               >
                 — Kosongkan pilihan
               </li>
             )}
             {isLoading ? (
-              <li className="px-3 py-8 text-xs text-gray-400 flex flex-col items-center justify-center gap-3">
-                <Loader2 size={24} className="animate-spin text-green-500" />
-                <span className="font-bold tracking-tight">Memuat data sumber...</span>
+              <li className="px-3 py-10 text-xs text-black flex flex-col items-center justify-center gap-3">
+                <Loader2 size={24} strokeWidth={3} className="animate-spin text-black" />
+                <span className="font-black uppercase tracking-widest">Memuat data...</span>
               </li>
             ) : filtered.length === 0 ? (
-              <li className="px-3 py-6 text-xs text-gray-400 italic text-center font-medium">
-                {noOptionsMessage || 'Tidak ada hasil ditemukan'}
+              <li className="px-3 py-8 text-xs text-black italic text-center font-bold uppercase tracking-wide">
+                {noOptionsMessage || 'Tidak ada hasil'}
               </li>
             ) : (
               filtered.map((o, i) => (
                 <li
                   key={i}
-                  className={`px-4 py-3 text-sm cursor-pointer rounded-[8px] transition-all mb-0.5 last:mb-0 ${
+                  className={`px-4 py-3 text-sm cursor-pointer rounded-none transition-all mb-1 last:mb-0 border-2 border-transparent ${
                     selected && valueFn(selected) === valueFn(o) 
-                      ? 'bg-green-50 text-green-700 font-black' 
-                      : 'text-gray-700 hover:bg-green-500 hover:text-white'
+                      ? 'bg-[#fde047] text-black border-black font-black shadow-[2px_2px_0_0_#000]' 
+                      : 'text-black font-bold hover:bg-black hover:text-white'
                   }`}
                   onClick={() => handleSelect(o)}
                 >
@@ -611,9 +611,9 @@ export default function RecordsForm({
     finally { setLoading(false); pendingSubmitDataRef.current = null; }
   };
 
-  const inputCls = 'w-full bg-gray-50/50 border border-gray-100 rounded-[8px] px-4 h-11 text-sm focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 focus:bg-white transition-all text-gray-700 font-medium placeholder:text-gray-300';
-  const labelCls = 'flex items-center gap-1.5 text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1';
-  const sectionHeaderCls = 'flex items-center gap-2.5 pb-2 border-b border-gray-50 mb-6 mt-2';
+  const inputCls = 'w-full bg-white border-[3px] border-black rounded-none px-4 h-11 text-sm focus:outline-none shadow-[3px_3px_0_0_#000] focus:translate-x-[-1px] focus:translate-y-[-1px] focus:shadow-[4px_4px_0_0_#000] transition-all text-black font-black placeholder:text-gray-400';
+  const labelCls = 'flex items-center gap-1.5 text-[11px] font-black text-black uppercase tracking-[0.15em] mb-2 ml-1';
+  const sectionHeaderCls = 'flex items-center gap-3 pb-3 border-b-[3px] border-black mb-8 mt-2';
 
   return (
     <div className="w-full pb-10">
@@ -621,19 +621,19 @@ export default function RecordsForm({
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
-          <div className="lg:col-span-5 flex flex-col gap-4">
-            <div className="bg-white rounded-[8px] border border-gray-100 p-8 hover:border-gray-200 hover:shadow-sm transition-all duration-300">
+          <div className="lg:col-span-5 flex flex-col gap-6">
+            <div className="bg-white rounded-none border-[4px] border-black p-8 shadow-[8px_8px_0_0_#000]">
               <div className={sectionHeaderCls}>
-                <div className="w-8 h-8 rounded-[8px] bg-green-50 flex items-center justify-center">
-                  <ClipboardList size={18} className="text-green-600" />
+                <div className="w-10 h-10 rounded-none bg-[#fde047] border-[2px] border-black flex items-center justify-center shadow-[2px_2px_0_0_#000]">
+                  <ClipboardList size={20} strokeWidth={2.5} className="text-black" />
                 </div>
-                <h3 className="text-base font-bold text-gray-800 tracking-tight">Data Utama</h3>
+                <h3 className="text-lg font-black text-black uppercase tracking-tight">Data Utama</h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-1.5">
                   <label className={labelCls}>Nomor Faktur</label>
-                  <div className="h-11 px-4 bg-gray-50 border border-gray-100 rounded-[8px] flex items-center text-sm font-bold text-gray-500 ring-1 ring-inset ring-gray-200/50">
+                  <div className="h-11 px-4 bg-white border-[3px] border-black rounded-none flex items-center text-sm font-black text-black shadow-[3px_3px_0_0_#aaa]">
                     {fakturPreview}
                   </div>
                 </div>
@@ -664,34 +664,33 @@ export default function RecordsForm({
               </div>
             </div>
 
-            <div className="bg-white rounded-[8px] border border-gray-100 p-8 hover:border-gray-200 hover:shadow-sm transition-all duration-300">
+            <div className="bg-white rounded-none border-[4px] border-black p-8 shadow-[8px_8px_0_0_#000]">
               <div className={sectionHeaderCls}>
-                <div className="w-8 h-8 rounded-[8px] bg-amber-50 flex items-center justify-center">
-                  <ShieldAlert size={18} className="text-amber-600" />
+                <div className="w-10 h-10 rounded-none bg-[#ff5e5e] border-[2px] border-black flex items-center justify-center shadow-[2px_2px_0_0_#000]">
+                  <ShieldAlert size={20} strokeWidth={2.5} className="text-white" />
                 </div>
-                <h3 className="text-base font-bold text-gray-800 tracking-tight">Tingkat Severitas & Detail</h3>
+                <h3 className="text-lg font-black text-black uppercase tracking-tight">Severitas & Detail</h3>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div className="space-y-1.5 focus-within:z-10">
                   <label className={labelCls}>Severitas (Tingkat Dampak)</label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-3">
                     {[
-                      { label: 'Low', value: 'Low', activeCls: 'bg-emerald-600 text-white border-emerald-600 ring-emerald-600/10' },
-                      { label: 'Medium', value: 'Medium', activeCls: 'bg-amber-500 text-white border-amber-500 ring-amber-500/10' },
-                      { label: 'High', value: 'High', activeCls: 'bg-rose-600 text-white border-rose-600 ring-rose-600/10' },
+                      { label: 'Low', value: 'Low', activeCls: 'bg-[#93c5fd] text-black border-black shadow-[3px_3px_0_0_#000]' },
+                      { label: 'Medium', value: 'Medium', activeCls: 'bg-[#fde047] text-black border-black shadow-[3px_3px_0_0_#000]' },
+                      { label: 'High', value: 'High', activeCls: 'bg-[#ff5e5e] text-white border-black shadow-[3px_3px_0_0_#000]' },
                     ].map((opt) => (
                       <button
                         key={opt.value}
                         type="button"
                         onClick={() => setSeverity(opt.value)}
-                        className={`px-4 h-10 text-[11px] font-bold rounded-[8px] border transition-all flex items-center justify-center gap-2 ${
+                        className={`px-5 h-11 text-[11px] font-black rounded-none border-[3px] transition-all flex items-center justify-center gap-2 uppercase tracking-widest ${
                           severity === opt.value 
-                            ? `${opt.activeCls} shadow-md ring-4` 
-                            : 'bg-white text-gray-500 border-gray-100 hover:border-gray-300'
+                            ? `${opt.activeCls} translate-x-[-2px] translate-y-[-2px]` 
+                            : 'bg-white text-black border-gray-200 hover:border-black active:translate-x-[1px] active:translate-y-[1px]'
                         }`}
                       >
-                        <div className={`w-1.5 h-1.5 rounded-full ${severity === opt.value ? 'bg-white' : 'bg-gray-300'}`} />
                         {opt.label}
                       </button>
                     ))}
@@ -704,7 +703,7 @@ export default function RecordsForm({
                     name="description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className={`${inputCls} min-h-[120px] py-3 leading-relaxed`}
+                    className={`${inputCls} min-h-[140px] py-4 leading-relaxed`}
                     placeholder="Jelaskan secara rinci kesalahan yang terjadi..."
                   />
                 </div>
@@ -712,16 +711,16 @@ export default function RecordsForm({
             </div>
           </div>
 
-          <div className="lg:col-span-7 flex flex-col gap-4">
-            <div className="bg-white rounded-[8px] border border-gray-100 p-8 hover:border-gray-200 hover:shadow-sm transition-all duration-300 overflow-visible text-gray-800">
+          <div className="lg:col-span-7 flex flex-col gap-6">
+            <div className="bg-white rounded-none border-[4px] border-black p-8 shadow-[8px_8px_0_0_#000] overflow-visible text-black">
               <div className={sectionHeaderCls}>
-                <div className="w-8 h-8 rounded-[8px] bg-blue-50 flex items-center justify-center">
-                  <Box size={18} className="text-blue-600" />
+                <div className="w-10 h-10 rounded-none bg-[#93c5fd] border-[2px] border-black flex items-center justify-center shadow-[2px_2px_0_0_#000]">
+                  <Box size={20} strokeWidth={2.5} className="text-black" />
                 </div>
-                <h3 className="text-base font-bold text-gray-800 tracking-tight">Rincian Beban Biaya</h3>
+                <h3 className="text-lg font-black text-black uppercase tracking-tight">Rincian Beban Biaya</h3>
               </div>
 
-              <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-6">
                 <SearchableSelect
                   key={`order-${resetKey}`}
                   label="Referensi Order"
@@ -759,45 +758,36 @@ export default function RecordsForm({
                   }}
                 />
 
-                <div className="grid grid-cols-1 gap-5">
+                <div className="grid grid-cols-1 gap-6">
                   <div className="space-y-1.5">
                     <label className={labelCls}>Kategori Barang</label>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-3">
                       {jenisBarangOptions.map((opt) => (
                         <button
                           key={opt.value}
                           type="button"
                           onClick={() => {
-                            const isManual = (jenisBarang === 'Input Manual' || jenisHarga === 'Input Manual');
-                            const nextIsManual = (opt.value === 'Input Manual');
-                            
                             setJenisBarang(opt.value);
-                            
-                            // 1. Explicitly Reset Downstream Fields
                             setSelectedNamaBarang('');
                             setSelectedItemFaktur('');
                             setDraftItemFaktur('');
                             setManualNamaBarang('');
                             
-                            // 2. Set Default Price Type & Price Reset
-                            if (!nextIsManual) {
+                            if (opt.value !== 'Input Manual') {
                               if (opt.value === 'BBB Produksi') setJenisHarga('HPP Digit');
                               else if (opt.value === 'Penerimaan Barang Hasil Produksi') setJenisHarga('HPP Digit');
                               else if (opt.value === 'Penjualan Barang') setJenisHarga('Harga Jual Digit');
                               else if (opt.value === 'HPP Kalkulasi') setJenisHarga('HPP Kalkulasi');
-                              
-                              // Clear price for system modes to trigger refetch
                               setHarga('');
                             } else {
-                              // If entering Manual category
                               setJenisHarga('Input Manual');
                               setHarga('');
                             }
                           }}
-                          className={`px-3 py-2 text-[11px] font-bold rounded-[8px] border transition-all text-center leading-tight h-10 flex items-center justify-center ${
+                          className={`px-4 py-2 text-[11px] font-black rounded-none border-[3px] transition-all text-center leading-tight h-11 flex items-center justify-center uppercase tracking-widest ${
                             jenisBarang === opt.value
-                              ? 'bg-green-600 text-white border-green-600 shadow-md ring-4 ring-green-600/10'
-                              : 'bg-white text-gray-500 border-gray-100 hover:border-gray-300'
+                              ? 'bg-[#fde047] text-black border-black shadow-[4px_4px_0_0_#000] translate-x-[-2px] translate-y-[-2px]'
+                              : 'bg-white text-black border-gray-200 hover:border-black active:translate-x-[1px] active:translate-y-[1px]'
                           }`}
                         >
                           {opt.label}
@@ -845,8 +835,8 @@ export default function RecordsForm({
                   ) : (
                     <div className="space-y-1.5 opacity-80">
                       <label className={labelCls}>Nama Barang (Order)</label>
-                      <div className="h-11 px-4 bg-blue-50/50 border border-blue-100 rounded-[8px] flex items-center text-sm font-bold text-blue-600">
-                        {hppLoading ? <Loader2 size={16} className="animate-spin mr-2" /> : <Star size={14} className="mr-2" />}
+                      <div className="h-11 px-4 bg-white border-[3px] border-black rounded-none flex items-center text-sm font-black text-black shadow-[3px_3px_0_0_#aaa]">
+                        {hppLoading ? <Loader2 size={16} strokeWidth={3} className="animate-spin mr-2" /> : <Star size={14} strokeWidth={3} className="mr-2" />}
                         {selectedOrderName || 'Pilih Order Dulu'}
                       </div>
                     </div>
@@ -854,7 +844,7 @@ export default function RecordsForm({
 
                   <div className="space-y-1.5">
                     <label className={labelCls}>Jenis Dasar Harga</label>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-3">
                       {jenisHargaOptions.map((opt) => (
                         <button
                           key={opt.value}
@@ -866,10 +856,10 @@ export default function RecordsForm({
                               setHarga('');
                             }
                           }}
-                          className={`px-3 py-2 text-[11px] font-bold rounded-[8px] border transition-all h-9 flex items-center justify-center ${
+                          className={`px-4 py-2 text-[11px] font-black rounded-none border-[3px] transition-all h-11 flex items-center justify-center uppercase tracking-widest ${
                             jenisHarga === opt.value
-                              ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-4 ring-blue-600/10'
-                              : 'bg-white text-gray-500 border-gray-100 hover:border-gray-300'
+                              ? 'bg-[#93c5fd] text-black border-black shadow-[4px_4px_0_0_#000] translate-x-[-2px] translate-y-[-2px]'
+                              : 'bg-white text-black border-gray-200 hover:border-black active:translate-x-[1px] active:translate-y-[1px]'
                           }`}
                         >
                           {opt.label}
@@ -878,7 +868,7 @@ export default function RecordsForm({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div className="grid grid-cols-2 gap-6 pt-2">
                     <div className="space-y-1.5">
                       <label className={labelCls}>Kuantitas (Qty)</label>
                       <input
@@ -903,12 +893,12 @@ export default function RecordsForm({
                           const val = e.target.value.replace(/[^0-9,]/g, '');
                           setHarga(formatNumberIndo(val));
                         }}
-                        className={`${inputCls} ${jenisHarga !== 'Input Manual' ? 'bg-gray-100/80 cursor-not-allowed text-gray-400' : ''}`}
+                        className={`${inputCls} ${jenisHarga !== 'Input Manual' ? 'bg-[#f4f4f4] cursor-not-allowed text-gray-500 shadow-none' : ''}`}
                         placeholder="0"
                       />
                       {jenisBarang === 'HPP Kalkulasi' && jenisHarga === 'HPP Kalkulasi' && hppKeterangan && (
-                        <div className="mt-1.5 flex items-center gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-[10px] font-bold">
+                        <div className="mt-2 flex items-center gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#fde047] text-black border-[2px] border-black rounded-none text-[10px] font-black uppercase tracking-wider shadow-[2px_2px_0_0_#000]">
                             <span>📌</span>
                             {hppKeterangan}
                           </span>
@@ -918,9 +908,9 @@ export default function RecordsForm({
                     </div>
                   </div>
 
-                  <div className="mt-4 p-4 bg-gray-50/50 rounded-[8px] border border-gray-100 flex justify-between items-center">
-                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Total Estimasi Beban</span>
-                    <span className="text-lg font-bold text-gray-700">
+                  <div className="mt-4 p-5 bg-black text-white rounded-none border-[4px] border-black shadow-[6px_6px_0_0_#aaa] flex justify-between items-center">
+                    <span className="text-xs font-black uppercase tracking-[0.2em] text-white/70">Total Estimasi Beban</span>
+                    <span className="text-2xl font-black">
                       Rp {totalValue.toLocaleString('id-ID')}
                     </span>
                   </div>
@@ -928,18 +918,18 @@ export default function RecordsForm({
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 h-12 rounded-[8px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-500/10 transition-all flex items-center justify-center gap-2.5 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="flex-1 h-14 rounded-none bg-[#fde047] border-[4px] border-black text-black font-black text-sm uppercase tracking-widest shadow-[6px_6px_0_0_#000] transition-all flex items-center justify-center gap-3 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed group"
               >
                 {loading ? (
-                  <Loader2 size={18} className="animate-spin" />
+                  <Loader2 size={18} strokeWidth={3} className="animate-spin" />
                 ) : (
                   <>
-                    <CheckCircle2 size={22} className="group-hover:scale-110 transition-transform" />
-                    <span>{editingInfraction ? 'Simpan' : 'Catat Kesalahan'}</span>
+                    <CheckCircle2 size={24} strokeWidth={3} className="group-hover:rotate-12 transition-transform" />
+                    <span>{editingInfraction ? 'Simpan Perubahan' : 'Catat Kesalahan'}</span>
                   </>
                 )}
               </button>
@@ -948,7 +938,7 @@ export default function RecordsForm({
                 <button
                   type="button"
                   onClick={onCancelEdit}
-                  className="flex-1 h-12 rounded-[8px] bg-white border border-gray-200 text-gray-500 font-bold text-sm hover:bg-gray-50 transition-all active:scale-[0.98]"
+                  className="px-8 h-14 rounded-none bg-white border-[4px] border-black text-black font-black text-sm uppercase tracking-widest shadow-[6px_6px_0_0_#000] hover:bg-gray-100 transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
                 >
                   Batal
                 </button>

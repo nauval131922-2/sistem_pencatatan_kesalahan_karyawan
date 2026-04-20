@@ -8,17 +8,23 @@ export const metadata = {
 
 export default function UnauthorizedPage() {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center min-h-[80vh]">
-      <ShieldAlert size={72} className="text-gray-300 mb-6" />
-      <h1 className="text-3xl font-black text-gray-800 mb-3 tracking-tight">
-        403 — Akses Ditolak
-      </h1>
-      <p className="text-gray-500 font-medium mb-8 max-w-md text-center leading-relaxed">
-        Maaf, peran Anda saat ini tidak memiliki izin untuk melihat modul ini. Hubungi <strong>Super Admin</strong> jika Anda memerlukan akses.
+    <div className="flex-1 flex flex-col items-center justify-center min-h-[80vh] text-center p-6">
+      <div className="w-24 h-24 bg-[var(--accent-primary)] border-[4px] border-black shadow-[8px_8px_0_0_#000] flex items-center justify-center mb-8">
+        <ShieldAlert size={44} strokeWidth={2.5} className="text-white" />
+      </div>
+      
+      <h1 className="text-6xl font-black text-black tracking-tight leading-none mb-4">403</h1>
+      <div className="inline-block border-[3px] border-black bg-[#fde047] px-4 py-1 shadow-[4px_4px_0_0_#000] mb-6">
+        <p className="text-sm font-black text-black uppercase tracking-widest">Akses Ditolak</p>
+      </div>
+      
+      <p className="text-black font-bold mb-8 max-w-md text-center leading-relaxed border-l-[4px] border-black pl-4 text-left text-sm">
+        Maaf, peran Anda saat ini tidak memiliki izin untuk melihat modul ini. Hubungi <strong className="font-black underline decoration-[3px]">Super Admin</strong> jika Anda memerlukan akses.
       </p>
+
       <Link 
         href="/dashboard"
-        className="px-6 py-2.5 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-[8px] transition-all shadow-sm active:scale-95"
+        className="px-6 py-3 bg-black text-white font-black rounded-none border-[3px] border-black transition-all shadow-[5px_5px_0_0_#555] hover:shadow-[7px_7px_0_0_#555] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none uppercase tracking-wide"
       >
         Kembali ke Dashboard
       </Link>
