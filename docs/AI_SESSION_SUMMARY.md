@@ -20,7 +20,10 @@ Branch   : master
 ## ✅ Yang Berhasil Diselesaikan
 
 > - **Migrasi Modul Manajemen**: Login, Manajemen Pengguna, Hak Akses (Role), dan Profil Pengguna telah sepenuhnya menggunakan gaya Neobrutalism (rounded-none, border 3px, shadow solid).
-> - **Standarisasi Komponen Global**: Badge *load time*, indikator jumlah hasil, dan PageHeader telah diselaraskan dengan estetika boxy.
+> - **Standarisasi Komponen Global**: Badge *load time*, indikator jumlah hasil, dan PageHeader telah diselaraskan dengan estetika boxy. `ActivityTable.tsx`, `DataTable.tsx`, `Sidebar.tsx`.
+> - **Jurnal Harian Produksi**: Modul **SOPD** (`SopdClient.tsx`, `SopdExcelUpload.tsx`) dan **Master Pekerjaan** (`MasterPekerjaanClient.tsx`, `MasterPekerjaanUpload.tsx`) telah berhasil dimigrasikan ke Neobrutalism.
+> - **Kalkulasi**: Modul **HPP Kalkulasi** (`HppKalkulasiClient.tsx`, `HppKalkulasiExcelUpload.tsx`) telah berhasil dimigrasikan ke Neobrutalism.
+> - **Produksi**: Modul **BOM** (`BOMClient.tsx`), **Barang Jadi** (`BarangJadiClient.tsx`), dan **Bahan Baku** (`BahanBakuClient.tsx`) telah sukses dimigrasikan ke Neobrutalism.
 > - **Resolusi Bug Kritis**: Memperbaiki kesalahan parsing JSX pada `ProfilePage.tsx` yang disebabkan oleh ketidakseimbangan tag penutup dan kesalahan sintaks template literal pasca-migrasi.
 > - **Dokumentasi**: Menambahkan tutorial migrasi Neobrutalism (`01-migrasi-desain-neobrutalism.md`) dan memperbarui panduan `BUILD_FROM_SCRATCH.md`.
 

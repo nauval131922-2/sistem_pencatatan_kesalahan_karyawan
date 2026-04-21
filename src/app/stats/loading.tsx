@@ -12,7 +12,7 @@ export default function Loading() {
       
       <div className="flex-1 flex flex-col gap-6 pb-10 overflow-y-auto custom-scrollbar">
         {/* Year Selector Skeleton */}
-        <div className="shrink-0 h-[75px] bg-white border-[3px] border-black rounded-none shadow-[4px_4px_0_0_#000] opacity-30 animate-pulse"></div>
+        <div className="shrink-0 h-[75px] bg-white border-[3px] border-black rounded-none shadow-[2.5px_2.5px_0_0_#000] opacity-30 animate-pulse"></div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
           {/* Main Chart Skeleton */}
@@ -33,6 +33,14 @@ export default function Loading() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
 
 
 

@@ -158,7 +158,7 @@ export default function DatePicker({ name, required, label, onChange, value, cus
                 onClick={() => selectDay(cell)}
                 className={`
                   h-8 w-8 mx-auto rounded-none text-sm font-bold transition-all flex items-center justify-center border-2
-                  ${sel ? 'bg-[var(--accent-primary)] text-white border-black shadow-[2px_2px_0_0_#000]' : ''}
+                  ${sel ? 'bg-[var(--accent-primary)] text-black border-black shadow-[2px_2px_0_0_#000]' : ''}
                   ${!sel && tod && !dim ? 'bg-[#fde047] text-black border-black font-black' : ''}
                   ${!sel && !tod && dim ? 'text-gray-400 border-transparent font-normal' : ''}
                   ${!sel && !tod && !dim ? 'text-black hover:bg-[#fde047] hover:border-black border-transparent' : ''}
@@ -186,7 +186,7 @@ export default function DatePicker({ name, required, label, onChange, value, cus
               onClick={() => { setViewMonth(i); setViewMode('days'); }}
               className={`
                 h-10 rounded-none text-sm font-bold transition-all border-2
-                ${sel ? 'bg-[var(--accent-primary)] text-white border-black shadow-[2px_2px_0_0_#000]' : 'text-black border-transparent hover:bg-[#fde047] hover:border-black'}
+                ${sel ? 'bg-[var(--accent-primary)] text-black border-black shadow-[2px_2px_0_0_#000]' : 'text-black border-transparent hover:bg-[#fde047] hover:border-black'}
               `}
             >
               {m}
@@ -211,7 +211,7 @@ export default function DatePicker({ name, required, label, onChange, value, cus
               onClick={() => { setViewYear(y); setViewMode('months'); }}
               className={`
                 h-10 rounded-none text-sm font-bold transition-all border-2
-                ${sel ? 'bg-[var(--accent-primary)] text-white border-black shadow-[2px_2px_0_0_#000]' : ''}
+                ${sel ? 'bg-[var(--accent-primary)] text-black border-black shadow-[2px_2px_0_0_#000]' : ''}
                 ${!sel && isEdge ? 'text-gray-400 bg-gray-100 font-normal border-transparent hover:bg-[#fde047] hover:border-black' : ''}
                 ${!sel && !isEdge ? 'text-black border-transparent hover:bg-[#fde047] hover:border-black' : ''}
               `}
@@ -234,7 +234,7 @@ export default function DatePicker({ name, required, label, onChange, value, cus
       {customTrigger ? customTrigger(() => setOpen(o => !o)) : (
         <div
           onClick={() => setOpen(o => !o)}
-          className="w-full bg-white border-[3px] border-black rounded-none px-3 py-1.5 text-sm cursor-pointer flex items-center justify-between shadow-[3px_3px_0_0_#000] hover:-translate-y-[1px] hover:-translate-x-[1px] hover:shadow-[4px_4px_0_0_#000] transition-all"
+          className="w-full bg-white border-[3px] border-black rounded-none px-3 py-1.5 text-sm cursor-pointer flex items-center justify-between shadow-[2px_2px_0_0_#000] hover:-translate-y-[1px] hover:-translate-x-[1px] hover:shadow-[2.5px_2.5px_0_0_#000] transition-all"
         >
           <span className={`font-bold ${formatted ? 'text-black' : 'text-gray-400'}`}>
             {formatted || 'Pilih tanggal...'}
@@ -244,7 +244,7 @@ export default function DatePicker({ name, required, label, onChange, value, cus
       )}
 
       {open && (
-        <div className={`absolute z-50 mt-2 bg-white border-[3px] border-black rounded-none shadow-[6px_6px_0_0_#000] p-3 w-[268px] font-sans ${popupAlign === 'right' ? 'right-0' : 'left-0'}`}>
+        <div className={`absolute z-50 mt-2 bg-white border-[3px] border-black rounded-none shadow-[2.5px_2.5px_0_0_#000] p-3 w-[268px] font-sans ${popupAlign === 'right' ? 'right-0' : 'left-0'}`}>
           {/* Header */}
           <div className="flex items-center justify-between mb-3 border-b-[3px] border-black pb-2">
             <button type="button" onClick={prevView} className="w-8 h-8 border-[2px] border-black rounded-none bg-white hover:bg-[#fde047] text-black font-black transition-all leading-none flex items-center justify-center shadow-[2px_2px_0_0_#000] active:shadow-none active:translate-y-[2px] active:translate-x-[2px]">
@@ -279,6 +279,14 @@ export default function DatePicker({ name, required, label, onChange, value, cus
     </div>
   );
 }
+
+
+
+
+
+
+
+
 
 
 

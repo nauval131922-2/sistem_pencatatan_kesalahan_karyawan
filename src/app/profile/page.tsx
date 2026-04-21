@@ -145,7 +145,7 @@ export default function ProfilePage() {
       />
 
       <div className="flex-1 overflow-y-auto flex flex-col items-center">
-        <div className="w-full max-w-4xl bg-white border-[3px] border-black rounded-none shadow-[8px_8px_0_0_#000] overflow-hidden mb-8">
+        <div className="w-full max-w-4xl bg-white border-[3px] border-black rounded-none shadow-[3.5px_3.5px_0_0_#000] overflow-hidden mb-8">
           <form onSubmit={handleSubmit}>
             <div className="p-8">
               {isInitialLoading ? (
@@ -175,7 +175,7 @@ export default function ProfilePage() {
                   {/* Avatar Column */}
                    <div className="flex flex-col items-center">
                     <div className="relative group">
-                      <div className="w-32 h-32 rounded-none bg-black flex items-center justify-center overflow-hidden border-[3px] border-black shadow-[4px_4px_0_0_#000] relative z-0">
+                      <div className="w-32 h-32 rounded-none bg-black flex items-center justify-center overflow-hidden border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] relative z-0">
                         {photoUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -229,7 +229,7 @@ export default function ProfilePage() {
                   <div className="space-y-8">
                     {message && (
                       <div
-                        className={`p-4 rounded-none flex items-start gap-4 text-sm border-[3px] border-black animate-in slide-in-from-top-2 duration-300 shadow-[4px_4px_0_0_#000] ${
+                        className={`p-4 rounded-none flex items-start gap-4 text-sm border-[3px] border-black animate-in slide-in-from-top-2 duration-300 shadow-[2.5px_2.5px_0_0_#000] ${
                           message.type === "success"
                             ? "bg-[#fde047] text-black"
                             : "bg-[#ff5e5e] text-white"
@@ -280,7 +280,7 @@ export default function ProfilePage() {
                               onChange={(e) => setName(e.target.value)}
                               required
                               placeholder="Administrator"
-                              className="w-full h-12 px-4 bg-white border-[3px] border-black rounded-none text-[13px] font-black focus:outline-none shadow-[4px_4px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[6px_6px_0_0_#000] transition-all text-black placeholder:text-black/20 uppercase tracking-tighter"
+                              className="w-full h-12 px-4 bg-white border-[3px] border-black rounded-none text-[13px] font-black focus:outline-none shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[2.5px_2.5px_0_0_#000] transition-all text-black placeholder:text-black/20 uppercase tracking-tighter"
                             />
                           </div>
 
@@ -298,7 +298,7 @@ export default function ProfilePage() {
                               onChange={(e) => setUsername(e.target.value)}
                               required
                               placeholder="admin"
-                              className="w-full h-12 px-4 bg-white border-[3px] border-black rounded-none text-[13px] font-black focus:outline-none shadow-[4px_4px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[6px_6px_0_0_#000] transition-all text-black placeholder:text-black/20 uppercase tracking-tighter"
+                              className="w-full h-12 px-4 bg-white border-[3px] border-black rounded-none text-[13px] font-black focus:outline-none shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[2.5px_2.5px_0_0_#000] transition-all text-black placeholder:text-black/20 uppercase tracking-tighter"
                             />
                           </div>
                         </div>
@@ -330,7 +330,7 @@ export default function ProfilePage() {
                               onChange={(e) => setPassword(e.target.value)}
                               placeholder="••••••••"
                               autoComplete="new-password"
-                              className="w-full h-12 px-4 bg-white border-[3px] border-black rounded-none text-[13px] font-black focus:outline-none shadow-[4px_4px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[6px_6px_0_0_#000] transition-all text-black placeholder:text-black/20"
+                              className="w-full h-12 px-4 bg-white border-[3px] border-black rounded-none text-[13px] font-black focus:outline-none shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[2.5px_2.5px_0_0_#000] transition-all text-black placeholder:text-black/20"
                             />
                           </div>
 
@@ -350,7 +350,7 @@ export default function ProfilePage() {
                               }
                               placeholder="••••••••"
                               autoComplete="new-password"
-                              className={`w-full h-12 px-4 bg-white border-[3px] rounded-none text-[13px] font-black focus:outline-none shadow-[4px_4px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[6px_6px_0_0_#000] transition-all text-black placeholder:text-black/20 ${
+                              className={`w-full h-12 px-4 bg-white border-[3px] rounded-none text-[13px] font-black focus:outline-none shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[2.5px_2.5px_0_0_#000] transition-all text-black placeholder:text-black/20 ${
                                 password && confirmPassword
                                   ? password === confirmPassword
                                     ? "border-black"
@@ -392,7 +392,7 @@ export default function ProfilePage() {
                   isPending ||
                   (password !== "" && password !== confirmPassword)
                 }
-                className="h-12 px-10 text-[13px] bg-[#fde047] hover:bg-black hover:text-[#fde047] text-black rounded-none border-[3px] border-black flex items-center gap-3 transition-all shadow-[4px_4px_0_0_#000] hover:shadow-[6px_6px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed font-black uppercase tracking-widest"
+                className="h-12 px-10 text-[13px] bg-[#fde047] hover:bg-black hover:text-[#fde047] text-black rounded-none border-[3px] border-black flex items-center gap-3 transition-all shadow-[2.5px_2.5px_0_0_#000] hover:shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed font-black uppercase tracking-widest"
               >
                 {isLoading || isPending ? (
                   <RefreshCw size={18} className="animate-spin" strokeWidth={3} />
@@ -410,3 +410,11 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+

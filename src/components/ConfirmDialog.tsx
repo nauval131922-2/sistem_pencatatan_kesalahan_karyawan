@@ -89,7 +89,7 @@ export default function ConfirmDialog({
           
           {/* Header Icon & Title */}
           <div className="p-6 pb-2">
-            <div className={`w-12 h-12 rounded-none border-[3px] border-black shadow-[4px_4px_0_0_#000] flex items-center justify-center mb-5 ${bgStyles[type]}`}>
+            <div className={`w-12 h-12 rounded-none border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] flex items-center justify-center mb-5 ${bgStyles[type]}`}>
               <IconComponent />
             </div>
             <h3 className="text-xl font-black text-black uppercase tracking-tight leading-none mb-2">{title}</h3>
@@ -106,7 +106,7 @@ export default function ConfirmDialog({
               <button
                 onClick={onCancel}
                 disabled={isLoading}
-                className="px-4 py-2 font-black text-black hover:bg-[#fde047] bg-white border-[3px] border-black rounded-none shadow-[4px_4px_0_0_#000] hover:shadow-[6px_6px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] transition-all text-sm disabled:opacity-50 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none"
+                className="px-4 py-2 font-black text-black hover:bg-[#fde047] bg-white border-[3px] border-black rounded-none shadow-[2.5px_2.5px_0_0_#000] hover:shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] transition-all text-sm disabled:opacity-50 active:translate-y-[2px] active:translate-x-[2px] active:shadow-none"
               >
                 {cancelLabel}
               </button>
@@ -114,7 +114,7 @@ export default function ConfirmDialog({
             <button
               onClick={onConfirm}
               disabled={isLoading}
-              className={`px-4 py-2 font-black rounded-none border-[3px] border-black shadow-[4px_4px_0_0_#000] hover:shadow-[6px_6px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all text-sm flex items-center justify-center min-w-[80px] ${btnConfirmStyles[type]} ${!isConfirmType ? 'w-full' : ''} disabled:opacity-70`}
+              className={`px-4 py-2 font-black rounded-none border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] hover:shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all text-sm flex items-center justify-center min-w-[80px] ${btnConfirmStyles[type]} ${!isConfirmType ? 'w-full' : ''} disabled:opacity-70`}
             >
               {isLoading ? (
                 <Loader2 size={16} className="animate-spin" />
@@ -128,6 +128,14 @@ export default function ConfirmDialog({
     </Portal>
   );
 }
+
+
+
+
+
+
+
+
 
 
 

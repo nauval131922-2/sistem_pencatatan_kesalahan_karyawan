@@ -309,13 +309,13 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
   return (
     <div className="w-full flex-1 min-h-0 overflow-hidden flex flex-col gap-6">
       {/* Header Section */}
-      <div className="bg-white rounded-[8px] border-[1.5px] border-gray-200 p-5 hover:border-gray-300 hover:shadow-sm transition-all duration-300 flex flex-col gap-5 shrink-0 relative z-50">
+      <div className="bg-[var(--bg-surface)] rounded-none border-[3px] border-black p-5 hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3.5px_3.5px_0_0_#000] shadow-[2.5px_2.5px_0_0_#000] transition-all duration-300 flex flex-col gap-5 shrink-0 relative z-50">
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex flex-col gap-1.5">
-            <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Rentang Tanggal</span>
+            <span className="text-[10px] font-black text-black uppercase tracking-widest ml-1">Rentang Tanggal</span>
             <div className="flex items-center gap-2">
               <div className="w-[140px] relative group"><DatePicker name="startDate" value={startDate} onChange={setStartDate} /></div>
-              <div className="w-4 h-[1px] bg-gray-200 mx-1"></div>
+              <div className="w-4 h-[1px] bg-black mx-1"></div>
               <div className="w-[140px] relative group"><DatePicker name="endDate" value={endDate} onChange={setEndDate} /></div>
             </div>
           </div>
@@ -324,13 +324,13 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
             onClick={runBatchSync}
             disabled={isBatchProcessing}
             className={`
-              px-5 h-10 rounded-[8px] font-extrabold text-[13px] transition-all flex items-center justify-center gap-2.5 shadow-sm active:scale-[0.98]
+              px-6 h-12 rounded-none font-black text-[13px] uppercase tracking-wider border-[3px] border-black transition-all flex items-center justify-center gap-2.5 
               ${isBatchProcessing 
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200' 
-                : 'bg-green-600 text-white hover:bg-green-700 shadow-sm'}
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-300' 
+                : 'bg-[#fde047] text-black hover:bg-black hover:text-white shadow-[3.5px_3.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] hover:shadow-[5px_5px_0_0_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none transition-all'}
             `}
           >
-            {isBatchProcessing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+            {isBatchProcessing ? <Loader2 size={18} className="animate-spin" strokeWidth={3} /> : <RefreshCw size={18} strokeWidth={3} />}
             <span>{isBatchProcessing ? `Sinkronkan...` : 'Mulai Scrape All'}</span>
           </button>
         </div>
@@ -349,19 +349,19 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
 
           const groupColorMap: Record<string, { badge: string; header: string; dot: string }> = {
             green: {
-              badge: 'bg-green-50 text-green-700 border-green-200',
-              header: 'border-green-500',
-              dot: 'bg-green-500',
+              badge: 'bg-[#93c5fd] text-black border-black',
+              header: 'border-black',
+              dot: 'bg-black',
             },
             blue: {
-              badge: 'bg-blue-50 text-blue-700 border-blue-200',
-              header: 'border-blue-500',
-              dot: 'bg-blue-500',
+              badge: 'bg-[#fde047] text-black border-black',
+              header: 'border-black',
+              dot: 'bg-black',
             },
             purple: {
-              badge: 'bg-violet-50 text-violet-700 border-violet-200',
-              header: 'border-violet-500',
-              dot: 'bg-violet-500',
+              badge: 'bg-[#ff5e5e] text-white border-black',
+              header: 'border-black',
+              dot: 'bg-black',
             },
           };
           const gc = groupColorMap[group.color] || groupColorMap.green;
@@ -369,12 +369,12 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
           return (
             <div key={group.group} className="flex flex-col gap-4">
               {/* Group Header */}
-              <div className={`flex items-center gap-3 border-l-4 pl-3 ${gc.header}`}>
-                <span className={`text-[11px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${gc.badge}`}>
+              <div className={`flex items-center gap-3 border-l-[6px] pl-3 ${gc.header}`}>
+                <span className={`text-[11px] font-black uppercase tracking-widest px-2.5 py-1 rounded-none border-[2px] shadow-[2px_2px_0_0_#000] ${gc.badge}`}>
                   {group.group}
                 </span>
-                <div className="flex-1 h-px bg-gray-100" />
-                <span className="text-[10px] font-bold text-gray-400">{visibleMods.length} modul</span>
+                <div className="flex-1 h-px bg-black opacity-10" />
+                <span className="text-[10px] font-black text-black uppercase tracking-tight">{visibleMods.length} modul</span>
               </div>
 
               {/* Module Cards */}
@@ -387,36 +387,36 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
                     <div
                       key={mod.id}
                       className={`
-                        relative bg-white rounded-[8px] p-5 transition-all duration-300
-                        ${isActive ? 'border-[2px] border-green-500 ring-4 ring-green-500/5 shadow-md' : 'border-[1.5px] border-gray-200 hover:border-gray-300 hover:shadow-sm'}
+                        relative bg-white rounded-none p-5 transition-all duration-300 border-[3px] border-black
+                        ${isActive ? 'bg-[#f0f9ff] -translate-y-1 -translate-x-1 shadow-[3.5px_3.5px_0_0_#000]' : 'shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[2.5px_2.5px_0_0_#000]'}
                       `}
                     >
                       <div className="flex flex-col gap-4">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex flex-col min-w-0">
-                            <h3 className="text-[14px] font-black text-gray-800 leading-tight py-0.5">{mod.name}</h3>
-                            <p className="text-[10px] text-gray-400 font-bold mt-1 truncate">{mod.description}</p>
+                            <h3 className="text-[14px] font-black text-black leading-tight py-0.5 uppercase tracking-tight">{mod.name}</h3>
+                            <p className="text-[10px] text-gray-500 font-bold mt-1 truncate uppercase tracking-tighter">{mod.description}</p>
                           </div>
                           <div className={`
-                            w-8 h-8 rounded-[8px] flex items-center justify-center shrink-0 border
-                            ${state?.status === 'success' ? 'bg-green-50 border-green-100 text-green-600' :
-                              state?.status === 'error' ? 'bg-red-50 border-red-100 text-red-600' :
-                              isActive ? 'bg-blue-50 border-blue-100 text-blue-600' : 'bg-gray-50 border-gray-100 text-gray-400'}
+                            w-10 h-10 rounded-none flex items-center justify-center shrink-0 border-[2px] border-black shadow-[2px_2px_0_0_#000]
+                            ${state?.status === 'success' ? 'bg-[#93c5fd] text-black' :
+                              state?.status === 'error' ? 'bg-[#ff5e5e] text-white' :
+                              isActive ? 'bg-[#fde047] text-black' : 'bg-gray-50 text-gray-400 border-gray-300'}
                           `}>
-                            {state?.status === 'success' ? <CheckCircle2 size={16} /> :
-                             state?.status === 'error' ? <AlertCircle size={16} /> :
-                             isActive ? <Loader2 size={16} className="animate-spin" /> : <Database size={16} />}
+                            {state?.status === 'success' ? <CheckCircle2 size={18} strokeWidth={3} /> :
+                             state?.status === 'error' ? <AlertCircle size={18} strokeWidth={3} /> :
+                             isActive ? <Loader2 size={18} className="animate-spin" strokeWidth={3} /> : <Database size={18} strokeWidth={3} />}
                           </div>
                         </div>
 
                         <div className="flex flex-col gap-2">
-                          <div className="flex items-start gap-2 text-[10px] font-bold text-gray-400 leading-tight">
-                            <Clock size={12} className="mt-0.5 shrink-0" />
+                          <div className="flex items-start gap-2 text-[10px] font-black text-black/60 leading-tight uppercase tracking-tight">
+                            <Clock size={12} className="mt-0.5 shrink-0" strokeWidth={3} />
                             <div className="flex flex-col gap-0.5">
-                              <span className="tracking-tight">Diperbarui: {state?.lastUpdate || '-'}</span>
+                              <span className="tracking-tight">Update: {state?.lastUpdate || '-'}</span>
                               {state?.period && (
-                                <span className="text-[9px] font-medium opacity-70">
-                                  (Periode: {formatScrapedPeriodDate(state.period.start)} s.d. {formatScrapedPeriodDate(state.period.end)})
+                                <span className="text-[9px] font-bold opacity-70">
+                                  [{formatScrapedPeriodDate(state.period.start)} - {formatScrapedPeriodDate(state.period.end)}]
                                 </span>
                               )}
                             </div>
@@ -424,8 +424,8 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
 
                           {state?.message && (
                             <div className={`
-                              text-[10px] font-bold px-2.5 py-1.5 rounded-[8px] border leading-tight
-                              ${state.status === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}
+                              text-[10px] font-black px-2.5 py-2 rounded-none border-[2px] border-black leading-tight shadow-[2px_2px_0_0_#000] uppercase tracking-tighter
+                              ${state.status === 'success' ? 'bg-[#93c5fd]/30 text-black' : 'bg-[#ff5e5e]/20 text-black'}
                             `}>
                               {state.message}
                             </div>
@@ -436,11 +436,11 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
                           onClick={() => runSync(mod.id)}
                           disabled={isBatchProcessing}
                           className={`
-                            w-full h-9 rounded-[8px] border text-[11px] font-black transition-all flex items-center justify-center gap-2 uppercase tracking-wide
-                            ${isBatchProcessing ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 hover:border-gray-300 active:scale-95'}
+                            w-full h-10 rounded-none border-[2px] border-black text-[11px] font-black transition-all flex items-center justify-center gap-2 uppercase tracking-widest
+                            ${isBatchProcessing ? 'bg-gray-50 text-gray-300 border-gray-300 cursor-not-allowed' : 'bg-white text-black hover:bg-[var(--accent-primary)] hover:-translate-y-[2px] hover:-translate-x-[2px] hover:shadow-[2px_2px_0_0_#000] active:translate-y-[1px] active:translate-x-[1px] active:shadow-none'}
                           `}
                         >
-                          <RefreshCw size={12} className={isActive ? 'animate-spin' : ''} />
+                          <RefreshCw size={14} className={isActive ? 'animate-spin' : ''} strokeWidth={3} />
                           Sinkronkan
                         </button>
                       </div>
@@ -460,13 +460,13 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
       </div>
 
       {/* Info Section */}
-      <div className="bg-white border-[1.5px] border-gray-200 rounded-[8px] p-6 flex items-start gap-4 hover:border-gray-300 hover:shadow-sm transition-all duration-300 shadow-sm mt-auto">
-        <div className="w-10 h-10 rounded-[8px] bg-gray-50 flex items-center justify-center text-gray-400 border border-gray-100 shrink-0">
-          <ShieldCheck size={20} />
+      <div className="bg-[#fde047] border-[3px] border-black rounded-none p-6 flex items-start gap-4 hover:-translate-y-1 hover:-translate-x-1 hover:shadow-[3.5px_3.5px_0_0_#000] shadow-[2.5px_2.5px_0_0_#000] transition-all duration-300 mt-auto">
+        <div className="w-12 h-12 rounded-none bg-white flex items-center justify-center text-black border-[3px] border-black shadow-[2px_2px_0_0_#000] shrink-0">
+          <ShieldCheck size={24} strokeWidth={3} />
         </div>
         <div className="flex flex-col gap-1">
-          <h4 className="text-[14px] font-black text-gray-800 tracking-tight">Catatan Keamanan & Performa</h4>
-          <p className="text-[12px] text-gray-500 font-medium leading-relaxed">
+          <h4 className="text-[14px] font-black text-black uppercase tracking-tight">Catatan Keamanan & Performa</h4>
+          <p className="text-[12px] text-black font-bold leading-relaxed uppercase tracking-tighter opacity-80">
             Batch sinkronisasi menjalankan perintah satu per satu untuk mencegah overload pada server MDT Host. 
             Proses ini mungkin memakan waktu beberapa menit tergantung pada volume data. Pastikan koneksi internet stabil selama proses berlangsung.
           </p>
@@ -483,6 +483,16 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -34,3 +34,11 @@ export default async function BarangJadiPage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+

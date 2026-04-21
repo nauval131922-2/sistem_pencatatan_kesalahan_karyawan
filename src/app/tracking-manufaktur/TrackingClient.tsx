@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, Loader2, Calculator, ArrowRight, AlertCircle, Clock, ChevronDown } from 'lucide-react';
+import { Search, Loader2, Calculator, ArrowRight, AlertCircle, Clock, ChevronDown, RefreshCw } from 'lucide-react';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, ScrollContext } from '@/components/ui/DataTable';
 import { useContext } from 'react';
@@ -35,19 +35,20 @@ const parseLooseNumber = (value: unknown) => {
    return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const chipClass = "px-1.5 py-0.5 rounded-[8px] border text-[11px] font-bold whitespace-nowrap";
-const cardClass = "bg-white rounded-[8px] p-3 flex flex-col gap-2.5 w-full max-w-full text-left [content-visibility:auto] [contain-intrinsic-size:100px]";
-const infoCardClass = "bg-slate-50 p-2 rounded-[8px] border border-gray-100/50";
-const infoLabelClass = "text-[10px] text-gray-400 font-bold tracking-tight";
-const refLabelClass = "text-gray-400 font-bold min-w-[60px]";
-const refRowClass = "flex items-center gap-1.5 text-[11px] text-gray-500";
-const productTitleClass = "text-[12px] font-bold text-slate-800 leading-snug mt-1";
-const productMetaClass = "flex flex-wrap items-center gap-1.5 text-[11px] text-gray-400 font-medium tracking-tight mt-1";
-const customerTextClass = "text-[11px] font-bold";
-const locationBadgeClass = "text-[11px] text-gray-400 px-1.5 py-0.5 bg-gray-50 rounded-[8px] border border-gray-100 tracking-tighter font-bold whitespace-nowrap";
-const emptyStateClass = "px-1 text-[11px] font-bold text-gray-300 italic py-1 mt-0.5";
-const headerDateClass = "text-[10px] text-gray-400 shrink-0 text-right";
-const auditSectionClass = "pt-1 mt-1 border-t border-gray-100 flex flex-col gap-0.5 text-[11px] text-gray-400 italic";
+// Neobrutalist Classes
+const chipClass = "px-2 py-0.5 rounded-none border-[2px] border-black text-[10px] font-black whitespace-nowrap bg-white shadow-[2px_2px_0_0_#000] uppercase tracking-tighter";
+const cardClass = "bg-white rounded-none p-3.5 flex flex-col gap-2.5 w-full max-w-full text-left [content-visibility:auto] [contain-intrinsic-size:100px] border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] hover:shadow-[2.5px_2.5px_0_0_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all";
+const infoCardClass = "bg-black/5 p-2.5 rounded-none border-[2px] border-black";
+const infoLabelClass = "text-[9px] text-black/40 font-black tracking-widest uppercase";
+const refLabelClass = "text-black/30 font-black min-w-[60px] uppercase text-[10px]";
+const refRowClass = "flex items-center gap-1.5 text-[11px] text-black font-bold";
+const productTitleClass = "text-[12px] font-black text-black leading-tight mt-1 uppercase tracking-tighter";
+const productMetaClass = "flex flex-wrap items-center gap-1.5 text-[10px] text-black/40 font-black tracking-widest mt-1 uppercase";
+const customerTextClass = "text-[11px] font-black uppercase";
+const locationBadgeClass = "text-[10px] text-black px-2 py-0.5 bg-[#fde047] rounded-none border-[2px] border-black tracking-tighter font-black whitespace-nowrap shadow-[2px_2px_0_0_#000] uppercase";
+const emptyStateClass = "px-1 text-[11px] font-black text-black/20 italic py-2 mt-0.5 uppercase tracking-widest";
+const headerDateClass = "text-[10px] text-black/30 shrink-0 text-right font-black";
+const auditSectionClass = "pt-2 mt-2 border-t-[2px] border-black/10 flex flex-col gap-0.5 text-[10px] text-black/30 italic font-black uppercase tracking-tighter";
 
 const toTitleCase = (str: string) => {
    const abbreviations: Record<string, string> = {
@@ -78,7 +79,7 @@ const HighlightedText = React.memo(({ text, highlight }: { text: string; highlig
       <span>
          {parts.map((part, i) => 
             regex.test(part) ? (
-               <mark key={i} className="bg-yellow-100 text-yellow-900 px-0.5 rounded-[8px] shadow-sm border border-yellow-200 decoration-clone">
+               <mark key={i} className="bg-[#fde047] text-black px-0.5 font-black border-b-[2px] border-black">
                   {part}
                </mark>
             ) : (
@@ -102,8 +103,8 @@ const DataField = React.memo(({ k, v, isRaw, highlight }: { k: string, v: any, i
 
    return (
       <div className="flex items-start justify-between gap-4 text-[12px] leading-tight group/field">
-         <span className="text-gray-400 font-bold shrink-0">{k}</span>
-         <span className="text-gray-600 font-medium text-right break-words group-hover/field:text-gray-900 transition-colors">
+         <span className="text-black/30 font-black shrink-0 uppercase text-[10px] tracking-widest">{k}</span>
+         <span className="text-black font-bold text-right break-words group-hover/field:text-black transition-colors uppercase tracking-tighter">
             <HighlightedText text={displayVal} highlight={highlight} />
          </span>
       </div>
@@ -122,7 +123,7 @@ const RenderAllFieldsRaw = ({ data, excludeKeys = [], highlightText = '' }: { da
    const rawFields = ['id', 'kode_cabang', 'kd_cabang', 'tgl', 'status', 'created_at', 'edited_at', 'kd_barang', 'recid', 'top_hari', 'kd_gudang', 'create_at', 'updated_at', 'kd_pelanggan', 'datetime_mulai', 'datetime_selesai', 'tgl_dibutuhkan', 'tgl_close', 'status_close', 'jthtmp', 'faktur_supplier', 'tgl_lunas', 'kd_porsekot', 'kd_bank', 'kd_supir', 'kd_armada', 'kd_eks', 'waktu_kirim', 'waktu_selesai', 'tgl_expired', 'gol_barang', 'no_ref_pelanggan'];
 
    return (
-      <div className="grid grid-cols-1 gap-1.5 overflow-hidden">
+      <div className="grid grid-cols-1 gap-2 overflow-hidden">
          {entries.map(([key, val]) => (
             <DataField key={key} k={key} v={val} isRaw={rawFields.includes(key.toLowerCase())} highlight={highlightText} />
          ))}
@@ -150,7 +151,6 @@ const DataCard = React.memo(({ item, highlightText }: { item: any, highlightText
             }
          },
          { 
-            // root: scrollContainer?.current, // Use global scroll if specific one not found
             rootMargin: '800px 0px', // Pre-render 800px before/after viewport for smooth scrolling
             threshold: 0.01 
          }
@@ -163,15 +163,15 @@ const DataCard = React.memo(({ item, highlightText }: { item: any, highlightText
    return (
       <div 
          ref={cardRef} 
-         className={`${cardClass} border-[1.5px] border-gray-200 hover:border-gray-300 hover:shadow-sm transition-all min-h-[100px]`}
+         className={cardClass}
       >
          {isVisible ? (
             <RenderAllFields data={item} excludeKeys={['raw_data']} highlightText={highlightText} />
          ) : (
             <div className="flex flex-col gap-2.5 animate-pulse">
-               <div className="h-3 w-3/4 bg-gray-50 rounded-full" />
-               <div className="h-3 w-1/2 bg-gray-50 rounded-full" />
-               <div className="h-10 w-full bg-gray-50/50 rounded-[8px]" />
+               <div className="h-3 w-3/4 bg-black/5 rounded-none" />
+               <div className="h-3 w-1/2 bg-black/5 rounded-none" />
+               <div className="h-10 w-full bg-black/5 rounded-none" />
             </div>
          )}
       </div>
@@ -181,7 +181,7 @@ DataCard.displayName = 'DataCard';
 
 // Helper component for uniform column rendering
 const RenderColumnContent = React.memo(({ label, data, items, debouncedFilterText, matchesFilter, extraLabel }: any) => {
-   const filterLabel = debouncedFilterText ? `(pencarian dengan keyword "${debouncedFilterText}")` : extraLabel;
+   const filterLabel = debouncedFilterText ? `(HASIL CARI: "${debouncedFilterText}")` : extraLabel;
 
    if (items) {
       const filtered = useMemo(() => 
@@ -189,13 +189,13 @@ const RenderColumnContent = React.memo(({ label, data, items, debouncedFilterTex
       , [items, debouncedFilterText]);
 
       if (!filtered || filtered.length === 0) return (
-         <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-            <div className="text-[10px] text-gray-400 mb-1">0 Data {label} {filterLabel && <span className="text-gray-500">{filterLabel}</span>}</div>
+         <div className="flex flex-col gap-3 pt-2 pb-4 w-full max-w-full overflow-hidden px-1">
+            <div className="text-[10px] font-black text-black/30 mb-1 uppercase tracking-widest">0 DATA {label} {filterLabel && <span className="text-black/20">{filterLabel}</span>}</div>
          </div>
       );
       return (
-         <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-            <div className="text-[10px] text-gray-400 mb-1">{filtered.length} Data {label} {filterLabel && <span className="text-gray-500">{filterLabel}</span>}</div>
+         <div className="flex flex-col gap-4 pt-2 pb-5 w-full max-w-full overflow-hidden px-1">
+            <div className="text-[10px] font-black text-black/30 mb-1 uppercase tracking-widest">{filtered.length} DATA {label} {filterLabel && <span className="text-black/20">{filterLabel}</span>}</div>
             {filtered.map((item: any, idx: number) => (
                <DataCard key={item.id || idx} item={item} highlightText={debouncedFilterText} />
             ))}
@@ -204,13 +204,13 @@ const RenderColumnContent = React.memo(({ label, data, items, debouncedFilterTex
    }
    
    if (!data || (debouncedFilterText && !matchesFilter(data, debouncedFilterText))) return (
-      <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-         <div className="text-[10px] text-gray-400 mb-1">0 Data {label} {filterLabel && <span className="text-gray-500">{filterLabel}</span>}</div>
+      <div className="flex flex-col gap-3 pt-2 pb-4 w-full max-w-full overflow-hidden px-1">
+         <div className="text-[10px] font-black text-black/30 mb-1 uppercase tracking-widest">0 DATA {label} {filterLabel && <span className="text-black/20">{filterLabel}</span>}</div>
       </div>
    );
    return (
-      <div className="flex flex-col gap-2.5 pt-1.5 pb-3.5 w-full max-w-full overflow-hidden px-1">
-         <div className="text-[10px] text-gray-400 mb-1">1 Data {label} {filterLabel && <span className="text-gray-500">{filterLabel}</span>}</div>
+      <div className="flex flex-col gap-4 pt-2 pb-5 w-full max-w-full overflow-hidden px-1">
+         <div className="text-[10px] font-black text-black/30 mb-1 uppercase tracking-widest">1 DATA {label} {filterLabel && <span className="text-black/20">{filterLabel}</span>}</div>
          <DataCard item={data} highlightText={debouncedFilterText} />
       </div>
    );
@@ -227,24 +227,24 @@ export default function TrackingClient() {
    const [selectedNama, setSelectedNama] = useState<string>('');
    const [isAutoRefreshing, setIsAutoRefreshing] = useState(false);
    const [trackingData, setTrackingData] = useState<{
-        bom: any;
-        sphOut: any;
-        spphOut: any[];
-        sphIn: any[];
-        purchaseOrders: any[];
-        salesOrder?: any;
-        productionOrder?: any;
-        purchaseRequests: any[];
-        pengiriman: any[];
-        pelunasanPiutang: any[];
-        penerimaanPembelian: any[];
-        pembelianBarang: any[];
-        pelunasanHutang: any[];
-        bahanBaku: any[];
-        barangJadi: any[];
-        laporanPenjualan: any[];
-        id?: string;
-     } | null>(null);
+         bom: any;
+         sphOut: any;
+         spphOut: any[];
+         sphIn: any[];
+         purchaseOrders: any[];
+         salesOrder?: any;
+         productionOrder?: any;
+         purchaseRequests: any[];
+         pengiriman: any[];
+         pelunasanPiutang: any[];
+         penerimaanPembelian: any[];
+         pembelianBarang: any[];
+         pelunasanHutang: any[];
+         bahanBaku: any[];
+         barangJadi: any[];
+         laporanPenjualan: any[];
+         id?: string;
+      } | null>(null);
    const [suggestionPage, setSuggestionPage] = useState(1);
    const [hasMoreSuggestions, setHasMoreSuggestions] = useState(true);
    const [loadTime, setLoadTime] = useState<number | null>(null);
@@ -307,84 +307,84 @@ export default function TrackingClient() {
        {
           id: 'bom', header: 'Bill of Material Produksi', accessorKey: 'bom', size: columnWidths.bom,
           meta: { wrap: true, valign: 'top' },
-          cell: ({ row }) => <RenderColumnContent label="Bill of Material Produksi" data={row.original.bom} debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+          cell: ({ row }: any) => <RenderColumnContent label="Bill of Material Produksi" data={row.original.bom} debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'sph', header: 'SPH Keluar', accessorKey: 'sphOut', size: columnWidths.sph,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="SPH Keluar" data={row.original.sphOut} extraLabel="(via Bill of Material Produksi.faktur = SPH Keluar.faktur_bom)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }: any) => <RenderColumnContent label="SPH Keluar" data={row.original.sphOut} extraLabel="(VIA BOM.FAKTUR = SPH KELUAR.FAKTUR_BOM)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'so', header: 'Sales Order Barang', accessorKey: 'salesOrder', size: columnWidths.so,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Sales Order Barang" data={row.original.salesOrder} extraLabel="(via SPH Keluar.faktur = Sales Order Barang.faktur_sph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }: any) => <RenderColumnContent label="Sales Order Barang" data={row.original.salesOrder} extraLabel="(VIA SPH KELUAR.FAKTUR = SO.FAKTUR_SPH)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'production', header: 'Order Produksi', accessorKey: 'productionOrder', size: columnWidths.production,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Order Produksi" data={row.original.productionOrder} extraLabel="(via Sales Order Barang.faktur = Order Produksi.faktur_so AND Bill of Material Produksi.faktur = Order Produksi.faktur_bom)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }: any) => <RenderColumnContent label="Order Produksi" data={row.original.productionOrder} extraLabel="(VIA SO.FAKTUR = PRD.FAKTUR_SO)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
          id: 'pr', header: 'Purchase Request (PR)', accessorKey: 'purchaseRequests', size: columnWidths.pr,
          meta: { wrap: true, valign: 'top' },
-         cell: ({ row }) => <RenderColumnContent label="Purchase Request (PR)" items={row.original.purchaseRequests} extraLabel="(via Order Produksi.faktur = Purchase Request (PR).faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+         cell: ({ row }: any) => <RenderColumnContent label="Purchase Request (PR)" items={row.original.purchaseRequests} extraLabel="(VIA PRD.FAKTUR = PR.FAKTUR_PRD)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
             id: 'spph', header: 'SPPH Keluar', accessorKey: 'spphOut', size: columnWidths.spph,
            meta: { wrap: true, valign: 'top' },
-            cell: ({ row }) => <RenderColumnContent label="SPPH Keluar" items={row.original.spphOut} extraLabel="(via Purchase Request (PR).faktur = SPPH Keluar.faktur_pr)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+            cell: ({ row }: any) => <RenderColumnContent label="SPPH Keluar" items={row.original.spphOut} extraLabel="(VIA PR.FAKTUR = SPPH.FAKTUR_PR)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'sph_in', header: 'SPH Masuk', accessorKey: 'sphIn', size: columnWidths.sph_in,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="SPH Masuk" items={row.original.sphIn} extraLabel="(via SPPH Keluar.faktur = SPH Masuk.faktur_spph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }: any) => <RenderColumnContent label="SPH Masuk" items={row.original.sphIn} extraLabel="(VIA SPPH.FAKTUR = SPH IN.FAKTUR_SPPH)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'purchase_orders', header: 'Purchase Order (PO)', accessorKey: 'purchaseOrders', size: columnWidths.purchase_orders,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Purchase Order (PO)" items={row.original.purchaseOrders} extraLabel="(via SPH Masuk.faktur = Purchase Order (PO).faktur_sph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }: any) => <RenderColumnContent label="Purchase Order (PO)" items={row.original.purchaseOrders} extraLabel="(VIA SPH IN.FAKTUR = PO.FAKTUR_SPH)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
        {
           id: 'penerimaan_pembelian', header: 'Penerimaan Barang', accessorKey: 'penerimaanPembelian', size: columnWidths.penerimaan_pembelian,
           meta: { wrap: true, valign: 'top' },
-          cell: ({ row }) => <RenderColumnContent label="Penerimaan Barang" items={row.original.penerimaanPembelian} extraLabel="(via Purchase Order (PO).faktur = PB.faktur_po)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+          cell: ({ row }: any) => <RenderColumnContent label="Penerimaan Barang" items={row.original.penerimaanPembelian} extraLabel="(VIA PO.FAKTUR = PB.FAKTUR_PO)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
-           id: 'pembelian_barang', header: 'Laporan Rekap Pembelian Barang', accessorKey: 'pembelianBarang', size: columnWidths.pembelian_barang,
+           id: 'pembelian_barang', header: 'Rekap Pembelian Barang', accessorKey: 'pembelianBarang', size: columnWidths.pembelian_barang,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Laporan Rekap Pembelian Barang" items={row.original.pembelianBarang} extraLabel="(via Penerimaan Barang.faktur = Pembelian Barang.faktur_pb)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }: any) => <RenderColumnContent label="Rekap Pembelian Barang" items={row.original.pembelianBarang} extraLabel="(VIA PB.FAKTUR = BELI.FAKTUR_PB)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'pelunasan_hutang', header: 'Pelunasan Hutang', accessorKey: 'pelunasanHutang', size: columnWidths.pelunasan_hutang,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Pelunasan Hutang" items={row.original.pelunasanHutang} extraLabel="(via Pembelian Barang.faktur = Pelunasan Hutang.faktur_pb)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }: any) => <RenderColumnContent label="Pelunasan Hutang" items={row.original.pelunasanHutang} extraLabel="(VIA BELI.FAKTUR = HUTANG.FAKTUR_PB)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'bahan_baku', header: 'BBB Produksi', accessorKey: 'bahanBaku', size: columnWidths.bahan_baku,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="BBB Produksi" items={row.original.bahanBaku} extraLabel="(via Order Produksi.faktur = BBB Produksi.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }: any) => <RenderColumnContent label="BBB Produksi" items={row.original.bahanBaku} extraLabel="(VIA PRD.FAKTUR = BBB.FAKTUR_PRD)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
-           id: 'barang_jadi', header: 'Penerimaan Barang Hasil Produksi', accessorKey: 'barangJadi', size: columnWidths.barang_jadi,
+           id: 'barang_jadi', header: 'Barang Hasil Produksi', accessorKey: 'barangJadi', size: columnWidths.barang_jadi,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Penerimaan Barang Hasil Produksi" items={row.original.barangJadi} extraLabel="(via Order Produksi.faktur = Penerimaan Barang Hasil Produksi.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }: any) => <RenderColumnContent label="Barang Hasil Produksi" items={row.original.barangJadi} extraLabel="(VIA PRD.FAKTUR = JADI.FAKTUR_PRD)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'laporan_penjualan', header: 'Laporan Penjualan', accessorKey: 'laporanPenjualan', size: columnWidths.laporan_penjualan,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Laporan Penjualan" items={row.original.laporanPenjualan} extraLabel="(via Sales Order Barang.faktur = Laporan Penjualan.faktur_so OR Sales Order Barang.kd_barang = Laporan Penjualan.kd_barang)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }: any) => <RenderColumnContent label="Laporan Penjualan" items={row.original.laporanPenjualan} extraLabel="(VIA SO.FAKTUR = JUAL.FAKTUR_SO)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
            id: 'pengiriman', header: 'Pengiriman', accessorKey: 'pengiriman', size: columnWidths.pengiriman,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Pengiriman" items={row.original.pengiriman} extraLabel="(via Laporan Penjualan.faktur = Pengiriman.faktur)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }: any) => <RenderColumnContent label="Pengiriman" items={row.original.pengiriman} extraLabel="(VIA JUAL.FAKTUR = KIRIM.FAKTUR)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
-           id: 'pelunasan_piutang', header: 'Pelunasan Piutang Penjualan', accessorKey: 'pelunasanPiutang', size: columnWidths.pelunasan_piutang,
+           id: 'pelunasan_piutang', header: 'Pelunasan Piutang', accessorKey: 'pelunasanPiutang', size: columnWidths.pelunasan_piutang,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }) => <RenderColumnContent label="Pelunasan Piutang Penjualan" items={row.original.pelunasanPiutang} extraLabel="(via Laporan Penjualan.faktur = Pelunasan Piutang Penjualan.fkt)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }: any) => <RenderColumnContent label="Pelunasan Piutang" items={row.original.pelunasanPiutang} extraLabel="(VIA JUAL.FAKTUR = PIUTANG.FKT)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         }
-    ], [columnWidths, debouncedFilterText]);
+    ], [columnWidths, debouncedFilterText, matchesFilter]);
 
    // Search logic for dropdown
    useEffect(() => {
@@ -490,53 +490,72 @@ export default function TrackingClient() {
 
    return (
       <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-700 overflow-hidden">
-         <div className="bg-white rounded-[8px] border-[1.5px] border-gray-200 p-5 hover:border-gray-300 hover:shadow-sm transition-all duration-300 flex flex-col gap-5 shrink-0 relative z-50">
+         {/* BOM SELECTOR SECTION */}
+         <div className="bg-white border-[3px] border-black p-6 shadow-[3.5px_3.5px_0_0_#000] flex flex-col gap-5 shrink-0 relative z-50">
             <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
                <div className="flex-1">
                   <div className="flex flex-col gap-1.5">
-                     <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Pilih BOM (Pencarian Bill of Material)</span>
+                     <span className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Pilih BOM (Bill of Material) Utama</span>
                   </div>
                   <div className="relative mt-2" ref={suggestionRef}>
                      <div
-                        className={`w-full bg-gray-50/50 border border-gray-100 rounded-[8px] px-4 h-11 text-sm flex items-center justify-between transition-all text-gray-800 cursor-pointer hover:border-gray-300 hover:bg-gray-100/50 shadow-sm ${open ? 'ring-4 ring-green-500/10 border-green-500 bg-white' : ''}`}
+                        className={`w-full bg-white border-[3px] border-black rounded-none px-4 h-14 text-sm flex items-center justify-between transition-all text-black cursor-pointer shadow-[2.5px_2.5px_0_0_#000] hover:shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] ${open ? 'bg-[#fde047]' : ''}`}
                         onClick={() => { setOpen(!open); setQ(''); }}
                      >
-                        <div className="flex items-center gap-3 truncate">
+                        <div className="flex items-center gap-4 truncate">
                            {loadingData ? (
-                              <Loader2 size={16} className="animate-spin text-green-500" />
+                              <RefreshCw size={20} className="animate-spin text-black" strokeWidth={3} />
                            ) : (
-                              <Calculator size={16} className={trackingData ? 'text-green-600' : 'text-gray-400'} />
+                              <Calculator size={20} className="text-black" strokeWidth={3} />
                            )}
-                           <span className={trackingData || (loadingData && selectedFaktur) ? 'text-gray-700 truncate font-bold text-[12px]' : 'text-gray-400 font-medium truncate text-[12px]'}>
-                              {loadingData 
-                                 ? (selectedFaktur ? `[${selectedFaktur}] Memperbarui data...` : 'Sedang melacak data...')
-                                 : trackingData 
-                                   ? `[${trackingData?.bom?.faktur || trackingData?.productionOrder?.faktur}] ${trackingData?.bom?.nama_prd || trackingData?.productionOrder?.nama_prd}` 
-                                   : 'Cari nomor BOM atau nama produk...'}
-                           </span>
+                           <div className="flex flex-col truncate leading-tight">
+                              <span className="text-black/40 font-black text-[9px] uppercase tracking-widest">Target Pelacakan:</span>
+                              <span className="text-black truncate font-black text-[13px] uppercase tracking-tighter">
+                                 {loadingData 
+                                    ? (selectedFaktur ? `[${selectedFaktur}] SINKRONISASI DATA...` : 'MENELUSURI JALUR...')
+                                    : trackingData 
+                                      ? `[${trackingData?.bom?.faktur || trackingData?.productionOrder?.faktur}] ${trackingData?.bom?.nama_prd || trackingData?.productionOrder?.nama_prd}` 
+                                      : 'PILIH NOMOR BOM ATAU NAMA PRODUK...'}
+                              </span>
+                           </div>
                         </div>
-                        <ChevronDown size={14} className={`text-gray-400 transition-transform duration-300 ${open ? 'rotate-180 text-green-500' : ''}`} />
+                        <ChevronDown size={20} strokeWidth={4} className={`text-black transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
                      </div>
 
                      {open && (
-                        <div className="absolute top-full left-0 right-0 mt-3 bg-white border border-gray-100 rounded-[8px] shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 ring-4 ring-black/5">
-                           <div className="p-4 border-b border-gray-50 bg-gray-50/50">
+                        <div className="absolute top-[calc(100%+12px)] left-0 right-0 bg-white border-[4px] border-black shadow-[3.5px_3.5px_0_0_#000] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                           <div className="p-4 border-b-[4px] border-black bg-[#fde047]">
                               <div className="relative">
-                                 <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                                 <input autoFocus type="text" placeholder="Ketik nomor BOM atau nama produk..." className="w-full pl-11 pr-4 h-11 text-sm border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 bg-white font-bold" value={q} onChange={(e) => setQ(e.target.value)} />
-                                 {loadingSuggestions && <div className="absolute right-4 top-1/2 -translate-y-1/2"><Loader2 size={16} className="animate-spin text-green-500" /></div>}
+                                 <Search size={18} strokeWidth={3} className="absolute left-4 top-1/2 -translate-y-1/2 text-black" />
+                                 <input 
+                                    autoFocus 
+                                    type="text" 
+                                    placeholder="CARI NOMOR BOM ATAU NAMA PRODUK..." 
+                                    className="w-full pl-12 pr-4 h-12 text-[13px] border-[3px] border-black rounded-none focus:outline-none focus:bg-white bg-white/50 font-black uppercase tracking-tighter placeholder:text-black/20" 
+                                    value={q} 
+                                    onChange={(e) => setQ(e.target.value)} 
+                                 />
+                                 {loadingSuggestions && <div className="absolute right-4 top-1/2 -translate-y-1/2"><Loader2 size={18} className="animate-spin text-black" strokeWidth={3} /></div>}
                               </div>
                            </div>
-                           <div className="max-h-[320px] overflow-y-auto custom-scrollbar p-2" onScroll={handleListScroll}>
+                           <div className="max-h-[350px] overflow-y-auto custom-scrollbar p-2" onScroll={handleListScroll}>
                               {suggestions.length > 0 ? suggestions.map((s: any, idx: number) => (
-                                 <button key={`${s.faktur}-${idx}`} onClick={() => handleSelect(s)} className={`w-full px-4 py-3 text-left rounded-[8px] transition-all flex items-center justify-between group/item mb-1 last:mb-0 ${trackingData?.id === s.faktur ? 'bg-green-50 text-green-700 font-black' : 'hover:bg-green-600 hover:text-white group/item'}`}>
+                                 <button 
+                                    key={`${s.faktur}-${idx}`} 
+                                    onClick={() => handleSelect(s)} 
+                                    className={`w-full px-4 py-3 text-left rounded-none transition-all flex items-center justify-between group/item mb-1 last:mb-0 border-[2px] border-transparent hover:border-black hover:bg-[#fde047] ${trackingData?.id === s.faktur ? 'bg-black text-[#fde047]' : 'text-black'}`}
+                                 >
                                     <div className="flex flex-col min-w-0">
-                                       <span className={`text-[12px] font-black truncate ${trackingData?.id === s.faktur ? 'text-green-700' : 'text-gray-800 group-hover/item:text-white'}`}>{s.faktur}</span>
-                                       <span className={`text-[12px] font-medium truncate ${trackingData?.id === s.faktur ? 'text-green-600/70' : 'text-gray-400 group-hover/item:text-white/85'}`}>{s.nama_prd}</span>
+                                       <span className="text-[12px] font-black truncate uppercase tracking-tighter">{s.faktur}</span>
+                                       <span className={`text-[11px] font-bold truncate uppercase tracking-tight ${trackingData?.id === s.faktur ? 'text-[#fde047]/60' : 'text-black/40'}`}>{s.nama_prd}</span>
                                     </div>
-                                    <ArrowRight size={14} className="shrink-0 opacity-0 group-hover/item:opacity-100 transition-opacity translate-x-1" />
+                                    <ArrowRight size={18} strokeWidth={4} className="shrink-0 opacity-0 group-hover/item:opacity-100 transition-all translate-x-2" />
                                  </button>
-                              )) : <div className="p-10 text-center flex flex-col items-center gap-3"><p className="text-sm font-black text-gray-400">Tidak Ada Hasil</p></div>}
+                              )) : (
+                                 <div className="p-12 text-center flex flex-col items-center gap-3">
+                                    <p className="text-[12px] font-black text-black/20 uppercase tracking-widest">Data Tidak Ditemukan</p>
+                                 </div>
+                              )}
                            </div>
                         </div>
                      )}
@@ -546,32 +565,33 @@ export default function TrackingClient() {
          </div>
 
          {error && (
-            <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-[8px] text-sm flex items-start gap-3 animate-in fade-in shrink-0">
-               <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-               <p className="font-semibold">{error}</p>
+            <div className="p-4 bg-[#ff5e5e] text-white border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] text-sm flex items-start gap-4 animate-in fade-in shrink-0">
+               <AlertCircle size={20} strokeWidth={3} className="shrink-0 mt-0.5" />
+               <p className="font-black uppercase tracking-tight leading-tight">{error}</p>
             </div>
          )}
 
+         {/* RESULTS SECTION */}
          <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
             <div className="flex flex-col gap-4 shrink-0">
                <div className="flex items-center justify-between gap-4 min-h-[32px]">
-                  <h3 className="text-[14px] font-extrabold text-gray-800 flex items-center gap-3.5 leading-none">
-                     <Clock size={18} className="text-green-600" />
-                     <span>Hasil Pelacakan</span>
+                  <h3 className="text-[14px] font-black text-black flex items-center gap-3 leading-none uppercase tracking-widest">
+                     <Clock size={20} className="text-black" strokeWidth={3} />
+                     <span>Visualisasi Alur Manufaktur</span>
                   </h3>
                   {isAutoRefreshing && (
-                     <div className="flex items-center gap-1.5 text-[11px] font-bold text-green-600 animate-pulse bg-green-50 px-2.5 py-1 rounded-full border border-green-100 uppercase tracking-tighter leading-none">
-                       <Loader2 size={11} className="animate-spin" />
-                       <span>Diperbarui otomatis</span>
+                     <div className="flex items-center gap-2 text-[10px] font-black text-black animate-pulse bg-[#fde047] px-3 py-1.5 border-[2px] border-black shadow-[2px_2px_0_0_#000] uppercase tracking-tighter leading-none">
+                       <Loader2 size={12} className="animate-spin" strokeWidth={3} />
+                       <span>Sinkronisasi Otomatis...</span>
                      </div>
                   )}
                </div>
                <div className="relative w-full group">
-                  <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-green-500 transition-colors" />
+                  <Search size={18} strokeWidth={3} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within:text-black transition-colors" />
                   <input 
                      type="text" 
-                     placeholder="Cari dalam hasil pelacakan (Faktur, Barang, Pelanggan, dll)..." 
-                     className="w-full pl-12 pr-4 h-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-bold placeholder:text-gray-300 shadow-sm" 
+                     placeholder="CARI DALAM HASIL PELACAKAN (FAKTUR, BARANG, PELANGGAN, DLL)..." 
+                     className="w-full pl-12 pr-4 h-12 bg-white border-[3px] border-black rounded-none focus:outline-none shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[2.5px_2.5px_0_0_#000] transition-all text-[13px] font-black placeholder:text-black/20 uppercase tracking-tighter" 
                      value={filterText} 
                      onChange={(e) => setFilterText(e.target.value)} 
                      onBlur={handleSearchTrigger}
@@ -581,6 +601,7 @@ export default function TrackingClient() {
                   />
                </div>
             </div>
+            
             <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
                {useMemo(() => (
                   <DataTable
@@ -590,20 +611,22 @@ export default function TrackingClient() {
                      hideSorting={true} disableHover={true} rowCursor="cursor-grab"
                   />
                ), [columns, trackingData, loadingData, columnWidths])}
+               
+               {/* FOOTER INFO BANNER */}
                <div className="flex items-center justify-between shrink-0 px-1 mt-1">
-                  <span className="text-[12px] leading-none font-bold text-gray-400">
+                  <span className="text-[12px] leading-none font-black text-black/30 uppercase tracking-tighter">
                      {loadingData ? (
                         <span className="flex items-center gap-2">
-                           <Loader2 size={14} className="animate-spin text-green-500" />
-                           Sedang menelusuri alur manufaktur...
+                           <Loader2 size={14} className="animate-spin text-black" strokeWidth={3} />
+                           SEDANG MENELUSURI ALUR PRODUKSI...
                         </span>
-                     ) : trackingData ? 'Data Pelacakan: 1 Siklus Manufaktur Ditemukan' : 'Silakan pilih BOM di atas untuk melihat pelacakan'}
+                     ) : trackingData ? 'STATUS: 1 SIKLUS PRODUKSI BERHASIL DILACAK' : 'INFO: SILAKAN PILIH NOMOR BOM UNTUK MEMULAI PELACAKAN'}
                   </span>
                   {loadTime !== null && trackingData && (
                      <div className="flex items-center gap-4">
-                        <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-none font-black flex items-center gap-1.5 shadow-[2px_2px_0_0_#000] border-[2px] border-black uppercase tracking-tight ${loadTime < 300 ? 'bg-[#93c5fd] text-black' : loadTime < 1000 ? 'bg-[#fde047] text-black' : 'bg-[#ff5e5e] text-white'}`}>
                            <span className="animate-pulse">⚡</span>
-                           <span>{(loadTime / 1000).toFixed(2)}s</span>
+                           <span>{(loadTime / 1000).toFixed(2)}S</span>
                         </span>
                      </div>
                   )}
@@ -613,8 +636,3 @@ export default function TrackingClient() {
       </div>
    );
 }
-
-
-
-
-

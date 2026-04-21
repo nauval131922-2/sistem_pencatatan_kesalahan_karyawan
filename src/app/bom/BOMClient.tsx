@@ -10,6 +10,8 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatLastUpdate } from '@/lib/date-utils';
 import { formatScrapedPeriodDate, getDefaultScraperDateRange, hydrateScraperPeriod, persistScraperPeriod } from '@/lib/scraper-period';
 import { DataTable } from '@/components/ui/DataTable';
+import SearchAndReload from '@/components/SearchAndReload';
+import TableFooter from '@/components/TableFooter';
 import { splitDateRangeIntoMonths } from '@/lib/date-utils';
 import { useTableSelection } from '@/lib/hooks/useTableSelection';
 
@@ -57,33 +59,12 @@ export default function BOMClient() {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('bom_columnWidths');
       return saved ? JSON.parse(saved) : {
-        id: 80,
-        faktur: 220,
-        faktur_tplt: 160,
-        kd_cabang: 120,
-        kd_gudang: 200,
-        tgl: 140,
-        kd_mtd: 120,
-        kd_pelanggan: 250,
-        nama_prd: 350,
-        status: 100,
-        bbb: 160,
-        pers_btkl: 100,
-        btkl: 160,
-        pers_bop: 100,
-        bop: 160,
-        hp: 160,
-        spesifikasi: 400,
-        qty_order: 100,
-        faktur_prd: 250,
-        faktur_sph: 250,
-        username: 120,
-        created_at: 180,
-        username_edited: 120,
-        edited_at: 180,
-        cmd: 250,
-        detil: 180,
-        recid: 100
+        id: 80, faktur: 220, faktur_tplt: 160, kd_cabang: 120, kd_gudang: 200,
+        tgl: 140, kd_mtd: 120, kd_pelanggan: 250, nama_prd: 350, status: 100,
+        bbb: 160, pers_btkl: 100, btkl: 160, pers_bop: 100, bop: 160,
+        hp: 160, spesifikasi: 400, qty_order: 100, faktur_prd: 250,
+        faktur_sph: 250, username: 120, created_at: 180, username_edited: 120,
+        edited_at: 180, cmd: 250, detil: 180, recid: 100
       };
     }
     return {};
@@ -111,7 +92,7 @@ export default function BOMClient() {
     if (!mountedRef.current) return;
 
     setLoading(page === 1);
-    const startTimer = Date.now();
+    const startTimer = performance.now();
     try {
       const queryParams = new URLSearchParams({
         page: page.toString(),
@@ -152,7 +133,7 @@ export default function BOMClient() {
             setLastUpdated(formatLastUpdate(latestDate));
           }
         }
-        setLoadTime(Date.now() - startTimer);
+        setLoadTime(Math.round(performance.now() - startTimer));
         if (isInitial) initialLoaded.current = true;
       }
     } catch (err: any) {
@@ -197,7 +178,6 @@ export default function BOMClient() {
     setStartDate(hydratedPeriod.startDate);
     setEndDate(hydratedPeriod.endDate);
     
-
     return () => {
       mountedRef.current = false;
     };
@@ -266,28 +246,9 @@ export default function BOMClient() {
       if (successCount > 0) {
         const periodStr = persistScraperPeriod({ stateKey: 'bomReportState', periodKey: 'BOMClient_scrapedPeriod' }, startDate, endDate);
         setScrapedPeriod(periodStr);
-        await fetch('/api/bom/scrape-period', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            start: formatDateToYYYYMMDD(startDate).split('-').reverse().join('-'),
-            end: formatDateToYYYYMMDD(endDate).split('-').reverse().join('-'),
-          })
-        });
         if (lastUpdatedFromScrape) {
           setLastUpdated(formatLastUpdate(new Date(lastUpdatedFromScrape)));
         }
-        setIsBatching(false);
-        await fetch('/api/activity-log', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action_type: 'SCRAPE',
-            table_name: 'bom',
-            message: `Tarik Bill of Material Produksi (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
-            raw_data: JSON.stringify({ totalScraped })
-          })
-        });
 
         setRefreshKey(prev => prev + 1);
         localStorage.setItem('sintak_data_updated', Date.now().toString());
@@ -316,267 +277,138 @@ export default function BOMClient() {
     }
   }, [loading, data, totalCount]);
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
+  const columns = useMemo(() => [
     {
       accessorKey: 'id',
       header: 'ID',
-      size: columnWidths.id,
-      cell: ({ getValue, row }) => (
-        <span className={`font-medium tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-gray-400'}`}>
-          {getValue() as string}
-        </span>
-      )
+      size: 80,
+      cell: ({ getValue, row }: any) => <span className={`font-medium tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-gray-400'}`}>{String(getValue())}</span>
     },
     {
       accessorKey: 'faktur',
       header: 'Faktur BOM',
-      size: columnWidths.faktur,
-      cell: ({ getValue, row }) => (
-        <span className={`font-medium transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-700'}`}>
-          {getValue() as string}
-        </span>
-      )
+      size: 220,
+      cell: ({ getValue, row }: any) => <span className={`font-black tracking-tight transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-700'}`}>{String(getValue())}</span>
     },
     {
       accessorKey: 'tgl',
       header: 'Tanggal',
-      size: columnWidths.tgl,
-      cell: ({ getValue, row }) => (
-        <span className={`font-medium tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>
-          {formatIndoDateStr(getValue() as string)}
-        </span>
-      )
+      size: 140,
+      cell: ({ getValue, row }: any) => <span className={`font-bold tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>{formatIndoDateStr(getValue() as string)}</span>
     },
     {
       accessorKey: 'faktur_tplt',
       header: 'Template',
-      size: columnWidths.faktur_tplt,
-      cell: ({ getValue, row }) => (
-        <span className={`font-medium transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-400'}`}>
-          {getValue() as string || '-'}
-        </span>
-      )
+      size: 160,
+      cell: ({ getValue, row }: any) => <span className={`font-medium transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-400'}`}>{String(getValue() || '—')}</span>
     },
     {
       accessorKey: 'kd_mtd',
       header: 'Metode',
-      size: columnWidths.kd_mtd,
-      cell: ({ getValue, row }) => (
-        <span className={`${row.getIsSelected() ? 'text-green-800' : 'text-gray-600'} font-bold text-[11px]`}>
-          {getValue() as string}
-        </span>
-      )
+      size: 120,
+      cell: ({ getValue, row }: any) => <span className={`${row.getIsSelected() ? 'text-green-800' : 'text-gray-600'} font-black text-[11px] uppercase`}>{String(getValue())}</span>
     },
     {
-        accessorKey: 'kd_cabang',
-        header: 'Cabang',
-        size: columnWidths.kd_cabang,
-        cell: ({ getValue }) => <span className="text-gray-500">{getValue() as string || '-'}</span>
-      },
-      {
-        accessorKey: 'kd_gudang',
-        header: 'Gudang',
-        size: columnWidths.kd_gudang,
-        cell: ({ getValue }) => <span className="text-gray-500">{getValue() as string || '-'}</span>
-      },
-    {
-        accessorKey: 'kd_pelanggan',
-        header: 'Pelanggan',
-        size: columnWidths.kd_pelanggan,
-        cell: ({ getValue, row }) => (
-          <span className={`font-medium transition-colors ${row.getIsSelected() ? 'text-green-800' : 'text-gray-700'}`}>
-            {getValue() as string}
-          </span>
-        )
-      },
+      accessorKey: 'kd_pelanggan',
+      header: 'Pelanggan',
+      size: 250,
+      cell: ({ getValue, row }: any) => <span className={`font-medium transition-colors ${row.getIsSelected() ? 'text-green-800' : 'text-gray-700'}`}>{String(getValue())}</span>
+    },
     {
       accessorKey: 'nama_prd',
       header: 'Nama Prd',
-      size: columnWidths.nama_prd,
-      cell: ({ getValue, row }) => (
-        <span className={`font-bold text-[13px] ${row.getIsSelected() ? 'text-green-900' : 'text-slate-800'}`}>
-          {getValue() as string}
-        </span>
-      )
+      size: 350,
+      cell: ({ getValue, row }: any) => <span className={`font-bold text-[13px] uppercase tracking-tighter ${row.getIsSelected() ? 'text-green-900' : 'text-slate-800'}`}>{String(getValue())}</span>
     },
     {
         accessorKey: 'qty_order',
         header: 'Qty',
-        size: columnWidths.qty_order,
+        size: 100,
         meta: { align: 'right' },
-        cell: ({ getValue }) => {
-          const val = getValue();
-          const cleanStr = String(val || '0').replace(/,/g, '').replace(/[^0-9.-]/g, '');
-          const num = parseFloat(cleanStr);
-          return <span className="font-bold tabular-nums text-slate-500">{(isNaN(num) ? 0 : num).toLocaleString('id-ID')}</span>
-        }
+        cell: ({ getValue }: any) => <span className="font-black tabular-nums text-slate-700">{Number(String(getValue() || '0').replace(/[^0-9.-]/g, '') || 0).toLocaleString('id-ID')}</span>
     },
     {
       accessorKey: 'bbb',
       header: 'BBB',
-      size: columnWidths.bbb,
+      size: 160,
       meta: { align: 'right' },
-      cell: ({ getValue, row }) => (
-        <div className={`flex items-center justify-end font-medium tabular-nums transition-colors ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>
-          <span className={`text-[10px] font-bold mr-1 ${row.getIsSelected() ? 'text-green-400' : 'text-gray-300'}`}>Rp</span>
-          <span>{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+      cell: ({ getValue, row }: any) => (
+        <div className={`flex items-center justify-between font-black tabular-nums transition-colors w-full ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>
+          <span className={`text-[10px] opacity-40 ${row.getIsSelected() ? 'text-green-400' : 'text-gray-400'}`}>Rp</span>
+          <span>{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</span>
         </div>
       )
-    },
-    {
-        accessorKey: 'pers_btkl',
-        header: '% BTKL',
-        size: columnWidths.pers_btkl,
-        meta: { align: 'right' },
-        cell: ({ getValue }) => <span className="text-gray-400 tabular-nums text-[11px]">{Number(getValue() || 0).toFixed(2)}%</span>
     },
     {
       accessorKey: 'btkl',
       header: 'BTKL',
-      size: columnWidths.btkl,
+      size: 160,
       meta: { align: 'right' },
-      cell: ({ getValue, row }) => (
-        <div className={`flex items-center justify-end font-medium tabular-nums transition-colors ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>
-          <span className={`text-[10px] font-bold mr-1 ${row.getIsSelected() ? 'text-green-400' : 'text-gray-300'}`}>Rp</span>
-          <span>{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+      cell: ({ getValue, row }: any) => (
+        <div className={`flex items-center justify-between font-black tabular-nums transition-colors w-full ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>
+          <span className={`text-[10px] opacity-40 ${row.getIsSelected() ? 'text-green-400' : 'text-gray-400'}`}>Rp</span>
+          <span>{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</span>
         </div>
       )
     },
     {
-        accessorKey: 'pers_bop',
-        header: '% BOP',
-        size: columnWidths.pers_bop,
-        meta: { align: 'right' },
-        cell: ({ getValue }) => <span className="text-gray-400 tabular-nums text-[11px]">{Number(getValue() || 0).toFixed(2)}%</span>
-    },
-    {
       accessorKey: 'bop',
       header: 'BOP',
-      size: columnWidths.bop,
+      size: 160,
       meta: { align: 'right' },
-      cell: ({ getValue, row }) => (
-        <div className={`flex items-center justify-end font-medium tabular-nums transition-colors ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>
-          <span className={`text-[10px] font-bold mr-1 ${row.getIsSelected() ? 'text-green-400' : 'text-gray-300'}`}>Rp</span>
-          <span>{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+      cell: ({ getValue, row }: any) => (
+        <div className={`flex items-center justify-between font-black tabular-nums transition-colors w-full ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>
+          <span className={`text-[10px] opacity-40 ${row.getIsSelected() ? 'text-green-400' : 'text-gray-400'}`}>Rp</span>
+          <span>{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</span>
         </div>
       )
     },
     {
       accessorKey: 'hp',
       header: 'HP',
-      size: columnWidths.hp,
+      size: 160,
       meta: { align: 'right' },
-      cell: ({ getValue, row }) => (
-        <div className={`flex items-center justify-end font-extrabold tabular-nums transition-colors ${row.getIsSelected() ? 'text-green-800' : 'text-slate-900'}`}>
-          <span className={`text-[10px] font-bold mr-1 ${row.getIsSelected() ? 'text-green-400' : 'text-gray-300'}`}>Rp</span>
-          <span>{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+      cell: ({ getValue, row }: any) => (
+        <div className={`flex items-center justify-between font-black tabular-nums transition-colors w-full ${row.getIsSelected() ? 'text-green-800' : 'text-black'}`}>
+          <span className={`text-[10px] opacity-40 ${row.getIsSelected() ? 'text-green-400' : 'text-black'}`}>Rp</span>
+          <span>{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</span>
         </div>
       )
     },
     {
         accessorKey: 'status',
         header: 'Status',
-        size: columnWidths.status,
-        cell: ({ getValue }) => {
-          const val = getValue() as string;
+        size: 100,
+        cell: ({ getValue }: any) => {
+          const val = String(getValue());
           return (
-            <span className={`font-black text-[10px] px-2 py-0.5 rounded-full border ${val === '1' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+            <span className={`font-black text-[10px] px-2 py-0.5 border-[2px] border-black shadow-[1.5px_1.5px_0_0_#000] uppercase ${val === '1' ? 'bg-[#22c55e] text-white' : 'bg-gray-200 text-gray-500'}`}>
               {val === '1' ? 'ACTIVE' : 'INACTIVE'}
             </span>
           );
         }
       },
     {
-        accessorKey: 'spesifikasi',
-        header: 'Spesifikasi',
-        size: columnWidths.spesifikasi,
-        cell: ({ getValue }) => <span className="text-gray-500 text-[12px] italic whitespace-nowrap">{getValue() as string || '-'}</span>
-    },
-    {
-        accessorKey: 'faktur_prd',
-        header: 'Ref. Produksi',
-        size: columnWidths.faktur_prd,
-        cell: ({ getValue, row }) => (
-          <div className={`transition-colors truncate font-medium ${row.getIsSelected() ? 'text-green-600' : 'text-gray-400'}`} dangerouslySetInnerHTML={{ __html: getValue() as string || '-' }} />
-        )
-      },
-      {
-        accessorKey: 'faktur_sph',
-        header: 'Ref. SPH',
-        size: columnWidths.faktur_sph,
-        cell: ({ getValue, row }) => (
-          <div className={`transition-colors truncate font-medium ${row.getIsSelected() ? 'text-green-600' : 'text-gray-400'}`} dangerouslySetInnerHTML={{ __html: getValue() as string || '-' }} />
-        )
-      },
-      {
-        accessorKey: 'username',
-        header: 'User',
-        size: columnWidths.username,
-        cell: ({ getValue, row }) => (
-          <span className={`text-[11px] font-bold transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-400'}`}>
-            @{getValue() as string || '–'}
-          </span>
-        )
-      },
-      {
-        accessorKey: 'created_at',
-        header: 'Created At',
-        size: columnWidths.created_at,
-        cell: ({ getValue }) => <span className="text-[11px] text-gray-400 font-mono">{getValue() as string || '-'}</span>
-      },
-      {
-        accessorKey: 'username_edited',
-        header: 'Edited By',
-        size: columnWidths.username_edited,
-        cell: ({ getValue }) => <span className="text-[11px] text-gray-400">@{getValue() as string || '-'}</span>
-      },
-      {
-        accessorKey: 'edited_at',
-        header: 'Edited At',
-        size: columnWidths.edited_at,
-        cell: ({ getValue }) => <span className="text-[11px] text-gray-400 font-mono">{getValue() as string || '-'}</span>
-      },
-      {
-        accessorKey: 'cmd',
-        header: 'Komando',
-        size: columnWidths.cmd,
-        cell: ({ getValue }) => <div className="flex justify-center" dangerouslySetInnerHTML={{ __html: getValue() as string || '-' }} />
-      },
-      {
-        accessorKey: 'detil',
-        header: 'Detil',
-        size: columnWidths.detil,
-        cell: ({ getValue }) => <div className="flex justify-center" dangerouslySetInnerHTML={{ __html: getValue() as string || '-' }} />
-      },
-    {
       accessorKey: 'recid',
       header: 'RecId',
-      size: columnWidths.recid,
-      cell: ({ getValue, row }) => (
-        <span className={`font-mono text-[11px] ${row.getIsSelected() ? 'text-green-600' : 'text-gray-400'}`}>
-          {getValue() as string}
-        </span>
-      )
+      size: 100,
+      cell: ({ getValue, row }: any) => <span className={`font-mono text-[11px] ${row.getIsSelected() ? 'text-green-600' : 'text-gray-400'}`}>{String(getValue())}</span>
     }
-  ], [columnWidths]);
+  ], []);
+
+  if (!isMounted) return null;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
-      <div className="bg-white rounded-[8px] border-[1.5px] border-gray-200 p-5 hover:border-gray-200 hover:shadow-sm transition-all duration-300 flex flex-col gap-5 shrink-0 relative z-50">
+      <div className="bg-[var(--bg-surface)] rounded-none border-[3px] border-black p-5 hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3.5px_3.5px_0_0_#000] shadow-[2.5px_2.5px_0_0_#000] transition-all duration-300 flex flex-col gap-5 shrink-0 relative z-50">
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex flex-wrap items-center gap-6">
             <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Rentang Tanggal</span>
+              <span className="text-[10px] font-black text-black uppercase tracking-widest ml-1">Rentang Tanggal</span>
               <div className="flex items-center gap-2">
-                <>
-                  <div className="w-[140px]">
-                    <DatePicker value={startDate} onChange={setStartDate} name="startDate" />
-                  </div>
-                  <div className="w-4 h-[1px] bg-gray-200 mx-1"></div>
-                  <div className="w-[140px]">
-                    <DatePicker value={endDate} onChange={setEndDate} name="endDate" />
-                  </div>
-                </>
+                <div className="w-[140px] relative group"><DatePicker value={startDate} onChange={setStartDate} name="startDate" /></div>
+                <div className="w-4 h-[1px] bg-gray-200 mx-1"></div>
+                <div className="w-[140px] relative group"><DatePicker value={endDate} onChange={setEndDate} name="endDate" /></div>
               </div>
             </div>
           </div>
@@ -584,18 +416,18 @@ export default function BOMClient() {
           <div className="shrink-0 flex items-center gap-3">
             {isBatching && (
               <div className="flex flex-col items-end">
-                <div className="text-[10px] text-green-600 font-bold animate-pulse leading-none uppercase tracking-tighter">{batchStatus}</div>
-                <div className="w-24 h-1 bg-gray-50 rounded-full mt-1.5 overflow-hidden border border-gray-200">
-                  <div className="h-full bg-green-500 transition-all duration-300" style={{ width: `${batchProgress}%` }} />
+                <div className="text-[10px] text-black font-black animate-pulse leading-none uppercase tracking-tighter bg-[#fde047] px-2 py-1 border-[2px] border-black shadow-[2px_2px_0_0_#000]">{batchStatus}</div>
+                <div className="w-24 h-2 bg-white rounded-none mt-1.5 overflow-hidden border-[2px] border-black shadow-[2px_2px_0_0_#000]">
+                  <div className="h-full bg-black transition-all duration-300" style={{ width: `${batchProgress}%` }} />
                 </div>
               </div>
             )}
             <button
               onClick={handleFetch}
               disabled={loading || isBatching}
-              className="px-5 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-[8px] transition-all flex items-center justify-center gap-2.5 disabled:opacity-70 shadow-sm active:scale-[0.98]"
+              className="px-5 h-10 bg-[#fde047] text-black hover:bg-black hover:text-white hover:border-black text-[13px] font-black uppercase tracking-wider border-[3px] border-black rounded-none transition-all flex items-center justify-center gap-2.5 shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] hover:shadow-[2.5px_2.5px_0_0_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none disabled:opacity-50"
             >
-              <RefreshCw size={16} className={isBatching ? "animate-spin" : ""} />
+              <RefreshCw size={16} className={isBatching ? "animate-spin" : ""} strokeWidth={3} />
               <span>{isBatching ? `${batchProgress}%` : 'Tarik Data'}</span>
             </button>
           </div>
@@ -603,13 +435,12 @@ export default function BOMClient() {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-[8px] text-sm flex items-start gap-2 animate-in fade-in shrink-0">
-          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-          <p className="font-semibold">{error}</p>
+        <div className="p-3 bg-[#ff5e5e] text-white border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] rounded-none text-sm font-black flex items-start gap-2 animate-in fade-in shrink-0 uppercase tracking-wide">
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" strokeWidth={3} />
+          <p>{error}</p>
         </div>
       )}
 
-      {/* Results View */}
       <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
         <div className="flex flex-col gap-4 shrink-0">
           <div className="flex items-center justify-between gap-4 min-h-[32px]">
@@ -619,7 +450,7 @@ export default function BOMClient() {
                 <span>Hasil Scrapping</span>
               </h3>
               {lastUpdated && (
-                <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none" style={{ color: '#99a1af' }}>
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-black/40 leading-none">
                   <span className="opacity-40">|</span>
                   <span>Diperbarui: {lastUpdated}{scrapedPeriod ? ` (Periode: ${formatScrapedPeriodDate(scrapedPeriod.start)} s.d. ${formatScrapedPeriodDate(scrapedPeriod.end)})` : ''}</span>
                 </div>
@@ -627,25 +458,16 @@ export default function BOMClient() {
             </div>
 
             {loading && (data?.length || 0) > 0 && (
-              <div className="flex items-center gap-2 text-[11px] font-bold text-green-600 animate-pulse bg-green-50 px-2.5 py-1 rounded-full border border-green-100 uppercase tracking-tighter leading-none">
+              <div className="text-[11px] font-black text-black flex items-center gap-2 bg-[#fde047] px-2.5 py-1 rounded-none border-[2px] border-black shadow-[2px_2px_0_0_#000] animate-pulse uppercase tracking-tighter leading-none">
                 <Loader2 size={12} className="animate-spin" />
                 <span>Memproses...</span>
               </div>
             )}
           </div>
-          <div className="relative w-full group">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-green-500 transition-colors" />
-            <input
-              type="text"
-              placeholder="Cari faktur, produk, pelanggan..."
-              className="w-full pl-12 pr-4 h-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+          <SearchAndReload searchQuery={searchQuery} setSearchQuery={setSearchQuery} onReload={() => setRefreshKey(prev => prev + 1)} loading={loading} placeholder="Cari faktur, produk, pelanggan..." />
         </div>
 
-        <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden relative">
           <DataTable
             columns={columns}
             data={data || []}
@@ -656,30 +478,17 @@ export default function BOMClient() {
             onRowClick={handleRowClick}
             columnWidths={columnWidths}
             onColumnWidthChange={setColumnWidths}
+            rowHeight="h-10"
           />
 
-          <div className="flex items-center justify-between shrink-0 px-1 mt-1">
-            <span className="text-[12px] leading-none font-bold text-gray-400">
-              {totalCount === 0 ? 'Tidak ada Bill of Material Produksi' : `Menampilkan ${data?.length || 0} dari ${totalCount} Bill of Material Produksi`}
-            </span>
-            <div className="flex items-center gap-4">
-              {selectedIds.size > 0 && (
-                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                  <span className="text-[12px] leading-none font-bold text-gray-400">{selectedIds.size} dipilih</span>
-                  <button onClick={clearSelection} className="text-[12px] leading-none font-black text-rose-500 hover:text-rose-600 underline underline-offset-4">Batal</button>
-                </div>
-              )}
-              {loadTime !== null && (
-                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
-                  loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                  loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'
-                }`}>
-                  <span className="animate-pulse">⚡</span>
-                  <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
-                </span>
-              )}
-            </div>
-          </div>
+          <TableFooter 
+            totalCount={totalCount}
+            currentCount={data?.length || 0}
+            label="Bill of Material Produksi"
+            selectedCount={selectedIds.size}
+            onClearSelection={clearSelection}
+            loadTime={loadTime}
+          />
         </div>
       </div>
 
@@ -693,14 +502,3 @@ export default function BOMClient() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-

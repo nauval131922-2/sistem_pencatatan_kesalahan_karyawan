@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -7,6 +6,7 @@ import { DataTable } from '@/components/ui/DataTable';
 import MasterPekerjaanUpload from './MasterPekerjaanUpload';
 import ImportInfo from '@/components/ImportInfo';
 import SearchAndReload from '@/components/SearchAndReload';
+import TableFooter from '@/components/TableFooter';
 
 interface PekerjaanRecord {
   id: number;
@@ -43,15 +43,6 @@ const CATEGORIES = [
   'E. GUDANG',
   'F. TEHNISI',
 ];
-
-const CATEGORY_COLORS: Record<string, string> = {
-  'A. PRA CETAK':       'bg-blue-50 text-blue-700 border-blue-200',
-  'B. QUALITY CONTROL': 'bg-purple-50 text-purple-700 border-purple-200',
-  'C. CETAK':           'bg-orange-50 text-orange-700 border-orange-200',
-  'D. PASCA CETAK':     'bg-green-50 text-green-700 border-green-200',
-  'E. GUDANG':          'bg-yellow-50 text-yellow-700 border-yellow-200',
-  'F. TEHNISI':         'bg-red-50 text-red-700 border-red-200',
-};
 
 interface MasterPekerjaanClientProps {
   importInfo?: {
@@ -154,7 +145,7 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
 
   // Fetch data
   const loadData = useCallback(async () => {
-    setLoading(true);
+    setLoading(page === 1);
     setError('');
     const start = performance.now();
     try {
@@ -195,38 +186,119 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
   const columns = useMemo(() => {
     const cw = (k: string, def: number) => columnWidths[k] ?? def;
     return [
-      { accessorKey: 'no',      header: 'No.',           cell: (i: any) => (page-1)*PAGE_SIZE + i.row.index + 1, size: cw('no',50), meta:{align:'center'} },
-      { accessorKey: 'code',    header: 'Kode',          cell: (i: any) => <span className="font-mono text-[12px] font-bold text-gray-700 tracking-tight">{i.getValue()}</span>, size: cw('code',180) },
-      { accessorKey: 'name',    header: 'Nama Pekerjaan',cell: (i: any) => <span className="text-[12px] text-gray-800 font-medium">{i.getValue()}</span>, size: cw('name',320) },
-      { accessorKey: 'target_value',         header: 'Target',                        cell: (i: any) => numCell(i.getValue(), 'text-green-700'),  size: cw('target_value',90),         meta:{align:'right'} },
-      { accessorKey: 'standart_target',      header: 'Standart Target',               cell: (i: any) => numCell(i.getValue(), 'text-amber-700'),  size: cw('standart_target',120),     meta:{align:'right'} },
-      { accessorKey: 'ket_1',                header: 'Ket-1',                         cell: (i: any) => textCell(i.getValue(), 'text-slate-600'),  size: cw('ket_1',80),                meta:{align:'left'} },
-      { accessorKey: 'ket_2',                header: 'Ket-2',                         cell: (i: any) => textCell(i.getValue(), 'text-slate-600'),  size: cw('ket_2',80),                meta:{align:'left'} },
-      { accessorKey: 'ket_3',                header: 'Ket-3',                         cell: (i: any) => textCell(i.getValue(), 'text-slate-600'),  size: cw('ket_3',80),                meta:{align:'left'} },
-      { accessorKey: 'ket_4',                header: 'Ket-4',                         cell: (i: any) => textCell(i.getValue(), 'text-slate-600'),  size: cw('ket_4',80),                meta:{align:'left'} },
-      { accessorKey: 'ket_5',                header: 'Ket-5',                         cell: (i: any) => textCell(i.getValue(), 'text-slate-600'),  size: cw('ket_5',80),                meta:{align:'left'} },
-      { accessorKey: 'ket_6',                header: 'Ket-6',                         cell: (i: any) => textCell(i.getValue(), 'text-slate-600'),  size: cw('ket_6',80),                meta:{align:'left'} },
-      { accessorKey: 'ket_7',                header: 'Ket-7',                         cell: (i: any) => textCell(i.getValue(), 'text-slate-600'),  size: cw('ket_7',80),                meta:{align:'left'} },
-      { accessorKey: 'unit_mesin',           header: 'Unit Mesin',                    cell: (i: any) => <span className="text-[12px] text-gray-600">{i.getValue()||'—'}</span>,       size: cw('unit_mesin',110) },
-      { accessorKey: 'jumlah_plate',         header: 'Jumlah Plate',                  cell: (i: any) => numCell(i.getValue(), 'text-gray-600'),   size: cw('jumlah_plate',100),        meta:{align:'right'} },
-      { accessorKey: 'target_per_jam_plate', header: 'Target/Jam Per Plate',          cell: (i: any) => numCell(i.getValue(), 'text-indigo-700'), size: cw('target_per_jam_plate',150),meta:{align:'right'} },
-      { accessorKey: 'persiapan_mesin',      header: 'Persiapan Mesin',               cell: (i: any) => numCell(i.getValue(), 'text-gray-600'),   size: cw('persiapan_mesin',120),     meta:{align:'right'} },
-      { accessorKey: 'waktu_ganti_plate',    header: 'Waktu Ganti Plate',             cell: (i: any) => numCell(i.getValue(), 'text-gray-600'),   size: cw('waktu_ganti_plate',120),   meta:{align:'right'} },
-      { accessorKey: 'jml_gosok_plate',      header: 'Jml. Gosok Plate',              cell: (i: any) => numCell(i.getValue(), 'text-gray-600'),   size: cw('jml_gosok_plate',120),     meta:{align:'right'} },
-      { accessorKey: 'waktu_gosok_plate',    header: 'Waktu Gosok Plate',             cell: (i: any) => numCell(i.getValue(), 'text-gray-600'),   size: cw('waktu_gosok_plate',130),   meta:{align:'right'} },
-      { accessorKey: 'asumsi_target_per_hari',header:'Asumsi Target/Hari',            cell: (i: any) => numCell(i.getValue(), 'text-blue-600'),   size: cw('asumsi_target_per_hari',150),meta:{align:'right'} },
-      { accessorKey: 'target_per_hari',      header: 'Target Per Hari',               cell: (i: any) => numCell(i.getValue(), 'text-blue-700'),   size: cw('target_per_hari',110),     meta:{align:'right'} },
-      { accessorKey: 'target_per_jam',       header: 'Target Per Jam',                cell: (i: any) => numCell(i.getValue(), 'text-indigo-700'), size: cw('target_per_jam',110),      meta:{align:'right'} },
-      { accessorKey: 'efektif_jam_kerja',    header: 'Efektif Jam Kerja',             cell: (i: any) => numCell(i.getValue(), 'text-teal-700'),   size: cw('efektif_jam_kerja',130),   meta:{align:'right'} },
-      { accessorKey: 'keterangan',           header: 'Keterangan',                    cell: (i: any) => <span className="text-[12px] text-gray-500 italic">{i.getValue()||'—'}</span>, size: cw('keterangan',200) },
+      { 
+        accessorKey: 'no', 
+        header: 'No.', 
+        size: 80,
+        cell: ({ row }: any) => <span className={`font-medium tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-gray-400'}`}>{(page - 1) * PAGE_SIZE + (row.index + 1)}</span>
+      },
+      { 
+        accessorKey: 'code', 
+        header: 'Kode', 
+        size: 180,
+        cell: ({ getValue, row }: any) => <span className={`font-mono text-[12px] font-bold tracking-tight transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-700'}`}>{String(getValue())}</span> 
+      },
+      { 
+        accessorKey: 'name', 
+        header: 'Nama Pekerjaan', 
+        size: 320,
+        cell: ({ getValue, row }: any) => <span className={`text-[12px] font-medium transition-colors ${row.getIsSelected() ? 'text-green-900' : 'text-gray-800'}`}>{String(getValue())}</span> 
+      },
+      { 
+        accessorKey: 'target_value', header: 'Target', size: 90, meta: { align: 'right' },
+        cell: ({ getValue, row }: any) => (
+          <div className={`flex items-center justify-between font-black tabular-nums w-full ${row.getIsSelected() ? 'text-green-700' : 'text-green-700'}`}>
+            <span>{Number(getValue() || 0).toLocaleString('id-ID')}</span>
+          </div>
+        )
+      },
+      { 
+        accessorKey: 'standart_target', header: 'Standart Target', size: 120, meta: { align: 'right' },
+        cell: ({ getValue, row }: any) => (
+          <div className={`flex items-center justify-between font-black tabular-nums w-full ${row.getIsSelected() ? 'text-amber-800' : 'text-amber-700'}`}>
+            <span>{Number(getValue() || 0).toLocaleString('id-ID')}</span>
+          </div>
+        )
+      },
+      { 
+        accessorKey: 'ket_1', header: 'Ket-1', size: 80,
+        cell: ({ getValue }: any) => <span className="text-[11px] font-bold text-gray-400">{String(getValue() || '—')}</span>
+      },
+      { 
+        accessorKey: 'ket_2', header: 'Ket-2', size: 80,
+        cell: ({ getValue }: any) => <span className="text-[11px] font-bold text-gray-400">{String(getValue() || '—')}</span>
+      },
+      { 
+        accessorKey: 'ket_3', header: 'Ket-3', size: 80,
+        cell: ({ getValue }: any) => <span className="text-[11px] font-bold text-gray-400">{String(getValue() || '—')}</span>
+      },
+      { 
+        accessorKey: 'ket_4', header: 'Ket-4', size: 80,
+        cell: ({ getValue }: any) => <span className="text-[11px] font-bold text-gray-400">{String(getValue() || '—')}</span>
+      },
+      { 
+        accessorKey: 'ket_5', header: 'Ket-5', size: 80,
+        cell: ({ getValue }: any) => <span className="text-[11px] font-bold text-gray-400">{String(getValue() || '—')}</span>
+      },
+      { 
+        accessorKey: 'ket_6', header: 'Ket-6', size: 80,
+        cell: ({ getValue }: any) => <span className="text-[11px] font-bold text-gray-400">{String(getValue() || '—')}</span>
+      },
+      { 
+        accessorKey: 'ket_7', header: 'Ket-7', size: 80,
+        cell: ({ getValue }: any) => <span className="text-[11px] font-bold text-gray-400">{String(getValue() || '—')}</span>
+      },
+      { 
+        accessorKey: 'unit_mesin', header: 'Unit Mesin', size: 110,
+        cell: ({ getValue }: any) => <span className="text-[11px] font-bold text-gray-400">{String(getValue() || '—')}</span>
+      },
+      { 
+        accessorKey: 'jumlah_plate', header: 'Jumlah Plate', size: 100, meta: { align: 'right' },
+        cell: ({ getValue }: any) => <span className="text-[12px] font-bold text-gray-700">{Number(getValue() || 0).toLocaleString('id-ID')}</span>
+      },
+      { 
+        accessorKey: 'target_per_jam_plate', header: 'Target/Jam Per Plate', size: 150, meta: { align: 'right' },
+        cell: ({ getValue }: any) => <span className="text-[12px] font-bold text-indigo-700">{Number(getValue() || 0).toLocaleString('id-ID')}</span>
+      },
+      { 
+        accessorKey: 'persiapan_mesin', header: 'Persiapan Mesin', size: 120, meta: { align: 'right' },
+        cell: ({ getValue }: any) => <span className="text-[12px] font-bold text-gray-700">{Number(getValue() || 0).toLocaleString('id-ID')}</span>
+      },
+      { 
+        accessorKey: 'waktu_ganti_plate', header: 'Waktu Ganti Plate', size: 120, meta: { align: 'right' },
+        cell: ({ getValue }: any) => <span className="text-[12px] font-bold text-gray-700">{Number(getValue() || 0).toLocaleString('id-ID')}</span>
+      },
+      { 
+        accessorKey: 'jml_gosok_plate', header: 'Jml. Gosok Plate', size: 120, meta: { align: 'right' },
+        cell: ({ getValue }: any) => <span className="text-[12px] font-bold text-gray-700">{Number(getValue() || 0).toLocaleString('id-ID')}</span>
+      },
+      { 
+        accessorKey: 'waktu_gosok_plate', header: 'Waktu Gosok Plate', size: 130, meta: { align: 'right' },
+        cell: ({ getValue }: any) => <span className="text-[12px] font-bold text-gray-700">{Number(getValue() || 0).toLocaleString('id-ID')}</span>
+      },
+      { 
+        accessorKey: 'asumsi_target_per_hari', header: 'Asumsi Target/Hari', size: 150, meta: { align: 'right' },
+        cell: ({ getValue }: any) => <span className="text-[12px] font-bold text-blue-600">{Number(getValue() || 0).toLocaleString('id-ID')}</span>
+      },
+      { 
+        accessorKey: 'target_per_hari', header: 'Target Per Hari', size: 110, meta: { align: 'right' },
+        cell: ({ getValue }: any) => <span className="text-[12px] font-bold text-blue-700">{Number(getValue() || 0).toLocaleString('id-ID')}</span>
+      },
+      { 
+        accessorKey: 'target_per_jam', header: 'Target Per Jam', size: 110, meta: { align: 'right' },
+        cell: ({ getValue }: any) => <span className="text-[12px] font-bold text-indigo-700">{Number(getValue() || 0).toLocaleString('id-ID')}</span>
+      },
+      { 
+        accessorKey: 'efektif_jam_kerja', header: 'Efektif Jam Kerja', size: 130, meta: { align: 'right' },
+        cell: ({ getValue }: any) => <span className="text-[12px] font-bold text-teal-700">{Number(getValue() || 0).toLocaleString('id-ID')}</span>
+      },
+      { 
+        accessorKey: 'keterangan', header: 'Keterangan', size: 200,
+        cell: ({ getValue }: any) => <span className="text-[11px] font-bold text-gray-400 italic">{String(getValue() || '—')}</span>
+      },
     ];
   }, [page, columnWidths]);
 
-
-  const canPrev = page > 1;
-  const canNext = page < totalPages;
-  const pageStart = totalCount === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const pageEnd   = Math.min(page * PAGE_SIZE, totalCount);
 
   const handleColumnWidthChange = useCallback((widths: Record<string, number>) => {
     setColumnWidths(widths);
@@ -241,39 +313,39 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
          <MasterPekerjaanUpload />
 
          {/* Filters Card */}
-         <div className="bg-white rounded-[8px] border-[1.5px] border-gray-200 p-5 hover:border-gray-200 hover:shadow-sm transition-all duration-300 flex flex-col justify-center relative z-50 h-[97px]">
+         <div className="bg-[var(--bg-surface)] rounded-none border-[3px] border-black p-5 hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3.5px_3.5px_0_0_#000] shadow-[2.5px_2.5px_0_0_#000] transition-all duration-300 flex flex-col justify-center relative z-50 h-[97px]">
             <div className="flex items-end gap-3">
                {/* Category Filter */}
                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Kategori</span>
+                  <span className="text-[10px] font-black text-black uppercase tracking-widest ml-1">Kategori</span>
                   <div className="flex items-center gap-2">
                     <div className="w-[180px] relative category-dropdown-container">
                       <button
                         onClick={() => setIsCategoryDropdownOpen(prev => !prev)}
-                        className="w-full h-9 pl-8 pr-8 bg-white border border-gray-200 rounded-[8px] focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-600 transition-all text-sm font-semibold text-gray-700 flex items-center justify-between"
+                        className="w-full h-9 pl-8 pr-8 bg-white border-[2px] border-black rounded-none shadow-[2px_2px_0_0_#000] focus:outline-none focus:shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] hover:-translate-y-[1px] hover:-translate-x-[1px] hover:shadow-[2px_2px_0_0_#000] transition-all text-sm font-black text-black flex items-center justify-between"
                       >
                         <span className="truncate" title={categoryFilter === '' ? 'Semua Kategori' : categoryFilter}>
                           {categoryFilter === '' ? 'Semua Kategori' : categoryFilter}
                         </span>
                         <div className="absolute top-1/2 -translate-y-1/2 left-2.5 pointer-events-none text-gray-400">
-                          <Filter size={14} />
+                          <Filter size={14} className="text-black" strokeWidth={2.5} />
                         </div>
                         <div className="absolute top-1/2 -translate-y-1/2 right-2.5 pointer-events-none text-gray-400">
-                          <ChevronDown size={14} className={`transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} />
+                          <ChevronDown size={14} className={`text-black transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={3} />
                         </div>
                       </button>
 
                       {isCategoryDropdownOpen && (
-                        <div className="absolute top-[calc(100%+6px)] left-0 w-[240px] bg-white border border-gray-100 rounded-[8px] shadow-xl py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[300px]">
-                          <div className="px-2.5 pb-2 shrink-0 border-b border-gray-50 mb-1">
+                        <div className="absolute top-[calc(100%+6px)] left-0 w-[240px] bg-white border-[3px] border-black rounded-none shadow-[2.5px_2.5px_0_0_#000] py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[300px]">
+                          <div className="px-2.5 pb-2 shrink-0 border-b-2 border-black mb-1">
                             <div className="relative">
                               <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-gray-400">
-                                <Search size={12} />
+                                <Search size={12} className="text-black" strokeWidth={3} />
                               </div>
                               <input
                                 type="text" autoFocus placeholder="Cari..."
                                 value={categorySearchQuery} onChange={(e) => setCategorySearchQuery(e.target.value)}
-                                className="w-full pl-7 pr-2.5 py-1.5 text-xs bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-green-500/20 rounded-[6px] placeholder:text-gray-400 font-medium"
+                                className="w-full pl-7 pr-2.5 py-1.5 text-xs bg-white border-[2px] border-black focus:outline-none focus:shadow-[2px_2px_0_0_#000] rounded-none placeholder:text-gray-400 font-black"
                               />
                             </div>
                           </div>
@@ -291,7 +363,7 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
                                     setIsCategoryDropdownOpen(false); 
                                     setCategorySearchQuery(''); 
                                   }}
-                                  className={`w-full text-left px-2.5 py-2 text-sm font-medium rounded-md transition-colors truncate ${categoryFilter === cat ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                                  className={`w-full text-left px-2.5 py-2 text-sm font-black rounded-none transition-colors truncate border-b-2 border-transparent hover:border-black ${categoryFilter === cat ? 'bg-[#fde047] text-black border-black' : 'text-black hover:bg-gray-100'}`}
                                 >
                                   {cat === '' ? 'Semua Kategori' : cat}
                                 </button>
@@ -305,35 +377,35 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
 
                {/* Sub Category Filter */}
                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Sub Kategori</span>
+                  <span className="text-[10px] font-black text-black uppercase tracking-widest ml-1">Sub Kategori</span>
                   <div className="flex items-center gap-2">
                     <div className="w-[180px] relative subcategory-dropdown-container">
                       <button
                         onClick={() => setIsSubCategoryDropdownOpen(prev => !prev)}
-                        className="w-full h-9 pl-8 pr-8 bg-white border border-gray-200 rounded-[8px] focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-600 transition-all text-sm font-semibold text-gray-700 flex items-center justify-between"
+                        className="w-full h-9 pl-8 pr-8 bg-white border-[2px] border-black rounded-none shadow-[2px_2px_0_0_#000] focus:outline-none focus:shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] hover:-translate-y-[1px] hover:-translate-x-[1px] hover:shadow-[2px_2px_0_0_#000] transition-all text-sm font-black text-black flex items-center justify-between"
                       >
                         <span className="truncate" title={subCategoryFilter === '' ? 'Semua Sub' : subCategoryFilter}>
                           {subCategoryFilter === '' ? 'Semua Sub' : subCategoryFilter}
                         </span>
                         <div className="absolute top-1/2 -translate-y-1/2 left-2.5 pointer-events-none text-gray-400">
-                          <Filter size={14} />
+                          <Filter size={14} className="text-black" strokeWidth={2.5} />
                         </div>
                         <div className="absolute top-1/2 -translate-y-1/2 right-2.5 pointer-events-none text-gray-400">
-                          <ChevronDown size={14} className={`transition-transform duration-200 ${isSubCategoryDropdownOpen ? 'rotate-180' : ''}`} />
+                          <ChevronDown size={14} className={`text-black transition-transform duration-200 ${isSubCategoryDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={3} />
                         </div>
                       </button>
 
                       {isSubCategoryDropdownOpen && (
-                        <div className="absolute top-[calc(100%+6px)] left-0 w-[240px] bg-white border border-gray-100 rounded-[8px] shadow-xl py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[300px]">
-                          <div className="px-2.5 pb-2 shrink-0 border-b border-gray-50 mb-1">
+                        <div className="absolute top-[calc(100%+6px)] left-0 w-[240px] bg-white border-[3px] border-black rounded-none shadow-[2.5px_2.5px_0_0_#000] py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[300px]">
+                          <div className="px-2.5 pb-2 shrink-0 border-b-2 border-black mb-1">
                             <div className="relative">
                               <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-gray-400">
-                                <Search size={12} />
+                                <Search size={12} className="text-black" strokeWidth={3} />
                               </div>
                               <input
                                 type="text" autoFocus placeholder="Cari..."
                                 value={subCategorySearchQuery} onChange={(e) => setSubCategorySearchQuery(e.target.value)}
-                                className="w-full pl-7 pr-2.5 py-1.5 text-xs bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-green-500/20 rounded-[6px] placeholder:text-gray-400 font-medium"
+                                className="w-full pl-7 pr-2.5 py-1.5 text-xs bg-white border-[2px] border-black focus:outline-none focus:shadow-[2px_2px_0_0_#000] rounded-none placeholder:text-gray-400 font-black"
                               />
                             </div>
                           </div>
@@ -350,7 +422,7 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
                                     setIsSubCategoryDropdownOpen(false); 
                                     setSubCategorySearchQuery(''); 
                                   }}
-                                  className={`w-full text-left px-2.5 py-2 text-sm font-medium rounded-md transition-colors truncate ${subCategoryFilter === sub ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                                  className={`w-full text-left px-2.5 py-2 text-sm font-black rounded-none transition-colors truncate border-b-2 border-transparent hover:border-black ${subCategoryFilter === sub ? 'bg-[#fde047] text-black border-black' : 'text-black hover:bg-gray-100'}`}
                                   title={sub === '' ? 'Semua Sub Kategori' : sub}
                                 >
                                   {sub === '' ? 'Semua Sub Kategori' : sub}
@@ -365,35 +437,35 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
 
                {/* Group Filter */}
                <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Grup</span>
+                  <span className="text-[10px] font-black text-black uppercase tracking-widest ml-1">Grup</span>
                   <div className="flex items-center gap-2">
                     <div className="w-[180px] relative group-dropdown-container">
                       <button
                         onClick={() => setIsGroupDropdownOpen(prev => !prev)}
-                        className="w-full h-9 pl-8 pr-8 bg-white border border-gray-200 rounded-[8px] focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-600 transition-all text-sm font-semibold text-gray-700 flex items-center justify-between"
+                        className="w-full h-9 pl-8 pr-8 bg-white border-[2px] border-black rounded-none shadow-[2px_2px_0_0_#000] focus:outline-none focus:shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] hover:-translate-y-[1px] hover:-translate-x-[1px] hover:shadow-[2px_2px_0_0_#000] transition-all text-sm font-black text-black flex items-center justify-between"
                       >
                         <span className="truncate" title={groupFilter === '' ? 'Semua Grup' : groupFilter}>
                           {groupFilter === '' ? 'Semua Grup' : groupFilter}
                         </span>
                         <div className="absolute top-1/2 -translate-y-1/2 left-2.5 pointer-events-none text-gray-400">
-                          <Filter size={14} />
+                          <Filter size={14} className="text-black" strokeWidth={2.5} />
                         </div>
                         <div className="absolute top-1/2 -translate-y-1/2 right-2.5 pointer-events-none text-gray-400">
-                          <ChevronDown size={14} className={`transition-transform duration-200 ${isGroupDropdownOpen ? 'rotate-180' : ''}`} />
+                          <ChevronDown size={14} className={`text-black transition-transform duration-200 ${isGroupDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={3} />
                         </div>
                       </button>
 
                       {isGroupDropdownOpen && (
-                        <div className="absolute top-[calc(100%+6px)] left-0 w-[240px] bg-white border border-gray-100 rounded-[8px] shadow-xl py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[300px]">
-                          <div className="px-2.5 pb-2 shrink-0 border-b border-gray-50 mb-1">
+                        <div className="absolute top-[calc(100%+6px)] left-0 w-[240px] bg-white border-[3px] border-black rounded-none shadow-[2.5px_2.5px_0_0_#000] py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[300px]">
+                          <div className="px-2.5 pb-2 shrink-0 border-b-2 border-black mb-1">
                             <div className="relative">
                               <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-gray-400">
-                                <Search size={12} />
+                                <Search size={12} className="text-black" strokeWidth={3} />
                               </div>
                               <input
                                 type="text" autoFocus placeholder="Cari..."
                                 value={groupSearchQuery} onChange={(e) => setGroupSearchQuery(e.target.value)}
-                                className="w-full pl-7 pr-2.5 py-1.5 text-xs bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-green-500/20 rounded-[6px] placeholder:text-gray-400 font-medium"
+                                className="w-full pl-7 pr-2.5 py-1.5 text-xs bg-white border-[2px] border-black focus:outline-none focus:shadow-[2px_2px_0_0_#000] rounded-none placeholder:text-gray-400 font-black"
                               />
                             </div>
                           </div>
@@ -404,7 +476,7 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
                                 <button
                                   key={grp}
                                   onClick={() => { setGroupFilter(grp); setIsGroupDropdownOpen(false); setGroupSearchQuery(''); }}
-                                  className={`w-full text-left px-2.5 py-2 text-sm font-medium rounded-md transition-colors truncate ${groupFilter === grp ? 'bg-green-50 text-green-700' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                                  className={`w-full text-left px-2.5 py-2 text-sm font-black rounded-none transition-colors truncate border-b-2 border-transparent hover:border-black ${groupFilter === grp ? 'bg-[#fde047] text-black border-black' : 'text-black hover:bg-gray-100'}`}
                                   title={grp === '' ? 'Semua Grup' : grp}
                                 >
                                   {grp === '' ? 'Semua Grup' : grp}
@@ -428,9 +500,9 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
                       setSearchQuery('');
                       setPage(1);
                     }}
-                    className="h-9 px-4 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900 border border-gray-200 rounded-[8px] text-[12px] font-bold transition-all flex items-center gap-2"
+                    className="h-9 px-4 bg-white hover:bg-[#ff5e5e] text-black hover:text-white border-[2px] border-black rounded-none shadow-[2px_2px_0_0_#000] hover:shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[1px] active:translate-x-[1px] active:shadow-none text-[12px] font-black transition-all flex items-center gap-2 uppercase tracking-wide"
                   >
-                    <RotateCcw size={14} />
+                    <RotateCcw size={14} strokeWidth={3} />
                     Reset Filter
                   </button>
                </div>
@@ -452,7 +524,7 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
 
             </div>
             {loading && (data?.length || 0) > 0 && (
-                <div className="text-[11px] font-bold text-green-600 flex items-center gap-2 bg-green-50 px-2.5 py-1 rounded-full border border-green-100 animate-pulse uppercase tracking-tighter leading-none">
+                <div className="text-[11px] font-black text-black flex items-center gap-2 bg-[#fde047] px-2.5 py-1 rounded-none border-[2px] border-black shadow-[2px_2px_0_0_#000] animate-pulse uppercase tracking-tighter leading-none">
                   <Loader2 size={12} className="animate-spin" />
                   <span>Memuat...</span>
                 </div>
@@ -472,23 +544,23 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
         {/* Main Table Context */}
         <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden relative">
          {error ? (
-           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-rose-50/10 rounded-[8px] border border-rose-100">
-              <div className="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mb-4">
-                  <AlertCircle className="text-rose-500" size={32} />
+           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-rose-50/10">
+              <div className="w-16 h-16 bg-[#fde047] rounded-none border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] flex items-center justify-center mb-4">
+                  <AlertCircle className="text-black" size={32} />
               </div>
-              <p className="text-sm font-black text-gray-800">{error}</p>
+              <p className="text-sm font-black text-gray-800 uppercase tracking-wide">{error}</p>
               <button 
                 onClick={() => setRefreshKey(k => k + 1)}
-                className="mt-4 px-6 py-2 bg-white border border-rose-200 text-rose-600 rounded-[8px] text-xs font-black hover:bg-rose-50 transition-colors"
+                className="mt-4 px-6 py-2 bg-black text-white border-[3px] border-black rounded-none text-xs font-black hover:bg-[var(--accent-primary)] hover:border-black transition-colors shadow-[2.5px_2.5px_0_0_#000] hover:shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none uppercase tracking-wider"
               >
                 Coba Lagi
               </button>
            </div>
          ) : data !== null && data.length === 0 ? (
-           <div className="flex flex-col items-center justify-center flex-1 gap-3 rounded-[8px] border border-gray-100 bg-white">
-              <Database className="text-gray-200" size={50} />
-              <p className="text-[14px] text-gray-400 font-extrabold">Data Tidak Ditemukan</p>
-              <p className="text-[13px] text-gray-300 font-medium max-w-sm text-center">
+           <div className="flex flex-col items-center justify-center flex-1 gap-3 rounded-none border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] bg-white">
+              <Database className="text-black" size={50} strokeWidth={1.5} />
+              <p className="text-[14px] text-gray-800 font-black">Data Tidak Ditemukan</p>
+              <p className="text-[13px] text-gray-600 font-medium max-w-sm text-center">
                 {debouncedQuery || categoryFilter
                   ? 'Coba ubah kata kunci pencarian atau filter kategori.'
                   : 'Belum ada data. Upload file Excel Master Pekerjaan untuk memulai.'}
@@ -502,7 +574,7 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
                     setGroupFilter('');
                     setPage(1);
                   }}
-                  className="mt-2 px-6 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 text-[12px] font-bold rounded-[6px] transition-colors border border-gray-200"
+                  className="mt-2 px-6 py-2 bg-black text-white hover:bg-[var(--accent-primary)] text-[12px] font-black rounded-none transition-all border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] hover:shadow-[2.5px_2.5px_0_0_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none uppercase tracking-wider"
                 >
                   Reset Filter
                 </button>
@@ -521,89 +593,17 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
                 onRowClick={(id) => setSelectedId(id === selectedId ? null : id)}
               />
 
-              {/* Pagination Controls */}
-              <div className="flex items-center justify-between shrink-0 px-1 mt-1">
-                <div className="flex items-center gap-4">
-                  <span className="text-[12px] leading-none font-bold text-gray-400">
-                    {totalCount === 0
-                      ? 'Tidak ada data master pekerjaan'
-                      : `${pageStart}–${pageEnd} dari ${totalCount.toLocaleString('id-ID')} Item`}
-                  </span>
-                  {loadTime !== null && (
-                    <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
-                      loadTime < 300  ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                      loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                        'bg-red-50 text-red-600 border-red-100'
-                    }`}>
-                      <span className="animate-pulse">⚡</span>
-                      <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
-                    </span>
-                  )}
-                </div>
-                
-                <div className="flex items-center gap-1.5">
-                  <button
-                    disabled={!canPrev || loading}
-                    onClick={() => setPage(1)}
-                    className="w-8 h-8 rounded-[6px] flex items-center justify-center text-[11px] font-extrabold border border-gray-100 bg-white text-gray-500 hover:bg-green-50 hover:text-green-600 hover:border-green-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                    title="Halaman pertama"
-                  >
-                    «
-                  </button>
-                  <button
-                    disabled={!canPrev || loading}
-                    onClick={() => setPage(p => p - 1)}
-                    className="w-8 h-8 rounded-[6px] flex items-center justify-center border border-gray-100 bg-white text-gray-500 hover:bg-green-50 hover:text-green-600 hover:border-green-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                    title="Halaman sebelumnya"
-                  >
-                    <ChevronLeft size={15} />
-                  </button>
-
-                  <div className="flex items-center gap-1">
-                    {(() => {
-                      const pills: number[] = [];
-                      const delta = 2;
-                      for (let i = Math.max(1, page - delta); i <= Math.min(totalPages, page + delta); i++) {
-                        pills.push(i);
-                      }
-                      return pills.map(p => (
-                        <button
-                          key={p}
-                          onClick={() => setPage(p)}
-                          disabled={loading}
-                          className={`w-8 h-8 rounded-[6px] flex items-center justify-center text-[12px] font-extrabold border transition-all ${
-                            p === page
-                              ? 'bg-green-600 text-white border-green-600 shadow-sm'
-                              : 'bg-white text-gray-500 border-gray-100 hover:bg-green-50 hover:text-green-600 hover:border-green-300'
-                          } disabled:cursor-not-allowed`}
-                        >
-                          {p}
-                        </button>
-                      ));
-                    })()}
-                  </div>
-
-                  <button
-                    disabled={!canNext || loading}
-                    onClick={() => setPage(p => p + 1)}
-                    className="w-8 h-8 rounded-[6px] flex items-center justify-center border border-gray-100 bg-white text-gray-500 hover:bg-green-50 hover:text-green-600 hover:border-green-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                    title="Halaman berikutnya"
-                  >
-                    <ChevronRight size={15} />
-                  </button>
-                  <button
-                    disabled={!canNext || loading}
-                    onClick={() => setPage(totalPages)}
-                    className="w-8 h-8 rounded-[6px] flex items-center justify-center text-[11px] font-extrabold border border-gray-100 bg-white text-gray-500 hover:bg-green-50 hover:text-green-600 hover:border-green-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                    title="Halaman terakhir"
-                  >
-                    »
-                  </button>
-                  <span className="ml-2 text-[11px] font-bold text-gray-400 leading-none">
-                    Hal. {page} / {totalPages}
-                  </span>
-                </div>
-              </div>
+              <TableFooter 
+                totalCount={totalCount}
+                currentCount={data?.length || 0}
+                label="Item Master Pekerjaan"
+                selectedCount={selectedId ? 1 : 0}
+                onClearSelection={() => setSelectedId(null)}
+                loadTime={loadTime}
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+              />
            </>
          )}
         </div>

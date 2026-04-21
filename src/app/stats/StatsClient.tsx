@@ -62,7 +62,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
     <div className="flex-1 flex flex-col gap-5 pb-10 overflow-y-auto custom-scrollbar sm:px-0">
       {/* Year Selector - Neo-brutalist */}
       <div className="shrink-0">
-        <div className="bg-white border-[3px] border-black shadow-[4px_4px_0_0_#000] rounded-none px-6 py-4 flex items-center justify-between">
+        <div className="bg-white border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] rounded-none px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Calendar size={18} strokeWidth={3} className="text-black" />
             <span className="text-[11px] font-black text-black uppercase tracking-[0.2em]">Tahun Analisis Statistik</span>
@@ -75,7 +75,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
                  flex items-center gap-4 px-5 py-2.5 rounded-none transition-all duration-200 border-[3px] border-black font-black uppercase tracking-widest text-xs
                  ${isDropdownOpen 
                    ? 'bg-[#fde047] text-black shadow-none translate-x-[2px] translate-y-[2px]' 
-                   : 'bg-white text-black shadow-[4px_4px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[6px_6px_0_0_#000]'
+                   : 'bg-white text-black shadow-[2.5px_2.5px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[2.5px_2.5px_0_0_#000]'
                  }
                `}
              >
@@ -88,7 +88,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
              </button>
 
             {isDropdownOpen && (
-              <div className="absolute top-full right-0 mt-4 w-44 bg-white border-[3px] border-black rounded-none shadow-[8px_8px_0_0_#000] z-50 py-2 animate-in fade-in zoom-in-95 duration-200">
+              <div className="absolute top-full right-0 mt-4 w-44 bg-white border-[3px] border-black rounded-none shadow-[3.5px_3.5px_0_0_#000] z-50 py-2 animate-in fade-in zoom-in-95 duration-200">
                 <div className="px-4 pb-2 mb-2 border-b-[2px] border-black">
                   <span className="text-[10px] font-black text-black/30 uppercase tracking-[0.2em]">Pilih Tahun</span>
                 </div>
@@ -120,10 +120,10 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
         {/* Monthly Trend Chart */}
-        <div className="lg:col-span-3 bg-white border-[4px] border-black p-8 rounded-none flex flex-col min-h-[500px] shadow-[8px_8px_0_0_#000]">
+        <div className="lg:col-span-3 bg-white border-[4px] border-black p-8 rounded-none flex flex-col min-h-[500px] shadow-[3.5px_3.5px_0_0_#000]">
           <div className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-[#93c5fd] text-black border-[2px] border-black shadow-[3px_3px_0_0_#000]">
+              <div className="p-3 bg-[#93c5fd] text-black border-[2px] border-black shadow-[2px_2px_0_0_#000]">
                 <TrendingUp size={20} strokeWidth={3} />
               </div>
               <h3 className="text-lg font-black text-black uppercase tracking-tight">Tren Kasus & Beban Bulanan</h3>
@@ -283,9 +283,9 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
         </div>
 
         {/* Severity Pie Chart */}
-        <div className="bg-white border-[4px] border-black p-8 rounded-none flex flex-col min-h-[400px] shadow-[8px_8px_0_0_#000]">
+        <div className="bg-white border-[4px] border-black p-8 rounded-none flex flex-col min-h-[400px] shadow-[3.5px_3.5px_0_0_#000]">
           <div className="flex items-center gap-4 mb-10">
-            <div className="p-3 bg-[#ff5e5e] text-white border-[2px] border-black shadow-[3px_3px_0_0_#000]">
+            <div className="p-3 bg-[#ff5e5e] text-white border-[2px] border-black shadow-[2px_2px_0_0_#000]">
               < ShieldAlert size={20} strokeWidth={3} />
             </div>
             <h3 className="text-lg font-black text-black uppercase tracking-tight">Distribusi Severitas</h3>
@@ -326,7 +326,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
 
             <div className="w-full space-y-2 mt-8 px-1">
               {pieData.map((item, idx) => (
-                <div key={idx} className="group flex items-center justify-between p-3 rounded-none border-[2px] border-black bg-white hover:bg-black hover:text-white transition-all shadow-[3px_3px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[4px_4px_0_0_#000]">
+                <div key={idx} className="group flex items-center justify-between p-3 rounded-none border-[2px] border-black bg-white hover:bg-black hover:text-white transition-all shadow-[2px_2px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[2.5px_2.5px_0_0_#000]">
                   <div className="flex items-center gap-3">
                     <div className="w-4 h-4 border-[2px] border-black shadow-sm" style={{ backgroundColor: severityColors[item.name] }}></div>
                     <p className="text-[11px] font-black group-hover:text-white transition-colors uppercase tracking-widest">{item.name} Severity</p>
@@ -346,7 +346,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Top Repeaters List */}
-        <div className="bg-white border-[4px] border-black rounded-none flex flex-col min-h-[350px] overflow-hidden shadow-[8px_8px_0_0_#000]">
+        <div className="bg-white border-[4px] border-black rounded-none flex flex-col min-h-[350px] overflow-hidden shadow-[3.5px_3.5px_0_0_#000]">
           <div className="p-6 border-b-[3px] border-black flex items-center justify-between bg-[#fde047]">
             <div className="flex items-center gap-4">
               <div className="p-2.5 bg-black text-white border-[2px] border-black shadow-[2px_2px_0_0_#fff]">
@@ -365,7 +365,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
             ) : (
               <div className="space-y-2">
                 {detailedData.topRepeaters.map((emp: any, idx: number) => (
-                  <div key={idx} className="p-4 flex items-center justify-between border-[2.5px] border-black bg-white hover:bg-[#fde047] transition-all hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0_0_#000] group">
+                  <div key={idx} className="p-4 flex items-center justify-between border-[2.5px] border-black bg-white hover:bg-[#fde047] transition-all hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[2px_2px_0_0_#000] group">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 bg-black text-white border-[2px] border-black flex items-center justify-center font-black text-xs">
                         #{idx + 1}
@@ -411,7 +411,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
         </div>
 
         {/* Dynamic Actionable Insights - Neo-brutalist */}
-        <div className={`rounded-none border-[4px] border-black p-10 flex flex-col justify-center relative overflow-hidden shadow-[8px_8px_0_0_#000] transition-all duration-500 ${
+        <div className={`rounded-none border-[4px] border-black p-10 flex flex-col justify-center relative overflow-hidden shadow-[3.5px_3.5px_0_0_#000] transition-all duration-500 ${
           stats.totalInfractions === 0 
             ? 'bg-[#10b981]' 
             : stats.highSeverity > 0 
@@ -421,7 +421,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
            <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-black/10 blur-3xl rounded-full"></div>
            
            <div className="relative z-10 text-white">
-              <div className="w-16 h-16 bg-white border-[3px] border-black text-black flex items-center justify-center mb-8 shadow-[4px_4px_0_0_#000]">
+              <div className="w-16 h-16 bg-white border-[3px] border-black text-black flex items-center justify-center mb-8 shadow-[2.5px_2.5px_0_0_#000]">
                  {stats.totalInfractions === 0 
                    ? <TrendingDown size={32} strokeWidth={3} /> 
                    : stats.highSeverity > 0 
@@ -447,7 +447,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
               </p>
               
               <div className="flex flex-wrap gap-3">
-                 <div className="px-4 py-2 bg-white border-[2px] border-black text-black text-[10px] font-black uppercase tracking-[0.2em] shadow-[3px_3px_0_0_#000]">
+                 <div className="px-4 py-2 bg-white border-[2px] border-black text-black text-[10px] font-black uppercase tracking-[0.2em] shadow-[2px_2px_0_0_#000]">
                    {stats.totalInfractions === 0 
                      ? '⭐ KUALITAS TERBAIK' 
                      : stats.highSeverity > 0 
@@ -455,7 +455,7 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
                        : '📚 EDUKASI SOP'
                    }
                  </div>
-                 <div className="px-4 py-2 bg-white border-[2px] border-black text-black text-[10px] font-black uppercase tracking-[0.2em] shadow-[3px_3px_0_0_#000]">
+                 <div className="px-4 py-2 bg-white border-[2px] border-black text-black text-[10px] font-black uppercase tracking-[0.2em] shadow-[2px_2px_0_0_#000]">
                    {stats.totalInfractions === 0 
                      ? '🏆 ZERO DEFECT' 
                      : stats.highSeverity > 0 
@@ -470,6 +470,16 @@ export default function StatsClient({ stats, detailedData, year }: { stats: any,
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
 
 
 

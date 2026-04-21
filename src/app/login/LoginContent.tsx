@@ -40,7 +40,7 @@ export default function LoginContent() {
         {/* Logo/Brand Header */}
         <div className="text-center mb-8 flex flex-col items-center">
           <div className="inline-flex items-center justify-center mb-5">
-            <div className="w-16 h-16 bg-[var(--accent-primary)] border-[4px] border-black shadow-[6px_6px_0_0_#000] flex items-center justify-center rounded-none">
+            <div className="w-16 h-16 bg-[var(--accent-primary)] border-[4px] border-black shadow-[2.5px_2.5px_0_0_#000] flex items-center justify-center rounded-none">
               <Image
                 src={logoPic}
                 alt="SINTAK Logo"
@@ -51,7 +51,7 @@ export default function LoginContent() {
           </div>
           <div className="text-center px-4">
             <h1 className="text-3xl font-black text-black tracking-tight leading-none uppercase">SINTAK</h1>
-            <div className="mt-3 inline-block border-[3px] border-black bg-[#fde047] px-3 py-1 shadow-[3px_3px_0_0_#000]">
+            <div className="mt-3 inline-block border-[3px] border-black bg-[#fde047] px-3 py-1 shadow-[2px_2px_0_0_#000]">
               <p className="text-[11px] font-black text-black uppercase tracking-[0.2em]">
                 Sistem Informasi Cetak
               </p>
@@ -67,7 +67,7 @@ export default function LoginContent() {
           </div>
           <form onSubmit={handleSubmit} className="p-5 pt-5 flex flex-col gap-4">
             {error && (
-              <div className="p-4 bg-[#ff5e5e] border-[3px] border-black rounded-none flex items-start gap-3 text-white text-xs shadow-[4px_4px_0_0_#000]">
+              <div className="p-4 bg-[#ff5e5e] border-[3px] border-black rounded-none flex items-start gap-3 text-white text-xs shadow-[2.5px_2.5px_0_0_#000]">
                 <AlertCircle size={16} strokeWidth={3} className="mt-0.5 shrink-0" />
                 <span className="font-black uppercase tracking-tight">{error}</span>
               </div>
@@ -84,7 +84,7 @@ export default function LoginContent() {
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="block w-full h-12 pl-12 pr-4 border-[3px] border-black rounded-none text-[13px] font-black focus:outline-none shadow-[4px_4px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[6px_6px_0_0_#000] transition-all bg-white text-black placeholder:text-black/20 uppercase tracking-tighter"
+                    className="block w-full h-12 pl-12 pr-4 border-[3px] border-black rounded-none text-[13px] font-black focus:outline-none shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[2.5px_2.5px_0_0_#000] transition-all bg-white text-black placeholder:text-black/20 uppercase tracking-tighter"
                     placeholder="Masukkan username..."
                     required
                   />
@@ -101,7 +101,7 @@ export default function LoginContent() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full h-12 pl-12 pr-4 border-[3px] border-black rounded-none text-[13px] font-black focus:outline-none shadow-[4px_4px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[6px_6px_0_0_#000] transition-all bg-white text-black placeholder:text-black/20 uppercase tracking-tighter"
+                    className="block w-full h-12 pl-12 pr-4 border-[3px] border-black rounded-none text-[13px] font-black focus:outline-none shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[2.5px_2.5px_0_0_#000] transition-all bg-white text-black placeholder:text-black/20 uppercase tracking-tighter"
                     placeholder="••••••••"
                     required
                   />
@@ -112,7 +112,7 @@ export default function LoginContent() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-14 mt-4 flex items-center justify-center gap-3 px-6 rounded-none border-[3px] border-black font-black text-black uppercase tracking-widest bg-[#fde047] hover:bg-black hover:text-[#fde047] shadow-[6px_6px_0_0_#000] hover:shadow-[8px_8px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[4px] active:translate-x-[4px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-14 mt-4 flex items-center justify-center gap-3 px-6 rounded-none border-[3px] border-black font-black text-black uppercase tracking-widest bg-[#fde047] hover:bg-black hover:text-[#fde047] shadow-[2.5px_2.5px_0_0_#000] hover:shadow-[3.5px_3.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[4px] active:translate-x-[4px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <div className="w-6 h-6 border-[4px] border-black/20 border-t-black rounded-none animate-spin" />
@@ -136,6 +136,14 @@ export default function LoginContent() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
 
 
 

@@ -94,10 +94,10 @@ export default function HppKalkulasiExcelUpload() {
 
   return (
     <div className="shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="bg-white border border-gray-200 shadow-sm rounded-[8px] px-4 py-3 flex items-center justify-between gap-4 relative">
+      <div className="bg-[var(--bg-surface)] rounded-none border-[3px] border-black p-5 hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3.5px_3.5px_0_0_#000] shadow-[2.5px_2.5px_0_0_#000] transition-all duration-300 flex items-center justify-between gap-4 relative z-50">
         <div className="flex items-center gap-4 flex-1">
-          <div className="w-10 h-10 rounded-[8px] bg-green-50 flex items-center justify-center shrink-0">
-            <Upload className="text-green-600" size={20} />
+          <div className="w-10 h-10 rounded-none bg-[#fde047] border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] flex items-center justify-center shrink-0">
+            <Upload className="text-black" size={20} strokeWidth={3} />
           </div>
           <div className="min-w-0">
             <h3 className="text-sm font-bold text-gray-800 leading-none mb-1">Upload Data HPP Kalkulasi</h3>
@@ -118,7 +118,7 @@ export default function HppKalkulasiExcelUpload() {
           <button
             onClick={() => fileRef.current?.click()}
             disabled={status === 'loading'}
-            className="px-4 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-bold rounded-[8px] transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm active:scale-[0.98]"
+            className="px-4 h-10 bg-black text-white hover:bg-[var(--accent-primary)] hover:border-black text-[13px] font-black uppercase tracking-wider border-[3px] border-black rounded-none transition-all flex items-center gap-2 disabled:opacity-70 disabled:shadow-none disabled:translate-x-0 disabled:translate-y-0 shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] hover:shadow-[2.5px_2.5px_0_0_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none"
           >
             {status === 'loading' ? (
               <Loader2 size={16} className="animate-spin" />
@@ -130,9 +130,9 @@ export default function HppKalkulasiExcelUpload() {
         </div>
 
         {status === 'error' && (
-          <div className="absolute top-full left-0 right-0 mt-2 p-2.5 bg-red-50 text-red-600 border border-red-100 rounded-[8px] text-[11px] flex items-start gap-2 animate-in slide-in-from-top-1 z-20">
-            <XCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-            <p className="font-medium">{message}</p>
+          <div className="absolute top-full left-0 right-0 mt-2 p-2.5 bg-[#ff5e5e] text-white border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] rounded-none text-[11px] font-black flex items-start gap-2 animate-in slide-in-from-top-1 z-20">
+            <XCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" strokeWidth={3} />
+            <p className="font-black">{message}</p>
           </div>
         )}
       </div>
@@ -152,6 +152,14 @@ export default function HppKalkulasiExcelUpload() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
 
 
 

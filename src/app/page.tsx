@@ -12,3 +12,11 @@ export default async function RootPage() {
   const firstRoute = await getFirstAccessibleRoute(session.role);
   redirect(firstRoute);
 }
+
+
+
+
+
+
+
+

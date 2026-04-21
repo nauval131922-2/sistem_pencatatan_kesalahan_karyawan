@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Search, RefreshCw, Loader2, AlertCircle, Clock, CreditCard } from 'lucide-react';
+import { Search, RefreshCw, Loader2, AlertCircle, Clock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ColumnDef } from '@tanstack/react-table';
 
@@ -10,6 +10,8 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatLastUpdate } from '@/lib/date-utils';
 import { formatScrapedPeriodDate, getDefaultScraperDateRange, hydrateScraperPeriod, persistScraperPeriod } from '@/lib/scraper-period';
 import { DataTable } from '@/components/ui/DataTable';
+import SearchAndReload from '@/components/SearchAndReload';
+import TableFooter from '@/components/TableFooter';
 import { splitDateRangeIntoMonths } from '@/lib/date-utils';
 import { useTableSelection } from '@/lib/hooks/useTableSelection';
 
@@ -40,39 +42,27 @@ export default function PelunasanHutangClient() {
   const [startDate, setStartDate] = useState<Date>(() => getDefaultScraperDateRange().startDate);
   const [endDate, setEndDate] = useState<Date>(() => getDefaultScraperDateRange().endDate);
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<any[] | null>(null);
   const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [scrapedPeriod, setScrapedPeriod] = useState<{start: string, end: string} | null>(null);
-
+  const [loadTime, setLoadTime] = useState<number | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [loadTime, setLoadTime] = useState<number | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
 
-  const { selectedIds, setSelectedIds, handleRowClick, clearSelection } = useTableSelection(data);
+  const isLoadingMore = useRef(false);
+  const mountedRef = useRef(true);
+
+  const { selectedIds, setSelectedIds, handleRowClick, clearSelection } = useTableSelection(data || []);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('ph_columnWidths');
       return saved ? JSON.parse(saved) : {
-        id: 100,
-        tgl: 120,
-        faktur: 220,
-        kd_supplier: 250,
-        pembelian: 160,
-        retur: 140,
-        subtotal: 160,
-        diskon: 140,
-        total: 180,
-        kas: 160,
-        bank: 160,
-        faktur_pb: 220,
-        keterangan: 300,
-        username: 120,
-        recid: 100
+        id: 100, tgl: 120, faktur: 220, kd_supplier: 250, total: 180, username: 120, recid: 80
       };
     }
     return {};
@@ -82,368 +72,203 @@ export default function PelunasanHutangClient() {
     localStorage.setItem('ph_columnWidths', JSON.stringify(columnWidths));
   }, [columnWidths]);
 
-  const isLoadingMore = useRef(false);
-  const mountedRef = useRef(true);
-
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
       setPage(1);
-      clearSelection();
     }, 500);
     return () => clearTimeout(handler);
-  }, [searchQuery, clearSelection]);
+  }, [searchQuery]);
 
   useEffect(() => {
-    mountedRef.current = true;
     setIsMounted(true);
-
     const hydratedPeriod = hydrateScraperPeriod({ stateKey: 'phState', periodKey: 'PelunasanHutangClient_scrapedPeriod' });
     setScrapedPeriod(hydratedPeriod.scrapedPeriod);
     setStartDate(hydratedPeriod.startDate);
     setEndDate(hydratedPeriod.endDate);
-
-    return () => {
-      mountedRef.current = false;
-    };
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
   }, []);
 
-  // Fetch Data
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'sintak_data_updated') {
+        setRefreshKey(prev => prev + 1);
+        router.refresh();
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => { window.removeEventListener('storage', handleStorageChange); };
+  }, [router]);
+
   useEffect(() => {
     let active = true;
     async function loadData() {
+      if (!active || !mountedRef.current || !isMounted) return;
       setLoading(page === 1);
-      const startTimer = Date.now();
+      const startTimer = performance.now();
       try {
         const queryParams = new URLSearchParams({
-          page: page.toString(),
-          limit: PAGE_SIZE.toString(),
-          search: debouncedQuery,
-          from: formatDateToYYYYMMDD(startDate),
-          to: formatDateToYYYYMMDD(endDate),
-          _t: Date.now().toString()
+          page: page.toString(), limit: PAGE_SIZE.toString(), search: debouncedQuery,
+          from: formatDateToYYYYMMDD(startDate), to: formatDateToYYYYMMDD(endDate), _t: Date.now().toString()
         });
-
         const res = await fetch(`/api/pelunasan-hutang?${queryParams.toString()}`);
         if (!res.ok) throw new Error('Gagal memuat data');
         const json = await res.json();
-        
         if (active) {
           setData(prev => {
             const processData = (items: any[]) => (items || []).map((item: any) => {
               let parsedRaw = {};
-              if (item.raw_data) {
-                try { parsedRaw = JSON.parse(item.raw_data); } catch(e){}
-              }
+              if (item.raw_data) { try { parsedRaw = JSON.parse(item.raw_data); } catch(e){} }
               return { ...item, ...parsedRaw };
             });
-
             if (page === 1) return processData(json.data);
             const currentData = prev || [];
             const newData = processData(json.data);
             const existingIds = new Set(currentData.map((d: any) => d.id));
-            const filteredNew = newData.filter((d: any) => !existingIds.has(d.id));
-            return [...currentData, ...filteredNew];
+            return [...currentData, ...newData.filter((d: any) => !existingIds.has(d.id))];
           });
           setTotalCount(json.total || 0);
           if (json.scrapedPeriod) setScrapedPeriod(json.scrapedPeriod);
-          
-          if (json.lastUpdated) {
-            const latestDate = new Date(json.lastUpdated);
-            if (!isNaN(latestDate.getTime())) {
-              setLastUpdated(formatLastUpdate(latestDate));
-            }
-          }
-          setLoadTime(Date.now() - startTimer);
+          if (json.lastUpdated) setLastUpdated(formatLastUpdate(new Date(json.lastUpdated)));
+          setLoadTime(Math.round(performance.now() - startTimer));
         }
       } catch (err: any) {
-        if (active) {
-          setError(err.message || 'Gagal memuat data');
-        }
+        if (active) { setError(err.message || 'Gagal memuat data'); setData([]); }
       } finally {
-        if (active) {
-          setLoading(false);
-          isLoadingMore.current = false;
-        }
+        if (active) { setLoading(false); isLoadingMore.current = false; }
       }
     }
     loadData();
     return () => { active = false; };
-  }, [page, debouncedQuery, refreshKey, startDate, endDate]);
+  }, [page, debouncedQuery, refreshKey, startDate, endDate, isMounted]);
 
   const [isBatching, setIsBatching] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
   const [batchStatus, setBatchStatus] = useState('');
+  const [dialog, setDialog] = useState({ isOpen: false, type: 'success' as any, title: '', message: '' });
 
   const handleFetch = async () => {
     if (!startDate || !endDate) return;
-
     localStorage.setItem('phState', JSON.stringify({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      sessionDate: new Date().toLocaleDateString('en-CA')
+      startDate: startDate.toISOString(), endDate: endDate.toISOString(), sessionDate: new Date().toLocaleDateString('en-CA')
     }));
-
-    setError('');
-    setData([]);
-    setPage(1);
-    clearSelection();
-    setIsBatching(true);
-    setLoading(true);
-    setSearchQuery('');
-    setBatchProgress(0);
-
+    setError(''); setData([]); setPage(1); setIsBatching(true); setLoading(true); setSearchQuery(''); setBatchProgress(0);
     const startStr = formatDateToYYYYMMDD(startDate);
     const endStr = formatDateToYYYYMMDD(endDate);
     const chunks = splitDateRangeIntoMonths(startStr, endStr);
-    let successCount = 0;
-    let totalScraped = 0;
-    let completedChunks = 0;
-
+    let successCount = 0; let totalScraped = 0; let completedChunks = 0;
     const processChunk = async (chunk: any) => {
       try {
         const res = await fetch(`/api/scrape-pelunasan-hutang?start=${chunk.start}&end=${chunk.end}&metaStart=${startStr}&metaEnd=${endStr}`);
         if (res.ok) {
-          successCount++;
-          const json = await res.json();
-          totalScraped += (json.total || 0);
+          successCount++; const json = await res.json(); totalScraped += (json.total || 0);
         }
-      } catch (err) {
-        console.error("Scrape error:", err);
-      } finally {
-        completedChunks++;
-        setBatchProgress(Math.round((completedChunks / chunks.length) * 100));
+      } catch (e) {} finally {
+        completedChunks++; setBatchProgress(Math.round((completedChunks / chunks.length) * 100));
         setBatchStatus(`Memproses ${completedChunks}/${chunks.length} bulan...`);
       }
     };
-
     try {
-      const concurrency = 2; 
-      const queue = [...chunks];
+      const concurrency = 2; const queue = [...chunks];
       const workers = Array(Math.min(concurrency, queue.length)).fill(null).map(async () => {
-        while (queue.length > 0) {
-          const chunk = queue.shift();
-          if (chunk) await processChunk(chunk);
-        }
+        while (queue.length > 0) { const chunk = queue.shift(); if (chunk) await processChunk(chunk); }
       });
       await Promise.all(workers);
-
       if (successCount > 0) {
-        const periodStr = persistScraperPeriod({ stateKey: 'phState', periodKey: 'PelunasanHutangClient_scrapedPeriod' }, startDate, endDate);
-        setScrapedPeriod(periodStr);
+        persistScraperPeriod({ stateKey: 'phState', periodKey: 'PelunasanHutangClient_scrapedPeriod' }, startDate, endDate);
         setRefreshKey(prev => prev + 1);
         localStorage.setItem('sintak_data_updated', Date.now().toString());
-
-        await fetch('/api/activity-log', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action_type: 'SCRAPE',
-            table_name: 'pelunasan_hutang',
-            message: `Tarik Pelunasan Hutang (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
-            raw_data: JSON.stringify({ totalScraped })
-          })
-        });
-
-        setDialog({
-          isOpen: true,
-          type: 'success',
-          title: 'Berhasil',
-          message: `Berhasil menarik ${totalScraped} data Pelunasan Hutang.`
-        });
+        setDialog({ isOpen: true, type: 'success', title: 'Berhasil', message: `Berhasil menarik ${totalScraped} data Pelunasan Hutang.` });
       }
-    } catch (err: any) {
-      setError(err.message || 'Gagal sinkronasi');
-    } finally {
-      setIsBatching(false);
-      setLoading(false);
-    }
+    } finally { setIsBatching(false); setLoading(false); }
   };
 
-  const [dialog, setDialog] = useState({ isOpen: false, type: 'success', title: '', message: '' });
-
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop <= clientHeight + 150 && !loading && !isLoadingMore.current) {
-      if (data && data.length < totalCount) {
-        isLoadingMore.current = true;
-        setPage(prev => prev + 1);
-      }
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight + 300 && !loading && (data?.length || 0) < totalCount) {
+      setPage(prev => prev + 1);
     }
-  };
+  }, [loading, data, totalCount]);
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
+  const columns = useMemo(() => [
     {
       accessorKey: 'id',
       header: 'ID',
-      size: columnWidths.id,
-      cell: ({ getValue, row }) => (
-        <span className={`font-medium tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-gray-400'}`}>
-          {String(getValue() || '')}
-        </span>
-      )
+      size: 100,
+      cell: ({ getValue, row }: any) => <span className={`font-medium tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-gray-400'}`}>{String(getValue())}</span>
     },
     {
       accessorKey: 'tgl',
       header: 'Tanggal',
-      size: columnWidths.tgl,
-      cell: ({ getValue, row }) => (
-        <span className={`font-medium tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>
-          {formatIndoDateStr(getValue() as string)}
-        </span>
-      )
+      size: 120,
+      cell: ({ getValue, row }: any) => <span className={`font-bold tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>{formatIndoDateStr(getValue() as string)}</span>
     },
     {
       accessorKey: 'faktur',
       header: 'Faktur PH',
-      size: columnWidths.faktur,
-      cell: ({ getValue, row }) => (
-        <div className="flex flex-col leading-tight">
-          <div className={`font-bold transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-700'}`} dangerouslySetInnerHTML={{ __html: getValue() as string || '-' }} />
-          {row.original.kd_cabang && (
-             <span className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter mt-0.5">Cabang: {row.original.kd_cabang}</span>
-          )}
-        </div>
-      )
+      size: 220,
+      cell: ({ getValue, row }: any) => <span className={`font-black tracking-tight transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-700'}`}>{String(getValue())}</span>
     },
     {
       accessorKey: 'kd_supplier',
       header: 'Supplier',
-      size: columnWidths.kd_supplier,
-      cell: ({ getValue, row }) => (
-        <span className={`font-black uppercase tracking-tight text-[12px] ${row.getIsSelected() ? 'text-green-900' : 'text-gray-800'}`}>
-          {getValue() as string}
-        </span>
-      )
-    },
-    {
-      accessorKey: 'pembelian',
-      header: 'Beban Pembelian',
-      size: columnWidths.pembelian,
-      meta: { align: 'right' },
-      cell: ({ getValue, row }) => (
-        <div className={`flex flex-col items-end leading-tight font-medium tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>
-          <div className="flex items-center">
-            <span className="text-[10px] text-gray-400 mr-1">Rp</span>
-            <span>{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</span>
-          </div>
-          {Number(row.original.retur || 0) !== 0 && (
-            <span className="text-[10px] text-rose-500 font-bold">Retur: {Number(row.original.retur).toLocaleString('id-ID')}</span>
-          )}
-        </div>
-      )
+      size: 250,
+      cell: ({ getValue, row }: any) => <span className={`font-black uppercase tracking-tight ${row.getIsSelected() ? 'text-green-900' : 'text-gray-800'}`}>{String(getValue())}</span>
     },
     {
       accessorKey: 'total',
       header: 'Penyelesaian',
-      size: columnWidths.total,
-      meta: { align: 'right' },
-      cell: ({ getValue, row }) => (
-        <div className={`flex flex-col items-end leading-tight font-black tabular-nums ${row.getIsSelected() ? 'text-green-800' : 'text-gray-800'}`}>
-          <div className="flex items-center">
-            <span className="text-[10px] text-gray-400 mr-1">Rp</span>
-            <span>{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</span>
-          </div>
-          {(Number(row.original.diskon || 0) !== 0 || Number(row.original.pembulatan || 0) !== 0) && (
-            <span className="text-[9px] text-amber-600">Disc/Bulat: {Number(Number(row.original.diskon || 0) + Number(row.original.pembulatan || 0)).toLocaleString('id-ID')}</span>
-          )}
-        </div>
-      )
-    },
-    {
-      accessorKey: 'kas',
-      header: 'Metode Bayar',
       size: 180,
       meta: { align: 'right' },
-      cell: ({ row }) => {
-        const kas = Number(row.original.kas || 0);
-        const bank = Number(row.original.bank || 0);
-        const bgcek = Number(row.original.bgcek || 0);
-        const porsekot = Number(row.original.porsekot || 0);
-        
-        return (
-          <div className="flex flex-col items-end leading-[1.1] gap-0.5">
-            {kas !== 0 && <span className="text-[11px] font-bold text-emerald-600">Kas: {kas.toLocaleString('id-ID')}</span>}
-            {bank !== 0 && <span className="text-[11px] font-bold text-blue-600">Bank: {bank.toLocaleString('id-ID')}</span>}
-            {bgcek !== 0 && <span className="text-[11px] font-bold text-purple-600">BG: {bgcek.toLocaleString('id-ID')}</span>}
-            {porsekot !== 0 && <span className="text-[11px] font-bold text-orange-600">Pst: {porsekot.toLocaleString('id-ID')}</span>}
-          </div>
-        );
-      }
-    },
-    {
-      accessorKey: 'faktur_pb',
-      header: 'No. Tagihan (PB)',
-      size: columnWidths.faktur_pb,
-      cell: ({ getValue, row }) => (
-        <div className="flex flex-col leading-tight">
-          <div className={`transition-colors truncate font-black text-blue-600 ${row.getIsSelected() ? 'text-green-600' : ''}`} dangerouslySetInnerHTML={{ __html: getValue() as string || '-' }} />
-          {row.original.detil && (
-             <div className="mt-1 scale-75 origin-left" dangerouslySetInnerHTML={{ __html: row.original.detil }} />
-          )}
+      cell: ({ getValue, row }: any) => (
+        <div className={`flex items-center justify-between font-black tabular-nums w-full ${row.getIsSelected() ? 'text-green-700' : 'text-emerald-700'}`}>
+          <span className="text-[10px] opacity-40 mr-1">Rp</span>
+          <span>{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</span>
         </div>
       )
     },
-    {
-      accessorKey: 'keterangan',
-      header: 'Keterangan',
-      size: columnWidths.keterangan,
-      cell: ({ getValue }) => <span className="text-gray-500 italic text-[12px]">{getValue() as string || '-'}</span>
+    { 
+        accessorKey: 'username', 
+        header: 'User', 
+        size: 120, 
+        cell: ({ getValue }: any) => <span className="text-[11px] font-bold text-gray-400">@{String(getValue() || '–')}</span> 
     },
-    {
-      accessorKey: 'username',
-      header: 'User',
-      size: columnWidths.username,
-      cell: ({ getValue }) => <span className="text-[11px] font-bold text-gray-400">@{getValue() as string || '–'}</span>
-    },
-    {
-        accessorKey: 'recid',
-        header: 'RecId',
-        size: columnWidths.recid,
-        cell: ({ getValue }) => <span className="text-[11px] font-black text-gray-700/60 tabular-nums">{String(getValue() || '')}</span>
+    { 
+        accessorKey: 'recid', 
+        header: 'RecId', 
+        size: 80, 
+        cell: ({ getValue }: any) => <span className="text-[11px] font-black text-gray-700/60 tabular-nums">{String(getValue())}</span> 
     }
-  ], [columnWidths]);
+  ], []);
+
+  if (!isMounted) return null;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
-      <div className="bg-white rounded-[8px] border border-gray-100 p-5 hover:border-gray-200 hover:shadow-sm transition-all duration-300 flex flex-col gap-5 shrink-0 relative z-50">
+      <div className="bg-[var(--bg-surface)] rounded-none border-[3px] border-black p-5 hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3.5px_3.5px_0_0_#000] shadow-[2.5px_2.5px_0_0_#000] transition-all duration-300 flex flex-col gap-5 shrink-0 relative z-50">
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex flex-wrap items-center gap-6">
             <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Rentang Tanggal</span>
+              <span className="text-[10px] font-black text-black uppercase tracking-widest ml-1">Rentang Tanggal</span>
               <div className="flex items-center gap-2">
-                {!isMounted ? (
-                   <div className="w-[300px] h-10 bg-gray-50 animate-pulse rounded-[8px]" />
-                ) : (
-                  <>
-                    <div className="w-[140px]">
-                      <DatePicker value={startDate} onChange={setStartDate} name="startDate" />
-                    </div>
-                    <div className="w-4 h-[1px] bg-gray-200 mx-1"></div>
-                    <div className="w-[140px]">
-                      <DatePicker value={endDate} onChange={setEndDate} name="endDate" />
-                    </div>
-                  </>
-                )}
+                <div className="w-[140px] relative group"><DatePicker value={startDate} onChange={setStartDate} name="startDate" /></div>
+                <div className="w-4 h-[1px] bg-gray-200 mx-1"></div>
+                <div className="w-[140px] relative group"><DatePicker value={endDate} onChange={setEndDate} name="endDate" /></div>
               </div>
             </div>
           </div>
-
           <div className="shrink-0 flex items-center gap-3">
             {isBatching && (
               <div className="flex flex-col items-end">
-                <div className="text-[10px] text-green-600 font-bold animate-pulse leading-none uppercase tracking-tighter">{batchStatus}</div>
-                <div className="w-24 h-1 bg-gray-50 rounded-full mt-1.5 overflow-hidden border border-gray-200">
-                  <div className="h-full bg-green-500 transition-all duration-300" style={{ width: `${batchProgress}%` }} />
+                <div className="text-[10px] text-black font-black animate-pulse leading-none uppercase tracking-tighter bg-[#fde047] px-2 py-1 border-[2px] border-black shadow-[2px_2px_0_0_#000]">{batchStatus}</div>
+                <div className="w-24 h-2 bg-white rounded-none mt-1.5 overflow-hidden border-[2px] border-black shadow-[2px_2px_0_0_#000]">
+                  <div className="h-full bg-black transition-all duration-300" style={{ width: `${batchProgress}%` }} />
                 </div>
               </div>
             )}
-            <button
-              onClick={handleFetch}
-              disabled={loading || isBatching}
-              className="px-5 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-[8px] transition-all flex items-center justify-center gap-2.5 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm active:scale-[0.98]"
-            >
-              <RefreshCw size={16} className={isBatching ? "animate-spin" : ""} />
+            <button onClick={handleFetch} disabled={loading || isBatching} className="px-5 h-10 bg-[#fde047] text-black hover:bg-black hover:text-white hover:border-black text-[13px] font-black uppercase tracking-wider border-[3px] border-black rounded-none transition-all flex items-center gap-2 shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] hover:shadow-[2.5px_2.5px_0_0_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none">
+              <RefreshCw size={16} className={isBatching ? "animate-spin" : ""} strokeWidth={3} />
               <span>{isBatching ? `${batchProgress}%` : 'Tarik Data'}</span>
             </button>
           </div>
@@ -451,13 +276,11 @@ export default function PelunasanHutangClient() {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-[8px] text-sm flex items-start gap-2 animate-in fade-in shrink-0">
-          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-          <p className="font-semibold">{error}</p>
+        <div className="p-3 bg-[#ff5e5e] text-white border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] rounded-none text-sm font-black flex items-start gap-2 animate-in fade-in shrink-0 uppercase tracking-wide">
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" strokeWidth={3} /><p>{error}</p>
         </div>
       )}
 
-      {/* Results View */}
       <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
         <div className="flex flex-col gap-4 shrink-0">
           <div className="flex items-center justify-between gap-4 min-h-[32px]">
@@ -467,82 +290,29 @@ export default function PelunasanHutangClient() {
                 <span>Hasil Scrapping</span>
               </h3>
               {lastUpdated && (
-                <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none" style={{ color: '#99a1af' }}>
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-black/40 leading-none">
                   <span className="opacity-40">|</span>
                   <span>Diperbarui: {lastUpdated}{scrapedPeriod ? ` (Periode: ${formatScrapedPeriodDate(scrapedPeriod.start)} s.d. ${formatScrapedPeriodDate(scrapedPeriod.end)})` : ''}</span>
                 </div>
               )}
             </div>
-
-            {loading && data.length > 0 && (
-              <div className="flex items-center gap-2 text-[11px] font-bold text-green-600 animate-pulse bg-green-50 px-2.5 py-1 rounded-full border border-green-100 uppercase tracking-tighter leading-none">
+            {loading && data && data.length > 0 && (
+              <div className="text-[11px] font-black text-black flex items-center gap-2 bg-[#fde047] px-2.5 py-1 rounded-none border-[2px] border-black shadow-[2px_2px_0_0_#000] animate-pulse uppercase tracking-tighter leading-none">
                 <Loader2 size={12} className="animate-spin" />
                 <span>Memproses...</span>
               </div>
             )}
           </div>
-          <div className="relative w-full group">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-green-500 transition-colors" />
-            <input
-              type="text"
-              placeholder="Cari faktur, supplier, PB, keterangan..."
-              className="w-full pl-12 pr-4 h-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+          <SearchAndReload searchQuery={searchQuery} setSearchQuery={setSearchQuery} onReload={() => setRefreshKey(prev => prev + 1)} loading={loading} placeholder="Cari faktur, supplier, PB, keterangan..." />
         </div>
 
-        <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
-          <DataTable
-            columns={columns}
-            data={data}
-            isLoading={loading}
-            totalCount={totalCount}
-            onScroll={handleScroll}
-            selectedIds={selectedIds}
-            onRowClick={handleRowClick}
-            columnWidths={columnWidths}
-            onColumnWidthChange={setColumnWidths}
-          />
-
-          <div className="flex items-center justify-between shrink-0 px-1 mt-1">
-            <span className="text-[12px] leading-none font-bold text-gray-400">
-              {totalCount === 0 ? 'Tidak ada data Pelunasan Hutang' : `Menampilkan ${data.length} dari ${totalCount} data Pelunasan Hutang`}
-            </span>
-            <div className="flex items-center gap-4">
-              {selectedIds.size > 0 && (
-                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                  <span className="text-[12px] leading-none font-bold text-gray-400">{selectedIds.size} dipilih</span>
-                  <button onClick={clearSelection} className="text-[12px] leading-none font-black text-rose-500 hover:text-rose-600 underline underline-offset-4">Batal</button>
-                </div>
-              )}
-              {loadTime !== null && (
-                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
-                  loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                  loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'
-                }`}>
-                  <span className="animate-pulse">⚡</span>
-                  <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
-                </span>
-              )}
-            </div>
-          </div>
+        <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden relative">
+          <DataTable columns={columns} data={data || []} isLoading={loading || data === null} totalCount={totalCount} onScroll={handleScroll} selectedIds={selectedIds} onRowClick={handleRowClick} columnWidths={columnWidths} onColumnWidthChange={setColumnWidths} rowHeight="h-10" />
+          <TableFooter totalCount={totalCount} currentCount={data?.length || 0} label="Pelunasan Hutang" selectedCount={selectedIds.size} onClearSelection={clearSelection} loadTime={loadTime} />
         </div>
       </div>
 
-      <ConfirmDialog
-        isOpen={dialog.isOpen}
-        type={dialog.type as any}
-        title={dialog.title}
-        message={dialog.message}
-        onConfirm={() => setDialog({ ...dialog, isOpen: false })}
-      />
+      <ConfirmDialog isOpen={dialog.isOpen} type={dialog.type} title={dialog.title} message={dialog.message} onConfirm={() => setDialog({ ...dialog, isOpen: false })} />
     </div>
   );
 }
-
-
-
-
-

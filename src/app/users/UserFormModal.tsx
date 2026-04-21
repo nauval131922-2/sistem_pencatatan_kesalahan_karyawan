@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { X, Save, AlertCircle, Search, ChevronDown } from 'lucide-react';
+import { X, Save, RefreshCw, AlertCircle, Search, ChevronDown, User, ShieldCheck, UserCog, Lock } from 'lucide-react';
 import { createUser, updateUser } from '@/lib/users';
 
-interface User {
+interface UserData {
   id: number;
   username: string;
   name: string;
@@ -12,7 +12,7 @@ interface User {
 }
 
 interface UserFormModalProps {
-  user: User | null;
+  user: UserData | null;
   customRoles?: string[];
   onClose: (refresh: boolean) => void;
 }
@@ -77,82 +77,94 @@ export default function UserFormModal({ user, customRoles = ['Super Admin', 'Adm
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-[8px] shadow-xl w-full max-w-md animate-in zoom-in-95 duration-200">
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 rounded-t-[8px]">
-          <h2 className="text-lg font-bold text-slate-800">
-            {isEditing ? 'Edit User' : 'Tambah User Baru'}
-          </h2>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white border-[4px] border-black shadow-[3.5px_3.5px_0_0_#000] w-full max-w-md animate-in zoom-in-95 duration-200 relative">
+        {/* Header */}
+        <div className="px-6 py-5 border-b-[4px] border-black flex justify-between items-center bg-[#fde047]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-black flex items-center justify-center border-2 border-black">
+               <UserCog size={24} className="text-[#fde047]" strokeWidth={3} />
+            </div>
+            <h2 className="text-[18px] font-black text-black uppercase tracking-tighter leading-none">
+              {isEditing ? 'Edit Profil User' : 'Buat Akun Baru'}
+            </h2>
+          </div>
           <button
             onClick={() => onClose(false)}
-            className="p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-[8px] transition-colors"
+            className="p-1 text-black hover:bg-black hover:text-white transition-all border-2 border-transparent hover:border-black active:translate-y-[2px]"
           >
-            <X size={20} />
+            <X size={24} strokeWidth={4} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
+        <form onSubmit={handleSubmit} className="p-7">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-[8px] flex items-start gap-2 text-sm border border-red-100">
-              <AlertCircle size={16} className="shrink-0 mt-0.5" />
+            <div className="mb-6 p-4 bg-[#ff5e5e] text-white border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] flex items-start gap-3 text-[12px] font-black uppercase tracking-wide">
+              <AlertCircle size={18} className="shrink-0 mt-0.5" strokeWidth={3} />
               <span>{error}</span>
             </div>
           )}
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nama Lengkap</label>
+          <div className="space-y-6">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black text-black uppercase tracking-widest ml-1 flex items-center gap-2">
+                <User size={14} strokeWidth={3} /> Nama Lengkap
+              </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-[8px] focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
-                placeholder="Ex. John Doe"
+                className="w-full px-4 py-3 bg-white border-[3px] border-black rounded-none focus:outline-none focus:bg-[#fde047]/5 transition-all font-black text-[14px] uppercase tracking-tighter placeholder:text-black/20 focus:shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px]"
+                placeholder="CONTOH: BUDI SANTOSO"
                 required
               />
             </div>
             
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Username</label>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black text-black uppercase tracking-widest ml-1 flex items-center gap-2">
+                <ShieldCheck size={14} strokeWidth={3} /> Username
+              </label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s/g, ''))}
-                className="w-full px-3 py-2 border border-slate-200 rounded-[8px] focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
-                placeholder="Ex. johnd"
+                className="w-full px-4 py-3 bg-white border-[3px] border-black rounded-none focus:outline-none focus:bg-[#fde047]/5 transition-all font-black text-[14px] lowercase tracking-tighter placeholder:text-black/20 focus:shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px]"
+                placeholder="CONTOH: budis"
                 required
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Peran Akses (Role)</label>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black text-black uppercase tracking-widest ml-1 flex items-center gap-2">
+                <UserCog size={14} strokeWidth={3} /> Peran Akses (Role)
+              </label>
               <div className="relative" ref={dropdownRef}>
                 <button
                   type="button"
                   onClick={() => setIsRoleDropdownOpen(prev => !prev)}
-                  className="w-full px-3 py-2 text-left bg-white border border-slate-200 rounded-[8px] focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all font-medium text-slate-700 flex items-center justify-between"
+                  className="w-full px-4 py-3 text-left bg-white border-[3px] border-black rounded-none focus:outline-none transition-all font-black text-[14px] text-black flex items-center justify-between uppercase tracking-tighter focus:shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px]"
                 >
                   <span className="truncate">{role}</span>
-                  <ChevronDown size={16} className={`text-slate-400 shrink-0 transition-transform duration-200 ${isRoleDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={18} strokeWidth={3} className={`text-black shrink-0 transition-transform duration-200 ${isRoleDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {isRoleDropdownOpen && (
-                  <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-slate-100 rounded-[8px] shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[250px]">
-                    <div className="px-3 pb-2 shrink-0 border-b border-slate-50 mb-1">
+                  <div className="absolute top-[calc(100%+10px)] left-0 w-full bg-white border-[3px] border-black rounded-none shadow-[3.5px_3.5px_0_0_#000] py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[250px]">
+                    <div className="px-3 pb-2 shrink-0 border-b-[2px] border-black/10 mb-2">
                       <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
-                          <Search size={14} />
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-black/40">
+                          <Search size={14} strokeWidth={3} />
                         </div>
                         <input
                           type="text"
                           autoFocus
-                          placeholder="Cari role..."
+                          placeholder="CARI ROLE..."
                           value={roleSearchQuery}
                           onChange={(e) => setRoleSearchQuery(e.target.value)}
-                          className="w-full pl-8 pr-3 py-1.5 text-sm bg-slate-50 border-none focus:outline-none focus:ring-2 focus:ring-emerald-500/20 rounded-[6px] placeholder:text-slate-400 font-medium"
+                          className="w-full pl-9 pr-3 py-2 text-[12px] bg-black/5 border-none focus:outline-none rounded-none placeholder:text-black/30 font-black uppercase tracking-tighter"
                         />
                       </div>
                     </div>
-                    <div className="flex-1 overflow-y-auto px-1.5 scrollbar-thin">
+                    <div className="flex-1 overflow-y-auto px-2 custom-scrollbar">
                       {customRoles
                         .filter(r => r.toLowerCase().includes(roleSearchQuery.toLowerCase()))
                         .map(cr => (
@@ -164,61 +176,56 @@ export default function UserFormModal({ user, customRoles = ['Super Admin', 'Adm
                               setIsRoleDropdownOpen(false);
                               setRoleSearchQuery('');
                             }}
-                            className={`w-full text-left px-3 py-2 text-sm font-medium rounded-md transition-colors truncate ${
+                            className={`w-full text-left px-3 py-2.5 text-[12px] font-black rounded-none transition-all uppercase tracking-tighter mb-1 ${
                               role === cr 
-                                ? 'bg-emerald-50 text-emerald-700' 
-                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                ? 'bg-black text-[#fde047]' 
+                                : 'text-black hover:bg-[#fde047]'
                             }`}
                           >
                             {cr}
                           </button>
                         ))}
-                        {customRoles.filter(r => r.toLowerCase().includes(roleSearchQuery.toLowerCase())).length === 0 && (
-                          <div className="px-3 py-4 text-center text-xs text-slate-400 font-medium">
-                            Role tidak ditemukan.
-                          </div>
-                        )}
                     </div>
                   </div>
                 )}
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                {isEditing ? 'Password Baru (Opsional)' : 'Password'}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-black text-black uppercase tracking-widest ml-1 flex items-center gap-2">
+                <Lock size={14} strokeWidth={3} /> {isEditing ? 'Password Baru (Opsional)' : 'Password'}
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="new-password"
-                className="w-full px-3 py-2 border border-slate-200 rounded-[8px] focus:ring-2 focus:ring-emerald-500 outline-none transition-all font-medium"
-                placeholder={isEditing ? 'Biarkan kosong jika tidak diubah' : 'Minimal 6 karakter'}
+                className="w-full px-4 py-3 bg-white border-[3px] border-black rounded-none focus:outline-none focus:bg-[#fde047]/5 transition-all font-black text-[14px] tracking-tighter placeholder:text-black/20 focus:shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px]"
+                placeholder={isEditing ? 'KOSONGKAN JIKA TIDAK DIUBAH' : 'MINIMAL 6 KARAKTER'}
                 required={!isEditing}
               />
             </div>
           </div>
 
-          <div className="mt-8 flex justify-end gap-3">
+          <div className="mt-10 flex gap-4">
             <button
               type="button"
               onClick={() => onClose(false)}
-              className="px-4 py-2 text-slate-600 hover:bg-slate-100 font-semibold rounded-[8px] transition-colors"
+              className="flex-1 px-4 py-3 text-[13px] font-black text-black/40 hover:text-black border-[3px] border-transparent hover:border-black transition-all uppercase tracking-widest"
             >
               Batal
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-[8px] flex items-center gap-2 transition-colors disabled:opacity-50"
+              className="flex-2 px-8 py-3 bg-[#fde047] hover:bg-black hover:text-[#fde047] text-black text-[13px] font-black border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] hover:shadow-[3.5px_3.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[3px] active:translate-x-[3px] active:shadow-none transition-all disabled:opacity-50 flex items-center justify-center gap-3 uppercase tracking-widest"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <RefreshCw size={18} className="animate-spin" strokeWidth={3} />
               ) : (
-                <Save size={18} />
+                <Save size={18} strokeWidth={3} />
               )}
-              {isEditing ? 'Simpan Perubahan' : 'Buat User'}
+              <span>{isEditing ? 'Update User' : 'Buat User'}</span>
             </button>
           </div>
         </form>
@@ -226,6 +233,8 @@ export default function UserFormModal({ user, customRoles = ['Super Admin', 'Adm
     </div>
   );
 }
+
+
 
 
 

@@ -2,15 +2,9 @@
 
 ## 🔄 Sedang Dikerjakan (In Progress)
 
-> _Belum ada task yang sedang dikerjakan._
-
-<!--
-Contoh format:
-- [ ] Implementasi fitur login Google OAuth
-      → Sudah: setup library, buat route
-      → Belum: callback handler, simpan ke database
-      → Catatan: gunakan passport.js
--->
+- [ ] Melanjutkan Migrasi Neobrutalism pada modul lainnya
+      → Sudah: Manajemen, SOPD, Master Pekerjaan, HPP Kalkulasi, Produksi (BOM, Barang Jadi, Bahan Baku), Global Components (Sidebar, Table)
+      → Belum: Penjualan & Pembelian, Dashboard & Analytics, dsb.
 
 ---
 
@@ -35,13 +29,10 @@ Contoh format:
 - [x] Migrasi visual seluruh modul ke sistem desain Neobrutalism (Boxy, Mechanical Yellow) — 2026-04-20
 - [x] Standarisasi badge loadTime dan count badge di seluruh modul tabel — 2026-04-20
 - [x] Perbaikan bug parsing JSX pada Profile page pasca-migrasi — 2026-04-20
-
-<!--
-Contoh format:
-- [x] Inisialisasi proyek — 2024-01-15
-- [x] Setup database & migration — 2024-01-15
-- [x] Implementasi autentikasi JWT — 2024-01-16
--->
+- [x] Migrasi Neobrutalism Global Components (`ActivityTable.tsx`, `DataTable.tsx`, `Sidebar.tsx`) — 2026-04-21
+- [x] Migrasi Neobrutalism SOPD & Master Pekerjaan — 2026-04-21
+- [x] Migrasi Neobrutalism HPP Kalkulasi — 2026-04-21
+- [x] Migrasi Neobrutalism Produksi (BOM, Barang Jadi, Bahan Baku) — 2026-04-21
 
 ---
 
@@ -75,12 +66,12 @@ Contoh format:
 ## 📊 Statistik
 
 ```
-Total task    : 6
-Selesai       : 6
-In progress   : 0
+Total task    : 11
+Selesai       : 10
+In progress   : 1
 Backlog       : 0
 Bug diketahui : 0
-Progress      : 100%
+Progress      : 91%
 ```
 
 ---

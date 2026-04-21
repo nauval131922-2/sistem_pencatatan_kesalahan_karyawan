@@ -45,3 +45,11 @@ export default async function MasterPekerjaanPage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+

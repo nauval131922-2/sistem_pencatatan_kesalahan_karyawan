@@ -380,7 +380,7 @@ export default function ManualModal() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
-            className="relative w-full max-w-lg bg-white rounded-none shadow-[12px_12px_0_0_#000] border-[4px] border-black overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300"
+            className="relative w-full max-w-lg bg-white rounded-none shadow-[3.5px_3.5px_0_0_#000] border-[4px] border-black overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300"
           >
             {/* Header */}
             <div className="p-5 border-b-[4px] border-black flex items-center justify-between bg-[#fde047]">
@@ -389,8 +389,8 @@ export default function ManualModal() {
                   <currentGuide.icon size={20} strokeWidth={2.5} />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-black uppercase tracking-widest mb-0.5">Detail Menu {currentGuide.title}</span>
-                  <h2 id="modal-title" className="text-xl font-black text-black uppercase tracking-tight flex items-center gap-2">
+                  <span className="text-[10px] font-black text-black mb-0.5">Detail Menu {currentGuide.title}</span>
+                  <h2 id="modal-title" className="text-xl font-black text-black flex items-center gap-2">
                     Bantuan & Panduan
                   </h2>
                 </div>
@@ -424,11 +424,11 @@ export default function ManualModal() {
                     {/* Description / Kegunaan */}
                     {currentGuide.description && (
                       <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
-                          <Database size={12} />
+                        <div className="flex items-center gap-2 text-[12px] text-black/40 font-black tracking-tighter">
+                          <Database size={14} strokeWidth={3} />
                           <span>Kegunaan Menu:</span>
                         </div>
-                        <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                        <p className="text-[12px] text-black/40 font-black tracking-tighter leading-tight max-w-2xl">
                           {renderText(currentGuide.description)}
                         </p>
                       </div>
@@ -449,7 +449,7 @@ export default function ManualModal() {
                               <div className="flex-shrink-0 w-2.5 h-2.5 mt-1.5 rounded-none border-[2px] border-black bg-[var(--accent-primary)] group-hover:scale-125 transition-all shadow-[1px_1px_0_0_#000]" />
                             )}
                             <p className={`text-sm leading-relaxed ${
-                              isHeader ? 'font-black text-black text-xs uppercase underline underline-offset-4 decoration-[2px]' : 
+                              isHeader ? 'font-black text-black text-xs underline underline-offset-4 decoration-[2px]' : 
                               isSubStep ? 'text-gray-700 text-[13px] font-bold' : 'text-black font-bold'
                             }`}>
                               {renderText(cleanText)}
@@ -460,10 +460,10 @@ export default function ManualModal() {
                     </div>
 
                     {(currentGuide as any).tips && (
-                      <div className="p-4 bg-[var(--accent-primary)] border-[3px] border-black rounded-none flex gap-3 shadow-[4px_4px_0_0_#000]">
+                      <div className="p-4 bg-[var(--accent-primary)] border-[3px] border-black rounded-none flex gap-3 shadow-[2.5px_2.5px_0_0_#000]">
                         <Info size={20} className="text-white shrink-0 mt-0.5" strokeWidth={2.5} />
                         <div>
-                          <p className="text-[11px] font-black text-white uppercase tracking-wider mb-1">Tips Berguna:</p>
+                          <p className="text-[11px] font-black text-white mb-1">Tips Berguna:</p>
                           <p className="text-sm font-bold text-white leading-relaxed">
                             "{renderText((currentGuide as any).tips)}"
                           </p>
@@ -477,7 +477,7 @@ export default function ManualModal() {
 
             {/* Footer */}
             <div className="p-4 bg-[var(--bg-deep)] border-t-[4px] border-black flex items-center justify-center">
-              <p className="text-[11px] font-bold text-black uppercase tracking-widest">Panduan Penggunaan SINTAK</p>
+              <p className="text-[11px] font-bold text-black">Panduan Penggunaan SINTAK</p>
             </div>
           </div>
         </div>
@@ -485,6 +485,14 @@ export default function ManualModal() {
     </>
   );
 }
+
+
+
+
+
+
+
+
 
 
 

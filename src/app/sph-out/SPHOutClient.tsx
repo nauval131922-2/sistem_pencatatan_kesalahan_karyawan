@@ -10,7 +10,10 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatLastUpdate } from '@/lib/date-utils';
 import { formatScrapedPeriodDate, getDefaultScraperDateRange, hydrateScraperPeriod, persistScraperPeriod } from '@/lib/scraper-period';
 import { DataTable } from '@/components/ui/DataTable';
+import SearchAndReload from '@/components/SearchAndReload';
+import TableFooter from '@/components/TableFooter';
 import { splitDateRangeIntoMonths } from '@/lib/date-utils';
+import { useTableSelection } from '@/lib/hooks/useTableSelection';
 
 function formatDateToYYYYMMDD(date: Date) {
   const y = date.getFullYear();
@@ -38,62 +41,36 @@ export default function SphOutClient() {
   const [isMounted, setIsMounted] = useState(false);
   const [startDate, setStartDate] = useState<Date>(() => getDefaultScraperDateRange().startDate);
   const [endDate, setEndDate] = useState<Date>(() => getDefaultScraperDateRange().endDate);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [data, setData] = useState<any[] | null>(null);
   const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [scrapedPeriod, setScrapedPeriod] = useState<{start: string, end: string} | null>(null);
-
+  const [loadTime, setLoadTime] = useState<number | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [loadTime, setLoadTime] = useState<number | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
 
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const isLoadingMore = useRef(false);
+  const mountedRef = useRef(true);
+
+  const { selectedIds, setSelectedIds, handleRowClick, clearSelection } = useTableSelection(data || []);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('sphOut_columnWidths');
-      if (saved) return JSON.parse(saved);
+      return saved ? JSON.parse(saved) : {
+        id: 80, faktur: 220, tgl: 120, kd_pelanggan: 250, total: 180, username: 120, recid: 80
+      };
     }
-    return {
-      id: 80,
-      faktur: 220,
-      tgl: 120,
-      top_hari: 100,
-      faktur_bom: 200,
-      faktur_spph: 200,
-      kd_gudang: 100,
-      kd_cabang: 100,
-      kd_pelanggan: 250,
-      subtotal: 160,
-      persppn: 100,
-      ppn: 140,
-      total: 180,
-      status: 100,
-      create_at: 180,
-      updated_at: 180,
-      username: 120,
-      edited_at: 180,
-      username_edited: 120,
-      deleted_at: 180,
-      username_deleted: 120,
-      barang: 400,
-      faktur_so: 220,
-      cmd: 200,
-      detil: 120,
-      recid: 80
-    };
+    return {};
   });
 
   useEffect(() => {
     localStorage.setItem('sphOut_columnWidths', JSON.stringify(columnWidths));
   }, [columnWidths]);
-
-  const isLoadingMore = useRef(false);
-  const mountedRef = useRef(true);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -104,66 +81,14 @@ export default function SphOutClient() {
   }, [searchQuery]);
 
   useEffect(() => {
-    let active = true;
-    async function loadData() {
-      if (mountedRef.current) setLoading(page === 1);
-      const startTimer = Date.now();
-      try {
-        const queryParams = new URLSearchParams({
-          page: page.toString(),
-          pageSize: PAGE_SIZE.toString(),
-          q: debouncedQuery,
-          start: formatDateToYYYYMMDD(startDate),
-          end: formatDateToYYYYMMDD(endDate)
-        });
-
-        const res = await fetch(`/api/sph-out?${queryParams.toString()}`);
-        if (!res.ok) throw new Error('Gagal memuat data');
-        const json = await res.json();
-        
-        if (active && mountedRef.current) {
-          setData(prev => {
-            const processData = (items: any[]) => items.map(item => {
-              let parsed = {};
-              if (item.raw_data) {
-                try { parsed = JSON.parse(item.raw_data); } catch(e){}
-              }
-              return { ...item, ...parsed };
-            });
-
-            if (page === 1) return processData(json.data || []);
-            const currentData = prev || [];
-            const newData = processData(json.data || []);
-            const existingIds = new Set(currentData.map((d: any) => d.id));
-            const filteredNew = newData.filter((d: any) => !existingIds.has(d.id));
-            return [...currentData, ...filteredNew];
-          });
-          setTotalCount(json.total || 0);
-          if (json.scrapedPeriod) setScrapedPeriod(json.scrapedPeriod);
-          
-          if (json.lastUpdated) {
-            const latestDate = new Date(json.lastUpdated);
-            if (!isNaN(latestDate.getTime())) {
-              setLastUpdated(formatLastUpdate(latestDate));
-            }
-          }
-          setLoadTime(Date.now() - startTimer);
-        }
-      } catch (err: any) {
-        if (active && mountedRef.current) {
-          setError(err.message || 'Gagal memuat data');
-          setData([]);
-        }
-      } finally {
-        if (active && mountedRef.current) {
-          setLoading(false);
-          isLoadingMore.current = false;
-        }
-      }
-    }
-    loadData();
-    return () => { active = false; };
-  }, [page, debouncedQuery, refreshKey, startDate, endDate]);
+    setIsMounted(true);
+    const hydratedPeriod = hydrateScraperPeriod({ stateKey: 'sphOutState', periodKey: 'SphOutClient_scrapedPeriod' });
+    setScrapedPeriod(hydratedPeriod.scrapedPeriod);
+    setStartDate(hydratedPeriod.startDate);
+    setEndDate(hydratedPeriod.endDate);
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
@@ -173,361 +98,169 @@ export default function SphOutClient() {
       }
     };
     window.addEventListener('storage', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
+    return () => { window.removeEventListener('storage', handleStorageChange); };
   }, [router]);
 
   useEffect(() => {
-    mountedRef.current = true;
-    setIsMounted(true);
-
-    const hydratedPeriod = hydrateScraperPeriod({ stateKey: 'sphOutState', periodKey: 'SphOutClient_scrapedPeriod' });
-    setScrapedPeriod(hydratedPeriod.scrapedPeriod);
-    setStartDate(hydratedPeriod.startDate);
-    setEndDate(hydratedPeriod.endDate);
-
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
+    let active = true;
+    async function loadData() {
+      if (!active || !mountedRef.current || !isMounted) return;
+      setLoading(page === 1);
+      const startTimer = performance.now();
+      try {
+        const queryParams = new URLSearchParams({
+          page: page.toString(), pageSize: PAGE_SIZE.toString(), q: debouncedQuery,
+          start: formatDateToYYYYMMDD(startDate), end: formatDateToYYYYMMDD(endDate)
+        });
+        const res = await fetch(`/api/sph-out?${queryParams.toString()}`);
+        if (!res.ok) throw new Error('Gagal memuat data');
+        const json = await res.json();
+        if (active) {
+          setData(prev => {
+            const processData = (items: any[]) => (items || []).map(item => {
+              let parsed = {};
+              if (item.raw_data) { try { parsed = JSON.parse(item.raw_data); } catch(e){} }
+              return { ...item, ...parsed };
+            });
+            if (page === 1) return processData(json.data || []);
+            const currentData = prev || [];
+            const newData = processData(json.data || []);
+            const existingIds = new Set(currentData.map((d: any) => d.id));
+            return [...currentData, ...newData.filter((d: any) => !existingIds.has(d.id))];
+          });
+          setTotalCount(json.total || 0);
+          if (json.scrapedPeriod) setScrapedPeriod(json.scrapedPeriod);
+          if (json.lastUpdated) setLastUpdated(formatLastUpdate(new Date(json.lastUpdated)));
+          setLoadTime(Math.round(performance.now() - startTimer));
+        }
+      } catch (err: any) {
+        if (active) { setError(err.message || 'Gagal memuat data'); setData([]); }
+      } finally {
+        if (active) { setLoading(false); isLoadingMore.current = false; }
+      }
+    }
+    loadData();
+    return () => { active = false; };
+  }, [page, debouncedQuery, refreshKey, startDate, endDate, isMounted]);
 
   const [isBatching, setIsBatching] = useState(false);
   const [batchProgress, setBatchProgress] = useState(0);
   const [batchStatus, setBatchStatus] = useState('');
+  const [dialog, setDialog] = useState({ isOpen: false, type: 'success' as any, title: '', message: '' });
 
   const handleFetch = async () => {
     if (!startDate || !endDate) return;
-
     localStorage.setItem('sphOutState', JSON.stringify({
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      sessionDate: new Date().toLocaleDateString('en-CA')
+      startDate: startDate.toISOString(), endDate: endDate.toISOString(), sessionDate: new Date().toLocaleDateString('en-CA')
     }));
-
-    setError('');
-    setData([]);
-    setPage(1);
-    setIsBatching(true);
-    setLoading(true);
-    setSearchQuery('');
-    setBatchProgress(0);
-
+    setError(''); setData([]); setPage(1); setIsBatching(true); setLoading(true); setSearchQuery(''); setBatchProgress(0);
     const startStr = formatDateToYYYYMMDD(startDate);
     const endStr = formatDateToYYYYMMDD(endDate);
     const chunks = splitDateRangeIntoMonths(startStr, endStr);
-    let successCount = 0;
-    let totalScraped = 0;
-    let completedChunks = 0;
-
+    let successCount = 0; let totalScraped = 0; let completedChunks = 0;
     const processChunk = async (chunk: any) => {
       try {
         const res = await fetch(`/api/scrape-sph-out?start=${chunk.start}&end=${chunk.end}&metaStart=${startStr}&metaEnd=${endStr}`);
         if (res.ok) {
-          successCount++;
-          const json = await res.json();
-          totalScraped += (json.total || 0);
+          successCount++; const json = await res.json(); totalScraped += (json.total || 0);
         }
-      } catch (err) {
-        console.error("Chunk error:", err);
-      } finally {
-        completedChunks++;
-        setBatchProgress(Math.round((completedChunks / chunks.length) * 100));
+      } catch (e) {} finally {
+        completedChunks++; setBatchProgress(Math.round((completedChunks / chunks.length) * 100));
         setBatchStatus(`Memproses ${completedChunks}/${chunks.length} bulan...`);
       }
     };
-
     try {
-      const concurrency = 15;
-      const queue = [...chunks];
+      const concurrency = 15; const queue = [...chunks];
       const workers = Array(Math.min(concurrency, queue.length)).fill(null).map(async () => {
-        while (queue.length > 0) {
-          const chunk = queue.shift();
-          if (chunk) await processChunk(chunk);
-        }
+        while (queue.length > 0) { const chunk = queue.shift(); if (chunk) await processChunk(chunk); }
       });
       await Promise.all(workers);
-
       if (successCount > 0) {
-        const periodStr = persistScraperPeriod({ stateKey: 'sphOutState', periodKey: 'SphOutClient_scrapedPeriod' }, startDate, endDate);
-        setScrapedPeriod(periodStr);
-        setIsBatching(false);
+        persistScraperPeriod({ stateKey: 'sphOutState', periodKey: 'SphOutClient_scrapedPeriod' }, startDate, endDate);
         setRefreshKey(prev => prev + 1);
         localStorage.setItem('sintak_data_updated', Date.now().toString());
-
-        await fetch('/api/activity-log', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action_type: 'SCRAPE',
-            table_name: 'sph_out',
-            message: `Tarik Data SPH Keluar (${formatDateToYYYYMMDD(startDate)} s/d ${formatDateToYYYYMMDD(endDate)})`,
-            raw_data: JSON.stringify({ totalScraped })
-          })
-        });
-
-        setDialog({
-          isOpen: true,
-          type: 'success',
-          title: 'Berhasil',
-          message: `Berhasil menarik ${totalScraped} data SPH Keluar.`
-        });
+        setDialog({ isOpen: true, type: 'success', title: 'Berhasil', message: `Berhasil menarik ${totalScraped} data SPH Keluar.` });
       }
-    } catch (err: any) {
-      setError(err.message || 'Gagal sinkronasi');
-    } finally {
-      setIsBatching(false);
-      setLoading(false);
-    }
+    } finally { setIsBatching(false); setLoading(false); }
   };
-
-  const [dialog, setDialog] = useState({ isOpen: false, type: 'success', title: '', message: '' });
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
     if (scrollHeight - scrollTop <= clientHeight + 300 && !loading && (data?.length || 0) < totalCount) {
       setPage(prev => prev + 1);
     }
-  }, [loading, data, totalCount, setPage]);
+  }, [loading, data, totalCount]);
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
+  const columns = useMemo(() => [
     {
       accessorKey: 'id',
       header: 'ID',
-      size: columnWidths.id,
-      cell: ({ getValue, row }) => (
-        <span className={`font-medium tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-gray-400'}`}>
-          {getValue() as string}
-        </span>
-      )
-    },
-    {
-      accessorKey: 'faktur',
-      header: 'Faktur',
-      size: columnWidths.faktur,
-      cell: ({ getValue, row }) => (
-        <span className={`font-medium transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-700'}`}>
-          {getValue() as string}
-        </span>
-      )
+      size: 80,
+      cell: ({ getValue, row }: any) => <span className={`font-medium tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-gray-400'}`}>{String(getValue())}</span>
     },
     {
       accessorKey: 'tgl',
       header: 'Tanggal',
-      size: columnWidths.tgl,
-      cell: ({ getValue, row }) => (
-        <span className={`font-medium tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>
-          {getValue() as string}
-        </span>
-      )
+      size: 120,
+      cell: ({ getValue, row }: any) => <span className={`font-bold tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>{formatIndoDateStr(getValue() as string)}</span>
     },
     {
-      accessorKey: 'top_hari',
-      header: 'TOP (Hari)',
-      size: columnWidths.top_hari,
-      cell: ({ getValue }) => <span className="text-gray-500">{getValue() as string || '0'}</span>
-    },
-    {
-      accessorKey: 'faktur_bom',
-      header: 'Faktur BOM',
-      size: columnWidths.faktur_bom,
-      cell: ({ getValue, row }) => (
-        <span className={`font-medium truncate transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-400'}`}>
-          {getValue() as string || '-'}
-        </span>
-      )
-    },
-    {
-      accessorKey: 'faktur_spph',
-      header: 'Faktur SPPH',
-      size: columnWidths.faktur_spph,
-      cell: ({ getValue, row }) => (
-        <span className={`font-medium transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-600'}`}>
-          {getValue() as string || '-'}
-        </span>
-      )
-    },
-    {
-      accessorKey: 'kd_gudang',
-      header: 'Gudang',
-      size: columnWidths.kd_gudang,
-      cell: ({ getValue }) => <span className="text-gray-500">{getValue() as string || '-'}</span>
-    },
-    {
-      accessorKey: 'kd_cabang',
-      header: 'Cabang',
-      size: columnWidths.kd_cabang,
-      cell: ({ getValue }) => <span className="text-gray-500">{getValue() as string || '-'}</span>
+      accessorKey: 'faktur',
+      header: 'Faktur SPH',
+      size: 220,
+      cell: ({ getValue, row }: any) => <span className={`font-black tracking-tight transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-700'}`}>{String(getValue())}</span>
     },
     {
       accessorKey: 'kd_pelanggan',
       header: 'Pelanggan',
-      size: columnWidths.kd_pelanggan,
-      cell: ({ getValue, row }) => (
-        <span className={`font-medium transition-colors ${row.getIsSelected() ? 'text-green-800' : 'text-gray-700'}`}>
-          {getValue() as string}
-        </span>
-      )
-    },
-    {
-      accessorKey: 'subtotal',
-      header: 'Subtotal',
-      size: columnWidths.subtotal,
-      meta: { align: 'right' },
-      cell: ({ getValue, row }) => (
-        <div className={`flex items-center justify-end font-medium tabular-nums transition-colors ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>
-          <span className={`text-[10px] font-bold mr-1 ${row.getIsSelected() ? 'text-green-400' : 'text-gray-300'}`}>Rp</span>
-          <span>{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-        </div>
-      )
-    },
-    {
-      accessorKey: 'persppn',
-      header: '% PPN',
-      size: columnWidths.persppn,
-      meta: { align: 'right' },
-      cell: ({ getValue }) => <span className="text-gray-500">{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-    },
-    {
-      accessorKey: 'ppn',
-      header: 'PPN',
-      size: columnWidths.ppn,
-      meta: { align: 'right' },
-      cell: ({ getValue, row }) => (
-        <div className={`flex items-center justify-end font-medium tabular-nums transition-colors ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>
-          <span className={`text-[10px] font-bold mr-1 ${row.getIsSelected() ? 'text-green-400' : 'text-gray-300'}`}>Rp</span>
-          <span>{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-        </div>
-      )
+      size: 250,
+      cell: ({ getValue, row }: any) => <span className={`font-black uppercase tracking-tight ${row.getIsSelected() ? 'text-green-900' : 'text-gray-800'}`}>{String(getValue())}</span>
     },
     {
       accessorKey: 'total',
-      header: 'Total',
-      size: columnWidths.total,
+      header: 'Nilai SPH',
+      size: 180,
       meta: { align: 'right' },
-      cell: ({ getValue, row }) => (
-        <div className={`flex items-center justify-end font-medium tabular-nums transition-colors ${row.getIsSelected() ? 'text-green-700' : 'text-gray-800'}`}>
-          <span className={`text-[10px] font-bold mr-1 ${row.getIsSelected() ? 'text-green-400' : 'text-gray-300'}`}>Rp</span>
-          <span>{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+      cell: ({ getValue, row }: any) => (
+        <div className={`flex items-center justify-between font-black tabular-nums w-full ${row.getIsSelected() ? 'text-green-700' : 'text-emerald-700'}`}>
+          <span className="text-[10px] opacity-40 mr-1">Rp</span>
+          <span>{Number(getValue() || 0).toLocaleString('id-ID', { minimumFractionDigits: 2 })}</span>
         </div>
       )
     },
     {
       accessorKey: 'status',
       header: 'Status',
-      size: columnWidths.status,
-      cell: ({ getValue }) => {
-        const val = getValue() as string;
-        return (
-          <span className={`font-black text-[10px] px-2 py-0.5 rounded-full border ${val === '1' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
-            {val === '1' ? 'ACTIVE' : 'INACTIVE'}
-          </span>
-        );
-      }
+      size: 100,
+      cell: ({ getValue }: any) => <span className={`font-black text-[10px] px-2 py-0.5 rounded-none border-2 border-black shadow-[2px_2px_0_0_#000] ${getValue() === '1' ? 'bg-[#93c5fd] text-black' : 'bg-black/5 text-black/20'}`}>{getValue() === '1' ? 'ACTIVE' : 'INACTIVE'}</span>
     },
-    {
-      accessorKey: 'create_at',
-      header: 'Create At',
-      size: columnWidths.create_at,
-      cell: ({ getValue }) => <span className="text-[11px] text-gray-400 font-mono">{getValue() as string || '-'}</span>
+    { 
+        accessorKey: 'username', 
+        header: 'User', 
+        size: 120, 
+        cell: ({ getValue }: any) => <span className="text-[11px] font-bold text-gray-400">@{String(getValue() || '–')}</span> 
     },
-    {
-      accessorKey: 'updated_at',
-      header: 'Updated At',
-      size: columnWidths.updated_at,
-      cell: ({ getValue }) => <span className="text-[11px] text-gray-400 font-mono">{getValue() as string || '-'}</span>
-    },
-    {
-      accessorKey: 'username',
-      header: 'Username',
-      size: columnWidths.username,
-      cell: ({ getValue, row }) => (
-        <span className={`text-[11px] font-bold transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-400'}`}>
-          @{getValue() as string || '–'}
-        </span>
-      )
-    },
-    {
-      accessorKey: 'edited_at',
-      header: 'Edited At',
-      size: columnWidths.edited_at,
-      cell: ({ getValue }) => <span className="text-[11px] text-gray-400 font-mono">{getValue() as string || '-'}</span>
-    },
-    {
-      accessorKey: 'username_edited',
-      header: 'User Edited',
-      size: columnWidths.username_edited,
-      cell: ({ getValue }) => <span className="text-[11px] text-gray-400">@{getValue() as string || '-'}</span>
-    },
-    {
-      accessorKey: 'deleted_at',
-      header: 'Deleted At',
-      size: columnWidths.deleted_at,
-      cell: ({ getValue }) => <span className="text-[11px] text-rose-300 font-mono">{getValue() as string || '-'}</span>
-    },
-    {
-      accessorKey: 'username_deleted',
-      header: 'User Deleted',
-      size: columnWidths.username_deleted,
-      cell: ({ getValue }) => <span className="text-[11px] text-rose-300">@{getValue() as string || '-'}</span>
-    },
-    {
-      accessorKey: 'barang',
-      header: 'Barang',
-      size: columnWidths.barang,
-      cell: ({ getValue, row }) => (
-        <span className={`truncate block transition-colors ${row.getIsSelected() ? 'text-green-800' : 'text-gray-600'}`} title={getValue() as string || ''}>
-          {getValue() as string || '–'}
-        </span>
-      )
-    },
-    {
-      accessorKey: 'faktur_so',
-      header: 'Faktur SO',
-      size: columnWidths.faktur_so,
-      cell: ({ getValue, row }) => (
-        <div className={`transition-colors truncate font-medium ${row.getIsSelected() ? 'text-green-600' : 'text-gray-400'}`} dangerouslySetInnerHTML={{ __html: getValue() as string || '-' }} />
-      )
-    },
-    {
-      accessorKey: 'cmd',
-      header: 'Aksi',
-      size: columnWidths.cmd,
-      cell: ({ getValue, row }) => (
-        <div className="flex justify-center" dangerouslySetInnerHTML={{ __html: getValue() as string || '-' }} />
-      )
-    },
-    {
-      accessorKey: 'detil',
-      header: 'Cetak',
-      size: columnWidths.detil,
-      cell: ({ getValue, row }) => (
-        <div className="flex justify-center" dangerouslySetInnerHTML={{ __html: getValue() as string || '-' }} />
-      )
-    },
-    {
-      accessorKey: 'recid',
-      header: 'RecId',
-      size: columnWidths.recid,
-      cell: ({ getValue }) => <span className="text-[11px] text-gray-300 font-mono">{getValue() as string}</span>
+    { 
+        accessorKey: 'recid', 
+        header: 'RecId', 
+        size: 80, 
+        cell: ({ getValue }: any) => <span className="text-[11px] font-black text-gray-700/60 tabular-nums">{String(getValue())}</span> 
     }
-  ], [columnWidths]);
+  ], []);
+
+  if (!isMounted) return null;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
-      <div className="bg-white rounded-[8px] border border-gray-100 p-5 hover:border-gray-200 hover:shadow-sm transition-all duration-300 flex flex-col gap-5 shrink-0 relative z-50">
+      <div className="bg-[var(--bg-surface)] rounded-none border-[3px] border-black p-5 hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3.5px_3.5px_0_0_#000] shadow-[2.5px_2.5px_0_0_#000] transition-all duration-300 flex flex-col gap-5 shrink-0 relative z-50">
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex flex-wrap items-center gap-6">
             <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest ml-1">Rentang Tanggal</span>
+              <span className="text-[10px] font-black text-black uppercase tracking-widest ml-1">Rentang Tanggal</span>
               <div className="flex items-center gap-2">
-                <div className="w-[140px]">
-                  <DatePicker value={startDate} onChange={setStartDate} name="startDate" />
-                </div>
+                <div className="w-[140px] relative group"><DatePicker value={startDate} onChange={setStartDate} name="startDate" /></div>
                 <div className="w-4 h-[1px] bg-gray-200 mx-1"></div>
-                <div className="w-[140px]">
-                  <DatePicker value={endDate} onChange={setEndDate} name="endDate" />
-                </div>
+                <div className="w-[140px] relative group"><DatePicker value={endDate} onChange={setEndDate} name="endDate" /></div>
               </div>
             </div>
           </div>
@@ -535,18 +268,18 @@ export default function SphOutClient() {
           <div className="shrink-0 flex items-center gap-3">
             {isBatching && (
               <div className="flex flex-col items-end">
-                <div className="text-[10px] text-green-600 font-bold animate-pulse leading-none uppercase tracking-tighter">{batchStatus}</div>
-                <div className="w-24 h-1 bg-gray-50 rounded-full mt-1.5 overflow-hidden border border-gray-200">
-                  <div className="h-full bg-green-500 transition-all duration-300" style={{ width: `${batchProgress}%` }} />
+                <div className="text-[10px] text-black font-black animate-pulse leading-none uppercase tracking-tighter bg-[#fde047] px-2 py-1 border-[2px] border-black shadow-[2px_2px_0_0_#000]">{batchStatus}</div>
+                <div className="w-24 h-2 bg-white rounded-none mt-1.5 overflow-hidden border-[2px] border-black shadow-[2px_2px_0_0_#000]">
+                  <div className="h-full bg-black transition-all duration-300" style={{ width: `${batchProgress}%` }} />
                 </div>
               </div>
             )}
             <button
               onClick={handleFetch}
               disabled={loading || isBatching}
-              className="px-5 h-10 bg-green-600 hover:bg-green-700 text-white text-[13px] font-extrabold rounded-[8px] transition-all flex items-center justify-center gap-2.5 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm active:scale-[0.98]"
+              className="px-5 h-10 bg-[#fde047] text-black hover:bg-black hover:text-white hover:border-black text-[13px] font-black uppercase tracking-wider border-[3px] border-black rounded-none transition-all flex items-center justify-center gap-2.5 shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] hover:shadow-[2.5px_2.5px_0_0_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none disabled:opacity-50"
             >
-              <RefreshCw size={16} className={isBatching ? "animate-spin" : ""} />
+              <RefreshCw size={16} className={isBatching ? "animate-spin" : ""} strokeWidth={3} />
               <span>{isBatching ? `${batchProgress}%` : 'Tarik Data'}</span>
             </button>
           </div>
@@ -554,13 +287,12 @@ export default function SphOutClient() {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-[8px] text-sm flex items-start gap-2 animate-in fade-in shrink-0">
-          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-          <p className="font-semibold">{error}</p>
+        <div className="p-3 bg-[#ff5e5e] text-white border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] rounded-none text-sm font-black flex items-start gap-2 animate-in fade-in shrink-0 uppercase tracking-wide">
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" strokeWidth={3} />
+          <p>{error}</p>
         </div>
       )}
 
-      {/* Results View */}
       <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
         <div className="flex flex-col gap-4 shrink-0">
           <div className="flex items-center justify-between gap-4 min-h-[32px]">
@@ -570,7 +302,7 @@ export default function SphOutClient() {
                 <span>Hasil Scrapping</span>
               </h3>
               {lastUpdated && (
-                <div className="flex items-center gap-1.5 text-[12px] font-medium leading-none" style={{ color: '#99a1af' }}>
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-black/40 leading-none">
                   <span className="opacity-40">|</span>
                   <span>Diperbarui: {lastUpdated}{scrapedPeriod ? ` (Periode: ${formatScrapedPeriodDate(scrapedPeriod.start)} s.d. ${formatScrapedPeriodDate(scrapedPeriod.end)})` : ''}</span>
                 </div>
@@ -578,85 +310,22 @@ export default function SphOutClient() {
             </div>
 
             {loading && (data?.length || 0) > 0 && (
-              <div className="flex items-center gap-2 text-[11px] font-bold text-green-600 animate-pulse bg-green-50 px-2.5 py-1 rounded-full border border-green-100 uppercase tracking-tighter leading-none">
+              <div className="text-[11px] font-black text-black flex items-center gap-2 bg-[#fde047] px-2.5 py-1 rounded-none border-[2px] border-black shadow-[2px_2px_0_0_#000] animate-pulse uppercase tracking-tighter leading-none">
                 <Loader2 size={12} className="animate-spin" />
                 <span>Memproses...</span>
               </div>
             )}
           </div>
-          <div className="relative w-full group">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-green-500 transition-colors" />
-            <input
-              type="text"
-              placeholder="Cari faktur, pelanggan, keterangan..."
-              className="w-full pl-12 pr-4 h-10 bg-white border border-gray-100 rounded-[8px] focus:outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all text-[13px] font-semibold placeholder:text-gray-300 shadow-sm"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+          <SearchAndReload searchQuery={searchQuery} setSearchQuery={setSearchQuery} onReload={() => setRefreshKey(prev => prev + 1)} loading={loading} placeholder="Cari faktur, pelanggan, keterangan..." />
         </div>
 
-        <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
-          <DataTable
-            columns={columns}
-            data={data || []}
-            isLoading={loading || data === null}
-            totalCount={totalCount}
-            onScroll={handleScroll}
-            selectedIds={selectedIds}
-            onRowClick={(id: any) => {
-              const next = new Set(selectedIds);
-              if (next.has(id)) next.delete(id);
-              else next.add(id);
-              setSelectedIds(next);
-            }}
-            columnWidths={columnWidths}
-            onColumnWidthChange={setColumnWidths}
-          />
-
-          <div className="flex items-center justify-between shrink-0 px-1 mt-1">
-            <span className="text-[12px] leading-none font-bold text-gray-400">
-              {totalCount === 0 ? 'Tidak ada data SPH Keluar' : `Menampilkan ${data?.length || 0} dari ${totalCount} data SPH Keluar`}
-            </span>
-            <div className="flex items-center gap-4">
-              {selectedIds.size > 0 && (
-                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                  <span className="text-[12px] leading-none font-bold text-gray-400">{selectedIds.size} dipilih</span>
-                  <button onClick={() => setSelectedIds(new Set())} className="text-[12px] leading-none font-black text-rose-500 hover:text-rose-600 underline underline-offset-4">Batal</button>
-                </div>
-              )}
-              {loadTime !== null && (
-                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1.5 shadow-sm border ${
-                  loadTime < 300 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                  loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'
-                }`}>
-                  <span className="animate-pulse">⚡</span>
-                  <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
-                </span>
-              )}
-            </div>
-          </div>
+        <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden relative">
+          <DataTable columns={columns} data={data || []} isLoading={loading || data === null} totalCount={totalCount} onScroll={handleScroll} selectedIds={selectedIds} onRowClick={handleRowClick} columnWidths={columnWidths} onColumnWidthChange={setColumnWidths} rowHeight="h-10" />
+          <TableFooter totalCount={totalCount} currentCount={data?.length || 0} label="data SPH Keluar" selectedCount={selectedIds.size} onClearSelection={clearSelection} loadTime={loadTime} />
         </div>
       </div>
 
-      <ConfirmDialog
-        isOpen={dialog.isOpen}
-        type={dialog.type as any}
-        title={dialog.title}
-        message={dialog.message}
-        onConfirm={() => setDialog({ ...dialog, isOpen: false })}
-      />
+      <ConfirmDialog isOpen={dialog.isOpen} type={dialog.type} title={dialog.title} message={dialog.message} onConfirm={() => setDialog({ ...dialog, isOpen: false })} />
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-

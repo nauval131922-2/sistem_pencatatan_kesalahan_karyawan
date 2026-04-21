@@ -9,12 +9,12 @@ export const metadata = {
 export default function UnauthorizedPage() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center min-h-[80vh] text-center p-6">
-      <div className="w-24 h-24 bg-[var(--accent-primary)] border-[4px] border-black shadow-[8px_8px_0_0_#000] flex items-center justify-center mb-8">
+      <div className="w-24 h-24 bg-[var(--accent-primary)] border-[4px] border-black shadow-[3.5px_3.5px_0_0_#000] flex items-center justify-center mb-8">
         <ShieldAlert size={44} strokeWidth={2.5} className="text-white" />
       </div>
       
       <h1 className="text-6xl font-black text-black tracking-tight leading-none mb-4">403</h1>
-      <div className="inline-block border-[3px] border-black bg-[#fde047] px-4 py-1 shadow-[4px_4px_0_0_#000] mb-6">
+      <div className="inline-block border-[3px] border-black bg-[#fde047] px-4 py-1 shadow-[2.5px_2.5px_0_0_#000] mb-6">
         <p className="text-sm font-black text-black uppercase tracking-widest">Akses Ditolak</p>
       </div>
       
@@ -31,3 +31,11 @@ export default function UnauthorizedPage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+

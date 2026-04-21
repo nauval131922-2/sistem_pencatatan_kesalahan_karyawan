@@ -48,7 +48,7 @@ async function DashboardStats() {
         <Link
           key={card.title}
           href={card.href}
-          className="group bg-white border-[3px] border-black rounded-none p-5 h-[110px] flex items-center gap-4 shadow-[5px_5px_0_0_#000] hover:shadow-[7px_7px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[3px] active:translate-x-[3px] active:shadow-none transition-all duration-150"
+          className="group bg-white border-[3px] border-black rounded-none p-5 h-[110px] flex items-center gap-4 shadow-[3.5px_3.5px_0_0_#000] hover:shadow-[7px_7px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[3px] active:translate-x-[3px] active:shadow-none transition-all duration-150"
         >
           <div
             className={`w-12 h-12 rounded-none border-[2px] border-black shadow-[2px_2px_0_0_#000] flex items-center justify-center shrink-0 ${card.iconBg}`}
@@ -60,11 +60,11 @@ async function DashboardStats() {
               <span className="text-3xl font-black text-black tracking-tight leading-none">
                 {card.value}
               </span>
-              <span className="text-[10px] text-black/50 font-black uppercase tracking-widest">
+              <span className="text-[10px] text-black/50 font-black">
                 {card.subtitle}
               </span>
             </div>
-            <span className="text-[12px] text-black font-black tracking-tight mt-2 uppercase">
+            <span className="text-[12px] text-black font-black tracking-tight mt-2">
               {card.title}
             </span>
           </div>
@@ -85,7 +85,7 @@ function StatSkeleton() {
       {[1, 2, 3].map((i) => (
         <div
           key={i}
-          className="bg-white border-[3px] border-black rounded-none p-5 h-[110px] animate-pulse shadow-[5px_5px_0_0_#000]"
+          className="bg-white border-[3px] border-black rounded-none p-5 h-[110px] animate-pulse shadow-[3.5px_3.5px_0_0_#000]"
         ></div>
       ))}
     </div>
@@ -108,7 +108,7 @@ export default async function Home() {
       <div className="flex-1 overflow-hidden flex flex-col">
         <Suspense
           fallback={
-            <div className="h-full bg-white border-[3px] border-black rounded-none animate-pulse shadow-[5px_5px_0_0_#000]"></div>
+            <div className="h-full bg-white border-[3px] border-black rounded-none animate-pulse shadow-[3.5px_3.5px_0_0_#000]"></div>
           }
         >
           <DashboardLogs />
@@ -117,3 +117,11 @@ export default async function Home() {
     </div>
   );
 }
+
+
+
+
+
+
+
+

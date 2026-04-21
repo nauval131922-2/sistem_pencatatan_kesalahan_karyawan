@@ -22,7 +22,7 @@ export default function SearchAndReload({
       <button
         onClick={onReload}
         disabled={loading}
-        className="h-10 px-3 bg-[#fde047] border-[3px] border-black rounded-none text-black hover:bg-black hover:text-white flex items-center justify-center transition-all disabled:opacity-50 shrink-0 shadow-[4px_4px_0_0_#000] hover:shadow-[6px_6px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none"
+        className="h-10 px-3 bg-[#fde047] border-[3px] border-black rounded-none text-black hover:bg-black hover:text-white flex items-center justify-center transition-all disabled:opacity-50 shrink-0 shadow-[2.5px_2.5px_0_0_#000] hover:shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none"
         title="Refresh Data"
       >
         <RefreshCw size={16} strokeWidth={2.5} className={loading ? 'animate-spin' : ''} />
@@ -32,7 +32,7 @@ export default function SearchAndReload({
         <input 
           type="text" 
           placeholder={placeholder}
-          className="w-full pl-12 pr-4 h-10 bg-white border-[3px] border-black rounded-none focus:outline-none shadow-[4px_4px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[6px_6px_0_0_#000] transition-transform text-[13px] font-bold placeholder:text-gray-400" 
+          className="w-full pl-12 pr-4 h-10 bg-white border-[3px] border-black rounded-none focus:outline-none shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[2.5px_2.5px_0_0_#000] transition-all text-[13px] font-black placeholder:text-gray-400" 
           value={searchQuery} 
           onChange={(e) => setSearchQuery(e.target.value)} 
         />
@@ -40,3 +40,11 @@ export default function SearchAndReload({
     </div>
   );
 }
+
+
+
+
+
+
+
+

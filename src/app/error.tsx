@@ -27,7 +27,7 @@ export default function Error({ error, reset }: ErrorProps) {
   return (
     <div className="min-h-[400px] flex items-center justify-center bg-[var(--bg-deep)] px-4">
       <div className="max-w-md w-full bg-white border-[4px] border-black shadow-[10px_10px_0_0_#000] rounded-none p-8 text-center">
-        <div className="w-16 h-16 bg-[var(--accent-primary)] border-[3px] border-black shadow-[4px_4px_0_0_#000] rounded-none flex items-center justify-center mx-auto mb-6">
+        <div className="w-16 h-16 bg-[var(--accent-primary)] border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] rounded-none flex items-center justify-center mx-auto mb-6">
           <AlertTriangle size={32} strokeWidth={2.5} className="text-white" />
         </div>
 
@@ -52,7 +52,7 @@ export default function Error({ error, reset }: ErrorProps) {
         <div className="space-y-3">
           <button
             onClick={reset}
-            className="w-full bg-[var(--accent-primary)] hover:bg-[#ff4444] text-white font-black py-3 px-4 rounded-none border-[3px] border-black transition-all flex items-center justify-center gap-2 shadow-[4px_4px_0_0_#000] hover:shadow-[6px_6px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none uppercase tracking-wide"
+            className="w-full bg-[var(--accent-primary)] hover:bg-[#ff4444] text-white font-black py-3 px-4 rounded-none border-[3px] border-black transition-all flex items-center justify-center gap-2 shadow-[2.5px_2.5px_0_0_#000] hover:shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none uppercase tracking-wide"
           >
             <RefreshCw size={16} strokeWidth={2.5} />
             Coba Muat Ulang
@@ -60,7 +60,7 @@ export default function Error({ error, reset }: ErrorProps) {
 
           <button
             onClick={() => window.location.href = '/'}
-            className="w-full border-[3px] border-black bg-[#fde047] hover:bg-[#facc15] text-black font-black py-3 px-4 rounded-none transition-all shadow-[4px_4px_0_0_#000] hover:shadow-[6px_6px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none uppercase tracking-wide"
+            className="w-full border-[3px] border-black bg-[#fde047] hover:bg-[#facc15] text-black font-black py-3 px-4 rounded-none transition-all shadow-[2.5px_2.5px_0_0_#000] hover:shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none uppercase tracking-wide"
           >
             Kembali ke Dashboard
           </button>
@@ -76,6 +76,14 @@ export default function Error({ error, reset }: ErrorProps) {
     </div>
   );
 }
+
+
+
+
+
+
+
+
 
 
 

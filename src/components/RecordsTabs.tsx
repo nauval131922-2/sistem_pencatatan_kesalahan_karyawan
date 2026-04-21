@@ -84,7 +84,7 @@ export default function RecordsTabs({ employees, orders, infractions: initialInf
           }}
           className={`flex items-center gap-2 px-6 py-3 text-[13px] font-black uppercase tracking-widest border-[3px] transition-all relative ${
             activeTab === 'list'
-              ? 'bg-[#fde047] text-black border-black shadow-[4px_4px_0_0_#000] z-10 translate-x-[-2px] translate-y-[-2px]'
+              ? 'bg-[#fde047] text-black border-black shadow-[2.5px_2.5px_0_0_#000] z-10 translate-x-[-2px] translate-y-[-2px]'
               : 'bg-white text-gray-500 border-gray-200 hover:border-black hover:text-black'
           }`}
         >
@@ -95,7 +95,7 @@ export default function RecordsTabs({ employees, orders, infractions: initialInf
           onClick={() => { setActiveTab('form'); handleCancelEdit(); }}
           className={`flex items-center gap-2 px-6 py-3 text-[13px] font-black uppercase tracking-widest border-[3px] transition-all relative ${
             activeTab === 'form'
-              ? 'bg-[#fde047] text-black border-black shadow-[4px_4px_0_0_#000] z-10 translate-x-[-2px] translate-y-[-2px]'
+              ? 'bg-[#fde047] text-black border-black shadow-[2.5px_2.5px_0_0_#000] z-10 translate-x-[-2px] translate-y-[-2px]'
               : 'bg-white text-gray-500 border-gray-200 hover:border-black hover:text-black'
           }`}
         >
@@ -138,6 +138,14 @@ export default function RecordsTabs({ employees, orders, infractions: initialInf
     </div>
   );
 }
+
+
+
+
+
+
+
+
 
 
 

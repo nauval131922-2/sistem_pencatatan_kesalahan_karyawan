@@ -379,7 +379,7 @@ export default function InfractionsTable({
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
       {/* Top Filter Bar - Neo-brutalist */}
-      <div className="bg-white rounded-none border-[3px] border-black p-6 shadow-[6px_6px_0_0_#000] flex flex-col gap-5 shrink-0 relative z-50">
+      <div className="bg-white rounded-none border-[3px] border-black p-6 shadow-[2.5px_2.5px_0_0_#000] flex flex-col gap-5 shrink-0 relative z-50">
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
           <div className="flex flex-col gap-2">
             <span className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Rentang Periode Kesalahan</span>
@@ -401,14 +401,14 @@ export default function InfractionsTable({
           <div className="shrink-0 flex items-center gap-4">
             <button 
               onClick={generateExcel}
-              className="px-6 h-12 bg-white text-black border-[3px] border-black font-black rounded-none hover:bg-[#fde047] transition-all flex items-center gap-3 shadow-[4px_4px_0_0_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none uppercase tracking-widest text-[11px]"
+              className="px-6 h-12 bg-white text-black border-[3px] border-black font-black rounded-none hover:bg-[#fde047] transition-all flex items-center gap-3 shadow-[2.5px_2.5px_0_0_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none uppercase tracking-widest text-[11px]"
             >
               <FileSpreadsheet size={18} strokeWidth={2.5} />
               <span>Ekspor Excel</span>
             </button>
             <button 
               onClick={generatePDF}
-              className="px-6 h-12 bg-white text-black border-[3px] border-black font-black rounded-none hover:bg-[#ff5e5e] hover:text-white transition-all flex items-center gap-3 shadow-[4px_4px_0_0_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none uppercase tracking-widest text-[11px]"
+              className="px-6 h-12 bg-white text-black border-[3px] border-black font-black rounded-none hover:bg-[#ff5e5e] hover:text-white transition-all flex items-center gap-3 shadow-[2.5px_2.5px_0_0_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none uppercase tracking-widest text-[11px]"
             >
               <Printer size={18} strokeWidth={2.5} />
               <span>Cetak Rekap PDF</span>
@@ -440,7 +440,7 @@ export default function InfractionsTable({
             <input 
               type="text" 
               placeholder="Cari nama karyawan, deskripsi, faktur..." 
-              className="w-full pl-12 pr-4 h-12 bg-white border-[3px] border-black rounded-none focus:outline-none shadow-[4px_4px_0_0_#000] focus:translate-x-[-1px] focus:translate-y-[-1px] focus:shadow-[6px_6px_0_0_#000] transition-all text-[13px] font-black uppercase tracking-tight placeholder:text-black/30" 
+              className="w-full pl-12 pr-4 h-12 bg-white border-[3px] border-black rounded-none focus:outline-none shadow-[2.5px_2.5px_0_0_#000] focus:translate-x-[-1px] focus:translate-y-[-1px] focus:shadow-[2.5px_2.5px_0_0_#000] transition-all text-[13px] font-black uppercase tracking-tight placeholder:text-black/30" 
               value={query} 
               onChange={handleSearch} 
             />
@@ -516,6 +516,14 @@ export default function InfractionsTable({
     </div>
   );
 }
+
+
+
+
+
+
+
+
 
 
 

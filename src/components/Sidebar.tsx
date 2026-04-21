@@ -208,11 +208,11 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
   const navItemClasses = (href: string) => {
     const isActive = checkIsActive(href);
     return `
-      group flex items-center gap-3 px-3 h-10 rounded-none transition-all text-[12.5px] font-black border-2 uppercase tracking-tight
+      group flex items-center gap-3 px-3 h-10 rounded-none transition-all text-[12.5px] font-black border-2
       ${!isExpanded ? 'justify-center px-0 w-10 mx-auto' : 'w-full'}
       ${isActive 
-        ? 'bg-[#fde047] text-black border-black shadow-[3px_3px_0_0_#000] -translate-y-[1px] -translate-x-[1px]' 
-        : 'border-transparent text-black/60 hover:bg-[#fde047] hover:text-black hover:border-black hover:shadow-[3px_3px_0_0_#000] hover:-translate-y-[1px] hover:-translate-x-[1px]'}
+        ? 'bg-[#fde047] text-black border-black shadow-[2px_2px_0_0_#000] -translate-y-[1px] -translate-x-[1px]' 
+        : 'border-transparent text-black/60 hover:bg-[#fde047] hover:text-black hover:border-black hover:shadow-[2px_2px_0_0_#000] hover:-translate-y-[1px] hover:-translate-x-[1px]'}
     `;
   };
 
@@ -316,7 +316,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
                 </div>
               </div>
               <div className="mt-4 px-3.5 py-1 rounded-none border-2 border-black inline-flex w-fit bg-[#fde047] shadow-[2px_2px_0_0_#000]">
-                <span className="text-[10px] font-black text-black tracking-wider uppercase">Div. Percetakan</span>
+                <span className="text-[10px] font-black text-black">Div. Percetakan</span>
               </div>
             </div>
           ) : (
@@ -367,7 +367,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
             <SectionLabel label="Data Digit" />
             <div className="space-y-1">
           {canAccess('sync') && (
-            <div className={`mb-3 p-0.5 rounded-[10px] border border-gray-100 ${!isExpanded ? 'mx-0' : ''}`}>
+            <div className={!isExpanded ? 'mx-0' : ''}>
               <Link 
                 href="/sync" 
                 className={navItemClasses('/sync')} 
@@ -635,8 +635,8 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               onMouseDown={(e) => e.stopPropagation()}
-              className={`w-full flex items-center gap-3 p-2 border-2 border-transparent transition-all hover:bg-[#fde047] hover:border-black hover:shadow-[3px_3px_0_0_#000] hover:-translate-y-[1px] hover:-translate-x-[1px] ${
-                isProfileOpen ? 'bg-[#fde047] border-black shadow-[3px_3px_0_0_#000] -translate-y-[1px] -translate-x-[1px]' : ''
+              className={`w-full flex items-center gap-3 p-2 border-2 border-transparent transition-all hover:bg-[#fde047] hover:border-black hover:shadow-[2px_2px_0_0_#000] hover:-translate-y-[1px] hover:-translate-x-[1px] ${
+                isProfileOpen ? 'bg-[#fde047] border-black shadow-[2px_2px_0_0_#000] -translate-y-[1px] -translate-x-[1px]' : ''
               } ${!isExpanded ? 'justify-center p-1' : ''}`}
             >
               <div className="w-8 h-8 rounded-none bg-black flex items-center justify-center overflow-hidden shrink-0 border-2 border-black">
@@ -656,12 +656,12 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
             </button>
 
             {isProfileOpen && (
-              <div className="absolute left-0 bottom-full mb-3 w-full bg-white rounded-none border-[3px] border-black shadow-[5px_5px_0_0_#000] p-1.5 animate-in fade-in slide-in-from-bottom-2 z-50">
-                <Link href="/profile" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-2 px-3 py-2 text-[12px] font-black text-black border-2 border-transparent hover:bg-[#fde047] hover:border-black transition-all uppercase tracking-tight">
+              <div className="absolute left-0 bottom-full mb-3 w-full bg-white rounded-none border-[3px] border-black shadow-[3.5px_3.5px_0_0_#000] p-1.5 animate-in fade-in slide-in-from-bottom-2 z-50">
+                <Link href="/profile" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-2 px-3 py-2 text-[12px] font-black text-black border-2 border-transparent hover:bg-[#fde047] hover:border-black transition-all">
                   <Settings size={14} strokeWidth={3} />
                   <span>Pengaturan Profil</span>
                 </Link>
-                <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 text-[12px] font-black text-black border-2 border-transparent hover:bg-[#ff5e5e] hover:text-white hover:border-black transition-all uppercase tracking-tight">
+                <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 text-[12px] font-black text-black border-2 border-transparent hover:bg-[#ff5e5e] hover:text-white hover:border-black transition-all">
                   <LogOut size={14} strokeWidth={3} />
                   <span>Keluar Sistem</span>
                 </button>
@@ -696,13 +696,13 @@ function FlyoutItem({ item, level }: { item: MenuItem; level: number }) {
           href={item.href}
           onClick={() => setActivePath([])}
           className={`
-            flex items-center gap-3 px-3 py-2.5 rounded-none text-[12px] font-black transition-all w-full border-2 border-transparent uppercase tracking-tight
+            group flex items-center gap-3 px-3 py-2.5 rounded-none text-[12px] font-black transition-all w-full border-2 border-transparent
             ${itemActive 
-              ? 'bg-[#fde047] text-black border-black shadow-[3px_3px_0_0_#000] -translate-x-[1px] -translate-y-[1px]' 
+              ? 'bg-[#fde047] text-black border-black shadow-[2px_2px_0_0_#000] -translate-x-[1px] -translate-y-[1px]' 
               : 'text-black/60 hover:bg-black hover:text-white hover:border-black'}
           `}
         >
-          <span className={itemActive ? 'text-black' : 'text-black/40 group-hover:text-white'}>{item.icon}</span>
+          <span className={`transition-colors ${itemActive ? 'text-black' : 'text-black/40 group-hover:text-white'}`}>{item.icon}</span>
           <span className="truncate">{item.label}</span>
         </Link>
       ) : (
@@ -710,15 +710,15 @@ function FlyoutItem({ item, level }: { item: MenuItem; level: number }) {
           onClick={(e) => { e.stopPropagation(); hasSub && handleItemClick(item.label, e, level); }}
           onMouseDown={(e) => e.stopPropagation()}
           className={`
-            flex items-center gap-3 px-3 py-2.5 rounded-none text-[12px] font-black transition-all cursor-pointer w-full border-2 border-transparent uppercase tracking-tight
+            group flex items-center gap-3 px-3 py-2.5 rounded-none text-[12px] font-black transition-all cursor-pointer w-full border-2 border-transparent
             ${isOpen 
-              ? 'bg-black text-white border-black shadow-[4px_4px_0_0_#000]' 
+              ? 'bg-black text-white border-black shadow-[4px_4px_0_0_#fde047]' 
               : itemActive 
                 ? 'bg-[#fde047] text-black border-black shadow-[2px_2px_0_0_#000]' 
                 : 'text-black/60 hover:bg-[#fde047] hover:text-black hover:border-black'}
           `}
         >
-          <span className={isOpen ? 'text-white' : itemActive ? 'text-black' : 'text-black/40'}>{item.icon}</span>
+          <span className={`transition-colors ${isOpen ? 'text-white' : itemActive ? 'text-black' : 'text-black/40 group-hover:text-black'}`}>{item.icon}</span>
           <span className="flex-1 text-left truncate">{item.label}</span>
           {hasSub && <ChevronRight size={14} strokeWidth={3} className={`transition-transform duration-200 ${isOpen ? 'rotate-90 sm:rotate-0' : 'text-black/20'}`} />}
         </button>
@@ -732,7 +732,7 @@ function FlyoutItem({ item, level }: { item: MenuItem; level: number }) {
             onClick={(e) => e.stopPropagation()}
             style={{ left: `${pos.left - 4}px`, top: `${pos.top - 6}px` }}
           >
-            <div className="bg-white border-[3px] border-black rounded-none shadow-[6px_6px_0_0_#000] p-1.5 min-w-[200px]">
+            <div className="bg-white border-[3px] border-black rounded-none shadow-[2.5px_2.5px_0_0_#000] p-1.5 min-w-[200px]">
               <div className="flex flex-col gap-1">
                 {item.items?.map((subItem) => (
                   <FlyoutItem key={subItem.label} item={subItem} level={level + 1} />
@@ -759,16 +759,16 @@ function FlyoutMenu({ id, label, icon, items }: { id?: string; label: string; ic
         onClick={(e) => handleItemClick(menuId, e, 0)}
         onMouseDown={(e) => e.stopPropagation()}
         className={`
-          group flex items-center gap-3 px-3 h-10 rounded-none transition-all text-[12.5px] font-black w-full border-2 uppercase tracking-tighter
+          group flex items-center gap-3 px-3 h-10 rounded-none transition-all text-[12.5px] font-black w-full border-2
           ${!isExpanded ? 'justify-center px-0 w-10 mx-auto' : ''}
           ${isActive && !isOpen 
-            ? 'bg-[#fde047] text-black border-black shadow-[3px_3px_0_0_#000] -translate-y-[1px] -translate-x-[1px]' 
+            ? 'bg-[#fde047] text-black border-black shadow-[2px_2px_0_0_#000] -translate-y-[1px] -translate-x-[1px]' 
             : isOpen 
-              ? 'bg-black text-white border-black shadow-[4px_4px_0_0_#000] -translate-y-[2px] -translate-x-[2px]' 
-              : 'text-black/60 border-transparent hover:bg-[#fde047] hover:text-black hover:border-black hover:shadow-[3px_3px_0_0_#000] hover:-translate-y-[1px] hover:-translate-x-[1px]'}
+              ? 'bg-black text-white border-black shadow-[4px_4px_0_0_#fde047] -translate-y-[2px] -translate-x-[2px]' 
+              : 'text-black/60 border-transparent hover:bg-[#fde047] hover:text-black hover:border-black hover:shadow-[2px_2px_0_0_#000] hover:-translate-y-[1px] hover:-translate-x-[1px]'}
         `}
       >
-        <span className={isOpen ? 'text-white' : isActive ? 'text-black' : 'text-black/60'}>{icon}</span>
+        <span className={`transition-colors ${isOpen ? 'text-white' : isActive ? 'text-black' : 'text-black/60 group-hover:text-black'}`}>{icon}</span>
         {isExpanded && (
           <>
             <span className="flex-1 text-left truncate">{label}</span>
@@ -785,7 +785,7 @@ function FlyoutMenu({ id, label, icon, items }: { id?: string; label: string; ic
             onClick={(e) => e.stopPropagation()}
             style={{ left: `${pos.left}px`, top: `${pos.top - 6}px` }}
           >
-            <div className="bg-white border-[3px] border-black rounded-none shadow-[6px_6px_0_0_#000] p-1.5 min-w-[220px]">
+            <div className="bg-white border-[3px] border-black rounded-none shadow-[2.5px_2.5px_0_0_#000] p-1.5 min-w-[220px]">
               <div className="flex flex-col gap-1">
                 {items.map((item) => (
                   <FlyoutItem key={item.label} item={item} level={1} />
@@ -798,4 +798,12 @@ function FlyoutMenu({ id, label, icon, items }: { id?: string; label: string; ic
     </div>
   );
 }
+
+
+
+
+
+
+
+
 

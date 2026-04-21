@@ -6,6 +6,7 @@ import ImportInfo from '@/components/ImportInfo';
 import SearchAndReload from '@/components/SearchAndReload';
 import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
+import TableFooter from '@/components/TableFooter';
 
 interface Employee {
   id: number;
@@ -111,7 +112,7 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
     return () => { active = false; };
   }, [page, debouncedQuery, refreshKey]);
 
-  // Columns definition (Removed Department as requested)
+  // Columns definition
   const columns = useMemo(() => [
     { 
         accessorKey: 'id', 
@@ -124,6 +125,7 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
         accessorKey: 'name', 
         header: 'Nama Karyawan',
         size: 350,
+        cell: (info: any) => <span className="font-bold uppercase tracking-tight">{info.getValue()}</span>
     },
     { 
         accessorKey: 'position', 
@@ -170,9 +172,10 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
     }
   };
 
+  if (!isMounted) return null;
+
   return (
     <div className="h-full flex flex-col gap-4 overflow-hidden">
-      {/* Search Bar Section - Updated to match Laporan Penjualan */}
       <div className="flex flex-col gap-4 shrink-0">
         <div className="flex items-center justify-between gap-4 min-h-[32px]">
           <div className="flex items-center gap-4">
@@ -199,17 +202,16 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
         />
       </div>
 
-      {/* Main Table - Let DataTable handle border and rounding */}
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
          {error ? (
-           <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-white border-[4px] border-black shadow-[8px_8px_0_0_#000]">
-              <div className="w-20 h-20 bg-[#ff5e5e] border-[3px] border-black flex items-center justify-center mb-6 shadow-[4px_4px_0_0_#000]">
+           <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-white border-[3px] border-black shadow-[3.5px_3.5px_0_0_#000]">
+              <div className="w-20 h-20 bg-[#ff5e5e] border-[3px] border-black flex items-center justify-center mb-6 shadow-[2.5px_2.5px_0_0_#000]">
                   <AlertCircle className="text-white" size={40} strokeWidth={3} />
               </div>
               <p className="text-lg font-black text-black uppercase tracking-tight mb-6">{error}</p>
               <button 
                 onClick={() => setRefreshKey(k => k + 1)}
-                className="px-8 py-3 bg-[#fde047] border-[3px] border-black text-black font-black uppercase tracking-widest text-xs shadow-[4px_4px_0_0_#000] hover:shadow-[6px_6px_0_0_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all"
+                className="px-8 py-3 bg-[#fde047] border-[3px] border-black text-black font-black uppercase tracking-widest text-xs shadow-[2.5px_2.5px_0_0_#000] hover:shadow-[2.5px_2.5px_0_0_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all"
               >
                 Coba Lagi
               </button>
@@ -224,46 +226,19 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
              selectedIds={selectedIds}
              onRowClick={handleSelection} 
              onScroll={handleScroll}
+             rowHeight="h-10"
            />
          )}
       </div>
 
-      {/* Footer info Banner - Updated to match Laporan Penjualan styles */}
-      <div className="flex items-center justify-between shrink-0 px-1 mt-1">
-          <span className="text-[12px] leading-none font-black text-black/50 uppercase tracking-widest">
-             {totalCount === 0 ? 'Data Kosong' : `Menampilkan ${data?.length || 0} dari ${totalCount} Karyawan`}
-          </span>
-          
-          <div className="flex items-center gap-4">
-            {selectedIds.size > 0 && (
-                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                   <span className="text-[12px] leading-none font-black text-black/40 uppercase tracking-widest">{selectedIds.size} dipilih</span>
-                   <button 
-                    onClick={() => setSelectedIds(new Set())}
-                    className="text-[12px] leading-none font-black text-black bg-[#fde047] border-[2px] border-black px-3 py-1 shadow-[2px_2px_0_0_#000] hover:bg-black hover:text-white transition-all active:translate-x-[1px] active:translate-y-[1px] active:shadow-none uppercase tracking-[0.2em]"
-                   >
-                     BATAL
-                   </button>
-                </div>
-            )}
-            {loadTime !== null && (
-               <span className={`text-[10px] px-2 py-0.5 rounded-none font-black flex items-center gap-1.5 shadow-[2px_2px_0_0_#000] border-[2px] border-black uppercase tracking-tight ${
-                loadTime < 300 ? 'bg-[#93c5fd] text-black' : 
-                loadTime < 1000 ? 'bg-[#fde047] text-black' : 
-                'bg-[#ff5e5e] text-white'
-              }`}>
-                  <span className="animate-pulse">⚡</span>
-                  <span className="leading-none">{(loadTime / 1000).toFixed(2)}S</span>
-               </span>
-            )}
-          </div>
-      </div>
+      <TableFooter 
+        totalCount={totalCount}
+        currentCount={data?.length || 0}
+        label="karyawan"
+        selectedCount={selectedIds.size}
+        onClearSelection={() => setSelectedIds(new Set())}
+        loadTime={loadTime}
+      />
     </div>
   );
 }
-
-
-
-
-
-
