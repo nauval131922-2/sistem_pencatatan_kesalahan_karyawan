@@ -15,6 +15,7 @@ import TableFooter from '@/components/TableFooter';
 import DateRangeCard from '@/components/DateRangeCard';
 import { splitDateRangeIntoMonths } from '@/lib/date-utils';
 import { useTableSelection } from '@/lib/hooks/useTableSelection';
+import ScrapingHeader from '@/components/ScrapingHeader';
 
 function formatDateToYYYYMMDD(date: Date) {
   const y = date.getFullYear();
