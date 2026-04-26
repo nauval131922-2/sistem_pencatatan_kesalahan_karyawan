@@ -83,6 +83,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
   const [isResizing, setIsResizing] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   
   const pathname = usePathname();
   const profileRef = useRef<HTMLDivElement>(null);
@@ -103,6 +104,10 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
     if (savedWidth !== null) {
       setExpandedWidth(parseInt(savedWidth));
     }
+
+    const handleMobileToggle = () => setIsMobileOpen(prev => !prev);
+    window.addEventListener('sidebar-mobile-toggle', handleMobileToggle);
+    return () => window.removeEventListener('sidebar-mobile-toggle', handleMobileToggle);
   }, []);
 
   useEffect(() => {
@@ -227,9 +232,10 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
   const [activePath, setActivePath] = useState<string[]>([]);
   const [flyoutPositions, setFlyoutPositions] = useState<Record<string, { top: number, left: number }>>({});
 
-  // Reset menu path on route change
+  // Reset menu path and close mobile sidebar on route change
   useEffect(() => {
     setActivePath(prev => prev.length > 0 ? [] : prev);
+    setIsMobileOpen(false);
   }, [pathname]);
 
   const handleItemClick = (label: string, e: React.MouseEvent, level: number) => {
@@ -278,14 +284,24 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
 
   return (
     <SidebarContext.Provider value={sidebarCtxValue}>
+    {/* Mobile Overlay */}
+    {isMobileOpen && (
+      <div 
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[90] xl:hidden animate-in fade-in duration-300"
+        onClick={() => setIsMobileOpen(false)}
+      />
+    )}
+
     <aside 
       ref={sidebarRef}
       onMouseEnter={() => isCollapsed && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{ width: currentWidth }}
-      className={`h-screen bg-white border-r border-gray-100 shrink-0 flex flex-col z-[50] relative ${
-        isResizing ? '' : 'transition-[width] duration-300 ease-in-out'
-      }`}
+      className={`
+        fixed xl:relative h-screen bg-white border-r border-gray-100 shrink-0 flex flex-col z-[100] transition-all duration-300 ease-in-out
+        ${isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full xl:translate-x-0'}
+        ${isResizing ? '' : 'transition-[width,transform]'}
+      `}
     >
       {/* Resizer Handle */}
       {isExpanded && (

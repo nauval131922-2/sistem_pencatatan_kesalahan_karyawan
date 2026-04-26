@@ -88,7 +88,7 @@ export default function MainContentWrapper({
     <div className="flex h-screen overflow-hidden bg-[var(--bg-deep)]">
       <Sidebar user={user} permissions={permissions} />
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar bg-[var(--bg-deep)] px-6 md:px-8 py-8">
+        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar bg-[var(--bg-deep)] px-4 xl:px-8 py-6 xl:py-8">
           {children}
         </div>
       </div>
