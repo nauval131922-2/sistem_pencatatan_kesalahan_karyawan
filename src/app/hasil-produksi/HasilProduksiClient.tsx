@@ -453,7 +453,7 @@ export default function HasilProduksiClient() {
       {/* 1. Header Section - Fixed */}
       <div className="flex flex-col gap-8 shrink-0">
         {/* 1. Filter Control Center */}
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 flex flex-col lg:flex-row xl:flex-col items-stretch lg:items-center xl:items-stretch gap-6 xl:gap-8 relative z-[60]">
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 flex flex-col items-stretch gap-6 lg:gap-8 relative z-[60]">
           {/* Left side: SOPd Selection Group */}
           <div className="flex-1 min-w-0">
             <label className="block text-[13px] font-semibold text-gray-500 mb-2 ml-1 tracking-tight select-none">
@@ -566,10 +566,10 @@ export default function HasilProduksiClient() {
             </div>
           </div>
 
-          <div className="hidden lg:block xl:hidden w-px h-12 bg-gray-100"></div>
+          <div className="hidden w-px h-12 bg-gray-100"></div>
 
           {/* Right side: Secondary Filters */}
-          <div className="flex flex-wrap lg:flex-nowrap xl:flex-wrap items-end gap-5">
+          <div className="flex flex-wrap items-end gap-5">
             {/* Date Group - always visible */}
             <div className="flex flex-col">
               <label className="block text-[13px] font-semibold text-gray-500 mb-2 ml-1 tracking-tight select-none">Rentang Tanggal</label>
