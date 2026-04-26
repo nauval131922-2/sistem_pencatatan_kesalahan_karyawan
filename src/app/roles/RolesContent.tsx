@@ -165,7 +165,7 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
   const groupedModules = useMemo(() => {
     const groups: Record<string, typeof MODULE_REGISTRY[number][]> = {};
     for (const m of MODULE_REGISTRY) {
-      let groupName = m.group;
+      let groupName: string = m.group;
       if (groupName.startsWith('Data Digit - ')) groupName = 'Data Digit';
       if (groupName.startsWith('Sistem - ')) groupName = 'Sistem';
 
