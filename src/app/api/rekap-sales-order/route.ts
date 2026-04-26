@@ -10,14 +10,14 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const page    = parseInt(searchParams.get('page')  || '1');
     const limit   = parseInt(searchParams.get('limit') || '50');
-    const search  = searchParams.get('search') || '';
+    const search  = searchParams.get('q') || '';
     const from    = searchParams.get('from');
     const to      = searchParams.get('to');
-    const minHarga = searchParams.get('minHarga');
-    const maxHarga = searchParams.get('maxHarga');
+    const minHarga = searchParams.get('min');
+    const maxHarga = searchParams.get('max');
     const offset  = (page - 1) * limit;
 
-    let query      = `SELECT id, faktur_sph, faktur, kd_barang, faktur_prd, nama_prd, harga FROM sales_orders WHERE 1=1`;
+    let query      = `SELECT *, jumlah AS total FROM sales_orders WHERE 1=1`;
     let countQuery = `SELECT COUNT(*) as total FROM sales_orders WHERE 1=1`;
     const params: any[] = [];
 
@@ -58,13 +58,13 @@ export async function GET(req: NextRequest) {
 
     // ─── Harga Filter ─────────────────────────────────────────────────────
     if (minHarga !== null && minHarga !== '') {
-      const clause = ` AND harga >= ?`;
+      const clause = ` AND jumlah >= ?`;
       query      += clause;
       countQuery += clause;
       params.push(parseFloat(minHarga));
     }
     if (maxHarga !== null && maxHarga !== '') {
-      const clause = ` AND harga <= ?`;
+      const clause = ` AND jumlah <= ?`;
       query      += clause;
       countQuery += clause;
       params.push(parseFloat(maxHarga));

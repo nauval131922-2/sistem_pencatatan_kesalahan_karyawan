@@ -142,10 +142,11 @@ export async function addInfraction(employeeId: number, description: string, sev
   return sanitizeData(result);
 }
 
-export const getStats = cache(async (year?: number) => {
-  const currentYear = year || new Date().getFullYear();
-  const startOfYear = `${currentYear}-01-01 00:00:00`;
-  const endOfYear = `${currentYear}-12-31 23:59:59`;
+export const getStats = cache(async (startDate?: string, endDate?: string) => {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const start = startDate ? `${startDate} 00:00:00` : `${currentYear}-01-01 00:00:00`;
+  const end = endDate ? `${endDate} 23:59:59` : `${currentYear}-12-31 23:59:59`;
 
   const results = await db.batch([
     'SELECT COUNT(*) as count FROM employees WHERE is_active = 1',
@@ -155,7 +156,7 @@ export const getStats = cache(async (year?: number) => {
               SUM(CASE WHEN severity = 'High' THEN 1 ELSE 0 END) as high
             FROM infractions 
             WHERE (date >= ? AND date <= ?)`,
-      args: [startOfYear, endOfYear]
+      args: [start, end]
     },
     'SELECT COUNT(*) as count FROM orders'
   ], "read");
@@ -201,16 +202,17 @@ export const getDashboardSummary = cache(async () => {
   });
 });
 
-export const getDetailedStats = cache(async (year: number) => {
-  const yr = year.toString();
-  const startOfYear = `${yr}-01-01 00:00:00`;
-  const endOfYear = `${yr}-12-31 23:59:59`;
+export const getDetailedStats = cache(async (startDate?: string, endDate?: string) => {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const start = startDate ? `${startDate} 00:00:00` : `${currentYear}-01-01 00:00:00`;
+  const end = endDate ? `${endDate} 23:59:59` : `${currentYear}-12-31 23:59:59`;
   
   const [monthlyRes, repeatersRes, severityRes] = await db.batch([
     {
       sql: `
         SELECT 
-          CAST(strftime('%m', date) AS INTEGER) as month_idx,
+          strftime('%Y-%m', date) as month_ym,
           COUNT(*) as total,
           SUM(CASE WHEN severity = 'Low' THEN 1 ELSE 0 END) as low_count,
           SUM(CASE WHEN severity = 'Medium' THEN 1 ELSE 0 END) as med_count,
@@ -218,9 +220,10 @@ export const getDetailedStats = cache(async (year: number) => {
           SUM(IFNULL(total, 0)) as amount
         FROM infractions
         WHERE date >= ? AND date <= ?
-        GROUP BY month_idx
+        GROUP BY month_ym
+        ORDER BY month_ym ASC
       `,
-      args: [startOfYear, endOfYear]
+      args: [start, end]
     },
     {
       sql: `
@@ -239,7 +242,7 @@ export const getDetailedStats = cache(async (year: number) => {
         ORDER BY total_amount DESC
         LIMIT 5
       `,
-      args: [startOfYear, endOfYear]
+      args: [start, end]
     },
     {
       sql: `
@@ -248,16 +251,31 @@ export const getDetailedStats = cache(async (year: number) => {
         WHERE date >= ? AND date <= ?
         GROUP BY severity
       `,
-      args: [startOfYear, endOfYear]
+      args: [start, end]
     }
   ], "read");
 
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-  const monthlyData = monthNames.map((name, idx) => {
-    const monthIdx = idx + 1;
-    const dbRow = monthlyRes.rows.find((r: any) => r.month_idx === monthIdx);
+  const startD = new Date(start);
+  const endD = new Date(end);
+  const monthsList = [];
+  const curr = new Date(startD.getFullYear(), startD.getMonth(), 1);
+  const monthNamesShort = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+  // Prevent infinite loops by capping at 60 months (5 years) just in case
+  let loops = 0;
+  while (loops < 60 && (curr < endD || (curr.getFullYear() === endD.getFullYear() && curr.getMonth() === endD.getMonth()))) {
+    const ym = `${curr.getFullYear()}-${String(curr.getMonth() + 1).padStart(2, '0')}`;
+    // E.g., 'Jul 26'
+    const name = `${monthNamesShort[curr.getMonth()]} '${String(curr.getFullYear()).slice(-2)}`;
+    monthsList.push({ ym, name });
+    curr.setMonth(curr.getMonth() + 1);
+    loops++;
+  }
+
+  const monthlyData = monthsList.map((m) => {
+    const dbRow = monthlyRes.rows.find((r: any) => r.month_ym === m.ym);
     return {
-      name,
+      name: m.name,
       total: dbRow ? Number(dbRow.total) : 0,
       low: dbRow ? Number(dbRow.low_count) : 0,
       medium: dbRow ? Number(dbRow.med_count) : 0,
@@ -312,6 +330,16 @@ export async function getLastMasterPekerjaanImport() {
     return result.rows.length > 0 ? sanitizeData({ ...result.rows[0] }) : null;
   } catch (err) {
     console.error('Failed to get last master pekerjaan import log', err);
+    return null;
+  }
+}
+
+export async function getLastJurnalHarianImport() {
+  try {
+    const result = await db.execute(`SELECT * FROM activity_logs WHERE table_name = 'jurnal_harian_produksi' AND action_type = 'UPLOAD' ORDER BY id DESC LIMIT 1`);
+    return result.rows.length > 0 ? sanitizeData({ ...result.rows[0] }) : null;
+  } catch (err) {
+    console.error('Failed to get last jurnal harian import log', err);
     return null;
   }
 }

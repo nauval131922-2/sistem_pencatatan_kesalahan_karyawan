@@ -9,7 +9,7 @@ export async function login(username: string, password: string): Promise<{ succe
   console.log(`[AUTH] Login attempt for user: ${username}`);
   try {
     const result = await db.execute({
-      sql: 'SELECT * FROM users WHERE username = ?',
+      sql: 'SELECT * FROM users WHERE LOWER(username) = LOWER(?)',
       args: [username]
     });
 
@@ -75,7 +75,7 @@ export async function updateProfile(data: { name: string, username: string, pass
 
     // Check if new username is already taken by someone else
     const checkUser = await db.execute({
-      sql: 'SELECT id FROM users WHERE username = ? AND id != ?',
+      sql: 'SELECT id FROM users WHERE LOWER(username) = LOWER(?) AND id != ?',
       args: [data.username, userId]
     });
 

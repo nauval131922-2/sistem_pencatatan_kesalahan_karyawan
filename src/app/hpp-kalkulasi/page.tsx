@@ -36,7 +36,7 @@ export default async function HppKalkulasiPage() {
         description="Upload data HPP Kalkulasi dari file Excel."
       />
 
-      <div className="flex-1 min-h-0 flex flex-col gap-6 max-w-7xl mx-auto w-full px-4 md:px-6">
+      <div className="flex-1 min-h-0 flex flex-col gap-6">
         <HppKalkulasiExcelUpload />
 
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -52,6 +52,9 @@ export default async function HppKalkulasiPage() {
     </div>
   );
 }
+
+
+
 
 
 

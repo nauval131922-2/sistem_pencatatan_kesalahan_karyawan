@@ -5,13 +5,15 @@ import {
   Users, ShieldCheck, UserCog, Plus, Search, 
   Edit2, Trash2, X,
   AlertCircle, BadgeCheck, Loader2, ShieldAlert,
-  RefreshCw, ChevronUp, ChevronDown
+  RefreshCw
 } from 'lucide-react';
+import SearchableDropdown from '@/components/SearchableDropdown';
 import { getUsers, deleteUser } from '@/lib/users';
 import UserFormModal from './UserFormModal';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/ui/DataTable';
 import TableFooter from '@/components/TableFooter';
+import SearchAndReload from '@/components/SearchAndReload';
 
 interface User {
   id: number;
@@ -29,7 +31,7 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
   const [searchDebounced, setSearchDebounced] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [roleFilter, setRoleFilter] = useState('Semua Jabatan');
+  const [roleFilter, setRoleFilter] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -37,8 +39,6 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
   const [lastSelectedId, setLastSelectedId] = useState<number | null>(null);
   const [loadTime, setLoadTime] = useState<number | null>(null);
 
-  const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
-  const [roleSearchQuery, setRoleSearchQuery] = useState('');
 
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(() => {
     if (typeof window !== 'undefined') {
@@ -91,14 +91,7 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [loadUsers]);
 
-  useEffect(() => {
-    const handleGlobalClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('.role-dropdown-container')) setIsRoleDropdownOpen(false);
-    };
-    window.addEventListener('click', handleGlobalClick);
-    return () => window.removeEventListener('click', handleGlobalClick);
-  }, []);
+  // Outside click handling is managed within SearchableDropdown
 
   useEffect(() => {
     setIsSearching(true);
@@ -122,7 +115,7 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
     const query = searchDebounced.toLowerCase().trim();
     return users.filter(user => {
       const matchesSearch = !query || user.name.toLowerCase().includes(query) || user.username.toLowerCase().includes(query);
-      const matchesRole = roleFilter === 'Semua Jabatan' || user.role === roleFilter;
+      const matchesRole = !roleFilter || user.role === roleFilter;
       return matchesSearch && matchesRole;
     });
   }, [users, searchDebounced, roleFilter]);
@@ -138,15 +131,15 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
       cell: (info: any) => {
         const user = info.row.original as User;
         return (
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-none bg-black flex items-center justify-center text-[#fde047] font-black text-[11px] shadow-[2px_2px_0_0_#000] shrink-0 overflow-hidden border-2 border-black">
+          <div className="flex items-center gap-4">
+            <div className="w-11 h-11 rounded-lg bg-green-50 flex items-center justify-center text-green-600 font-bold text-[12px] shrink-0 overflow-hidden border border-green-100">
               {user.photo ? (
                 <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
               ) : getInitials(user.name)}
             </div>
             <div className="flex flex-col min-w-0 leading-tight">
-              <span className="text-[13px] font-black text-black truncate mb-0.5 uppercase tracking-tighter">{user.name}</span>
-              <span className="text-[11px] text-black/40 font-bold truncate">@{user.username}</span>
+              <span className="text-[13px] font-bold text-gray-800 truncate mb-1 tracking-tight">{user.name}</span>
+              <span className="text-[11px] text-gray-400 font-semibold truncate">@{user.username}</span>
             </div>
           </div>
         );
@@ -159,10 +152,10 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
       cell: (info: any) => {
         const role = info.getValue() as string;
         return (
-          <span className={`px-2.5 py-1 rounded-none text-[10px] font-black uppercase tracking-tight inline-flex items-center gap-1.5 leading-none border-2 border-black shadow-[2px_2px_0_0_#000] ${
-            role === 'Super Admin' ? 'bg-black text-[#fde047]' : 'bg-[#fde047] text-black'
+          <span className={`px-3 py-1.5 rounded-lg text-[10px] font-bold inline-flex items-center gap-2 leading-none border ${
+            role === 'Super Admin' ? 'bg-emerald-50 text-emerald-700 border-emerald-100 shadow-sm' : 'bg-green-50 text-green-600 border-green-100'
           }`}>
-            {role === 'Super Admin' ? <ShieldCheck size={12} strokeWidth={3} /> : <UserCog size={12} strokeWidth={3} />}
+            {role === 'Super Admin' ? <ShieldCheck size={12} /> : <UserCog size={12} />}
             {role}
           </span>
         );
@@ -177,12 +170,12 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
         const user = info.row.original as User;
         return (
           <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 group-[.is-selected]:opacity-100 transition-opacity">
-            <button onClick={(e) => { e.stopPropagation(); handleEdit(user); }} className="p-1.5 text-black hover:bg-[#fde047] border-2 border-transparent hover:border-black rounded-none transition-all" title="Edit User">
-              <Edit2 size={16} strokeWidth={3} />
+            <button onClick={(e) => { e.stopPropagation(); handleEdit(user); }} className="p-2.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all" title="Edit User">
+              <Edit2 size={16} />
             </button>
             {user.id !== currentUserId && (
-              <button onClick={(e) => { e.stopPropagation(); handleDelete(user.id, user.username); }} className="p-1.5 text-black hover:bg-[#ff5e5e] hover:text-white border-2 border-transparent hover:border-black rounded-none transition-all" title="Hapus User">
-                <Trash2 size={16} strokeWidth={3} />
+              <button onClick={(e) => { e.stopPropagation(); handleDelete(user.id, user.username); }} className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Hapus User">
+                <Trash2 size={16} />
               </button>
             )}
           </div>
@@ -216,56 +209,58 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
   const handleCreate = () => { setEditingUser(null); setShowModal(true); };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
-      <div className="shrink-0 flex items-center justify-between gap-4 z-50">
-        <div className="flex-1 max-w-[280px] relative role-dropdown-container z-50">
-          <button onClick={() => setIsRoleDropdownOpen(prev => !prev)} className="w-full h-[52px] pl-10 pr-10 bg-white border-[3px] border-black rounded-none focus:outline-none transition-all text-[13px] font-black text-black shadow-[2.5px_2.5px_0_0_#000] flex items-center justify-between uppercase tracking-tighter hover:-translate-y-[1px] hover:-translate-x-[1px] hover:shadow-[2.5px_2.5px_0_0_#000]">
-            <span className="truncate">{roleFilter === 'Semua Jabatan' ? 'Filter Jabatan' : roleFilter}</span>
-            <div className="absolute top-1/2 -translate-y-1/2 left-3.5 pointer-events-none text-black"><Users size={18} strokeWidth={3} /></div>
-            <div className="absolute top-1/2 -translate-y-1/2 right-3.5 pointer-events-none text-black"><ChevronDown size={18} strokeWidth={3} className={`transition-transform duration-200 ${isRoleDropdownOpen ? 'rotate-180' : ''}`} /></div>
-          </button>
-          {isRoleDropdownOpen && (
-            <div className="absolute top-[calc(100%+10px)] left-0 w-full bg-white border-[3px] border-black rounded-none shadow-[3.5px_3.5px_0_0_#000] py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[350px]">
-              <div className="px-3 pb-2 shrink-0 border-b-[2px] border-black/10 mb-2">
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-black/40"><Search size={14} strokeWidth={3} /></div>
-                  <input type="text" autoFocus placeholder="Cari role..." value={roleSearchQuery} onChange={(e) => setRoleSearchQuery(e.target.value)} className="w-full pl-9 pr-3 py-2 text-[12px] bg-black/5 border-none focus:outline-none rounded-none placeholder:text-black/30 font-black uppercase tracking-tighter" />
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto px-2 custom-scrollbar">
-                {['Semua Jabatan', ...customRoles].filter(r => r.toLowerCase().includes(roleSearchQuery.toLowerCase())).map(role => (
-                  <button key={role} onClick={() => { startTransition(() => setRoleFilter(role)); setIsRoleDropdownOpen(false); setRoleSearchQuery(''); }} className={`w-full text-left px-3 py-2.5 text-[12px] font-black rounded-none transition-all uppercase tracking-tighter mb-1 ${roleFilter === role ? 'bg-black text-[#fde047]' : 'text-black hover:bg-[#fde047]'}`}>{role}</button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        <button onClick={handleCreate} className="px-8 h-[52px] bg-[#fde047] hover:bg-black hover:text-[#fde047] text-black text-[13px] font-black rounded-none transition-all flex items-center justify-center gap-3 shadow-[2.5px_2.5px_0_0_#000] hover:shadow-[3.5px_3.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[3px] active:translate-x-[3px] active:shadow-none border-[3px] border-black uppercase tracking-widest">
-          <Plus size={22} strokeWidth={4} /><span className="hidden sm:inline">Tambah Akun Baru</span><span className="sm:hidden">Tambah</span>
+    <div className="flex-1 min-h-0 flex flex-col gap-3 animate-in fade-in duration-500 overflow-hidden">
+      <div className="shrink-0 flex items-center justify-between gap-3 z-50">
+        <SearchableDropdown
+          id="users-role"
+          value={roleFilter}
+          items={customRoles}
+          allLabel="Semua Jabatan"
+          placeholder="Filter Jabatan"
+          searchPlaceholder="Cari role..."
+          triggerWidth="w-[300px]"
+          panelWidth="w-[300px]"
+          icon={<Users size={16} className={roleFilter ? 'text-green-600' : 'text-gray-400'} />}
+          onChange={(val) => startTransition(() => setRoleFilter(val))}
+        />
+        <button 
+          onClick={handleCreate} 
+          className="flex items-center justify-center gap-3 px-6 h-12 bg-emerald-600 hover:bg-emerald-700 text-white text-[13px] font-bold rounded-xl transition-all shadow-md shadow-emerald-900/10 active:scale-95"
+        >
+          <Plus size={20} />
+          <span className="hidden sm:inline">Tambah Akun Baru</span>
+          <span className="sm:hidden">Tambah</span>
         </button>
       </div>
 
-      <div className="shrink-0 relative group">
-        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">{isSearching || isPending ? <RefreshCw size={18} className="text-black animate-spin" strokeWidth={3} /> : <Search size={18} className="text-black/30 group-focus-within:text-black transition-colors" strokeWidth={3} />}</div>
-        <input type="text" placeholder="CARI USER BERDASARKAN NAMA ATAU USERNAME..." className="w-full pl-12 pr-12 h-[56px] bg-white border-[3px] border-black rounded-none focus:outline-none transition-all text-[13px] font-black placeholder:text-black/20 shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[2.5px_2.5px_0_0_#000] uppercase tracking-tighter" value={searchImmediate} onChange={(e) => setSearchImmediate(e.target.value)} />
-        {searchImmediate && <button onClick={() => setSearchImmediate('')} className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-black hover:text-white transition-all text-black border-2 border-transparent hover:border-black"><X size={16} strokeWidth={3} /></button>}
+      <div className="shrink-0">
+        <SearchAndReload 
+          searchQuery={searchImmediate} 
+          setSearchQuery={setSearchImmediate} 
+          onReload={loadUsers} 
+          loading={loading} 
+          placeholder="Cari user berdasarkan nama atau username..." 
+        />
       </div>
 
       {message && (
-        <div className={`p-4 rounded-none flex items-center gap-4 text-sm animate-in slide-in-from-top-2 border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] ${message.type === 'success' ? 'bg-[#fde047] text-black' : 'bg-[#ff5e5e] text-white'}`}>
-          {message.type === 'success' ? <BadgeCheck size={20} strokeWidth={3} /> : <AlertCircle size={20} strokeWidth={3} />}
-          <span className="font-black uppercase tracking-tight">{message.text}</span>
-          <button onClick={() => setMessage(null)} className="ml-auto opacity-50 hover:opacity-100 transition-opacity"><X size={18} strokeWidth={3} /></button>
+        <div className={`p-4 rounded-xl flex items-center gap-4 text-sm animate-in slide-in-from-top-2 border shadow-sm ${message.type === 'success' ? 'bg-green-50 text-green-600 border-green-100 shadow-green-900/5' : 'bg-red-50 text-red-600 border-red-100 shadow-red-900/5'}`}>
+          {message.type === 'success' ? <BadgeCheck size={20} /> : <AlertCircle size={20} />}
+          <span className="font-bold">{message.text}</span>
+          <button onClick={() => setMessage(null)} className="ml-auto opacity-50 hover:opacity-100 transition-opacity"><X size={18} /></button>
         </div>
       )}
 
-      <div className="flex-1 flex flex-col min-h-0 gap-4 overflow-hidden">
-        <DataTable columns={columns} data={filteredUsers} isLoading={loading} selectedIds={selectedIds} onRowClick={(id: any, e: any) => { setSelectedIds((prev) => { const next = new Set(prev); if (e.shiftKey && lastSelectedId !== null) { const currentIndex = filteredUsers.findIndex((u) => u.id === id); const lastIndex = filteredUsers.findIndex((u) => u.id === lastSelectedId); if (currentIndex !== -1 && lastIndex !== -1) { const start = Math.min(currentIndex, lastIndex); const end = Math.max(currentIndex, lastIndex); for (let i = start; i <= end; i++) next.add(filteredUsers[i].id); } } else if (e.ctrlKey || e.metaKey) { if (next.has(id)) next.delete(id); else next.add(id); } else { if (next.has(id) && next.size === 1) { if (e.detail === 1) next.clear(); } else { next.clear(); next.add(id); } } setLastSelectedId(id); return next; }); }} onRowDoubleClick={(id) => { const user = users.find(u => u.id === id); if (user) handleEdit(user); }} columnWidths={columnWidths} onColumnWidthChange={handleResize} rowHeight="h-14" />
-        <TableFooter totalCount={users.length} currentCount={filteredUsers.length} label="pengguna" selectedCount={selectedIds.size} onClearSelection={() => setSelectedIds(new Set())} loadTime={loadTime} />
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <DataTable columns={columns} data={filteredUsers} isLoading={loading} selectedIds={selectedIds} onRowClick={(id: any, e: any) => { setSelectedIds((prev) => { const next = new Set(prev); if (e.shiftKey && lastSelectedId !== null) { const currentIndex = filteredUsers.findIndex((u) => u.id === id); const lastIndex = filteredUsers.findIndex((u) => u.id === lastSelectedId); if (currentIndex !== -1 && lastIndex !== -1) { const start = Math.min(currentIndex, lastIndex); const end = Math.max(currentIndex, lastIndex); for (let i = start; i <= end; i++) next.add(filteredUsers[i].id); } } else if (e.ctrlKey || e.metaKey) { if (next.has(id)) next.delete(id); else next.add(id); } else { if (next.has(id) && next.size === 1) { if (e.detail === 1) next.clear(); } else { next.clear(); next.add(id); } } setLastSelectedId(id); return next; }); }} onRowDoubleClick={(id) => { const user = users.find(u => u.id === id); if (user) handleEdit(user); }} columnWidths={columnWidths} onColumnWidthChange={handleResize} rowHeight="h-16" />
       </div>
+      <TableFooter totalCount={users.length} currentCount={filteredUsers.length} label="pengguna" selectedCount={selectedIds.size} onClearSelection={() => setSelectedIds(new Set())} loadTime={loadTime} />
 
       {showModal && <UserFormModal user={editingUser} customRoles={customRoles} onClose={(refresh) => { setShowModal(false); if (refresh) loadUsers(); }} />}
       <ConfirmDialog isOpen={dialog.isOpen} type={dialog.type} title={dialog.title} message={dialog.message} onConfirm={dialog.onConfirm || (() => setDialog(prev => ({ ...prev, isOpen: false })))} onCancel={() => setDialog(prev => ({ ...prev, isOpen: false }))} />
     </div>
   );
 }
+
+
+

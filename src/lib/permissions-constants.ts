@@ -39,6 +39,7 @@ export const MODULE_REGISTRY = [
   { key: 'produksi_jhp_master_pekerjaan', label: 'Master Pekerjaan',          group: 'Sistem - Produksi' },
   { key: 'produksi_jhp_target',    label: 'Target Harian',                    group: 'Sistem - Produksi' },
   { key: 'produksi_jhp',           label: 'Jurnal Harian Produksi',           group: 'Sistem - Produksi' },
+  { key: 'produksi_hasil',         label: 'Hasil Produksi',                   group: 'Sistem - Produksi' },
 
   // Sistem - User
   { key: 'hak_akses',              label: 'Hak Akses',                        group: 'Sistem - User' },

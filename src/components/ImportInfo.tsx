@@ -19,7 +19,7 @@ export default function ImportInfo({ info, className = '', showPrefix = true }: 
   if (!info) return null;
 
   return (
-    <div className={`flex items-center gap-2 text-[10px] font-black leading-none uppercase tracking-widest text-black/40 ${className}`}>
+    <div className={`flex items-center gap-2 text-[11px] font-bold leading-none text-black/40 ${className}`}>
       {showPrefix && <span className="text-black/20 font-light">|</span>}
       <div className="flex items-center gap-2">
         <span title={info.fileName} className="text-black/60 truncate max-w-[200px]">
@@ -31,6 +31,9 @@ export default function ImportInfo({ info, className = '', showPrefix = true }: 
     </div>
   );
 }
+
+
+
 
 
 

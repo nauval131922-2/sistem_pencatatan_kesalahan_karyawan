@@ -8,29 +8,32 @@ export const metadata = {
 
 export default function UnauthorizedPage() {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center min-h-[80vh] text-center p-6">
-      <div className="w-24 h-24 bg-[var(--accent-primary)] border-[4px] border-black shadow-[3.5px_3.5px_0_0_#000] flex items-center justify-center mb-8">
-        <ShieldAlert size={44} strokeWidth={2.5} className="text-white" />
+    <div className="flex-1 flex flex-col items-center justify-center min-h-[80vh] text-center p-8 animate-in fade-in duration-700">
+      <div className="w-28 h-28 bg-emerald-50 rounded-2xl border border-emerald-100 shadow-sm shadow-green-900/5 flex items-center justify-center mb-10 group hover:scale-105 transition-transform duration-500">
+        <ShieldAlert size={52} strokeWidth={2} className="text-emerald-600 group-hover:animate-pulse" />
       </div>
       
-      <h1 className="text-6xl font-black text-black tracking-tight leading-none mb-4">403</h1>
-      <div className="inline-block border-[3px] border-black bg-[#fde047] px-4 py-1 shadow-[2.5px_2.5px_0_0_#000] mb-6">
-        <p className="text-sm font-black text-black uppercase tracking-widest">Akses Ditolak</p>
+      <h1 className="text-7xl font-bold text-gray-900 tracking-tight leading-none mb-4">403</h1>
+      <div className="inline-block border border-emerald-100 bg-emerald-50 px-6 py-2 rounded-full shadow-sm mb-8">
+        <p className="text-[12px] font-bold text-emerald-700 uppercase tracking-[0.2em]">Akses Ditolak</p>
       </div>
       
-      <p className="text-black font-bold mb-8 max-w-md text-center leading-relaxed border-l-[4px] border-black pl-4 text-left text-sm">
-        Maaf, peran Anda saat ini tidak memiliki izin untuk melihat modul ini. Hubungi <strong className="font-black underline decoration-[3px]">Super Admin</strong> jika Anda memerlukan akses.
+      <p className="text-gray-500 font-medium mb-10 max-w-md text-center leading-relaxed text-sm">
+        Maaf, akun Anda saat ini tidak memiliki izin yang cukup untuk mengakses modul ini. Silakan hubungi <strong className="font-bold text-gray-800 underline decoration-2 decoration-emerald-200 underline-offset-4">Super Admin</strong> jika Anda memerlukan bantuan akses.
       </p>
 
       <Link 
         href="/dashboard"
-        className="px-6 py-3 bg-black text-white font-black rounded-none border-[3px] border-black transition-all shadow-[5px_5px_0_0_#555] hover:shadow-[7px_7px_0_0_#555] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none uppercase tracking-wide"
+        className="px-10 py-4 bg-emerald-600 text-white font-bold rounded-xl transition-all shadow-sm shadow-green-900/10 hover:bg-emerald-700 hover:-translate-y-1 hover:shadow-sm hover:shadow-green-900/20 active:translate-y-0 uppercase tracking-widest text-[13px]"
       >
         Kembali ke Dashboard
       </Link>
     </div>
   );
 }
+
+
+
 
 
 

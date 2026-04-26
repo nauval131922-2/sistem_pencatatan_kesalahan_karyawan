@@ -153,11 +153,11 @@ export function DataTable<TData extends { id: number | string }>({
   const headers = table.getFlatHeaders();
   const totalWidth = table.getTotalSize();
 
-  if (!isMounted) return <div className={`bg-white border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] rounded-none overflow-hidden flex flex-col min-h-0 relative ${height} animate-pulse`} />;
+  if (!isMounted) return <div className={`bg-white border border-gray-100 shadow-sm rounded-[12px] overflow-hidden flex flex-col min-h-0 relative ${height} animate-pulse`} />;
 
   return (
     <ScrollContext.Provider value={parentRef}>
-      <div className={`bg-white border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] rounded-none overflow-hidden flex flex-col min-h-0 relative ${height} ${className} ${isResizingColumn ? 'is-resizing' : ''}`}>
+      <div className={`bg-white border border-gray-100 shadow-sm rounded-[12px] overflow-hidden flex flex-col min-h-0 relative ${height} ${className} ${isResizingColumn ? 'is-resizing' : ''}`}>
         <style dangerouslySetInnerHTML={{ __html: `.is-resizing * { user-select: none !important; transition: none !important; cursor: col-resize !important; } .is-resizing th > div { cursor: col-resize !important; }` }} />
         <div 
           ref={parentRef}
@@ -177,26 +177,34 @@ export function DataTable<TData extends { id: number | string }>({
                 <col style={{ width: 6 }} />
                 {headers.map((header) => (<col key={header.id} style={{ width: columnSizing[header.id] || (header.column.columnDef as any).size || 150 }} />))}
             </colgroup>
-            <thead className="sticky top-0 z-20 bg-[#fde047] shadow-[0_3px_0_0_#000]">
+            <thead className="sticky top-0 z-20 shadow-sm">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
-                  <th className="sticky left-0 w-[6px] p-0 bg-[#fde047] z-30 border-b-[3px] border-black" />
+                  <th 
+                    className="sticky left-0 w-[6px] p-0 z-30 border-b border-gray-100" 
+                    style={{ backgroundColor: (headerGroup.headers[0]?.column.columnDef.meta as any)?.headerBg || '#f8fafc' }}
+                  />
                   {headerGroup.headers.map((header) => {
                     const sortingState = sorting.find((s) => s.id === header.id);
-                    return (<th key={header.id} className="p-0 border-b-[3px] border-r-[2px] border-black relative group transition-colors overflow-hidden last:border-r-0">
+                    const meta = header.column.columnDef.meta as any;
+                    return (<th 
+                      key={header.id} 
+                      className="p-0 border-b border-r border-gray-100 relative group transition-colors overflow-hidden last:border-r-0"
+                      style={{ backgroundColor: meta?.headerBg || '#f8fafc' }}
+                    >
                         <div 
                           className={`px-4 py-3 flex items-center gap-2 transition-colors select-none ${!hideSorting ? 'cursor-pointer hover:bg-black/5' : ''} ${(header.column.columnDef.meta as any)?.align === 'right' ? 'justify-end flex-row-reverse' : (header.column.columnDef.meta as any)?.align === 'center' ? 'justify-center' : 'justify-start'}`}
                           onClick={!hideSorting ? header.column.getToggleSortingHandler() : undefined}
                         >
-                            <span className="text-[12px] font-black text-black whitespace-nowrap overflow-hidden truncate">
+                            <span className="text-[12px] font-bold text-gray-700 whitespace-nowrap overflow-hidden truncate">
                                 {flexRender(header.column.columnDef.header, header.getContext())}
                             </span>
                             {!hideSorting && (
                                 <div className="flex-shrink-0">
                                 {sortingState ? (
-                                    sortingState.desc ? <ArrowDown size={14} className="text-black" strokeWidth={3} /> : <ArrowUp size={14} className="text-black" strokeWidth={3} />
+                                    sortingState.desc ? <ArrowDown size={14} className="text-green-600" /> : <ArrowUp size={14} className="text-green-600" />
                                 ) : (
-                                    <ArrowUpDown size={14} className="text-black/20 group-hover:text-black/40 transition-colors" strokeWidth={3} />
+                                    <ArrowUpDown size={14} className="text-gray-300 group-hover:text-gray-400 transition-colors" />
                                 )}
                                 </div>
                             )}
@@ -219,8 +227,8 @@ export function DataTable<TData extends { id: number | string }>({
                 <tr key="empty-row">
                   <td key="empty-cell" colSpan={headers.length + 1} className="p-0 border-none">
                       <div className="flex flex-col items-center justify-center py-24 text-center">
-                         <div className="w-16 h-16 bg-white border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] rounded-none flex items-center justify-center mb-4">
-                            <AlertCircle className="text-black" size={32} strokeWidth={3} />
+                         <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                            <AlertCircle className="text-gray-300" size={32} />
                          </div>
                          <h3 className="text-[14px] font-bold text-gray-800 mb-1">Data Tidak Ditemukan</h3>
                          <p className="text-[12px] text-gray-400 font-medium max-w-[240px] leading-relaxed">
@@ -264,16 +272,13 @@ export function DataTable<TData extends { id: number | string }>({
         
         {/* Minimalist Loading Overlay */}
         {isLoading && (
-          <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-white/40 backdrop-blur-none animate-in fade-in duration-300">
-             <div className="flex flex-col items-center gap-4 bg-white p-6 border-[4px] border-black shadow-[3.5px_3.5px_0_0_#000]">
+          <div className="absolute inset-0 z-[100] flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm animate-in fade-in duration-300">
+             <div className="flex flex-col items-center gap-4 bg-white p-8 rounded-[12px] shadow-md border border-gray-100">
                 <div className="relative">
-                   <div className="w-12 h-12 border-4 border-black bg-[#fde047] flex items-center justify-center">
-                      <Loader2 className="text-black animate-spin" size={24} strokeWidth={3} />
-                   </div>
+                   <div className="w-12 h-12 border-4 border-gray-100 rounded-full border-t-green-600 animate-spin" />
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                   <span className="text-[12px] font-black text-black uppercase tracking-[0.2em] animate-pulse">Memproses Data</span>
-                   <span className="text-[10px] text-black/40 font-bold uppercase">SINTAK Engine is working...</span>
+                   <span className="text-[12px] font-bold text-gray-700 uppercase tracking-widest animate-pulse">Memproses Data</span>
                 </div>
              </div>
           </div>
@@ -293,11 +298,11 @@ const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick, onRowDoubleCl
       }}
       onClick={(e) => onRowClick && onRowClick(row.original.id, e)}
       onDoubleClick={(e) => onRowDoubleClick && onRowDoubleClick(row.original.id, e)}
-      className={`${rowHeight} ${rowCursor} group border-b-[2px] border-black transition-colors ${
-        isSelected ? 'bg-[var(--accent-primary)] is-selected' : isOdd ? 'bg-[#f4f4f5]' : 'bg-white'
-      } ${!disableHover && !isSelected ? 'hover:bg-[#fde047]' : ''} text-[13px]`}
+      className={`${rowHeight} ${rowCursor} group border-b border-gray-50 transition-colors ${
+        isSelected ? 'bg-green-50 is-selected' : isOdd ? 'bg-gray-50/30' : 'bg-white'
+      } ${!disableHover && !isSelected ? 'hover:bg-green-50/50' : ''} text-[13px]`}
     >
-      <td className={`sticky left-0 w-[6px] p-0 z-30 border-none transition-colors ${isSelected ? 'bg-black shadow-[2px_0_5px_rgba(0,0,0,0.1)]' : 'bg-transparent'}`} />
+      <td className={`sticky left-0 w-[6px] p-0 z-30 border-none transition-colors ${isSelected ? 'bg-green-500 shadow-[2px_0_5px_rgba(0,0,0,0.05)]' : 'bg-transparent'}`} />
       {row.getVisibleCells().map((cell: any) => {
         const meta = cell.column.columnDef.meta as any;
         const alignClass = meta?.align === 'right' ? 'justify-end text-right font-mono' : meta?.align === 'center' ? 'justify-center text-center' : 'justify-start text-left';
@@ -306,10 +311,10 @@ const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick, onRowDoubleCl
         return (
           <td 
             key={cell.id} 
-            className="p-0 border-r-[2px] border-black last:border-r-0"
+            className="p-0 border-r border-gray-50/50 last:border-r-0"
             style={meta?.valign === 'top' ? { verticalAlign: 'top' } : {}}
           >
-            <div className={`px-4 ${meta?.valign === 'top' ? '' : rowHeight} flex ${vAlignClass} text-[12px] leading-snug font-bold ${wrapClass} ${alignClass} ${isSelected ? 'text-white font-black' : 'text-black'} select-text`}>
+            <div className={`px-4 ${meta?.valign === 'top' ? '' : rowHeight} flex ${vAlignClass} text-[12px] leading-snug font-medium ${wrapClass} ${alignClass} ${isSelected ? 'text-green-900 font-bold' : 'text-gray-600'} select-text`}>
               {flexRender(cell.column.columnDef.cell, cell.getContext())}
             </div>
           </td>
@@ -319,6 +324,9 @@ const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick, onRowDoubleCl
 });
 
 TableRow.displayName = 'TableRow';
+
+
+
 
 
 

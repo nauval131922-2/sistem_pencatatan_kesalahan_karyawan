@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Search, Loader2, AlertCircle, ChevronLeft, ChevronRight, RefreshCw, Calculator, ChevronDown, Filter, Database, RotateCcw } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Loader2, AlertCircle, Calculator, Database, RotateCcw, Filter } from 'lucide-react';
+import SearchableDropdown from '@/components/SearchableDropdown';
 import { DataTable } from '@/components/ui/DataTable';
 import MasterPekerjaanUpload from './MasterPekerjaanUpload';
 import ImportInfo from '@/components/ImportInfo';
@@ -207,7 +208,7 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
       { 
         accessorKey: 'target_value', header: 'Target', size: 90, meta: { align: 'right' },
         cell: ({ getValue, row }: any) => (
-          <div className={`flex items-center justify-between font-black tabular-nums w-full ${row.getIsSelected() ? 'text-green-700' : 'text-green-700'}`}>
+          <div className={`flex items-center justify-between font-semibold tabular-nums w-full ${row.getIsSelected() ? 'text-green-700' : 'text-green-700'}`}>
             <span>{Number(getValue() || 0).toLocaleString('id-ID')}</span>
           </div>
         )
@@ -215,7 +216,7 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
       { 
         accessorKey: 'standart_target', header: 'Standart Target', size: 120, meta: { align: 'right' },
         cell: ({ getValue, row }: any) => (
-          <div className={`flex items-center justify-between font-black tabular-nums w-full ${row.getIsSelected() ? 'text-amber-800' : 'text-amber-700'}`}>
+          <div className={`flex items-center justify-between font-semibold tabular-nums w-full ${row.getIsSelected() ? 'text-amber-800' : 'text-amber-700'}`}>
             <span>{Number(getValue() || 0).toLocaleString('id-ID')}</span>
           </div>
         )
@@ -306,192 +307,66 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
   }, []);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in duration-700 overflow-hidden">
       {/* Top Header Row: Upload & Controls */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 shrink-0 h-[97px]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 shrink-0 h-[105px]">
          {/* Upload Card */}
          <MasterPekerjaanUpload />
 
          {/* Filters Card */}
-         <div className="bg-[var(--bg-surface)] rounded-none border-[3px] border-black p-5 hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3.5px_3.5px_0_0_#000] shadow-[2.5px_2.5px_0_0_#000] transition-all duration-300 flex flex-col justify-center relative z-50 h-[97px]">
-            <div className="flex items-end gap-3">
-               {/* Category Filter */}
-               <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-black text-black uppercase tracking-widest ml-1">Kategori</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-[180px] relative category-dropdown-container">
-                      <button
-                        onClick={() => setIsCategoryDropdownOpen(prev => !prev)}
-                        className="w-full h-9 pl-8 pr-8 bg-white border-[2px] border-black rounded-none shadow-[2px_2px_0_0_#000] focus:outline-none focus:shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] hover:-translate-y-[1px] hover:-translate-x-[1px] hover:shadow-[2px_2px_0_0_#000] transition-all text-sm font-black text-black flex items-center justify-between"
-                      >
-                        <span className="truncate" title={categoryFilter === '' ? 'Semua Kategori' : categoryFilter}>
-                          {categoryFilter === '' ? 'Semua Kategori' : categoryFilter}
-                        </span>
-                        <div className="absolute top-1/2 -translate-y-1/2 left-2.5 pointer-events-none text-gray-400">
-                          <Filter size={14} className="text-black" strokeWidth={2.5} />
-                        </div>
-                        <div className="absolute top-1/2 -translate-y-1/2 right-2.5 pointer-events-none text-gray-400">
-                          <ChevronDown size={14} className={`text-black transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={3} />
-                        </div>
-                      </button>
+         <div className="bg-white rounded-2xl border border-gray-100 px-6 py-4 shadow-sm shadow-green-900/5 flex flex-col justify-center relative z-50 h-full">
+          <div className="flex items-center gap-4">
+               <SearchableDropdown
+                 id="mp-category"
+                 label="Kategori"
+                 value={categoryFilter}
+                 items={CATEGORIES}
+                 allLabel="Semua Kategori"
+                 searchPlaceholder="Cari kategori..."
+                 panelWidth="w-[260px]"
+                 icon={<Filter size={16} className={categoryFilter ? 'text-green-600' : 'text-gray-400'} />}
+                 onChange={(val) => {
+                   setCategoryFilter(val);
+                   setSubCategoryFilter('');
+                   setGroupFilter('');
+                   setPage(1);
+                 }}
+               />
 
-                      {isCategoryDropdownOpen && (
-                        <div className="absolute top-[calc(100%+6px)] left-0 w-[240px] bg-white border-[3px] border-black rounded-none shadow-[2.5px_2.5px_0_0_#000] py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[300px]">
-                          <div className="px-2.5 pb-2 shrink-0 border-b-2 border-black mb-1">
-                            <div className="relative">
-                              <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-gray-400">
-                                <Search size={12} className="text-black" strokeWidth={3} />
-                              </div>
-                              <input
-                                type="text" autoFocus placeholder="Cari..."
-                                value={categorySearchQuery} onChange={(e) => setCategorySearchQuery(e.target.value)}
-                                className="w-full pl-7 pr-2.5 py-1.5 text-xs bg-white border-[2px] border-black focus:outline-none focus:shadow-[2px_2px_0_0_#000] rounded-none placeholder:text-gray-400 font-black"
-                              />
-                            </div>
-                          </div>
-                          <div className="flex-1 overflow-y-auto px-1 scrollbar-thin">
-                            {['', ...CATEGORIES]
-                              .filter(c => c.toLowerCase().includes(categorySearchQuery.toLowerCase()))
-                              .map(cat => (
-                                <button
-                                  key={cat}
-                                  onClick={() => { 
-                                    setCategoryFilter(cat); 
-                                    setSubCategoryFilter(''); // Reset sub-category
-                                    setGroupFilter('');       // Reset group
-                                    setPage(1); 
-                                    setIsCategoryDropdownOpen(false); 
-                                    setCategorySearchQuery(''); 
-                                  }}
-                                  className={`w-full text-left px-2.5 py-2 text-sm font-black rounded-none transition-colors truncate border-b-2 border-transparent hover:border-black ${categoryFilter === cat ? 'bg-[#fde047] text-black border-black' : 'text-black hover:bg-gray-100'}`}
-                                >
-                                  {cat === '' ? 'Semua Kategori' : cat}
-                                </button>
-                              ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-               </div>
+               <SearchableDropdown
+                 id="mp-subcategory"
+                 label="Sub Kategori"
+                 value={subCategoryFilter}
+                 items={availableSubs}
+                 allLabel="Semua Sub"
+                 searchPlaceholder="Cari sub-kategori..."
+                 panelWidth="w-[260px]"
+                 icon={<Filter size={16} className={subCategoryFilter ? 'text-green-600' : 'text-gray-400'} />}
+                 onChange={(val) => {
+                   setSubCategoryFilter(val);
+                   setGroupFilter('');
+                   setPage(1);
+                 }}
+               />
 
-               {/* Sub Category Filter */}
-               <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-black text-black uppercase tracking-widest ml-1">Sub Kategori</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-[180px] relative subcategory-dropdown-container">
-                      <button
-                        onClick={() => setIsSubCategoryDropdownOpen(prev => !prev)}
-                        className="w-full h-9 pl-8 pr-8 bg-white border-[2px] border-black rounded-none shadow-[2px_2px_0_0_#000] focus:outline-none focus:shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] hover:-translate-y-[1px] hover:-translate-x-[1px] hover:shadow-[2px_2px_0_0_#000] transition-all text-sm font-black text-black flex items-center justify-between"
-                      >
-                        <span className="truncate" title={subCategoryFilter === '' ? 'Semua Sub' : subCategoryFilter}>
-                          {subCategoryFilter === '' ? 'Semua Sub' : subCategoryFilter}
-                        </span>
-                        <div className="absolute top-1/2 -translate-y-1/2 left-2.5 pointer-events-none text-gray-400">
-                          <Filter size={14} className="text-black" strokeWidth={2.5} />
-                        </div>
-                        <div className="absolute top-1/2 -translate-y-1/2 right-2.5 pointer-events-none text-gray-400">
-                          <ChevronDown size={14} className={`text-black transition-transform duration-200 ${isSubCategoryDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={3} />
-                        </div>
-                      </button>
-
-                      {isSubCategoryDropdownOpen && (
-                        <div className="absolute top-[calc(100%+6px)] left-0 w-[240px] bg-white border-[3px] border-black rounded-none shadow-[2.5px_2.5px_0_0_#000] py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[300px]">
-                          <div className="px-2.5 pb-2 shrink-0 border-b-2 border-black mb-1">
-                            <div className="relative">
-                              <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-gray-400">
-                                <Search size={12} className="text-black" strokeWidth={3} />
-                              </div>
-                              <input
-                                type="text" autoFocus placeholder="Cari..."
-                                value={subCategorySearchQuery} onChange={(e) => setSubCategorySearchQuery(e.target.value)}
-                                className="w-full pl-7 pr-2.5 py-1.5 text-xs bg-white border-[2px] border-black focus:outline-none focus:shadow-[2px_2px_0_0_#000] rounded-none placeholder:text-gray-400 font-black"
-                              />
-                            </div>
-                          </div>
-                          <div className="flex-1 overflow-y-auto px-1 scrollbar-thin">
-                            {['', ...availableSubs]
-                              .filter(c => c.toLowerCase().includes(subCategorySearchQuery.toLowerCase()))
-                              .map(sub => (
-                                <button
-                                  key={sub}
-                                  onClick={() => { 
-                                    setSubCategoryFilter(sub); 
-                                    setGroupFilter(''); // Reset group
-                                    setPage(1);
-                                    setIsSubCategoryDropdownOpen(false); 
-                                    setSubCategorySearchQuery(''); 
-                                  }}
-                                  className={`w-full text-left px-2.5 py-2 text-sm font-black rounded-none transition-colors truncate border-b-2 border-transparent hover:border-black ${subCategoryFilter === sub ? 'bg-[#fde047] text-black border-black' : 'text-black hover:bg-gray-100'}`}
-                                  title={sub === '' ? 'Semua Sub Kategori' : sub}
-                                >
-                                  {sub === '' ? 'Semua Sub Kategori' : sub}
-                                </button>
-                              ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-               </div>
-
-               {/* Group Filter */}
-               <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-black text-black uppercase tracking-widest ml-1">Grup</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-[180px] relative group-dropdown-container">
-                      <button
-                        onClick={() => setIsGroupDropdownOpen(prev => !prev)}
-                        className="w-full h-9 pl-8 pr-8 bg-white border-[2px] border-black rounded-none shadow-[2px_2px_0_0_#000] focus:outline-none focus:shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] hover:-translate-y-[1px] hover:-translate-x-[1px] hover:shadow-[2px_2px_0_0_#000] transition-all text-sm font-black text-black flex items-center justify-between"
-                      >
-                        <span className="truncate" title={groupFilter === '' ? 'Semua Grup' : groupFilter}>
-                          {groupFilter === '' ? 'Semua Grup' : groupFilter}
-                        </span>
-                        <div className="absolute top-1/2 -translate-y-1/2 left-2.5 pointer-events-none text-gray-400">
-                          <Filter size={14} className="text-black" strokeWidth={2.5} />
-                        </div>
-                        <div className="absolute top-1/2 -translate-y-1/2 right-2.5 pointer-events-none text-gray-400">
-                          <ChevronDown size={14} className={`text-black transition-transform duration-200 ${isGroupDropdownOpen ? 'rotate-180' : ''}`} strokeWidth={3} />
-                        </div>
-                      </button>
-
-                      {isGroupDropdownOpen && (
-                        <div className="absolute top-[calc(100%+6px)] left-0 w-[240px] bg-white border-[3px] border-black rounded-none shadow-[2.5px_2.5px_0_0_#000] py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[300px]">
-                          <div className="px-2.5 pb-2 shrink-0 border-b-2 border-black mb-1">
-                            <div className="relative">
-                              <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-gray-400">
-                                <Search size={12} className="text-black" strokeWidth={3} />
-                              </div>
-                              <input
-                                type="text" autoFocus placeholder="Cari..."
-                                value={groupSearchQuery} onChange={(e) => setGroupSearchQuery(e.target.value)}
-                                className="w-full pl-7 pr-2.5 py-1.5 text-xs bg-white border-[2px] border-black focus:outline-none focus:shadow-[2px_2px_0_0_#000] rounded-none placeholder:text-gray-400 font-black"
-                              />
-                            </div>
-                          </div>
-                          <div className="flex-1 overflow-y-auto px-1 scrollbar-thin">
-                            {['', ...availableGroups]
-                              .filter(c => c.toLowerCase().includes(groupSearchQuery.toLowerCase()))
-                              .map(grp => (
-                                <button
-                                  key={grp}
-                                  onClick={() => { setGroupFilter(grp); setIsGroupDropdownOpen(false); setGroupSearchQuery(''); }}
-                                  className={`w-full text-left px-2.5 py-2 text-sm font-black rounded-none transition-colors truncate border-b-2 border-transparent hover:border-black ${groupFilter === grp ? 'bg-[#fde047] text-black border-black' : 'text-black hover:bg-gray-100'}`}
-                                  title={grp === '' ? 'Semua Grup' : grp}
-                                >
-                                  {grp === '' ? 'Semua Grup' : grp}
-                                </button>
-                              ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-               </div>
+               <SearchableDropdown
+                 id="mp-group"
+                 label="Grup"
+                 value={groupFilter}
+                 items={availableGroups}
+                 allLabel="Semua Grup"
+                 searchPlaceholder="Cari grup..."
+                 panelWidth="w-[260px]"
+                 icon={<Filter size={16} className={groupFilter ? 'text-green-600' : 'text-gray-400'} />}
+                 onChange={(val) => {
+                   setGroupFilter(val);
+                   setPage(1);
+                 }}
+               />
 
                {/* Reset Filter Button */}
-               <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-bold text-transparent uppercase tracking-widest ml-1 select-none">Reset</span>
+               <div className="flex flex-col gap-2">
+                  <span className="text-[13px] font-semibold text-transparent tracking-tight ml-1 select-none">Reset</span>
                   <button
                     onClick={() => {
                       setCategoryFilter('');
@@ -500,10 +375,10 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
                       setSearchQuery('');
                       setPage(1);
                     }}
-                    className="h-9 px-4 bg-white hover:bg-[#ff5e5e] text-black hover:text-white border-[2px] border-black rounded-none shadow-[2px_2px_0_0_#000] hover:shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[1px] active:translate-x-[1px] active:shadow-none text-[12px] font-black transition-all flex items-center gap-2 uppercase tracking-wide"
+                    className="h-11 px-6 bg-white hover:bg-rose-50 text-gray-400 hover:text-rose-600 border border-gray-100 hover:border-rose-100 rounded-lg shadow-sm transition-all flex items-center gap-2.5 text-[12px] font-bold tracking-tight"
                   >
-                    <RotateCcw size={14} strokeWidth={3} />
-                    Reset Filter
+                    <RotateCcw size={16} />
+                    Reset
                   </button>
                </div>
             </div>
@@ -511,22 +386,23 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
       </div>
 
       {/* Results View */}
-      <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
+      <div className="flex-1 flex flex-col gap-3 overflow-hidden min-h-0 relative">
         {/* Search Bar Section */}
-        <div className="flex flex-col gap-4 shrink-0">
+        <div className="flex flex-col gap-4 shrink-0 px-1">
           <div className="flex items-center justify-between gap-4 min-h-[32px]">
-            <div className="flex items-center gap-4">
-               <h3 className="text-[14px] font-extrabold text-gray-800 flex items-center gap-2.5 leading-none">
-                  <Calculator size={18} className="text-green-600" />
-                  <span>Data Master Pekerjaan</span>
+            <div className="flex items-center gap-5">
+               <h3 className="text-[14px] font-bold text-gray-800 flex items-center gap-3 leading-none tracking-tight">
+                  <div className="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center shadow-sm">
+                    <Calculator size={16} />
+                  </div>
+                  <span>Master Pekerjaan</span>
                </h3>
                <ImportInfo info={importInfo} />
-
             </div>
             {loading && (data?.length || 0) > 0 && (
-                <div className="text-[11px] font-black text-black flex items-center gap-2 bg-[#fde047] px-2.5 py-1 rounded-none border-[2px] border-black shadow-[2px_2px_0_0_#000] animate-pulse uppercase tracking-tighter leading-none">
+                <div className="text-[10px] font-bold text-green-600 flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full border border-green-100 shadow-sm animate-pulse uppercase tracking-widest leading-none">
                   <Loader2 size={12} className="animate-spin" />
-                  <span>Memuat...</span>
+                  <span>Loading Data...</span>
                 </div>
             )}
           </div>
@@ -542,29 +418,34 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
         </div>
 
         {/* Main Table Context */}
-        <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden relative">
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
          {error ? (
-           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-rose-50/10">
-              <div className="w-16 h-16 bg-[#fde047] rounded-none border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] flex items-center justify-center mb-4">
-                  <AlertCircle className="text-black" size={32} />
+           <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-white rounded-2xl border border-gray-100 shadow-sm shadow-green-900/5">
+              <div className="w-20 h-20 bg-rose-50 rounded-2xl border border-rose-100 shadow-sm flex items-center justify-center mb-6">
+                  <AlertCircle className="text-rose-500" size={40} />
               </div>
-              <p className="text-sm font-black text-gray-800 uppercase tracking-wide">{error}</p>
+              <p className="text-sm font-bold text-gray-800 uppercase tracking-[0.2em] mb-2">Terjadi Kesalahan</p>
+              <p className="text-gray-500 text-sm mb-8 max-w-xs">{error}</p>
               <button 
                 onClick={() => setRefreshKey(k => k + 1)}
-                className="mt-4 px-6 py-2 bg-black text-white border-[3px] border-black rounded-none text-xs font-black hover:bg-[var(--accent-primary)] hover:border-black transition-colors shadow-[2.5px_2.5px_0_0_#000] hover:shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none uppercase tracking-wider"
+                className="px-10 py-4 bg-emerald-600 text-white font-bold rounded-xl transition-all shadow-sm shadow-green-900/10 hover:bg-emerald-700 hover:-translate-y-1 hover:shadow-sm hover:shadow-green-900/20 active:translate-y-0 uppercase tracking-widest text-[11px]"
               >
                 Coba Lagi
               </button>
            </div>
          ) : data !== null && data.length === 0 ? (
-           <div className="flex flex-col items-center justify-center flex-1 gap-3 rounded-none border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] bg-white">
-              <Database className="text-black" size={50} strokeWidth={1.5} />
-              <p className="text-[14px] text-gray-800 font-black">Data Tidak Ditemukan</p>
-              <p className="text-[13px] text-gray-600 font-medium max-w-sm text-center">
-                {debouncedQuery || categoryFilter
-                  ? 'Coba ubah kata kunci pencarian atau filter kategori.'
-                  : 'Belum ada data. Upload file Excel Master Pekerjaan untuk memulai.'}
-              </p>
+           <div className="flex flex-col items-center justify-center flex-1 gap-5 rounded-2xl border border-gray-100 bg-white shadow-sm shadow-green-900/5">
+              <div className="w-20 h-20 bg-gray-50 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-center mb-2">
+                <Database className="text-gray-400" size={40} strokeWidth={1.5} />
+              </div>
+              <div className="text-center max-w-sm">
+                <p className="text-[14px] text-gray-800 font-bold uppercase tracking-widest mb-2">Data Tidak Ditemukan</p>
+                <p className="text-[13px] text-gray-400 font-medium leading-relaxed px-6">
+                  {debouncedQuery || categoryFilter
+                    ? 'Coba ubah kata kunci pencarian atau bersihkan filter yang aktif.'
+                    : 'Belum ada data. Upload file Excel Master Pekerjaan untuk memulai.'}
+                </p>
+              </div>
               {(debouncedQuery || categoryFilter || subCategoryFilter || groupFilter) && (
                 <button
                   onClick={() => { 
@@ -574,40 +455,41 @@ export default function MasterPekerjaanClient({ importInfo }: MasterPekerjaanCli
                     setGroupFilter('');
                     setPage(1);
                   }}
-                  className="mt-2 px-6 py-2 bg-black text-white hover:bg-[var(--accent-primary)] text-[12px] font-black rounded-none transition-all border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] hover:shadow-[2.5px_2.5px_0_0_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none uppercase tracking-wider"
+                  className="mt-4 px-8 py-3 bg-gray-800 text-white hover:bg-gray-900 text-[11px] font-bold rounded-lg transition-all shadow-sm uppercase tracking-widest"
                 >
                   Reset Filter
                 </button>
               )}
            </div>
          ) : (
-           <>
-              <DataTable
-                data={data || []}
-                columns={columns}
-                columnWidths={columnWidths}
-                onColumnWidthChange={handleColumnWidthChange}
-                isLoading={loading && data === null}
-                rowHeight="h-10"
-                selectedIds={selectedId ? new Set([selectedId]) : undefined}
-                onRowClick={(id) => setSelectedId(id === selectedId ? null : id)}
-              />
-
-              <TableFooter 
-                totalCount={totalCount}
-                currentCount={data?.length || 0}
-                label="Item Master Pekerjaan"
-                selectedCount={selectedId ? 1 : 0}
-                onClearSelection={() => setSelectedId(null)}
-                loadTime={loadTime}
-                page={page}
-                totalPages={totalPages}
-                onPageChange={setPage}
-              />
-           </>
+           <DataTable
+             data={data || []}
+             columns={columns}
+             columnWidths={columnWidths}
+             onColumnWidthChange={handleColumnWidthChange}
+             isLoading={loading && data === null}
+             rowHeight="h-11"
+             selectedIds={selectedId ? new Set([selectedId]) : undefined}
+             onRowClick={(id) => setSelectedId(id === selectedId ? null : id)}
+           />
          )}
         </div>
+
+        <TableFooter 
+          totalCount={totalCount}
+          currentCount={data?.length || 0}
+          label="Item Master Pekerjaan"
+          selectedCount={selectedId ? 1 : 0}
+          onClearSelection={() => setSelectedId(null)}
+          loadTime={loadTime}
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
       </div>
     </div>
   );
 }
+
+
+

@@ -34,7 +34,6 @@ import {
   Target
 } from 'lucide-react';
 import Image from 'next/image';
-import logoPic from '../../public/icon.png';
 import type { PermissionMap } from '@/lib/permissions-constants';
 import Portal from './Portal';
 
@@ -208,18 +207,18 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
   const navItemClasses = (href: string) => {
     const isActive = checkIsActive(href);
     return `
-      group flex items-center gap-3 px-3 h-10 rounded-none transition-all text-[12.5px] font-black border-2
-      ${!isExpanded ? 'justify-center px-0 w-10 mx-auto' : 'w-full'}
+      group flex items-center gap-3 px-3 h-9 rounded-[8px] transition-all text-[12.5px] font-semibold
+      ${!isExpanded ? 'justify-center px-0 w-9 mx-auto' : 'w-full'}
       ${isActive 
-        ? 'bg-[#fde047] text-black border-black shadow-[2px_2px_0_0_#000] -translate-y-[1px] -translate-x-[1px]' 
-        : 'border-transparent text-black/60 hover:bg-[#fde047] hover:text-black hover:border-black hover:shadow-[2px_2px_0_0_#000] hover:-translate-y-[1px] hover:-translate-x-[1px]'}
+        ? 'bg-green-50 text-green-600 font-black' 
+        : 'text-gray-500 hover:bg-green-50 hover:text-green-600'}
     `;
   };
 
   const SectionLabel = ({ label }: { label: string }) => {
-    if (!isExpanded) return <div className="h-px bg-black opacity-10 mx-2 my-4 first:hidden" />;
+    if (!isExpanded) return <div className="h-px bg-gray-100 mx-2 my-4 first:hidden" />;
     return (
-      <h2 className="px-3 text-[10px] font-black text-black opacity-30 uppercase tracking-[0.2em] mt-6 mb-2 truncate first:mt-0">
+      <h2 className="px-3 text-[10px] font-bold text-gray-400 tracking-wide mt-6 mb-2 truncate first:mt-0">
         {label}
       </h2>
     );
@@ -284,7 +283,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
       onMouseEnter={() => isCollapsed && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       style={{ width: currentWidth }}
-      className={`h-screen bg-[var(--bg-surface)] border-r-[3px] border-black shrink-0 flex flex-col z-[50] relative ${
+      className={`h-screen bg-white border-r border-gray-100 shrink-0 flex flex-col z-[50] relative ${
         isResizing ? '' : 'transition-[width] duration-300 ease-in-out'
       }`}
     >
@@ -297,31 +296,31 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
           }}
           className={`absolute -right-1.5 top-0 w-3 h-full cursor-col-resize z-30 group`}
         >
-          <div className={`w-0.5 h-full mx-auto transition-colors ${isResizing ? 'bg-green-500' : 'group-hover:bg-green-300'}`} />
+          <div className={`w-0.5 h-full mx-auto transition-colors ${isResizing ? 'bg-green-500' : 'group-hover:bg-green-200'}`} />
         </div>
       )}
 
       {/* Header */}
-      <div className="p-4 pb-4 relative min-h-[64px] bg-[var(--bg-deep)] border-b-[3px] border-black">
+      <div className="p-4 pb-4 relative min-h-[64px]">
         <div className={`flex items-center ${!isExpanded ? 'justify-center' : 'justify-between'}`}>
           {isExpanded ? (
             <div className="flex flex-col w-full">
               <div className="flex items-center gap-3 overflow-hidden">
-                <div className="w-8 h-8 rounded-none overflow-hidden shrink-0 bg-[#fde047] border-2 border-black">
-                  <Image src={logoPic} alt="SINTAK" className="w-full h-full object-contain p-0.5" />
+                <div className="w-8 h-8 rounded-[8px] overflow-hidden shrink-0 bg-emerald-600 text-white flex items-center justify-center shadow-sm shadow-emerald-100">
+                  <BarChart3 size={16} />
                 </div>
                 <div className="min-w-0 flex flex-col">
-                  <h1 className="text-[15px] font-black text-black tracking-tight leading-none uppercase">SINTAK</h1>
-                  <p className="text-[10px] text-gray-700 font-bold mt-1 tracking-wide truncate">PT. Buya Barokah</p>
+                  <h1 className="text-[15px] font-bold text-gray-800 tracking-tight leading-none uppercase">SINTAK</h1>
+                  <p className="text-[10px] text-gray-400 font-bold mt-1 tracking-wide truncate">PT. Buya Barokah</p>
                 </div>
               </div>
-              <div className="mt-4 px-3.5 py-1 rounded-none border-2 border-black inline-flex w-fit bg-[#fde047] shadow-[2px_2px_0_0_#000]">
-                <span className="text-[10px] font-black text-black">Div. Percetakan</span>
+              <div className="mt-4 px-3.5 py-1 rounded-[8px] border border-gray-100 inline-flex w-fit bg-gray-50/50">
+                <span className="text-[10px] font-bold text-gray-400">Div. Percetakan</span>
               </div>
             </div>
           ) : (
-            <div className="w-8 h-8 rounded-none overflow-hidden mx-auto bg-[#fde047] border-2 border-black">
-               <Image src={logoPic} alt="SINTAK" className="w-full h-full object-contain p-0.5" />
+            <div className="w-8 h-8 rounded-[8px] overflow-hidden mx-auto bg-emerald-600 text-white flex items-center justify-center shadow-sm shadow-emerald-100">
+               <BarChart3 size={16} />
             </div>
           )}
         </div>
@@ -333,11 +332,11 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
           setIsHovered(false);
           setActivePath([]);
         }}
-        className={`absolute -right-3.5 top-1/2 -translate-y-1/2 w-7 h-7 bg-[#fde047] border-[2px] border-black rounded-none flex items-center justify-center text-black shadow-[2px_2px_0_0_#000] hover:bg-[var(--accent-primary)] hover:text-white z-50 transition-all active:translate-y-[-40%] active:translate-x-[2px] active:shadow-none ${
+        className={`absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-100 rounded-full flex items-center justify-center text-gray-400 shadow-sm hover:text-green-600 z-50 transition-all ${
           !isExpanded && isCollapsed ? 'opacity-0' : 'opacity-100'
         }`}
       >
-        {isCollapsed ? <ChevronRight size={14} strokeWidth={3} /> : <ChevronLeft size={14} strokeWidth={3} />}
+        {isCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
       </button>
 
       <nav ref={navRef} className="flex-1 overflow-y-auto overflow-x-hidden px-3 pt-4 pb-2 custom-scrollbar">
@@ -364,7 +363,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
           canAccess('penjualan_sph_out') || canAccess('penjualan_so') || canAccess('penjualan_laporan') ||
           canAccess('penjualan_piutang') || canAccess('penjualan_pengiriman')) && (
           <>
-            <SectionLabel label="Data Digit" />
+            <SectionLabel label="DATA DIGIT" />
             <div className="space-y-1">
           {canAccess('sync') && (
             <div className={!isExpanded ? 'mx-0' : ''}>
@@ -508,7 +507,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
         )}
 
         {/* LABEL MULTI-PURPOSE / MANAGEMENT */}
-        <SectionLabel label="Sistem" />
+        <SectionLabel label="SISTEM" />
 
         {/* UMUM */}
         {(canAccess('tracking_manufaktur') || canAccess('karyawan')) && (
@@ -570,7 +569,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
         )}
 
         {/* PRODUKSI */}
-        {(canAccess('produksi_jhp_sopd') || canAccess('produksi_jhp_master_pekerjaan') || canAccess('produksi_jhp') || canAccess('produksi_jhp_target')) && (
+        {(canAccess('produksi_jhp_sopd') || canAccess('produksi_jhp_master_pekerjaan') || canAccess('produksi_jhp') || canAccess('produksi_jhp_target') || canAccess('produksi_hasil')) && (
           <div className="space-y-1 mb-1" data-group="Produksi">
             <FlyoutMenu
               id="Produksi Jurnal Harian"
@@ -592,7 +591,8 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
                     ...(canAccess('produksi_jhp') ? [{ label: 'Jurnal Harian Produksi', href: '/jurnal-harian-produksi', icon: <ClipboardList size={14} />, exact: true }] : []),
                     ...(canAccess('produksi_jhp_target') ? [{ label: 'Target Harian', href: '/jurnal-harian-produksi/target', icon: <TrendingUp size={14} /> }] : []),
                   ]
-                }
+                },
+                ...(canAccess('produksi_hasil') ? [{ label: 'Hasil Produksi', href: '/hasil-produksi', icon: <BarChart3 size={16} /> }] : []),
               ]}
             />
           </div>
@@ -629,47 +629,47 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
 
 
       {/* User Focus Footer */}
-      <div className={`mt-auto border-t-[3px] border-black p-3 bg-[var(--bg-deep)] relative z-10`} ref={profileRef}>
+      <div className={`mt-auto border-t border-gray-100 p-3 bg-gray-50/50 relative z-10`} ref={profileRef}>
         {user ? (
           <div className="relative">
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               onMouseDown={(e) => e.stopPropagation()}
-              className={`w-full flex items-center gap-3 p-2 border-2 border-transparent transition-all hover:bg-[#fde047] hover:border-black hover:shadow-[2px_2px_0_0_#000] hover:-translate-y-[1px] hover:-translate-x-[1px] ${
-                isProfileOpen ? 'bg-[#fde047] border-black shadow-[2px_2px_0_0_#000] -translate-y-[1px] -translate-x-[1px]' : ''
+              className={`w-full flex items-center gap-3 p-2 rounded-[8px] transition-all hover:bg-white hover:shadow-sm ${
+                isProfileOpen ? 'bg-white shadow-sm ring-1 ring-black/5' : ''
               } ${!isExpanded ? 'justify-center p-1' : ''}`}
             >
-              <div className="w-8 h-8 rounded-none bg-black flex items-center justify-center overflow-hidden shrink-0 border-2 border-black">
+              <div className="w-8 h-8 rounded-[8px] bg-green-100 flex items-center justify-center overflow-hidden shrink-0 border border-green-200">
                 {user.photo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={user.photo} alt={user.name} className="w-full h-full object-cover" />
                 ) : (
-                  <User size={16} className="text-[#fde047]" strokeWidth={3} />
+                  <User size={14} className="text-green-600" />
                 )}
               </div>
               {isExpanded && (
                 <div className="flex flex-col min-w-0 text-left">
-                  <p className="text-[13px] font-black text-black truncate leading-none">{user.name}</p>
-                  <p className="text-[11px] text-gray-800 font-bold mt-1.5 truncate">{user.role}</p>
+                  <p className="text-[12px] font-bold text-gray-700 truncate leading-none">{user.name}</p>
+                  <p className="text-[10px] text-gray-400 font-bold mt-1 truncate">{user.role}</p>
                 </div>
               )}
             </button>
 
             {isProfileOpen && (
-              <div className="absolute left-0 bottom-full mb-3 w-full bg-white rounded-none border-[3px] border-black shadow-[3.5px_3.5px_0_0_#000] p-1.5 animate-in fade-in slide-in-from-bottom-2 z-50">
-                <Link href="/profile" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-2 px-3 py-2 text-[12px] font-black text-black border-2 border-transparent hover:bg-[#fde047] hover:border-black transition-all">
-                  <Settings size={14} strokeWidth={3} />
+              <div className="absolute left-0 bottom-full mb-2 w-full bg-white rounded-[8px] shadow-sm border border-gray-100 p-1.5 animate-in fade-in slide-in-from-bottom-2 z-50">
+                <Link href="/profile" onClick={() => setIsProfileOpen(false)} className="flex items-center gap-2 px-3 py-2 text-[11px] font-bold text-gray-600 hover:bg-gray-50 rounded-[8px] transition-colors">
+                  <Settings size={14} />
                   <span>Pengaturan Profil</span>
                 </Link>
-                <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 text-[12px] font-black text-black border-2 border-transparent hover:bg-[#ff5e5e] hover:text-white hover:border-black transition-all">
-                  <LogOut size={14} strokeWidth={3} />
+                <button onClick={handleLogout} className="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-bold text-red-500 hover:bg-red-50 rounded-[8px] transition-colors">
+                  <LogOut size={14} />
                   <span>Keluar Sistem</span>
                 </button>
               </div>
             )}
           </div>
         ) : (
-          <div className="h-10 border-2 border-black bg-gray-200 rounded-none animate-pulse" />
+          <div className="h-10 bg-gray-200 rounded-[8px] animate-pulse" />
         )}
       </div>
     </aside>
@@ -696,13 +696,11 @@ function FlyoutItem({ item, level }: { item: MenuItem; level: number }) {
           href={item.href}
           onClick={() => setActivePath([])}
           className={`
-            group flex items-center gap-3 px-3 py-2.5 rounded-none text-[12px] font-black transition-all w-full border-2 border-transparent
-            ${itemActive 
-              ? 'bg-[#fde047] text-black border-black shadow-[2px_2px_0_0_#000] -translate-x-[1px] -translate-y-[1px]' 
-              : 'text-black/60 hover:bg-black hover:text-white hover:border-black'}
+            group flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[12px] font-bold transition-all w-full
+            ${itemActive ? 'bg-green-50 text-green-600 font-black' : 'text-gray-500 hover:bg-gray-50 hover:text-green-600'}
           `}
         >
-          <span className={`transition-colors ${itemActive ? 'text-black' : 'text-black/40 group-hover:text-white'}`}>{item.icon}</span>
+          <span className={itemActive ? 'text-green-600' : 'text-gray-400'}>{item.icon}</span>
           <span className="truncate">{item.label}</span>
         </Link>
       ) : (
@@ -710,17 +708,13 @@ function FlyoutItem({ item, level }: { item: MenuItem; level: number }) {
           onClick={(e) => { e.stopPropagation(); hasSub && handleItemClick(item.label, e, level); }}
           onMouseDown={(e) => e.stopPropagation()}
           className={`
-            group flex items-center gap-3 px-3 py-2.5 rounded-none text-[12px] font-black transition-all cursor-pointer w-full border-2 border-transparent
-            ${isOpen 
-              ? 'bg-black text-white border-black shadow-[4px_4px_0_0_#fde047]' 
-              : itemActive 
-                ? 'bg-[#fde047] text-black border-black shadow-[2px_2px_0_0_#000]' 
-                : 'text-black/60 hover:bg-[#fde047] hover:text-black hover:border-black'}
+            group flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[12px] font-bold transition-all cursor-pointer w-full
+            ${isOpen ? 'bg-green-600 text-white shadow-sm' : itemActive ? 'bg-green-50 text-green-600' : 'text-gray-500 hover:bg-gray-50 hover:text-green-600'}
           `}
         >
-          <span className={`transition-colors ${isOpen ? 'text-white' : itemActive ? 'text-black' : 'text-black/40 group-hover:text-black'}`}>{item.icon}</span>
+          <span className={isOpen ? 'text-white' : itemActive ? 'text-green-600' : 'text-gray-400'}>{item.icon}</span>
           <span className="flex-1 text-left truncate">{item.label}</span>
-          {hasSub && <ChevronRight size={14} strokeWidth={3} className={`transition-transform duration-200 ${isOpen ? 'rotate-90 sm:rotate-0' : 'text-black/20'}`} />}
+          {hasSub && <ChevronRight size={12} className={`transition-transform duration-200 ${isOpen ? 'rotate-90 sm:rotate-0' : 'text-gray-300'}`} />}
         </button>
       )}
 
@@ -732,7 +726,7 @@ function FlyoutItem({ item, level }: { item: MenuItem; level: number }) {
             onClick={(e) => e.stopPropagation()}
             style={{ left: `${pos.left - 4}px`, top: `${pos.top - 6}px` }}
           >
-            <div className="bg-white border-[3px] border-black rounded-none shadow-[2.5px_2.5px_0_0_#000] p-1.5 min-w-[200px]">
+            <div className="bg-white border-[1.5px] border-gray-100 rounded-[12px] shadow-md p-1.5 min-w-[200px]">
               <div className="flex flex-col gap-1">
                 {item.items?.map((subItem) => (
                   <FlyoutItem key={subItem.label} item={subItem} level={level + 1} />
@@ -759,20 +753,16 @@ function FlyoutMenu({ id, label, icon, items }: { id?: string; label: string; ic
         onClick={(e) => handleItemClick(menuId, e, 0)}
         onMouseDown={(e) => e.stopPropagation()}
         className={`
-          group flex items-center gap-3 px-3 h-10 rounded-none transition-all text-[12.5px] font-black w-full border-2
-          ${!isExpanded ? 'justify-center px-0 w-10 mx-auto' : ''}
-          ${isActive && !isOpen 
-            ? 'bg-[#fde047] text-black border-black shadow-[2px_2px_0_0_#000] -translate-y-[1px] -translate-x-[1px]' 
-            : isOpen 
-              ? 'bg-black text-white border-black shadow-[4px_4px_0_0_#fde047] -translate-y-[2px] -translate-x-[2px]' 
-              : 'text-black/60 border-transparent hover:bg-[#fde047] hover:text-black hover:border-black hover:shadow-[2px_2px_0_0_#000] hover:-translate-y-[1px] hover:-translate-x-[1px]'}
+          group flex items-center gap-3 px-3 h-9 rounded-[8px] transition-all text-[12.5px] font-semibold w-full
+          ${!isExpanded ? 'justify-center px-0 w-9 mx-auto' : ''}
+          ${isActive && !isOpen ? 'bg-green-50 text-green-600' : isOpen ? 'bg-green-600 text-white shadow-sm scale-[1.02]' : 'text-gray-500 hover:bg-green-50 hover:text-green-600'}
         `}
       >
-        <span className={`transition-colors ${isOpen ? 'text-white' : isActive ? 'text-black' : 'text-black/60 group-hover:text-black'}`}>{icon}</span>
+        <span className={`transition-colors ${isOpen ? 'text-white' : isActive ? 'text-green-600' : 'text-gray-500 group-hover:text-green-600'}`}>{icon}</span>
         {isExpanded && (
           <>
             <span className="flex-1 text-left truncate">{label}</span>
-            <ChevronRight size={14} strokeWidth={3} className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
+            <ChevronRight size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
           </>
         )}
       </button>
@@ -785,7 +775,7 @@ function FlyoutMenu({ id, label, icon, items }: { id?: string; label: string; ic
             onClick={(e) => e.stopPropagation()}
             style={{ left: `${pos.left}px`, top: `${pos.top - 6}px` }}
           >
-            <div className="bg-white border-[3px] border-black rounded-none shadow-[2.5px_2.5px_0_0_#000] p-1.5 min-w-[220px]">
+            <div className="bg-white border-[1.5px] border-gray-100 rounded-[12px] shadow-md p-1.5 min-w-[220px]">
               <div className="flex flex-col gap-1">
                 {items.map((item) => (
                   <FlyoutItem key={item.label} item={item} level={1} />
@@ -798,6 +788,9 @@ function FlyoutMenu({ id, label, icon, items }: { id?: string; label: string; ic
     </div>
   );
 }
+
+
+
 
 
 

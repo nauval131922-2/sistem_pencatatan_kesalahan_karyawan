@@ -52,7 +52,7 @@ export async function createUser(data: { name: string, username: string, role: s
     }
 
     // Check duplicate username
-    const checkUsr = await db.execute({ sql: 'SELECT id FROM users WHERE username = ?', args: [data.username] });
+    const checkUsr = await db.execute({ sql: 'SELECT id FROM users WHERE LOWER(username) = LOWER(?)', args: [data.username] });
     if (checkUsr.rows.length > 0) {
       return { success: false, message: 'Username sudah terdaftar.' };
     }
@@ -80,7 +80,7 @@ export async function updateUser(id: number, data: { name: string, username: str
     }
 
     // Check duplicate username for other users
-    const checkUsr = await db.execute({ sql: 'SELECT id FROM users WHERE username = ? AND id != ?', args: [data.username, id] });
+    const checkUsr = await db.execute({ sql: 'SELECT id FROM users WHERE LOWER(username) = LOWER(?) AND id != ?', args: [data.username, id] });
     if (checkUsr.rows.length > 0) {
       return { success: false, message: 'Username sudah dipakai oleh user lain.' };
     }

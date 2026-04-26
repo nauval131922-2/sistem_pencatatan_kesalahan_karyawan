@@ -2,8 +2,8 @@
 
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Upload, FileSpreadsheet, XCircle, Loader2 } from 'lucide-react';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import ExcelUploadCard from '@/components/ExcelUploadCard';
 
 export default function SopdExcelUpload() {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -14,7 +14,6 @@ export default function SopdExcelUpload() {
     title: '',
     message: ''
   });
-  const fileRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   const handleFile = async (file: File) => {
@@ -158,59 +157,17 @@ export default function SopdExcelUpload() {
       setStatus('error');
       setMessage(err.message || 'Terjadi kesalahan saat memproses file.');
     }
-
-    if (fileRef.current) fileRef.current.value = '';
-  };
-
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
   };
 
   return (
-    <div className="h-full shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="bg-[var(--bg-surface)] rounded-none border-[3px] border-black p-5 hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3.5px_3.5px_0_0_#000] shadow-[2.5px_2.5px_0_0_#000] transition-all duration-300 flex items-center justify-between gap-4 relative z-50 h-full">
-        <div className="flex items-center gap-4 flex-1">
-          <div className="w-10 h-10 rounded-none bg-[#fde047] border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] flex items-center justify-center shrink-0">
-            <Upload className="text-black" size={20} strokeWidth={3} />
-          </div>
-          <div className="min-w-0">
-            <h3 className="text-sm font-bold text-gray-800 leading-none mb-1">Upload Data SOPd</h3>
-            <p className="text-[11px] text-gray-400 font-medium leading-tight">
-              Unggah file Excel untuk sinkronisasi Data Order Produksi. Sistem akan memperbarui daftar order berdasarkan versi file terbaru.
-            </p>
-          </div>
-        </div>
-
-        <div className="shrink-0">
-          <input 
-            type="file" 
-            accept=".xls, .xlsx, .xlsm"
-            className="hidden" 
-            ref={fileRef}
-            onChange={onFileChange}
-          />
-          <button
-            onClick={() => fileRef.current?.click()}
-            disabled={status === 'loading'}
-            className="px-4 h-10 bg-black text-white hover:bg-[var(--accent-primary)] hover:border-black text-[13px] font-black uppercase tracking-wider border-[3px] border-black rounded-none transition-all flex items-center gap-2 disabled:opacity-70 disabled:shadow-none disabled:translate-x-0 disabled:translate-y-0 shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] hover:shadow-[2.5px_2.5px_0_0_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none"
-          >
-            {status === 'loading' ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <FileSpreadsheet size={16} />
-            )}
-            <span>{status === 'loading' ? 'Mengunggah...' : 'Pilih & Upload Excel'}</span>
-          </button>
-        </div>
-
-        {status === 'error' && (
-          <div className="absolute top-full left-0 right-0 mt-2 p-2.5 bg-[#ff5e5e] text-white border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] rounded-none text-[11px] font-black flex items-start gap-2 animate-in slide-in-from-top-1 z-20">
-            <XCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" strokeWidth={3} />
-            <p className="font-black">{message}</p>
-          </div>
-        )}
-      </div>
+    <div className="h-full flex flex-col shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <ExcelUploadCard
+        title="Upload Data SOPd"
+        description="Unggah file Excel untuk sinkronisasi Data Order Produksi. Sistem akan memperbarui daftar order berdasarkan versi file terbaru."
+        status={status}
+        errorMessage={message}
+        onFileSelect={handleFile}
+      />
 
       <ConfirmDialog 
         isOpen={dialog.isOpen}
@@ -227,6 +184,9 @@ export default function SopdExcelUpload() {
     </div>
   );
 }
+
+
+
 
 
 

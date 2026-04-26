@@ -567,6 +567,32 @@ export async function initSchema(db: any) {
       efektif_jam_kerja REAL,
       keterangan TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS jurnal_harian_produksi (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      posisi TEXT,
+      absensi REAL,
+      tgl TEXT,
+      shift TEXT,
+      nama_karyawan TEXT,
+      no_order TEXT,
+      nama_order TEXT,
+      jenis_pekerjaan TEXT,
+      keterangan TEXT,
+      target REAL,
+      realisasi REAL,
+      no_order_2 TEXT,
+      nama_order_2 TEXT,
+      jenis_pekerjaan_2 TEXT,
+      bahan_kertas TEXT,
+      jml_plate REAL,
+      warna TEXT,
+      inscheet REAL,
+      rijek REAL,
+      jam TEXT,
+      kendala TEXT,
+      bagian TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`
   ], "write");
 
@@ -583,6 +609,17 @@ export async function initSchema(db: any) {
     "ALTER TABLE infractions ADD COLUMN jenis_barang TEXT;",
     "ALTER TABLE infractions ADD COLUMN nama_barang TEXT;",
     "ALTER TABLE infractions ADD COLUMN jenis_harga TEXT;",
+    "ALTER TABLE jurnal_harian_produksi ADD COLUMN no_order_2 TEXT;",
+    "ALTER TABLE jurnal_harian_produksi ADD COLUMN nama_order_2 TEXT;",
+    "ALTER TABLE jurnal_harian_produksi ADD COLUMN jenis_pekerjaan_2 TEXT;",
+    "ALTER TABLE jurnal_harian_produksi ADD COLUMN bahan_kertas TEXT;",
+    "ALTER TABLE jurnal_harian_produksi ADD COLUMN jml_plate REAL;",
+    "ALTER TABLE jurnal_harian_produksi ADD COLUMN warna TEXT;",
+    "ALTER TABLE jurnal_harian_produksi ADD COLUMN inscheet REAL;",
+    "ALTER TABLE jurnal_harian_produksi ADD COLUMN rijek REAL;",
+    "ALTER TABLE jurnal_harian_produksi ADD COLUMN jam TEXT;",
+    "ALTER TABLE jurnal_harian_produksi ADD COLUMN kendala TEXT;",
+    "ALTER TABLE jurnal_harian_produksi ADD COLUMN bagian TEXT;",
     "ALTER TABLE infractions ADD COLUMN jumlah REAL;",
     "ALTER TABLE infractions ADD COLUMN harga REAL;",
     "ALTER TABLE infractions ADD COLUMN total REAL;",
@@ -727,6 +764,21 @@ export async function initSchema(db: any) {
     "ALTER TABLE master_pekerjaan ADD COLUMN waktu_gosok_plate REAL;",
     "ALTER TABLE master_pekerjaan ADD COLUMN asumsi_target_per_hari REAL;",
     "ALTER TABLE master_pekerjaan ADD COLUMN group_pekerjaan TEXT;",
+    `CREATE TABLE IF NOT EXISTS jurnal_harian_produksi (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      posisi TEXT,
+      absensi REAL,
+      tgl TEXT,
+      shift TEXT,
+      nama_karyawan TEXT,
+      no_order TEXT,
+      nama_order TEXT,
+      jenis_pekerjaan TEXT,
+      keterangan TEXT,
+      target REAL,
+      realisasi REAL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`
   ];
 
   const executor = db.client || db;

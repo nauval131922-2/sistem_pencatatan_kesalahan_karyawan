@@ -22,12 +22,12 @@ export async function GET(request: NextRequest) {
       return `${p[2]}-${p[1]}-${p[0]}`;
     };
 
-    const CUTOFF = '2026-01-01';
+    const CUTOFF = '2025-01-01';
     const startISO = toISO(startDate);
     const endISO = toISO(endDate);
 
     // Determines which tables to include based on date range
-    const useSopd   = !startDate || !endDate || startISO! <= CUTOFF;
+    const useSopd   = !startDate || !endDate || startISO! < CUTOFF;
     const useOrders = !startDate || !endDate || endISO! >= CUTOFF;
 
     // Date filter expression for sopd (stored as DD-MM-YYYY)
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     const ordersDateExpr = `substr(tgl,7,4)||'-'||substr(tgl,4,2)||'-'||substr(tgl,1,2)`;
 
     // Build the upper bound for sopd: either endDate or just before cutoff
-    const sopdEndISO   = (endISO && endISO < CUTOFF) ? endISO : /* day before cutoff */ '2025-12-31';
+    const sopdEndISO   = (endISO && endISO < CUTOFF) ? endISO : /* day before cutoff */ '2024-12-31';
     // Build lower bound for orders: either startDate or cutoff
     const ordersStartISO = (startISO && startISO > CUTOFF) ? startISO : CUTOFF;
 

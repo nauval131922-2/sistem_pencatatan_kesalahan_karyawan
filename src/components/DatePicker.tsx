@@ -44,14 +44,15 @@ interface DatePickerProps {
   value?: Date | null;
   customTrigger?: (toggle: () => void) => React.ReactNode;
   popupAlign?: 'left' | 'right';
+  selectionMode?: 'day' | 'month';
 }
 
-export default function DatePicker({ name, required, label, onChange, value, customTrigger, popupAlign = 'left' }: DatePickerProps) {
+export default function DatePicker({ name, required, label, onChange, value, customTrigger, popupAlign = 'left', selectionMode = 'day' }: DatePickerProps) {
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [open, setOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'days' | 'months' | 'years'>('days');
+  const [viewMode, setViewMode] = useState<'days' | 'months' | 'years'>(selectionMode === 'month' ? 'months' : 'days');
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -71,9 +72,11 @@ export default function DatePicker({ name, required, label, onChange, value, cus
 
   useEffect(() => {
     if (!open) {
-      setTimeout(() => setViewMode('days'), 200);
+      setTimeout(() => setViewMode(selectionMode === 'month' ? 'months' : 'days'), 200);
+    } else {
+      if (selectionMode === 'month') setViewMode('months');
     }
-  }, [open]);
+  }, [open, selectionMode]);
 
   const prevView = () => {
     if (viewMode === 'days') {
@@ -124,11 +127,15 @@ export default function DatePicker({ name, required, label, onChange, value, cus
   };
 
   const formatted = value
-    ? value.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+    ? (selectionMode === 'month'
+        ? `${MONTHS_SHORT[value.getMonth()]} ${value.getFullYear()}`
+        : value.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }))
     : '';
 
   const valueStr = value
-    ? `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`
+    ? (selectionMode === 'month'
+        ? `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}`
+        : `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`)
     : '';
 
   const startDecade = Math.floor(viewYear / 10) * 10;
@@ -141,12 +148,12 @@ export default function DatePicker({ name, required, label, onChange, value, cus
     const cells = getCalendarDays(viewYear, viewMonth);
     return (
       <>
-        <div className="grid grid-cols-7 mb-2 border-b-[2px] border-black pb-1">
+        <div className="grid grid-cols-7 mb-2 border-b border-gray-50 pb-2">
           {DAYS_SHORT.map(d => (
-            <div key={d} className="text-center text-[11px] font-black text-black py-1 uppercase tracking-widest">{d}</div>
+            <div key={d} className="text-center text-[10px] font-semibold text-gray-400 py-1">{d}</div>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-y-1 gap-x-0">
+        <div className="grid grid-cols-7 gap-1">
           {cells.map((cell, i) => {
             const sel = isSelectedDay(cell);
             const tod = isToday(cell);
@@ -157,11 +164,11 @@ export default function DatePicker({ name, required, label, onChange, value, cus
                 type="button"
                 onClick={() => selectDay(cell)}
                 className={`
-                  h-8 w-8 mx-auto rounded-none text-sm font-bold transition-all flex items-center justify-center border-2
-                  ${sel ? 'bg-[var(--accent-primary)] text-black border-black shadow-[2px_2px_0_0_#000]' : ''}
-                  ${!sel && tod && !dim ? 'bg-[#fde047] text-black border-black font-black' : ''}
-                  ${!sel && !tod && dim ? 'text-gray-400 border-transparent font-normal' : ''}
-                  ${!sel && !tod && !dim ? 'text-black hover:bg-[#fde047] hover:border-black border-transparent' : ''}
+                  h-8 w-8 mx-auto rounded-lg text-[13px] font-medium transition-all flex items-center justify-center
+                  ${sel ? 'bg-green-600 text-white shadow-sm shadow-green-100 font-bold' : ''}
+                  ${!sel && tod && !dim ? 'bg-green-50 text-green-600 font-bold border border-green-100' : ''}
+                  ${!sel && !tod && dim ? 'text-gray-300 font-normal' : ''}
+                  ${!sel && !tod && !dim ? 'text-gray-600 hover:bg-gray-50' : ''}
                 `}
               >
                 {cell.day}
@@ -176,17 +183,27 @@ export default function DatePicker({ name, required, label, onChange, value, cus
   const renderMonths = () => {
     const activeMonth = value && value.getFullYear() === viewYear ? value.getMonth() : -1;
     return (
-      <div className="grid grid-cols-4 gap-2 py-2">
+      <div className="grid grid-cols-3 gap-2 py-2">
         {MONTHS_SHORT.map((m, i) => {
           const sel = activeMonth === i;
           return (
             <button
               key={m}
               type="button"
-              onClick={() => { setViewMonth(i); setViewMode('days'); }}
+              onClick={() => { 
+                if (selectionMode === 'month') {
+                  const d = new Date(viewYear, i, 1);
+                  setViewMonth(i);
+                  setOpen(false);
+                  if (onChange) onChange(d);
+                } else {
+                  setViewMonth(i); 
+                  setViewMode('days'); 
+                }
+              }}
               className={`
-                h-10 rounded-none text-sm font-bold transition-all border-2
-                ${sel ? 'bg-[var(--accent-primary)] text-black border-black shadow-[2px_2px_0_0_#000]' : 'text-black border-transparent hover:bg-[#fde047] hover:border-black'}
+                h-12 rounded-lg text-[13px] font-bold transition-all border
+                ${sel ? 'bg-green-600 text-white border-transparent shadow-sm shadow-green-100' : 'text-gray-600 border-gray-50 hover:bg-gray-50'}
               `}
             >
               {m}
@@ -200,7 +217,7 @@ export default function DatePicker({ name, required, label, onChange, value, cus
   const renderYears = () => {
     const activeY = value ? value.getFullYear() : -1;
     return (
-      <div className="grid grid-cols-4 gap-2 py-2">
+      <div className="grid grid-cols-3 gap-2 py-2">
         {yearsGrid.map((y, i) => {
           const sel = activeY === y;
           const isEdge = i === 0 || i === 11;
@@ -210,10 +227,10 @@ export default function DatePicker({ name, required, label, onChange, value, cus
               type="button"
               onClick={() => { setViewYear(y); setViewMode('months'); }}
               className={`
-                h-10 rounded-none text-sm font-bold transition-all border-2
-                ${sel ? 'bg-[var(--accent-primary)] text-black border-black shadow-[2px_2px_0_0_#000]' : ''}
-                ${!sel && isEdge ? 'text-gray-400 bg-gray-100 font-normal border-transparent hover:bg-[#fde047] hover:border-black' : ''}
-                ${!sel && !isEdge ? 'text-black border-transparent hover:bg-[#fde047] hover:border-black' : ''}
+                h-12 rounded-lg text-[13px] font-bold transition-all border
+                ${sel ? 'bg-green-600 text-white border-transparent shadow-sm shadow-green-100' : ''}
+                ${!sel && isEdge ? 'text-gray-300 bg-gray-50 border-transparent hover:bg-gray-100' : ''}
+                ${!sel && !isEdge ? 'text-gray-600 border-gray-50 hover:bg-gray-50' : ''}
               `}
             >
               {y}
@@ -227,27 +244,27 @@ export default function DatePicker({ name, required, label, onChange, value, cus
   return (
     <div ref={ref} className="relative">
       {label && (
-        <label className="block text-xs font-black text-black mb-1.5 uppercase tracking-wide">{label}</label>
+        <label className="block text-[12px] font-semibold text-gray-500 mb-1.5 ml-1">{label}</label>
       )}
       <input type="hidden" name={name} value={valueStr} required={required} />
 
       {customTrigger ? customTrigger(() => setOpen(o => !o)) : (
         <div
           onClick={() => setOpen(o => !o)}
-          className="w-full bg-white border-[3px] border-black rounded-none px-3 py-1.5 text-sm cursor-pointer flex items-center justify-between shadow-[2px_2px_0_0_#000] hover:-translate-y-[1px] hover:-translate-x-[1px] hover:shadow-[2.5px_2.5px_0_0_#000] transition-all"
+          className="w-full h-11 bg-white border border-gray-100 rounded-lg px-4 text-sm cursor-pointer flex items-center justify-between shadow-sm transition-all hover:border-green-500 group"
         >
-          <span className={`font-bold ${formatted ? 'text-black' : 'text-gray-400'}`}>
+          <span className={`font-semibold ${formatted ? 'text-gray-800' : 'text-gray-300'}`}>
             {formatted || 'Pilih tanggal...'}
           </span>
-          <Calendar size={14} strokeWidth={2.5} className="text-black" />
+          <Calendar size={18} className="text-gray-300 group-hover:text-green-500 transition-colors" />
         </div>
       )}
 
       {open && (
-        <div className={`absolute z-50 mt-2 bg-white border-[3px] border-black rounded-none shadow-[2.5px_2.5px_0_0_#000] p-3 w-[268px] font-sans ${popupAlign === 'right' ? 'right-0' : 'left-0'}`}>
+        <div className={`absolute z-[200] mt-3 bg-white border border-gray-100 rounded-xl shadow-md p-4 w-[280px] animate-in fade-in zoom-in-95 duration-200 ${popupAlign === 'right' ? 'right-0' : 'left-0'}`}>
           {/* Header */}
-          <div className="flex items-center justify-between mb-3 border-b-[3px] border-black pb-2">
-            <button type="button" onClick={prevView} className="w-8 h-8 border-[2px] border-black rounded-none bg-white hover:bg-[#fde047] text-black font-black transition-all leading-none flex items-center justify-center shadow-[2px_2px_0_0_#000] active:shadow-none active:translate-y-[2px] active:translate-x-[2px]">
+          <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-50">
+            <button type="button" onClick={prevView} className="w-9 h-9 rounded-lg bg-gray-50 text-gray-500 hover:bg-green-50 hover:text-green-600 transition-all flex items-center justify-center font-bold">
               ‹
             </button>
             <button 
@@ -256,14 +273,14 @@ export default function DatePicker({ name, required, label, onChange, value, cus
                 if (viewMode === 'days') setViewMode('months');
                 else if (viewMode === 'months') setViewMode('years');
               }}
-              className="text-[13px] font-black text-black hover:bg-[#fde047] px-3 py-1.5 transition-all border-2 border-transparent hover:border-black uppercase tracking-tight"
+              className="text-[13px] font-bold text-gray-800 hover:text-green-600 transition-all px-2"
               disabled={viewMode === 'years'}
             >
               {viewMode === 'days' && `${MONTHS_ID[viewMonth]} ${viewYear}`}
               {viewMode === 'months' && `${viewYear}`}
               {viewMode === 'years' && `${startDecade}-${startDecade + 9}`}
             </button>
-            <button type="button" onClick={nextView} className="w-8 h-8 border-[2px] border-black rounded-none bg-white hover:bg-[#fde047] text-black font-black transition-all leading-none flex items-center justify-center shadow-[2px_2px_0_0_#000] active:shadow-none active:translate-y-[2px] active:translate-x-[2px]">
+            <button type="button" onClick={nextView} className="w-9 h-9 rounded-lg bg-gray-50 text-gray-500 hover:bg-green-50 hover:text-green-600 transition-all flex items-center justify-center font-bold">
               ›
             </button>
           </div>
@@ -279,6 +296,10 @@ export default function DatePicker({ name, required, label, onChange, value, cus
     </div>
   );
 }
+
+
+
+
 
 
 

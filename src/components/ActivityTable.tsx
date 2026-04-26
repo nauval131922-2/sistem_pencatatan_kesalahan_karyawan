@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Search, History, Clock, X, Cpu, User as UserIcon, Calendar as CalendarIcon, Database, Info, Loader2 } from 'lucide-react';
 import { formatLastUpdate } from '@/lib/date-utils';
 import { getLiveRecord } from '@/lib/actions';
-
+import TableFooter from '@/components/TableFooter';
 export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
   const [search, setSearch] = useState('');
   const [visibleCount, setVisibleCount] = useState(50);
@@ -46,17 +46,26 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
     }
   }, [selectedLog]);
 
-  // filteredLogs must be declared BEFORE useEffect that depends on it
+  // Filter logs based on search term
   const filteredLogs = useMemo(() => {
-    const term = search.toLowerCase();
-    if (!term) return initialLogs;
-    return initialLogs.filter(log => (
-      (log.action_type || '').toLowerCase().includes(term) ||
-      (log.table_name || '').toLowerCase().includes(term) ||
-      (log.message || '').toLowerCase().includes(term) ||
-      (log.recorded_by || '').toLowerCase().includes(term) ||
-      (log.raw_data || '').toLowerCase().includes(term)
-    ));
+    const term = (search || '').toLowerCase().trim();
+    const logs = Array.isArray(initialLogs) ? initialLogs : [];
+    if (!term) return logs;
+    
+    return logs.filter(log => {
+      if (!log) return false;
+      const msg = String(log.message || '').toLowerCase();
+      const action = String(log.action_type || '').toLowerCase();
+      const table = String(log.table_name || '').toLowerCase();
+      const user = String(log.recorded_by || '').toLowerCase();
+      const raw = String(log.raw_data || '').toLowerCase();
+      
+      return msg.includes(term) || 
+             action.includes(term) || 
+             table.includes(term) || 
+             user.includes(term) ||
+             raw.includes(term);
+    });
   }, [initialLogs, search]);
 
   const displayedLogs = filteredLogs.slice(0, visibleCount);
@@ -134,7 +143,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-4 w-full animate-in fade-in duration-500">
+    <div className="flex-1 min-h-0 flex flex-col gap-3 w-full animate-in fade-in duration-500">
       <div className="flex flex-col gap-4 shrink-0">
         <div className="flex items-center px-1">
           <div className="flex items-center gap-3">
@@ -142,11 +151,11 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
               <History size={18} className="text-green-600" />
               <span>Aktivitas Terkini</span>
             </h3>
-            {filteredLogs.length !== initialLogs.length && (
+            {search && (
               <div className="flex items-center gap-3">
-                <span className="text-black/20 text-xs mx-1">|</span>
-                <span className="text-[10px] bg-[#fde047] text-black px-2.5 py-1 rounded-none font-black uppercase tracking-wider border-2 border-black shadow-[2px_2px_0_0_#000] animate-in fade-in zoom-in-95">
-                  {filteredLogs.length} HASIL
+                <span className="text-gray-200 text-xs mx-1">|</span>
+                <span className="text-[10px] bg-green-50 text-green-700 px-2.5 py-1 rounded-full font-bold tracking-wide border border-green-100">
+                  {filteredLogs.length} hasil untuk "{search}"
                 </span>
               </div>
             )}
@@ -160,12 +169,13 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cari menu, user, atau keterangan..."
-            className="w-full pl-12 pr-4 h-12 bg-white border-[3px] border-black rounded-none focus:outline-none transition-transform text-[13px] font-bold placeholder:text-gray-400 shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[2.5px_2.5px_0_0_#000]"
+            className="w-full pl-12 pr-4 h-11 bg-white border border-gray-100 rounded-[12px] focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-[13px] font-medium placeholder:text-gray-400 shadow-sm"
           />
         </div>
       </div>
 
-      <div className="bg-[var(--bg-surface)] rounded-none border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] overflow-hidden flex-1 flex flex-col relative">
+      <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
+        <div className="bg-white rounded-[12px] border border-gray-100 shadow-sm overflow-hidden flex-1 flex flex-col relative">
         <div className="overflow-auto flex-1 p-2">
           {filteredLogs.length === 0 ? (
             <div className="p-8 flex items-center justify-center text-gray-400 text-[13px] font-bold">
@@ -177,12 +187,12 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                 <div 
                   key={log.id} 
                   onClick={() => setSelectedLog(log)}
-                  className="group flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-none border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] hover:shadow-[2.5px_2.5px_0_0_#000] bg-white transition-all cursor-pointer"
+                  className="group flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-[12px] border border-gray-50 hover:border-green-100 hover:bg-green-50/10 bg-white transition-all cursor-pointer"
                 >
                   
                   <div className="flex gap-4 items-start min-w-0">
                     <div className="shrink-0 mt-1">
-                      <span className={`inline-flex items-center justify-center px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-none border-2 border-black shadow-[2px_2px_0_0_#000] ${getActionColor(log.action_type)}`}>
+                      <span className={`inline-flex items-center justify-center px-2.5 py-1 text-[10px] font-bold tracking-wide rounded-full border ${getActionColor(log.action_type)}`}>
                         {log.action_type}
                       </span>
                     </div>
@@ -203,9 +213,9 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                            </>
                         )}
                         <span className="w-1.5 h-1.5 bg-black/20 shrink-0"></span>
-                        <span className="flex items-center gap-1.5 text-black/50">
-                           Oleh: <span className="font-black text-black">@{log.recorded_by || 'system'}</span>
-                        </span>
+                         <span className="flex items-center gap-1.5 text-gray-400">
+                           Oleh: <span className="font-bold text-gray-700">@{log.recorded_by || 'system'}</span>
+                         </span>
                       </div>
                       {/* Snapshot match hints */}
                       {(() => {
@@ -213,26 +223,26 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                         if (matches.length === 0) return null;
                         return (
                           <div className="flex flex-wrap gap-1.5 mt-1">
-                            <span className="text-[10px] font-bold text-violet-500 uppercase tracking-wider self-center">Snapshot:</span>
-                            {matches.map(({ key, value }) => (
-                              <span key={key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-none bg-violet-50 border-2 border-black text-[10px] font-black text-violet-700 max-w-[280px] shadow-[2px_2px_0_0_#000]">
-                                <span className="font-extrabold shrink-0">{key}</span>
-                                <span className="text-violet-400 shrink-0">:</span>
-                                <span className="truncate">{value.length > 45 ? value.slice(0, 45) + '…' : value}</span>
-                              </span>
-                            ))}
+                            <span className="text-[10px] font-bold text-violet-500 tracking-wide self-center">Snapshot:</span>
+                             {matches.map(({ key, value }) => (
+                               <span key={key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-50 text-[10px] font-bold text-violet-700 max-w-[280px] border border-violet-100">
+                                 <span className="font-extrabold shrink-0">{key}</span>
+                                 <span className="text-violet-300 shrink-0">:</span>
+                                 <span className="truncate">{value.length > 45 ? value.slice(0, 45) + '…' : value}</span>
+                               </span>
+                             ))}
                           </div>
                         );
                       })()}
                     </div>
                   </div>
 
-                  <div className="shrink-0 flex items-center gap-3">
-                    <button className="opacity-0 group-hover:opacity-100 px-3 py-1 text-[11px] font-black text-black border-2 border-black bg-[#fde047] hover:bg-[var(--accent-primary)] hover:text-white rounded-none shadow-[2px_2px_0_0_#000] transition-all leading-none">
+                   <div className="shrink-0 flex items-center gap-3">
+                    <button className="opacity-0 group-hover:opacity-100 px-3 py-1 text-[11px] font-bold text-green-600 hover:text-green-700 hover:bg-green-50 rounded-full transition-all leading-none">
                       Detail
                     </button>
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-black bg-white px-3 py-1.5 rounded-none border-[2px] border-black shadow-[2px_2px_0_0_#000]">
-                       <Clock size={12} className="text-black" strokeWidth={3} />
+                    <div className="flex items-center gap-2 text-[11px] font-bold text-gray-400 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
+                       <Clock size={12} className="text-gray-300" />
                        {formatLastUpdate(log.created_at)}
                     </div>
                   </div>
@@ -250,84 +260,74 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="flex items-center justify-between shrink-0 px-1">
-        <span className="text-[12px] leading-none font-black text-black/50">
-          {initialLogs.length === 0
-            ? 'Belum ada aktivitas'
-            : `Menampilkan ${Math.min(visibleCount, filteredLogs.length)} dari ${filteredLogs.length} total aktivitas`}
-        </span>
-        {loadTime !== null && (
-          <span className={`text-[10px] px-2 py-0.5 rounded-none font-black flex items-center gap-1.5 shadow-[2px_2px_0_0_#000] border-[2px] border-black uppercase tracking-tight ${
-            loadTime < 300 ? 'bg-[#93c5fd] text-black' : 
-            loadTime < 1000 ? 'bg-[#fde047] text-black' : 
-            'bg-[#ff5e5e] text-white'
-          }`}>
-            <span className="animate-pulse">⚡</span>
-            <span className="leading-none">{(loadTime / 1000).toFixed(2)}S</span>
-          </span>
-        )}
+        <TableFooter 
+          totalCount={filteredLogs.length}
+          currentCount={Math.min(visibleCount, filteredLogs.length)}
+          label="Aktivitas"
+          selectedCount={0}
+          loadTime={loadTime}
+        />
       </div>
 
       {selectedLog && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-none animate-in fade-in duration-200">
           <div
-            className="bg-white rounded-none shadow-[3.5px_3.5px_0_0_#000] border-[4px] border-black w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]"
+            className="bg-white rounded-2xl shadow-md shadow-green-900/10 border border-gray-100 w-full max-w-4xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b-[3px] border-black bg-[#fde047]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-white">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-none bg-white border-2 border-black shadow-[2px_2px_0_0_#000] flex items-center justify-center text-black">
-                  <Cpu size={20} strokeWidth={2.5} />
+                <div className="w-10 h-10 rounded-[12px] bg-green-50 flex items-center justify-center text-green-600">
+                  <Cpu size={20} />
                 </div>
                 <div>
-                  <h4 className="text-lg font-black text-black tracking-wide">Detail Log Aktivitas</h4>
-                  <p className="text-[11px] text-black/60 font-black">Informasi audit sistem & sinkronisasi data real-time</p>
+                  <h4 className="text-lg font-bold text-gray-800">Detail Log Aktivitas</h4>
+                  <p className="text-[11px] text-gray-400 font-bold">Informasi audit sistem & sinkronisasi data</p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
-                className="w-10 h-10 bg-white border-2 border-black rounded-none shadow-[2px_2px_0_0_#000] flex items-center justify-center hover:bg-[#fde047] hover:translate-y-[-1px] hover:translate-x-[-1px] hover:shadow-[2px_2px_0_0_#000] transition-all text-black active:translate-y-[2px] active:translate-x-[2px] active:shadow-none"
+                className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all text-gray-400"
               >
-                <X size={20} strokeWidth={3} />
+                <X size={20} />
               </button>
             </div>
 
             <div className="p-6 overflow-y-auto custom-scrollbar bg-white flex-1">
-              {/* Top Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-[#fde047] rounded-none p-3 border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000]">
+              {/* Top Summary Cards */}               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-gray-50 rounded-[12px] p-3 border border-gray-100">
                   <div className="flex items-center gap-2 mb-1">
-                    <UserIcon size={14} className="text-black" strokeWidth={3} />
-                    <span className="text-[10px] text-black font-black tracking-wider">Pelaku (recorded_by)</span>
+                    <UserIcon size={14} className="text-gray-400" />
+                    <span className="text-[10px] text-gray-400 font-bold tracking-wide">Pelaku</span>
                   </div>
-                  <p className="text-sm font-black text-black">{selectedLog.recorded_by || 'System'}</p>
+                  <p className="text-sm font-bold text-gray-700">{selectedLog.recorded_by || 'System'}</p>
                 </div>
-                <div className="bg-slate-50 rounded-none p-3 border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000]">
+                <div className="bg-gray-50 rounded-[12px] p-3 border border-gray-100">
                   <div className="flex items-center gap-2 mb-1">
-                    <CalendarIcon size={14} className="text-black" />
-                    <span className="text-[10px] text-black font-black tracking-wider">Waktu Kejadian</span>
+                    <CalendarIcon size={14} className="text-gray-400" />
+                    <span className="text-[10px] text-gray-400 font-bold tracking-wide">Waktu</span>
                   </div>
-                  <p className="text-sm font-black text-black">{formatLastUpdate(selectedLog.created_at)}</p>
+                  <p className="text-sm font-bold text-gray-700">{formatLastUpdate(selectedLog.created_at)}</p>
                 </div>
-                <div className="bg-indigo-50 rounded-none p-3 border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000]">
+                <div className="bg-gray-50 rounded-[12px] p-3 border border-gray-100">
                   <div className="flex items-center gap-2 mb-1">
-                    <Database size={14} className="text-black" />
-                    <span className="text-[10px] text-black font-black tracking-wider">Target Tabel & ID</span>
+                    <Database size={14} className="text-gray-400" />
+                    <span className="text-[10px] text-gray-400 font-bold tracking-wide">Target</span>
                   </div>
-                  <p className="text-sm font-black text-black flex items-center gap-2">
-                    <span className="bg-indigo-100 px-1.5 py-0.5 rounded text-[11px] uppercase">{selectedLog.table_name}</span>
+                  <p className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                    <span className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded text-[11px] uppercase">{selectedLog.table_name}</span>
                     <span>#{selectedLog.record_id}</span>
                   </p>
                 </div>
               </div>
+
 
               <div className="mb-6">
                  <div className="flex items-center gap-2 mb-2">
                     <Info size={16} className="text-amber-500" />
                     <span className="text-xs font-bold text-slate-500">Keterangan Aktivitas</span>
                   </div>
-                  <div className="p-4 bg-[#fde047] border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] rounded-none text-sm text-black leading-relaxed font-black">
+                  <div className="p-4 bg-gray-50 border border-gray-100 rounded-[12px] text-sm text-gray-700 leading-relaxed font-medium">
                     {selectedLog.message}
                   </div>
               </div>
@@ -342,17 +342,17 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                         <span className="text-xs font-bold text-slate-500">Snapshot Log (Data Saat Kejadian)</span>
                       </div>
                     </div>
-                    <div className="bg-white rounded-none overflow-hidden border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000]">
-                      <div className="px-4 py-2 bg-slate-100 border-b-[2px] border-black flex items-center justify-between">
-                        <span className="text-[10px] font-mono text-slate-500 font-bold">audit_snapshot.json</span>
+                    <div className="bg-white rounded-[12px] overflow-hidden border border-gray-100 shadow-sm">
+                      <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-gray-400 font-bold tracking-wide">audit_snapshot.json</span>
                         <div className="flex gap-1.5">
-                          <div className="w-2 h-2 bg-[#ff5e5e] border border-black shadow-[1px_1px_0_0_#000]" />
-                          <div className="w-2 h-2 bg-[#fde047] border border-black shadow-[1px_1px_0_0_#000]" />
-                          <div className="w-2 h-2 bg-green-500 border border-black shadow-[1px_1px_0_0_#000]" />
+                          <div className="w-2 h-2 bg-gray-200 rounded-full" />
+                          <div className="w-2 h-2 bg-gray-200 rounded-full" />
+                          <div className="w-2 h-2 bg-gray-200 rounded-full" />
                         </div>
                       </div>
                       <div className="p-4 max-h-[350px] overflow-y-auto custom-scrollbar">
-                        <pre className="text-[11px] font-mono text-green-700 whitespace-pre-wrap break-all leading-tight font-bold">
+                        <pre className="text-[11px] font-mono text-gray-600 whitespace-pre-wrap break-all leading-tight">
                           {(() => {
                             try {
                               const raw = JSON.parse(selectedLog.raw_data);
@@ -375,13 +375,13 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                       </div>
                       {isLoadingLive && <span className="text-[10px] text-green-600 font-bold animate-pulse">MEMUAT...</span>}
                     </div>
-                    <div className="bg-white rounded-none overflow-hidden border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000]">
-                      <div className="px-4 py-2 bg-slate-100 border-b-[2px] border-black flex items-center justify-between">
-                        <span className="text-[10px] font-mono text-slate-500 font-bold">current_db_state.json</span>
+                    <div className="bg-white rounded-[12px] overflow-hidden border border-gray-100 shadow-sm">
+                      <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-gray-400 font-bold tracking-wide">current_db_state.json</span>
                         {liveData ? (
-                          <span className="text-[9px] font-black text-green-600 bg-green-100 px-1.5 py-0.5 border border-green-600 shadow-[1px_1px_0_0_#000]">TERKONEKSI</span>
+                          <span className="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">TERKONEKSI</span>
                         ) : !isLoadingLive && (
-                          <span className="text-[9px] font-black text-red-600 bg-red-100 px-1.5 py-0.5 border border-red-600 shadow-[1px_1px_0_0_#000]">DATA DIHAPUS</span>
+                          <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded border border-red-100">DATA DIHAPUS</span>
                         )}
                       </div>
                       <div className="p-4 max-h-[350px] overflow-y-auto custom-scrollbar">
@@ -391,7 +391,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
                             <p className="text-[10px] font-mono text-black">Fetching live record...</p>
                           </div>
                         ) : liveData ? (
-                          <pre className="text-[11px] font-mono text-blue-700 whitespace-pre-wrap break-all leading-tight font-bold">
+                          <pre className="text-[11px] font-mono text-blue-600 whitespace-pre-wrap break-all leading-tight">
                             {JSON.stringify(liveData, null, 2)}
                           </pre>
                         ) : (
@@ -412,7 +412,7 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
             <div className="px-6 py-3 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3">
               <button
                 onClick={() => setSelectedLog(null)}
-                className="px-6 py-2 bg-[#fde047] border-[3px] border-black rounded-none text-sm font-black text-black hover:bg-[var(--accent-primary)] hover:text-white transition-all shadow-[2.5px_2.5px_0_0_#000] hover:shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none"
+                className="px-6 py-2 bg-green-600 rounded-[8px] text-sm font-bold text-white hover:bg-green-700 transition-all shadow-sm shadow-green-200"
               >
                 Tutup Jendela
               </button>
@@ -425,6 +425,9 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
     </div>
   );
 }
+
+
+
 
 
 

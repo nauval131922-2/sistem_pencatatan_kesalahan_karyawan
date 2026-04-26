@@ -35,7 +35,7 @@ export default async function EmployeesPage() {
         description="Data induk karyawan perusahaan."
       />
 
-      <div className="flex-1 min-h-0 flex flex-col gap-6 max-w-4xl mx-auto w-full px-4 md:px-6">
+      <div className="flex-1 min-h-0 flex flex-col gap-6">
         <ExcelUpload />
 
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -51,6 +51,9 @@ export default async function EmployeesPage() {
     </div>
   );
 }
+
+
+
 
 
 

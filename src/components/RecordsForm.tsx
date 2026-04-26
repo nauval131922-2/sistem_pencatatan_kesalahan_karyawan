@@ -105,61 +105,61 @@ function SearchableSelect({
 
   return (
     <div ref={ref} className="relative">
-      {label && <label className="flex items-center gap-1.5 text-[11px] font-black text-black uppercase tracking-[0.15em] mb-2 ml-1">{label}{required && <span className="text-red-500 font-black">*</span>}</label>}
+      {label && <label className="flex items-center gap-1.5 text-[12px] font-semibold text-gray-500 mb-1.5 ml-1">{label}{required && <span className="text-red-500 font-bold">*</span>}</label>}
       <input type="hidden" name={name} value={selected ? String(valueFn(selected)) : ''} />
       <div
-        className={`w-full bg-white border-[3px] border-black rounded-none px-4 h-11 text-sm flex items-center justify-between transition-all text-black shadow-[2px_2px_0_0_#000] ${disabled ? 'opacity-50 cursor-not-allowed shadow-none' : 'cursor-pointer hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[2.5px_2.5px_0_0_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none'}`}
+        className={`w-full bg-white border border-gray-100 rounded-lg px-4 h-11 text-sm flex items-center justify-between transition-all shadow-sm ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-green-500 focus-within:ring-4 focus-within:ring-green-500/5 focus-within:border-green-500'}`}
         onClick={() => { if (!disabled) { setOpen((o) => !o); setQuery(''); } }}
       >
-        <span className={selected ? 'text-black truncate font-black' : 'text-gray-400 font-bold truncate'}>
+        <span className={selected ? 'text-gray-800 truncate font-semibold' : 'text-gray-300 font-medium truncate'}>
           {selected ? displayFn(selected) : placeholder}
         </span>
-        <ChevronDown size={16} strokeWidth={3} className={`text-black transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown size={18} className={`text-gray-300 transition-transform duration-300 ${open ? 'rotate-180 text-green-500' : ''}`} />
       </div>
 
       {open && !disabled && (
-        <div className={`absolute z-[200] w-full bg-white border-[3px] border-black rounded-none shadow-[3.5px_3.5px_0_0_#000] overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${
-          dropdownPos === 'up' ? 'bottom-full mb-4' : 'top-full mt-4'
+        <div className={`absolute z-[200] w-full bg-white border border-gray-100 rounded-xl shadow-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${
+          dropdownPos === 'up' ? 'bottom-full mb-3' : 'top-full mt-3'
         }`}>
-          <div className="p-3 border-b-[3px] border-black bg-[#fde047]">
+          <div className="p-3 border-b border-gray-50 bg-gray-50/50">
             <div className="relative">
-              <Search size={14} strokeWidth={3} className="absolute left-3 top-1/2 -translate-y-1/2 text-black" />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" />
               <input
                 autoFocus
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Cari..."
-                className="w-full pl-9 pr-3 h-10 text-sm border-[2px] border-black rounded-none focus:outline-none bg-white font-bold"
+                className="w-full pl-10 pr-3 h-10 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-green-500 bg-white font-medium"
               />
             </div>
           </div>
-          <ul className="max-h-60 overflow-y-auto custom-scrollbar p-1">
+          <ul className="max-h-60 overflow-y-auto custom-scrollbar p-2">
             {!required && (
               <li
-                className="px-3 py-2 text-[11px] text-gray-500 hover:bg-gray-100 cursor-pointer italic font-black uppercase tracking-widest border-b border-black/10 mb-1"
+                className="px-3 py-2 text-[11px] text-gray-400 hover:bg-gray-50 rounded-lg cursor-pointer italic font-medium mb-1"
                 onClick={() => handleSelect(null)}
               >
                 — Kosongkan pilihan
               </li>
             )}
             {isLoading ? (
-              <li className="px-3 py-10 text-xs text-black flex flex-col items-center justify-center gap-3">
-                <Loader2 size={24} strokeWidth={3} className="animate-spin text-black" />
-                <span className="font-black uppercase tracking-widest">Memuat data...</span>
+              <li className="px-3 py-10 text-xs text-gray-400 flex flex-col items-center justify-center gap-3">
+                <Loader2 size={24} className="animate-spin text-green-500" />
+                <span className="font-medium">Memuat data...</span>
               </li>
             ) : filtered.length === 0 ? (
-              <li className="px-3 py-8 text-xs text-black italic text-center font-bold uppercase tracking-wide">
+              <li className="px-3 py-8 text-xs text-gray-400 italic text-center font-medium">
                 {noOptionsMessage || 'Tidak ada hasil'}
               </li>
             ) : (
               filtered.map((o, i) => (
                 <li
                   key={i}
-                  className={`px-4 py-3 text-sm cursor-pointer rounded-none transition-all mb-1 last:mb-0 border-2 border-transparent ${
+                  className={`px-4 py-3 text-sm cursor-pointer rounded-lg transition-all mb-1 last:mb-0 border border-transparent ${
                     selected && valueFn(selected) === valueFn(o) 
-                      ? 'bg-[#fde047] text-black border-black font-black shadow-[2px_2px_0_0_#000]' 
-                      : 'text-black font-bold hover:bg-black hover:text-white'
+                      ? 'bg-green-50 text-green-600 border-green-100 font-bold' 
+                      : 'text-gray-600 font-medium hover:bg-gray-50'
                   }`}
                   onClick={() => handleSelect(o)}
                 >
@@ -173,6 +173,7 @@ function SearchableSelect({
     </div>
   );
 }
+
 
 export default function RecordsForm({
   employees,
@@ -611,9 +612,9 @@ export default function RecordsForm({
     finally { setLoading(false); pendingSubmitDataRef.current = null; }
   };
 
-  const inputCls = 'w-full bg-white border-[3px] border-black rounded-none px-4 h-11 text-sm focus:outline-none shadow-[2px_2px_0_0_#000] focus:translate-x-[-1px] focus:translate-y-[-1px] focus:shadow-[2.5px_2.5px_0_0_#000] transition-all text-black font-black placeholder:text-gray-400';
-  const labelCls = 'flex items-center gap-1.5 text-[11px] font-black text-black uppercase tracking-[0.15em] mb-2 ml-1';
-  const sectionHeaderCls = 'flex items-center gap-3 pb-3 border-b-[3px] border-black mb-8 mt-2';
+  const inputCls = 'w-full bg-white border border-gray-100 rounded-lg px-4 h-11 text-sm focus:outline-none focus:ring-4 focus:ring-green-500/5 focus:border-green-500 transition-all text-gray-800 font-semibold placeholder:text-gray-300 shadow-sm';
+  const labelCls = 'flex items-center gap-1.5 text-[12px] font-semibold text-gray-500 mb-1.5 ml-1';
+  const sectionHeaderCls = 'flex items-center gap-3 pb-3 border-b border-gray-50 mb-5 mt-1';
 
   return (
     <div className="w-full pb-10">
@@ -622,18 +623,21 @@ export default function RecordsForm({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           <div className="lg:col-span-5 flex flex-col gap-6">
-            <div className="bg-white rounded-none border-[4px] border-black p-8 shadow-[3.5px_3.5px_0_0_#000]">
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm shadow-green-900/5">
               <div className={sectionHeaderCls}>
-                <div className="w-10 h-10 rounded-none bg-[#fde047] border-[2px] border-black flex items-center justify-center shadow-[2px_2px_0_0_#000]">
-                  <ClipboardList size={20} strokeWidth={2.5} className="text-black" />
+                <div className="w-9 h-9 rounded-lg bg-green-50 text-green-600 flex items-center justify-center shrink-0">
+                  <ClipboardList size={18} />
                 </div>
-                <h3 className="text-lg font-black text-black uppercase tracking-tight">Data Utama</h3>
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-medium text-gray-400">Identitas Data</span>
+                  <h3 className="text-[14px] font-bold text-gray-800 leading-tight">Data Utama</h3>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className={labelCls}>Nomor Faktur</label>
-                  <div className="h-11 px-4 bg-white border-[3px] border-black rounded-none flex items-center text-sm font-black text-black shadow-[3px_3px_0_0_#aaa]">
+                  <div className="h-11 px-4 bg-gray-50/50 border border-gray-100 rounded-lg flex items-center text-sm font-bold text-gray-400">
                     {fakturPreview}
                   </div>
                 </div>
@@ -664,12 +668,15 @@ export default function RecordsForm({
               </div>
             </div>
 
-            <div className="bg-white rounded-none border-[4px] border-black p-8 shadow-[3.5px_3.5px_0_0_#000]">
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm shadow-green-900/5">
               <div className={sectionHeaderCls}>
-                <div className="w-10 h-10 rounded-none bg-[#ff5e5e] border-[2px] border-black flex items-center justify-center shadow-[2px_2px_0_0_#000]">
-                  <ShieldAlert size={20} strokeWidth={2.5} className="text-white" />
+                <div className="w-9 h-9 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                  <ShieldAlert size={18} />
                 </div>
-                <h3 className="text-lg font-black text-black uppercase tracking-tight">Severitas & Detail</h3>
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-medium text-gray-400">Tingkat Bahaya</span>
+                  <h3 className="text-[14px] font-bold text-gray-800 leading-tight">Severitas & Detail</h3>
+                </div>
               </div>
 
               <div className="space-y-6">
@@ -677,18 +684,18 @@ export default function RecordsForm({
                   <label className={labelCls}>Severitas (Tingkat Dampak)</label>
                   <div className="flex flex-wrap gap-3">
                     {[
-                      { label: 'Low', value: 'Low', activeCls: 'bg-[#93c5fd] text-black border-black shadow-[2px_2px_0_0_#000]' },
-                      { label: 'Medium', value: 'Medium', activeCls: 'bg-[#fde047] text-black border-black shadow-[2px_2px_0_0_#000]' },
-                      { label: 'High', value: 'High', activeCls: 'bg-[#ff5e5e] text-white border-black shadow-[2px_2px_0_0_#000]' },
+                      { label: 'Low', value: 'Low', activeCls: 'bg-blue-600 text-white shadow-sm shadow-blue-200' },
+                      { label: 'Medium', value: 'Medium', activeCls: 'bg-amber-500 text-white shadow-sm shadow-amber-200' },
+                      { label: 'High', value: 'High', activeCls: 'bg-red-600 text-white shadow-sm shadow-red-200' },
                     ].map((opt) => (
                       <button
                         key={opt.value}
                         type="button"
                         onClick={() => setSeverity(opt.value)}
-                        className={`px-5 h-11 text-[11px] font-black rounded-none border-[3px] transition-all flex items-center justify-center gap-2 uppercase tracking-widest ${
+                        className={`flex-1 min-w-[80px] px-4 h-9 text-[12px] font-semibold rounded-lg transition-all duration-300 border ${
                           severity === opt.value 
-                            ? `${opt.activeCls} translate-x-[-2px] translate-y-[-2px]` 
-                            : 'bg-white text-black border-gray-200 hover:border-black active:translate-x-[1px] active:translate-y-[1px]'
+                            ? `${opt.activeCls} border-transparent` 
+                            : 'bg-white text-gray-400 border-gray-100 hover:bg-gray-50'
                         }`}
                       >
                         {opt.label}
@@ -712,12 +719,15 @@ export default function RecordsForm({
           </div>
 
           <div className="lg:col-span-7 flex flex-col gap-6">
-            <div className="bg-white rounded-none border-[4px] border-black p-8 shadow-[3.5px_3.5px_0_0_#000] overflow-visible text-black">
+            <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm shadow-green-900/5 overflow-visible text-black">
               <div className={sectionHeaderCls}>
-                <div className="w-10 h-10 rounded-none bg-[#93c5fd] border-[2px] border-black flex items-center justify-center shadow-[2px_2px_0_0_#000]">
-                  <Box size={20} strokeWidth={2.5} className="text-black" />
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                  <Box size={16} />
                 </div>
-                <h3 className="text-lg font-black text-black uppercase tracking-tight">Rincian Beban Biaya</h3>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-medium text-gray-400">Kalkulasi Beban</span>
+                  <h3 className="text-[13px] font-bold text-gray-800 leading-tight">Rincian Beban Biaya</h3>
+                </div>
               </div>
 
               <div className="flex flex-col gap-6">
@@ -736,11 +746,9 @@ export default function RecordsForm({
                       setSelectedOrderFaktur(o.faktur);
                       setSelectedOrderName(o.nama_prd);
                       setDraftOrderFaktur(o.faktur);
-                      // Reset item selection when order changes
                       setSelectedNamaBarang('');
                       setSelectedItemFaktur('');
                       setDraftItemFaktur('');
-                      // Only reset price if NOT in manual mode
                       if (jenisHarga !== 'Input Manual' && jenisBarang !== 'Input Manual') {
                         setHarga('');
                       }
@@ -761,7 +769,7 @@ export default function RecordsForm({
                 <div className="grid grid-cols-1 gap-6">
                   <div className="space-y-1.5">
                     <label className={labelCls}>Kategori Barang</label>
-                    <div className="flex flex-wrap gap-3">
+                    <div className="grid grid-cols-3 gap-1.5">
                       {jenisBarangOptions.map((opt) => (
                         <button
                           key={opt.value}
@@ -784,10 +792,10 @@ export default function RecordsForm({
                               setHarga('');
                             }
                           }}
-                          className={`px-4 py-2 text-[11px] font-black rounded-none border-[3px] transition-all text-center leading-tight h-11 flex items-center justify-center uppercase tracking-widest ${
+                          className={`px-2 py-2 text-[12px] font-semibold rounded-lg transition-all duration-300 h-9 leading-tight border ${
                             jenisBarang === opt.value
-                              ? 'bg-[#fde047] text-black border-black shadow-[2.5px_2.5px_0_0_#000] translate-x-[-2px] translate-y-[-2px]'
-                              : 'bg-white text-black border-gray-200 hover:border-black active:translate-x-[1px] active:translate-y-[1px]'
+                              ? 'bg-green-600 text-white border-transparent shadow-sm shadow-green-100'
+                              : 'bg-white text-gray-400 border-gray-100 hover:bg-gray-50'
                           }`}
                         >
                           {opt.label}
@@ -833,10 +841,10 @@ export default function RecordsForm({
                       />
                     </div>
                   ) : (
-                    <div className="space-y-1.5 opacity-80">
+                    <div className="space-y-1.5">
                       <label className={labelCls}>Nama Barang (Order)</label>
-                      <div className="h-11 px-4 bg-white border-[3px] border-black rounded-none flex items-center text-sm font-black text-black shadow-[3px_3px_0_0_#aaa]">
-                        {hppLoading ? <Loader2 size={16} strokeWidth={3} className="animate-spin mr-2" /> : <Star size={14} strokeWidth={3} className="mr-2" />}
+                      <div className="h-11 px-4 bg-gray-50/50 border border-gray-100 rounded-lg flex items-center text-sm font-bold text-gray-400">
+                        {hppLoading ? <Loader2 size={16} className="animate-spin mr-2" /> : <Star size={16} className="mr-2" />}
                         {selectedOrderName || 'Pilih Order Dulu'}
                       </div>
                     </div>
@@ -844,7 +852,7 @@ export default function RecordsForm({
 
                   <div className="space-y-1.5">
                     <label className={labelCls}>Jenis Dasar Harga</label>
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap gap-2.5">
                       {jenisHargaOptions.map((opt) => (
                         <button
                           key={opt.value}
@@ -856,10 +864,10 @@ export default function RecordsForm({
                               setHarga('');
                             }
                           }}
-                          className={`px-4 py-2 text-[11px] font-black rounded-none border-[3px] transition-all h-11 flex items-center justify-center uppercase tracking-widest ${
+                          className={`px-4 py-2 text-[12px] font-semibold rounded-lg transition-all duration-300 h-10 flex-1 min-w-[120px] border ${
                             jenisHarga === opt.value
-                              ? 'bg-[#93c5fd] text-black border-black shadow-[2.5px_2.5px_0_0_#000] translate-x-[-2px] translate-y-[-2px]'
-                              : 'bg-white text-black border-gray-200 hover:border-black active:translate-x-[1px] active:translate-y-[1px]'
+                              ? 'bg-blue-600 text-white border-transparent shadow-sm shadow-blue-100'
+                              : 'bg-white text-gray-400 border-gray-100 hover:bg-gray-50'
                           }`}
                         >
                           {opt.label}
@@ -893,26 +901,33 @@ export default function RecordsForm({
                           const val = e.target.value.replace(/[^0-9,]/g, '');
                           setHarga(formatNumberIndo(val));
                         }}
-                        className={`${inputCls} ${jenisHarga !== 'Input Manual' ? 'bg-[#f4f4f4] cursor-not-allowed text-gray-500 shadow-none' : ''}`}
+                        className={`${inputCls} ${jenisHarga !== 'Input Manual' ? 'bg-gray-50 cursor-not-allowed text-gray-400' : ''}`}
                         placeholder="0"
                       />
                       {jenisBarang === 'HPP Kalkulasi' && jenisHarga === 'HPP Kalkulasi' && hppKeterangan && (
                         <div className="mt-2 flex items-center gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#fde047] text-black border-[2px] border-black rounded-none text-[10px] font-black uppercase tracking-wider shadow-[2px_2px_0_0_#000]">
+                           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-lg text-[10px] font-medium">
                             <span>📌</span>
                             {hppKeterangan}
                           </span>
                         </div>
                       )}
-
                     </div>
                   </div>
 
-                  <div className="mt-4 p-5 bg-black text-white rounded-none border-[4px] border-black shadow-[6px_6px_0_0_#aaa] flex justify-between items-center">
-                    <span className="text-xs font-black uppercase tracking-[0.2em] text-white/70">Total Estimasi Beban</span>
-                    <span className="text-2xl font-black">
-                      Rp {totalValue.toLocaleString('id-ID')}
-                    </span>
+                  <div className="mt-2 p-4 bg-slate-600 text-white rounded-xl shadow-sm flex justify-between items-center overflow-hidden relative">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                      <Box size={120} strokeWidth={1} />
+                    </div>
+                    <div className="flex flex-col relative z-10">
+                      <span className="text-[10px] font-semibold text-slate-400 mb-1">Total Estimasi Beban</span>
+                      <span className="text-3xl font-extrabold tracking-tight">
+                        Rp {totalValue.toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                    <div className="relative z-10 w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center">
+                      <CheckCircle2 size={24} className="text-green-400" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -922,13 +937,13 @@ export default function RecordsForm({
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 h-14 rounded-none bg-[#fde047] border-[4px] border-black text-black font-black text-sm uppercase tracking-widest shadow-[2.5px_2.5px_0_0_#000] transition-all flex items-center justify-center gap-3 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="flex-[2] h-12 rounded-xl bg-green-600 text-white font-bold text-[13px] shadow-sm shadow-green-100 transition-all flex items-center justify-center gap-2.5 hover:bg-green-700 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed group"
               >
                 {loading ? (
-                  <Loader2 size={18} strokeWidth={3} className="animate-spin" />
+                  <Loader2 size={18} className="animate-spin" />
                 ) : (
                   <>
-                    <CheckCircle2 size={24} strokeWidth={3} className="group-hover:rotate-12 transition-transform" />
+                    <CheckCircle2 size={20} className="group-hover:scale-110 transition-transform" />
                     <span>{editingInfraction ? 'Simpan Perubahan' : 'Catat Kesalahan'}</span>
                   </>
                 )}
@@ -938,7 +953,7 @@ export default function RecordsForm({
                 <button
                   type="button"
                   onClick={onCancelEdit}
-                  className="px-8 h-14 rounded-none bg-white border-[4px] border-black text-black font-black text-sm uppercase tracking-widest shadow-[2.5px_2.5px_0_0_#000] hover:bg-gray-100 transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none"
+                  className="flex-1 h-12 rounded-xl bg-white border border-gray-200 text-gray-400 font-semibold text-[13px] hover:bg-gray-50 transition-all active:translate-y-0 shadow-sm"
                 >
                   Batal
                 </button>
@@ -961,6 +976,9 @@ export default function RecordsForm({
     </div>
   );
 }
+
+
+
 
 
 

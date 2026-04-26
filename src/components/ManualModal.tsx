@@ -320,6 +320,29 @@ export default function ManualModal() {
         'Harga Satuan pada form pencatatan akan otomatis terisi berdasarkan nilai **HPP Kalkulasi** di menu ini.'
       ]
     },
+    '/hasil-produksi': {
+      title: 'Hasil Produksi',
+      icon: BarChart3,
+      description: 'Analisis dan perbandingan laporan operasional produksi — memadukan data Jurnal Harian Produksi dengan data Barang Jadi Gudang dalam satu tampilan terpadu.',
+      steps: [
+        'Klik dropdown **Pilih Order Produksi (SOPd)** di bagian atas untuk memilih order yang ingin dianalisis.',
+        'Ketik nomor SOPd, nama pelanggan, atau nama order pada kotak pencarian di dalam dropdown untuk mempercepat pencarian.',
+        'Setelah memilih order, tiga kartu kontrol akan muncul:',
+        '  • **Target & Sisa**: Menampilkan target kuantitas order dan sisa yang belum tercapai.',
+        '  • **Tren & Progress**: Klik tombol **Tren** untuk membuka grafik produksi harian. Progress bar menunjukkan persentase ketercapaian barang jadi di gudang.',
+        '  • **Tab Tabel**: Pilih antara **Jurnal Produksi** (laporan operator) atau **Barang Jadi** (penerimaan gudang).',
+        'Gunakan filter **Rentang Tanggal** (tanggal mulai & akhir) untuk membatasi periode data yang ditampilkan.',
+        'Tab **Jurnal Produksi**:',
+        '  • Gunakan filter **Bagian** untuk menyaring berdasarkan departemen produksi.',
+        '  • Gunakan filter **Pekerjaan** untuk menyaring berdasarkan jenis pekerjaan spesifik.',
+        '  • Pilih **Pekerjaan** untuk memunculkan baris **Realisasi per Karyawan** dan **Footer Total Realisasi**.',
+        'Tab **Barang Jadi**:',
+        '  • Menampilkan data penerimaan barang ke gudang berdasarkan order yang dipilih.',
+        '  • Footer menampilkan **Total Barang Masuk** secara otomatis.',
+        'Klik tombol **Reset** (ikon panah melingkar berwarna merah) untuk menghapus semua filter sekaligus.'
+      ],
+      tips: 'Pilih filter Pekerjaan terlebih dahulu untuk mendapatkan analisis realisasi yang paling akurat — data akan dikelompokkan per operator dan jenis pekerjaan.'
+    },
     '/records': {
       title: 'Pencatatan Kesalahan',
       icon: AlertCircle,
@@ -380,32 +403,32 @@ export default function ManualModal() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
-            className="relative w-full max-w-lg bg-white rounded-none shadow-[3.5px_3.5px_0_0_#000] border-[4px] border-black overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300"
+            className="relative w-full max-w-2xl bg-white rounded-2xl shadow-md overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300 border border-gray-100"
           >
             {/* Header */}
-            <div className="p-5 border-b-[4px] border-black flex items-center justify-between bg-[#fde047]">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white text-black border-[2px] border-black shadow-[2px_2px_0_0_#000] rounded-none">
-                  <currentGuide.icon size={20} strokeWidth={2.5} />
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-white">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center">
+                  <currentGuide.icon size={24} />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-black mb-0.5">Detail Menu {currentGuide.title}</span>
-                  <h2 id="modal-title" className="text-xl font-black text-black flex items-center gap-2">
-                    Bantuan & Panduan
+                  <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Panduan Sistem</span>
+                  <h2 id="modal-title" className="text-xl font-bold text-gray-800 tracking-tight">
+                    {currentGuide.title}
                   </h2>
                 </div>
               </div>
               <button 
                 onClick={() => setIsOpen(false)}
-                className="w-10 h-10 border-[2px] border-black bg-white rounded-none flex items-center justify-center text-black shadow-[2px_2px_0_0_#000] hover:bg-black hover:text-white transition-all active:translate-y-[2px] active:translate-x-[2px] active:shadow-none"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all"
                 aria-label="Tutup Panduan"
               >
-                <X size={20} strokeWidth={3} />
+                <X size={20} />
               </button>
             </div>
 
             {/* Content Area */}
-            <div className="p-6 space-y-6 overflow-y-auto">
+            <div className="p-8 space-y-8 overflow-y-auto custom-scrollbar">
               {(() => {
                 // Helper to parse **bold** text into strong tags
                 const renderText = (text: string) => {
@@ -413,7 +436,7 @@ export default function ManualModal() {
                   const parts = text.split(/(\*\*.*?\*\*)/g);
                   return parts.map((part, i) => {
                     if (part.startsWith('**') && part.endsWith('**')) {
-                      return <strong key={i} className="font-bold text-slate-900">{part.slice(2, -2)}</strong>;
+                      return <strong key={i} className="font-bold text-gray-900">{part.slice(2, -2)}</strong>;
                     }
                     return part;
                   });
@@ -423,49 +446,58 @@ export default function ManualModal() {
                   <>
                     {/* Description / Kegunaan */}
                     {currentGuide.description && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-[12px] text-black/40 font-black tracking-tighter">
-                          <Database size={14} strokeWidth={3} />
-                          <span>Kegunaan Menu:</span>
+                      <div className="p-5 bg-gray-50 rounded-xl border border-gray-100">
+                        <div className="flex items-center gap-2 text-[11px] text-gray-400 font-bold uppercase tracking-widest mb-2">
+                          <Database size={14} />
+                          <span>Kegunaan Menu</span>
                         </div>
-                        <p className="text-[12px] text-black/40 font-black tracking-tighter leading-tight max-w-2xl">
+                        <p className="text-[14px] text-gray-600 font-medium leading-relaxed">
                           {renderText(currentGuide.description)}
                         </p>
                       </div>
                     )}
 
                     {/* Steps / Cara Penggunaan */}
-                    <div className="space-y-3.5 pl-1">
-                      {currentGuide.steps.map((step, index) => {
-                        const isHeader = step.endsWith(':') && (step.startsWith('Tab ') || step.startsWith('A. ') || step.startsWith('B. ') || step.startsWith('C. '));
-                        const isSubStep = step.trimStart().startsWith('•') || step.startsWith('  ');
-                        const cleanText = isSubStep ? step.trimStart().replace(/^[•\s]+/, '') : step;
-                        
-                        return (
-                          <div key={index} className={`flex ${isHeader ? 'mt-4 first:mt-0' : 'gap-3'} ${isSubStep ? 'pl-8 py-0.5' : 'pl-2'} group items-start`}>
-                            {isHeader ? null : isSubStep ? (
-                              <div className="flex-shrink-0 w-1.5 h-1.5 mt-2 rounded-none border-[1.5px] border-black bg-white" />
-                            ) : (
-                              <div className="flex-shrink-0 w-2.5 h-2.5 mt-1.5 rounded-none border-[2px] border-black bg-[var(--accent-primary)] group-hover:scale-125 transition-all shadow-[1px_1px_0_0_#000]" />
-                            )}
-                            <p className={`text-sm leading-relaxed ${
-                              isHeader ? 'font-black text-black text-xs underline underline-offset-4 decoration-[2px]' : 
-                              isSubStep ? 'text-gray-700 text-[13px] font-bold' : 'text-black font-bold'
-                            }`}>
-                              {renderText(cleanText)}
-                            </p>
-                          </div>
-                        );
-                      })}
+                    <div className="space-y-4">
+                      {(() => {
+                        let stepCounter = 0;
+                        return currentGuide.steps.map((step, index) => {
+                          const isHeader = step.endsWith(':') && (step.startsWith('Tab ') || step.startsWith('A. ') || step.startsWith('B. ') || step.startsWith('C. '));
+                          const isSubStep = step.trimStart().startsWith('•') || step.startsWith('  ');
+                          const cleanText = isSubStep ? step.trimStart().replace(/^[•\s]+/, '') : step;
+                          
+                          if (!isHeader && !isSubStep) {
+                            stepCounter++;
+                          }
+                          
+                          return (
+                            <div key={index} className={`flex ${isHeader ? 'mt-8 first:mt-0 mb-4' : 'gap-4'} ${isSubStep ? 'pl-10' : 'pl-2'} group items-start`}>
+                              {isHeader ? null : isSubStep ? (
+                                <div className="flex-shrink-0 w-1.5 h-1.5 mt-2 rounded-full bg-gray-300" />
+                              ) : (
+                                <div className="flex-shrink-0 w-6 h-6 rounded-lg bg-green-100 text-green-600 flex items-center justify-center text-[11px] font-bold shadow-sm">
+                                  {stepCounter}
+                                </div>
+                              )}
+                              <p className={`text-[14px] leading-relaxed ${
+                                isHeader ? 'font-bold text-gray-800 text-sm border-b-2 border-green-100 pb-1' : 
+                                isSubStep ? 'text-gray-500 font-medium' : 'text-gray-700 font-medium'
+                              }`}>
+                                {renderText(cleanText)}
+                              </p>
+                            </div>
+                          );
+                        });
+                      })()}
                     </div>
 
                     {(currentGuide as any).tips && (
-                      <div className="p-4 bg-[var(--accent-primary)] border-[3px] border-black rounded-none flex gap-3 shadow-[2.5px_2.5px_0_0_#000]">
-                        <Info size={20} className="text-white shrink-0 mt-0.5" strokeWidth={2.5} />
+                      <div className="p-5 bg-green-600 rounded-xl flex gap-4 shadow-sm shadow-green-200">
+                        <Info size={24} className="text-white shrink-0" />
                         <div>
-                          <p className="text-[11px] font-black text-white mb-1">Tips Berguna:</p>
-                          <p className="text-sm font-bold text-white leading-relaxed">
-                            "{renderText((currentGuide as any).tips)}"
+                          <p className="text-[11px] font-bold text-green-100 uppercase tracking-widest mb-1">Tips Berguna</p>
+                          <p className="text-[14px] font-bold text-white leading-relaxed">
+                            {renderText((currentGuide as any).tips)}
                           </p>
                         </div>
                       </div>
@@ -476,8 +508,8 @@ export default function ManualModal() {
             </div>
 
             {/* Footer */}
-            <div className="p-4 bg-[var(--bg-deep)] border-t-[4px] border-black flex items-center justify-center">
-              <p className="text-[11px] font-bold text-black">Panduan Penggunaan SINTAK</p>
+            <div className="p-6 bg-gray-50 border-t border-gray-100 flex items-center justify-center">
+              <p className="text-[12px] font-bold text-gray-400">SINTAK &copy; PT. Buya Barokah</p>
             </div>
           </div>
         </div>
@@ -485,8 +517,6 @@ export default function ManualModal() {
     </>
   );
 }
-
-
 
 
 

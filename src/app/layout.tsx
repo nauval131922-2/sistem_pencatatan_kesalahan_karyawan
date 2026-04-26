@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 import MainContentWrapper from "@/components/MainContentWrapper";
 import ManualModal from "@/components/ManualModal";
@@ -10,15 +10,11 @@ import { Analytics } from "@vercel/analytics/react";
 import { getSession } from "@/lib/session";
 import { getRolePermissions } from "@/lib/permissions";
 
-const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"] });
+const outfit = Outfit({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "SINTAK | Dashboard",
   description: "SINTAK - Sistem Informasi Cetak - Divisi Percetakan PT Buya Barokah",
-  icons: {
-    icon: "/icon.png",
-    apple: "/icon.png",
-  },
 };
 
 export default async function RootLayout({
@@ -55,7 +51,7 @@ export default async function RootLayout({
 
   return (
     <html lang="id">
-      <body className={jakarta.className}>
+      <body className={outfit.className}>
         <MainContentWrapper user={user} permissions={permissions}>
           {children}
         </MainContentWrapper>
@@ -67,6 +63,9 @@ export default async function RootLayout({
     </html>
   );
 }
+
+
+
 
 
 

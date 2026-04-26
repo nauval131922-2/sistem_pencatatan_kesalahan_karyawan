@@ -36,15 +36,16 @@ npm -v
 
 ---
 
-## 📌 Bagian 3: Sistem Desain (Neobrutalism)
-SINTAK ERP menggunakan identitas visual **Neobrutalism** untuk memberikan kesan taktil, berani, dan fungsional.
+## 📌 Bagian 3: Sistem Desain (Modern Premium)
+SINTAK ERP kini menggunakan identitas visual **Modern Premium** (evolusi dari Neobrutalism) yang mengedepankan keterbacaan, kebersihan antarmuka, dan kesan mewah.
 
 **Aturan Utama:**
-1. **Geometry**: Gunakan `rounded-none` pada semua elemen (Button, Card, Input, Modal).
-2. **Border**: Gunakan border hitam solid minimal `3px` (atau `border-black border-[3px]`).
-3. **Shadow**: Gunakan shadow solid tanpa blur dengan offset kaku (contoh: `shadow-[4px_4px_0_0_#000]`).
-4. **Warna**: Aksen utama menggunakan Mechanical Yellow (`#fde047`) dan aksen bahaya menggunakan Red Neo (`#ff5e5e`).
-5. **Tipografi**: Label utama, judul, dan tombol wajib menggunakan `uppercase` dan `font-black`.
+1. **Geometry**: Gunakan **`rounded-xl`** (12px) atau **`rounded-2xl`** (16px) pada elemen utama seperti Button, Card, Input, dan Modal. Hindari sudut tajam.
+2. **Typography (No All-Caps Policy)**: Dilarang menggunakan `uppercase` secara paksa pada label, tombol, atau judul profil. Gunakan **Sentence Case** agar teks lebih ramah dan mudah dibaca.
+3. **Shadow**: Gunakan shadow halus dengan intensitas rendah (contoh: `shadow-md shadow-emerald-900/5`).
+4. **Warna**: Aksen utama menggunakan **Emerald 600** (`#059669`) untuk elemen positif/tambah data dan **Rose 600** untuk elemen bahaya/hapus.
+5. **Layout**: Halaman manajemen data wajib menggunakan **Full Width** tanpa pembatas kontainer sempit (`max-w-5xl`).
+6. **Spacing**: Gunakan **gap-3** atau **gap-5** sebagai standar jarak vertikal antar elemen pencarian dan tabel.
 
 ---
 
@@ -166,7 +167,9 @@ sintak_pt_buya_barokah/
     ├── components/
     │   ├── Sidebar.tsx
     │   ├── PageHeader.tsx
-    │   └── DataTable.tsx
+    │   ├── DataTable.tsx
+    │   ├── SearchAndReload.tsx
+    │   └── TableFooter.tsx
     └── lib/
         ├── db.ts
         ├── schema.ts
@@ -263,7 +266,7 @@ export async function initSchema(db: any) {
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL,
       name TEXT NOT NULL,
-      role TEXT DEFAULT 'Admin',
+      role TEXT DEFAULT 'Super Admin',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`,
     `CREATE TABLE IF NOT EXISTS app_roles (
@@ -304,10 +307,10 @@ export async function initSchema(db: any) {
     const executor = db.client || db;
     const res = await executor.execute("SELECT COUNT(*) as c FROM app_roles");
     if (res.rows[0].c === 0) {
-      await executor.execute("INSERT INTO app_roles (role_name) VALUES ('Admin');");
+      await executor.execute("INSERT INTO app_roles (role_name) VALUES ('Super Admin');");
       await db.batch([
-        "INSERT INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'dashboard', 1);",
-        "INSERT INTO role_permissions (role, module_key, can_access) VALUES ('Admin', 'master_pekerjaan', 1);"
+        "INSERT INTO role_permissions (role, module_key, can_access) VALUES ('Super Admin', 'dashboard', 1);",
+        "INSERT INTO role_permissions (role, module_key, can_access) VALUES ('Super Admin', 'master_pekerjaan', 1);"
       ], "write");
     }
   } catch(e) {}

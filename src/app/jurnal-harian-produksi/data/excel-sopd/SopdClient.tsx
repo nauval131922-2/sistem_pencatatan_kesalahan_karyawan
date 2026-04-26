@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { Search, Loader2, AlertCircle, ChevronLeft, ChevronRight, RefreshCw, Calculator, Pencil, Check, X, Calendar } from 'lucide-react';
+import { Search, Loader2, AlertCircle, ChevronLeft, ChevronRight, RefreshCw, ClipboardList, Pencil, Check, X, Calendar } from 'lucide-react';
 import ImportInfo from '@/components/ImportInfo';
 import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
 import { useTableSelection } from '@/lib/hooks/useTableSelection';
 import SopdExcelUpload from './SopdExcelUpload';
 import DatePicker from '@/components/DatePicker';
+import TableTitle from '@/components/TableTitle';
 import SearchAndReload from '@/components/SearchAndReload';
 import TableFooter from '@/components/TableFooter';
 
@@ -60,13 +61,15 @@ const EditableCell = ({
     field, 
     onSave, 
     placeholder = 'klik 2x untuk isi',
-    isNumericOnly = false 
+    isNumericOnly = false,
+    isSelected = false 
 }: { 
     row: SopdRecord, 
     field: keyof SopdRecord,
     onSave: (no_sopd: string, value: string, field: string) => Promise<boolean>,
     placeholder?: string,
-    isNumericOnly?: boolean
+    isNumericOnly?: boolean,
+    isSelected?: boolean
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState('');
@@ -144,10 +147,10 @@ const EditableCell = ({
                         setTimeout(() => { isSavingGuard.current = false; }, 300);
                     }
                 }}
-                className={`w-full text-right font-mono text-[13px] font-black text-black bg-[#fde047] z-50 relative border-[2px] border-black rounded-none py-0.5 focus:outline-none focus:shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] transition-all ${(field === 'deadline_date' || field === 'finished_date') ? 'pr-8 pl-2' : 'px-2'}`}
+                className={`w-full text-right font-bold text-[13px] text-gray-800 bg-green-50 z-50 relative border border-green-200 rounded-lg py-1.5 focus:outline-none focus:ring-4 focus:ring-green-500/10 transition-all ${(field === 'deadline_date' || field === 'finished_date') ? 'pr-10 pl-3' : 'px-3'}`}
             />
             {(field === 'deadline_date' || field === 'finished_date') && (
-                <div className="absolute right-1 top-1/2 -translate-y-1/2 z-[60] flex items-center">
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 z-[60] flex items-center">
                     <DatePicker 
                         name="cellDatePicker"
                         value={
@@ -170,9 +173,9 @@ const EditableCell = ({
                                   e.preventDefault(); 
                                   toggle();
                                 }}
-                                className="p-1 px-1.5 hover:bg-green-100 rounded text-green-600 transition-colors"
+                                className="p-1.5 hover:bg-green-100 rounded-lg text-green-600 transition-colors"
                             >
-                                <Calendar size={14} />
+                                <Calendar size={16} />
                             </button>
                         )}
                     />
@@ -184,9 +187,9 @@ const EditableCell = ({
 
   if (isSaving) {
       return (
-          <div className="flex items-center justify-end gap-1.5 text-green-600 animate-pulse pr-2 h-10">
-              <Loader2 size={12} className="animate-spin" />
-              <span className="text-[11px] font-bold">Menyimpan...</span>
+          <div className="flex items-center justify-end gap-2 text-green-600 animate-pulse pr-4 h-11">
+              <Loader2 size={14} className="animate-spin" />
+              <span className="text-[11px] font-bold uppercase tracking-widest">Saving...</span>
           </div>
       );
   }
@@ -209,7 +212,7 @@ const EditableCell = ({
 
   return (
       <div
-          className="flex items-center justify-end w-[calc(100%+2rem)] h-10 pr-6 -mr-4 cursor-pointer group select-none overflow-hidden"
+          className="flex items-center justify-end w-[calc(100%+2rem)] h-11 pr-8 -mr-4 cursor-pointer group select-none overflow-hidden transition-colors hover:bg-green-50/30"
           onDoubleClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -228,11 +231,11 @@ const EditableCell = ({
           title="Klik 2x untuk mengisi"
       >
           {formatted ? (
-              <span className={`font-mono font-black text-green-700 truncate ${!isActuallyNumeric ? 'text-[12px] font-bold' : ''}`}>
+              <span className={`font-bold transition-colors ${isSelected ? 'text-green-800' : 'text-green-700'} truncate ${!isActuallyNumeric ? 'text-[12px]' : 'tabular-nums'}`}>
                   {formatted}
               </span>
           ) : (
-              <span className="text-gray-300 italic text-[12px] group-hover:text-green-400 transition-colors">{placeholder}</span>
+              <span className="text-gray-300 italic text-[11px] font-bold group-hover:text-green-400 transition-colors">{placeholder}</span>
           )}
       </div>
   );
@@ -305,16 +308,23 @@ export default function SopdClient({ importInfo }: SopdClientProps) {
       localStorage.setItem('sopd_endDate', today.toISOString());
     }
 
+    const handleDataUpdated = () => {
+      setRefreshKey(prev => prev + 1);
+      router.refresh();
+    };
+
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'sintak_data_updated' || e.key === 'sopd_data_updated') {
-        setRefreshKey(prev => prev + 1);
-        router.refresh();
+        handleDataUpdated();
       }
     };
+    
     window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('sintak:data-updated', handleDataUpdated);
     return () => { 
         mountedRef.current = false;
         window.removeEventListener('storage', handleStorageChange); 
+        window.removeEventListener('sintak:data-updated', handleDataUpdated);
     };
   }, [router]);
 
@@ -421,13 +431,13 @@ export default function SopdClient({ importInfo }: SopdClientProps) {
         accessorKey: 'no_sopd', 
         header: 'No. Order', 
         size: 180, 
-        cell: ({ getValue, row }: any) => <span className={`font-black tracking-tight transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-700'}`}>{String(getValue() || '—')}</span> 
+        cell: ({ getValue, row }: any) => <span className={`font-semibold tracking-tight transition-colors ${row.getIsSelected() ? 'text-green-600' : 'text-gray-700'}`}>{String(getValue() || '—')}</span> 
     },
     { 
         accessorKey: 'nama_order', 
         header: 'Nama Order', 
         size: 400, 
-        cell: ({ getValue, row }: any) => <span className={`font-black uppercase tracking-tight transition-colors ${row.getIsSelected() ? 'text-green-900' : 'text-gray-800'} truncate block`} title={String(getValue())}>{String(getValue() || '—')}</span> 
+        cell: ({ getValue, row }: any) => <span className={`font-semibold tracking-tight transition-colors ${row.getIsSelected() ? 'text-green-900' : 'text-gray-800'} truncate block`} title={String(getValue())}>{String(getValue() || '—')}</span> 
     },
     { 
         accessorKey: 'qty_sopd', header: 'Jumlah Order', size: 150, meta: { align: 'right' },
@@ -437,7 +447,7 @@ export default function SopdClient({ importInfo }: SopdClientProps) {
             const num = Number(val);
             const formatted = isNaN(num) ? val : num.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             return (
-              <div className={`flex items-center justify-between font-black tabular-nums w-full ${row.getIsSelected() ? 'text-green-700' : 'text-blue-600'}`}>
+              <div className={`flex items-center justify-between font-semibold tabular-nums w-full ${row.getIsSelected() ? 'text-green-700' : 'text-blue-600'}`}>
                 <span>{String(formatted)}</span>
               </div>
             );
@@ -449,10 +459,10 @@ export default function SopdClient({ importInfo }: SopdClientProps) {
         size: 120, 
         cell: ({ getValue }: any) => <span className="text-[11px] font-bold text-gray-400">{String(getValue() || '—')}</span> 
     },
-    { accessorKey: 'perkiraan_harga', header: 'Perkiraan Harga', size: 180, meta: { align: 'right' }, cell: (info: any) => <EditableCell row={info.row.original} field="perkiraan_harga" onSave={handleSaveRecord} placeholder="klik 2x untuk harga" /> },
-    { accessorKey: 'keterangan', header: 'Keterangan', size: 250, meta: { align: 'right' }, cell: (info: any) => <EditableCell row={info.row.original} field="keterangan" onSave={handleSaveRecord} placeholder="klik 2x untuk ket." /> },
-    { accessorKey: 'deadline_date', header: 'Tanggal Deadline', size: 180, meta: { align: 'right', overflowVisible: true }, cell: (info: any) => <EditableCell row={info.row.original} field="deadline_date" onSave={handleSaveRecord} placeholder="klik 2x untuk deadline" /> },
-    { accessorKey: 'finished_date', header: 'Tanggal Selesai', size: 180, meta: { align: 'right', overflowVisible: true }, cell: (info: any) => <EditableCell row={info.row.original} field="finished_date" onSave={handleSaveRecord} placeholder="klik 2x untuk selesai" /> }
+    { accessorKey: 'perkiraan_harga', header: 'Perkiraan Harga', size: 180, meta: { align: 'right' }, cell: (info: any) => <EditableCell row={info.row.original} isSelected={info.row.getIsSelected()} field="perkiraan_harga" onSave={handleSaveRecord} placeholder="klik 2x untuk harga" /> },
+    { accessorKey: 'keterangan', header: 'Keterangan', size: 250, meta: { align: 'right' }, cell: (info: any) => <EditableCell row={info.row.original} isSelected={info.row.getIsSelected()} field="keterangan" onSave={handleSaveRecord} placeholder="klik 2x untuk ket." /> },
+    { accessorKey: 'deadline_date', header: 'Tanggal Deadline', size: 180, meta: { align: 'right', overflowVisible: true }, cell: (info: any) => <EditableCell row={info.row.original} isSelected={info.row.getIsSelected()} field="deadline_date" onSave={handleSaveRecord} placeholder="klik 2x untuk deadline" /> },
+    { accessorKey: 'finished_date', header: 'Tanggal Selesai', size: 180, meta: { align: 'right', overflowVisible: true }, cell: (info: any) => <EditableCell row={info.row.original} isSelected={info.row.getIsSelected()} field="finished_date" onSave={handleSaveRecord} placeholder="klik 2x untuk selesai" /> }
   ], [page, handleSaveRecord]);
 
   const handleResize = useCallback((widths: any) => {
@@ -463,48 +473,53 @@ export default function SopdClient({ importInfo }: SopdClientProps) {
   if (!isMounted) return null;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 shrink-0">
+    <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in duration-700 overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 shrink-0 h-[105px]">
          <SopdExcelUpload />
-         <div className="bg-[var(--bg-surface)] rounded-none border-[3px] border-black p-5 hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3.5px_3.5px_0_0_#000] shadow-[2.5px_2.5px_0_0_#000] transition-all duration-300 flex flex-col justify-center relative z-50 h-full">
-            <div className="flex flex-wrap items-center gap-6">
-               <div className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-black text-black uppercase tracking-widest ml-1">Rentang Tanggal</span>
-                  <div className="flex items-center gap-2">
-                     <div className="w-[140px] relative group"><DatePicker name="startDate" value={startDate} onChange={(d) => { setStartDate(d); setPage(1); }} /></div>
-                     <div className="w-4 h-[1px] bg-gray-200 mx-1"></div>
-                     <div className="w-[140px] relative group"><DatePicker name="endDate" value={endDate} onChange={(d) => { setEndDate(d); setPage(1); }} /></div>
+         <div className="bg-white rounded-2xl border border-gray-100 px-6 py-4 shadow-sm shadow-green-900/5 flex flex-col justify-center relative z-50 h-full">
+            <div className="flex flex-wrap items-center gap-8">
+               <div className="flex flex-col">
+                  <span className="block text-[13px] font-semibold text-gray-500 mb-2 ml-1 tracking-tight select-none">Rentang Tanggal</span>
+                  <div className="flex items-center gap-3">
+                     <div className="w-[160px] relative group"><DatePicker name="startDate" value={startDate} onChange={(d) => { setStartDate(d); setPage(1); }} /></div>
+                     <div className="w-4 h-0.5 bg-gray-100 rounded-full mx-1"></div>
+                     <div className="w-[160px] relative group"><DatePicker name="endDate" value={endDate} onChange={(d) => { setEndDate(d); setPage(1); }} /></div>
                   </div>
                </div>
             </div>
          </div>
       </div>
-
-      <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
-        <div className="flex flex-col gap-4 shrink-0">
+      <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
+        <div className="flex flex-col gap-4 shrink-0 px-1">
           <div className="flex items-center justify-between gap-4 min-h-[32px]">
-            <div className="flex items-center gap-4">
-               <h3 className="text-[14px] font-extrabold text-gray-800 flex items-center gap-2.5 leading-none">
-                  <Calculator size={18} className="text-green-600" />
-                  <span>Data SOPd</span>
+            <div className="flex items-center gap-5">
+               <h3 className="text-[14px] font-bold text-gray-800 flex items-center gap-3 leading-none tracking-tight">
+                  <div className="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center shadow-sm">
+                    <ClipboardList size={16} />
+                  </div>
+                  <span>Data Order Produksi (SOPd)</span>
                </h3>
                <ImportInfo info={importInfo} />
             </div>
             {loading && (data?.length || 0) > 0 && (
-                <div className="text-[11px] font-black text-black flex items-center gap-2 bg-[#fde047] px-2.5 py-1 rounded-none border-[2px] border-black shadow-[2px_2px_0_0_#000] animate-pulse uppercase tracking-tighter leading-none">
+                <div className="text-[10px] font-bold text-green-600 flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full border border-green-100 shadow-sm animate-pulse uppercase tracking-widest leading-none">
                   <Loader2 size={12} className="animate-spin" />
-                  <span>Memproses...</span>
+                  <span>Memproses Data...</span>
                 </div>
             )}
           </div>
           <SearchAndReload searchQuery={searchQuery} setSearchQuery={setSearchQuery} onReload={() => setRefreshKey(k => k + 1)} loading={loading} placeholder="Cari berdasarkan nama order..." />
         </div>
 
-        <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden relative">
-          <DataTable data={data || []} columns={columns} columnWidths={columnWidths} onColumnWidthChange={handleResize} isLoading={loading || data === null} selectedIds={selectedIds} onRowClick={handleRowClick} rowHeight="h-10" />
-          <TableFooter totalCount={totalCount} currentCount={data?.length || 0} label="SOPd" selectedCount={selectedIds.size} onClearSelection={clearSelection} loadTime={loadTime} page={page} totalPages={totalPages} onPageChange={setPage} />
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
+          <DataTable data={data || []} columns={columns} columnWidths={columnWidths} onColumnWidthChange={handleResize} isLoading={loading || data === null} selectedIds={selectedIds} onRowClick={handleRowClick} rowHeight="h-11" />
         </div>
+
+        <TableFooter totalCount={totalCount} currentCount={data?.length || 0} label="SOPd" selectedCount={selectedIds.size} onClearSelection={clearSelection} loadTime={loadTime} page={page} totalPages={totalPages} onPageChange={setPage} />
       </div>
     </div>
   );
 }
+
+
+

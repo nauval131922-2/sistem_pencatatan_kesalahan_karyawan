@@ -125,14 +125,14 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
         accessorKey: 'name', 
         header: 'Nama Karyawan',
         size: 350,
-        cell: (info: any) => <span className="font-bold uppercase tracking-tight">{info.getValue()}</span>
+        cell: (info: any) => <span className="font-bold tracking-tight">{info.getValue()}</span>
     },
     { 
         accessorKey: 'position', 
         header: 'Jabatan',
         size: 250,
         cell: (info: any) => (
-            <span className="text-[11px] font-black bg-white px-2.5 py-1 border-[2px] border-black shadow-[2px_2px_0_0_#000] block w-fit truncate uppercase tracking-tight">
+            <span className="text-[11px] font-bold text-green-600 bg-green-50 px-3 py-1 rounded-lg border border-green-100 block w-fit truncate tracking-tight">
               {info.getValue()}
             </span>
         )
@@ -143,7 +143,7 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
         size: 180,
         meta: { align: 'right' },
         cell: (info: any) => (
-            <span className="font-mono font-black text-black">
+            <span className="font-mono font-bold text-gray-400">
                 {info.getValue() || '---'}
             </span>
         )
@@ -175,20 +175,22 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
   if (!isMounted) return null;
 
   return (
-    <div className="h-full flex flex-col gap-4 overflow-hidden">
-      <div className="flex flex-col gap-4 shrink-0">
+    <div className="h-full flex flex-col gap-3 overflow-hidden">
+      <div className="flex flex-col gap-4 shrink-0 px-1">
         <div className="flex items-center justify-between gap-4 min-h-[32px]">
-          <div className="flex items-center gap-4">
-             <h3 className="text-sm font-black text-black flex items-center gap-2.5 leading-none uppercase tracking-widest">
-                <Users size={20} strokeWidth={3} className="text-black" />
-                <span>Data Karyawan</span>
+          <div className="flex items-center gap-5">
+             <h3 className="text-[14px] font-bold text-gray-800 flex items-center gap-3 leading-none">
+                <div className="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center shadow-sm shrink-0">
+                  <Users size={16} />
+                </div>
+                <span>Data Master Karyawan</span>
              </h3>
              <ImportInfo info={importInfo} />
           </div>
           {loading && (data?.length || 0) > 0 && (
-              <div className="text-[10px] font-black text-black flex items-center gap-2 bg-[#fde047] px-3 py-1.5 border-[2px] border-black animate-pulse uppercase tracking-[0.2em] shadow-[2px_2px_0_0_#000]">
-                <Loader2 size={12} strokeWidth={3} className="animate-spin" />
-                <span>Memproses...</span>
+              <div className="text-[10px] font-bold text-green-600 flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full border border-green-100 shadow-sm animate-pulse uppercase tracking-widest leading-none">
+                <Loader2 size={12} className="animate-spin" />
+                <span>Memproses Data...</span>
               </div>
           )}
         </div>
@@ -204,16 +206,17 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
 
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
          {error ? (
-           <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-white border-[3px] border-black shadow-[3.5px_3.5px_0_0_#000]">
-              <div className="w-20 h-20 bg-[#ff5e5e] border-[3px] border-black flex items-center justify-center mb-6 shadow-[2.5px_2.5px_0_0_#000]">
-                  <AlertCircle className="text-white" size={40} strokeWidth={3} />
+           <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-white rounded-2xl border border-gray-100 shadow-sm shadow-green-900/5">
+              <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mb-6 shadow-sm shadow-rose-900/5">
+                  <AlertCircle size={40} />
               </div>
-              <p className="text-lg font-black text-black uppercase tracking-tight mb-6">{error}</p>
+              <p className="text-lg font-bold text-gray-800 uppercase tracking-tight mb-2">Terjadi Kesalahan</p>
+              <p className="text-sm text-gray-400 font-medium mb-8 max-w-md">{error}</p>
               <button 
                 onClick={() => setRefreshKey(k => k + 1)}
-                className="px-8 py-3 bg-[#fde047] border-[3px] border-black text-black font-black uppercase tracking-widest text-xs shadow-[2.5px_2.5px_0_0_#000] hover:shadow-[2.5px_2.5px_0_0_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all"
+                className="px-10 py-4 bg-green-600 text-white font-bold uppercase tracking-widest text-[13px] rounded-xl shadow-sm shadow-green-100 hover:bg-green-700 transition-all active:scale-95"
               >
-                Coba Lagi
+                Coba Muat Ulang
               </button>
            </div>
          ) : (
@@ -226,7 +229,7 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
              selectedIds={selectedIds}
              onRowClick={handleSelection} 
              onScroll={handleScroll}
-             rowHeight="h-10"
+             rowHeight="h-11"
            />
          )}
       </div>
@@ -242,3 +245,6 @@ export default function EmployeeTable({ importInfo }: EmployeeTableProps) {
     </div>
   );
 }
+
+
+

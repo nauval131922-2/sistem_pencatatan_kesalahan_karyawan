@@ -65,24 +65,27 @@ export default async function RecordsPage() {
 
 function RecordsSkeleton() {
   return (
-    <div className="flex-1 bg-white border border-gray-100 rounded-[8px] shadow-sm overflow-hidden flex flex-col p-6 animate-pulse">
-      <div className="flex gap-4 mb-6">
-        <div className="h-10 w-32 bg-gray-100 rounded-[8px]"></div>
-        <div className="h-10 w-32 bg-gray-100 rounded-[8px]"></div>
+    <div className="flex-1 bg-white border border-gray-100 rounded-2xl shadow-sm shadow-green-900/5 overflow-hidden flex flex-col p-8 animate-pulse">
+      <div className="flex gap-3 mb-8">
+        <div className="h-12 w-40 bg-gray-100 rounded-full"></div>
+        <div className="h-12 w-40 bg-gray-100 rounded-full"></div>
       </div>
 
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-5 space-y-4">
-          <div className="h-64 bg-gray-50 rounded-[8px] border border-gray-100"></div>
-          <div className="h-12 bg-gray-50 rounded-[8px] border border-gray-100"></div>
+      <div className="grid grid-cols-12 gap-8">
+        <div className="col-span-5 space-y-6">
+          <div className="h-64 bg-gray-50 rounded-2xl border border-gray-100"></div>
+          <div className="h-32 bg-gray-50 rounded-2xl border border-gray-100"></div>
         </div>
         <div className="col-span-7">
-          <div className="h-full bg-gray-50 rounded-[8px] border border-gray-100 min-h-[400px]"></div>
+          <div className="h-full bg-gray-50 rounded-2xl border border-gray-100 min-h-[450px]"></div>
         </div>
       </div>
     </div>
   );
 }
+
+
+
 
 
 

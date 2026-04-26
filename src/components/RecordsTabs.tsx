@@ -75,31 +75,31 @@ export default function RecordsTabs({ employees, orders, infractions: initialInf
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden min-h-0">
-      {/* Tab Navigation - Neo-brutalist Style */}
-      <div className="flex items-center gap-3 mb-8 shrink-0">
+      {/* Tab Navigation - Premium Light Style */}
+      <div className="flex items-center gap-1.5 mb-5 p-1 bg-gray-100 rounded-full w-fit shrink-0 border border-gray-100 shadow-inner">
         <button
           onClick={() => {
             setActiveTab('list');
             handleCancelEdit();
           }}
-          className={`flex items-center gap-2 px-6 py-3 text-[13px] font-black uppercase tracking-widest border-[3px] transition-all relative ${
+          className={`flex items-center gap-1.5 px-5 py-2 text-[12px] font-bold rounded-full transition-all duration-300 ${
             activeTab === 'list'
-              ? 'bg-[#fde047] text-black border-black shadow-[2.5px_2.5px_0_0_#000] z-10 translate-x-[-2px] translate-y-[-2px]'
-              : 'bg-white text-gray-500 border-gray-200 hover:border-black hover:text-black'
+              ? 'bg-white text-green-600 shadow-sm'
+              : 'text-gray-400 hover:text-gray-600'
           }`}
         >
-          <ClipboardList size={18} strokeWidth={2.5} />
+          <ClipboardList size={14} />
           <span>Daftar Kesalahan</span>
         </button>
         <button
           onClick={() => { setActiveTab('form'); handleCancelEdit(); }}
-          className={`flex items-center gap-2 px-6 py-3 text-[13px] font-black uppercase tracking-widest border-[3px] transition-all relative ${
+          className={`flex items-center gap-1.5 px-5 py-2 text-[12px] font-bold rounded-full transition-all duration-300 ${
             activeTab === 'form'
-              ? 'bg-[#fde047] text-black border-black shadow-[2.5px_2.5px_0_0_#000] z-10 translate-x-[-2px] translate-y-[-2px]'
-              : 'bg-white text-gray-500 border-gray-200 hover:border-black hover:text-black'
+              ? 'bg-white text-green-600 shadow-sm'
+              : 'text-gray-400 hover:text-gray-600'
           }`}
         >
-          {editingInfraction ? <Pencil size={18} strokeWidth={2.5} /> : <PlusCircle size={18} strokeWidth={2.5} />}
+          {editingInfraction ? <Pencil size={14} /> : <PlusCircle size={14} />}
           <span>{editingInfraction ? 'Edit Data' : 'Tambah Data'}</span>
         </button>
       </div>
@@ -138,6 +138,9 @@ export default function RecordsTabs({ employees, orders, infractions: initialInf
     </div>
   );
 }
+
+
+
 
 
 

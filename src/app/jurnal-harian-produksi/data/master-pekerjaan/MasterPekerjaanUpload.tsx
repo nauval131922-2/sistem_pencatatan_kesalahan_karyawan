@@ -404,15 +404,15 @@ export default function MasterPekerjaanUpload() {
 
   return (
     <div className="h-full shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="bg-[var(--bg-surface)] rounded-none border-[3px] border-black p-5 hover:-translate-y-0.5 hover:-translate-x-0.5 hover:shadow-[3.5px_3.5px_0_0_#000] shadow-[2.5px_2.5px_0_0_#000] transition-all duration-300 flex items-center justify-between gap-4 relative z-50 h-[97px]">
-        <div className="flex items-center gap-4 flex-1">
-          <div className="w-10 h-10 rounded-none bg-[#fde047] border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] flex items-center justify-center shrink-0">
-            <Upload className="text-black" size={20} strokeWidth={3} />
+      <div className="relative bg-white border border-gray-100 shadow-sm shadow-green-900/5 rounded-xl px-6 py-4 flex items-center justify-between gap-6 z-50 h-full">
+        <div className="flex items-center gap-5 flex-1">
+          <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
+            <Upload className="text-green-600" size={24} />
           </div>
           <div className="min-w-0">
-            <h3 className="text-sm font-bold text-gray-800 leading-none mb-1">Upload Master Pekerjaan</h3>
-            <p className="text-[11px] text-gray-400 font-medium leading-tight">
-              Unggah file Excel Master Pekerjaan untuk sinkronisasi database. Sistem akan memperbarui daftar pekerjaan berdasarkan versi file terbaru.
+            <h3 className="text-sm font-bold text-gray-800 leading-none mb-1.5 tracking-tight">Upload Master Pekerjaan</h3>
+            <p className="text-[11px] text-gray-400 font-medium leading-tight line-clamp-2">
+              Unggah file Excel Master Pekerjaan untuk sinkronisasi database.
             </p>
           </div>
         </div>
@@ -428,17 +428,22 @@ export default function MasterPekerjaanUpload() {
           <button
             onClick={() => fileRef.current?.click()}
             disabled={status === 'loading'}
-            className="px-4 h-10 bg-black text-white hover:bg-[var(--accent-primary)] hover:border-black text-[13px] font-black uppercase tracking-wider border-[3px] border-black rounded-none transition-all flex items-center gap-2 disabled:opacity-70 disabled:shadow-none disabled:translate-x-0 disabled:translate-y-0 shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] hover:shadow-[2.5px_2.5px_0_0_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-none"
+            className={`
+              px-6 h-11 rounded-lg font-bold text-[13px] tracking-wide border transition-all flex items-center gap-2 shadow-sm
+              ${status === 'loading' 
+                ? 'bg-gray-50 text-gray-300 border-gray-100' 
+                : 'bg-green-600 text-white border-green-500 hover:bg-green-700 shadow-green-100'}
+            `}
           >
-            {status === 'loading' ? <Loader2 size={16} className="animate-spin" /> : <FileSpreadsheet size={16} />}
+            {status === 'loading' ? <Loader2 size={18} className="animate-spin" /> : <FileSpreadsheet size={18} />}
             <span>{status === 'loading' ? 'Mengunggah...' : 'Pilih & Upload Excel'}</span>
           </button>
         </div>
 
         {status === 'error' && (
-          <div className="absolute top-full left-0 right-0 mt-2 p-2.5 bg-[#ff5e5e] text-white border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] rounded-none text-[11px] font-black flex items-start gap-2 animate-in slide-in-from-top-1 z-20">
-            <XCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" strokeWidth={3} />
-            <p className="font-black">{message}</p>
+          <div className="absolute top-full left-0 right-0 mt-2 p-3 bg-rose-50 text-rose-600 border border-rose-100 rounded-lg shadow-sm text-[11px] font-medium flex items-start gap-2.5 animate-in slide-in-from-top-2 z-20">
+            <XCircle className="w-4 h-4 shrink-0 mt-px" />
+            <p>{message}</p>
           </div>
         )}
       </div>
@@ -458,6 +463,9 @@ export default function MasterPekerjaanUpload() {
     </div>
   );
 }
+
+
+
 
 
 

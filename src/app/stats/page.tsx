@@ -14,32 +14,36 @@ export const dynamic = "force-dynamic";
 export default async function StatsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string }>;
+  searchParams: Promise<{ startDate?: string, endDate?: string }>;
 }) {
   const resolvedSearchParams = await searchParams;
-  const yearStr = resolvedSearchParams.year;
-  const currentYear = yearStr ? parseInt(yearStr) : new Date().getFullYear();
+  const startDate = resolvedSearchParams.startDate;
+  const endDate = resolvedSearchParams.endDate;
 
   const [stats, detailedData] = await Promise.all([
-    getStats(currentYear),
-    getDetailedStats(currentYear),
+    getStats(startDate, endDate),
+    getDetailedStats(startDate, endDate),
   ]);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden">
       <PageHeader
-        title={`Analitik Performa ${currentYear}`}
+        title="Analitik Performa"
         description="Statistik akumulasi kesalahan dan evaluasi performa karyawan."
         showHelp={false}
       />
       <StatsClient
         stats={stats}
         detailedData={detailedData}
-        year={currentYear}
+        startDate={startDate}
+        endDate={endDate}
       />
     </div>
   );
 }
+
+
+
 
 
 

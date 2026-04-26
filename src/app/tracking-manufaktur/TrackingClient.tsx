@@ -5,6 +5,7 @@ import { Search, Loader2, Calculator, ArrowRight, AlertCircle, Clock, ChevronDow
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, ScrollContext } from '@/components/ui/DataTable';
 import { useContext } from 'react';
+import SearchAndReload from '@/components/SearchAndReload';
 
 // Unified date formatter for MDT Host source data (YYYY-MM-DD -> DD-MM-YYYY)
 const formatMdtDate = (str: string) => {
@@ -35,20 +36,20 @@ const parseLooseNumber = (value: unknown) => {
    return Number.isFinite(parsed) ? parsed : 0;
 };
 
-// Neobrutalist Classes
-const chipClass = "px-2 py-0.5 rounded-none border-[2px] border-black text-[10px] font-black whitespace-nowrap bg-white shadow-[2px_2px_0_0_#000] uppercase tracking-tighter";
-const cardClass = "bg-white rounded-none p-3.5 flex flex-col gap-2.5 w-full max-w-full text-left [content-visibility:auto] [contain-intrinsic-size:100px] border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] hover:shadow-[2.5px_2.5px_0_0_#000] hover:-translate-x-[2px] hover:-translate-y-[2px] transition-all";
-const infoCardClass = "bg-black/5 p-2.5 rounded-none border-[2px] border-black";
-const infoLabelClass = "text-[9px] text-black/40 font-black tracking-widest uppercase";
-const refLabelClass = "text-black/30 font-black min-w-[60px] uppercase text-[10px]";
-const refRowClass = "flex items-center gap-1.5 text-[11px] text-black font-bold";
-const productTitleClass = "text-[12px] font-black text-black leading-tight mt-1 uppercase tracking-tighter";
-const productMetaClass = "flex flex-wrap items-center gap-1.5 text-[10px] text-black/40 font-black tracking-widest mt-1 uppercase";
-const customerTextClass = "text-[11px] font-black uppercase";
-const locationBadgeClass = "text-[10px] text-black px-2 py-0.5 bg-[#fde047] rounded-none border-[2px] border-black tracking-tighter font-black whitespace-nowrap shadow-[2px_2px_0_0_#000] uppercase";
-const emptyStateClass = "px-1 text-[11px] font-black text-black/20 italic py-2 mt-0.5 uppercase tracking-widest";
-const headerDateClass = "text-[10px] text-black/30 shrink-0 text-right font-black";
-const auditSectionClass = "pt-2 mt-2 border-t-[2px] border-black/10 flex flex-col gap-0.5 text-[10px] text-black/30 italic font-black uppercase tracking-tighter";
+// Premium Light Theme Classes
+const chipClass = "px-2.5 py-1 rounded-lg border border-gray-100 text-[10px] font-bold whitespace-nowrap bg-gray-50 text-gray-500";
+const cardClass = "bg-white rounded-xl p-4 flex flex-col gap-2.5 w-full max-w-full text-left [content-visibility:auto] [contain-intrinsic-size:100px] border border-gray-50 shadow-sm hover:shadow-sm hover:shadow-green-900/5 hover:border-green-100 transition-all duration-300";
+const infoCardClass = "bg-gray-50/50 p-3 rounded-lg border border-gray-100";
+const infoLabelClass = "text-[9px] text-gray-400 font-bold tracking-widest";
+const refLabelClass = "text-gray-300 font-bold min-w-[60px]text-[10px] tracking-widest";
+const refRowClass = "flex items-center gap-1.5 text-[11px] text-gray-700 font-bold";
+const productTitleClass = "text-[12px] font-bold text-gray-800 leading-tight mt-1";
+const productMetaClass = "flex flex-wrap items-center gap-1.5 text-[10px] text-gray-400 font-bold tracking-widest mt-1";
+const customerTextClass = "text-[11px] font-boldtext-gray-600";
+const locationBadgeClass = "text-[10px] text-green-700 px-2.5 py-1 bg-green-50 rounded-lg border border-green-100 tracking-wider font-bold whitespace-nowrap";
+const emptyStateClass = "px-1 text-[11px] font-bold text-gray-300 italic py-2 mt-0.5";
+const headerDateClass = "text-[10px] text-gray-300 shrink-0 text-right font-bold tracking-widest";
+const auditSectionClass = "pt-2 mt-2 border-t border-gray-50 flex flex-col gap-0.5 text-[10px] text-gray-300 italic font-bold";
 
 const toTitleCase = (str: string) => {
    const abbreviations: Record<string, string> = {
@@ -79,7 +80,7 @@ const HighlightedText = React.memo(({ text, highlight }: { text: string; highlig
       <span>
          {parts.map((part, i) => 
             regex.test(part) ? (
-               <mark key={i} className="bg-[#fde047] text-black px-0.5 font-black border-b-[2px] border-black">
+               <mark key={i} className="bg-green-100 text-green-800 px-0.5 font-bold rounded-sm">
                   {part}
                </mark>
             ) : (
@@ -103,8 +104,8 @@ const DataField = React.memo(({ k, v, isRaw, highlight }: { k: string, v: any, i
 
    return (
       <div className="flex items-start justify-between gap-4 text-[12px] leading-tight group/field">
-         <span className="text-black/30 font-black shrink-0 uppercase text-[10px] tracking-widest">{k}</span>
-         <span className="text-black font-bold text-right break-words group-hover/field:text-black transition-colors uppercase tracking-tighter">
+         <span className="text-gray-400 font-medium shrink-0 text-[11px]">{k}</span>
+         <span className="text-gray-700 font-bold text-right break-words group-hover/field:text-green-600 transition-colors">
             <HighlightedText text={displayVal} highlight={highlight} />
          </span>
       </div>
@@ -123,7 +124,7 @@ const RenderAllFieldsRaw = ({ data, excludeKeys = [], highlightText = '' }: { da
    const rawFields = ['id', 'kode_cabang', 'kd_cabang', 'tgl', 'status', 'created_at', 'edited_at', 'kd_barang', 'recid', 'top_hari', 'kd_gudang', 'create_at', 'updated_at', 'kd_pelanggan', 'datetime_mulai', 'datetime_selesai', 'tgl_dibutuhkan', 'tgl_close', 'status_close', 'jthtmp', 'faktur_supplier', 'tgl_lunas', 'kd_porsekot', 'kd_bank', 'kd_supir', 'kd_armada', 'kd_eks', 'waktu_kirim', 'waktu_selesai', 'tgl_expired', 'gol_barang', 'no_ref_pelanggan'];
 
    return (
-      <div className="grid grid-cols-1 gap-2 overflow-hidden">
+      <div className="grid grid-cols-1 gap-2.5 overflow-hidden">
          {entries.map(([key, val]) => (
             <DataField key={key} k={key} v={val} isRaw={rawFields.includes(key.toLowerCase())} highlight={highlightText} />
          ))}
@@ -169,9 +170,9 @@ const DataCard = React.memo(({ item, highlightText }: { item: any, highlightText
             <RenderAllFields data={item} excludeKeys={['raw_data']} highlightText={highlightText} />
          ) : (
             <div className="flex flex-col gap-2.5 animate-pulse">
-               <div className="h-3 w-3/4 bg-black/5 rounded-none" />
-               <div className="h-3 w-1/2 bg-black/5 rounded-none" />
-               <div className="h-10 w-full bg-black/5 rounded-none" />
+               <div className="h-3 w-3/4 bg-gray-50 rounded-lg" />
+               <div className="h-3 w-1/2 bg-gray-50 rounded-lg" />
+               <div className="h-10 w-full bg-gray-50 rounded-lg" />
             </div>
          )}
       </div>
@@ -190,12 +191,12 @@ const RenderColumnContent = React.memo(({ label, data, items, debouncedFilterTex
 
       if (!filtered || filtered.length === 0) return (
          <div className="flex flex-col gap-3 pt-2 pb-4 w-full max-w-full overflow-hidden px-1">
-            <div className="text-[10px] font-black text-black/30 mb-1 uppercase tracking-widest">0 DATA {label} {filterLabel && <span className="text-black/20">{filterLabel}</span>}</div>
+            <div className="text-[10px] font-bold text-gray-300 mb-1">0 Data {label} {filterLabel && <span className="text-gray-200">{filterLabel}</span>}</div>
          </div>
       );
       return (
-         <div className="flex flex-col gap-4 pt-2 pb-5 w-full max-w-full overflow-hidden px-1">
-            <div className="text-[10px] font-black text-black/30 mb-1 uppercase tracking-widest">{filtered.length} DATA {label} {filterLabel && <span className="text-black/20">{filterLabel}</span>}</div>
+         <div className="flex flex-col gap-2 pt-0 pb-5 w-full max-w-full overflow-hidden px-1">
+            <div className="text-[10px] font-bold text-gray-400 mb-0 px-1">{filtered.length} Data {label} {filterLabel && <span className="text-gray-300 font-medium ml-1">{filterLabel}</span>}</div>
             {filtered.map((item: any, idx: number) => (
                <DataCard key={item.id || idx} item={item} highlightText={debouncedFilterText} />
             ))}
@@ -204,13 +205,13 @@ const RenderColumnContent = React.memo(({ label, data, items, debouncedFilterTex
    }
    
    if (!data || (debouncedFilterText && !matchesFilter(data, debouncedFilterText))) return (
-      <div className="flex flex-col gap-3 pt-2 pb-4 w-full max-w-full overflow-hidden px-1">
-         <div className="text-[10px] font-black text-black/30 mb-1 uppercase tracking-widest">0 DATA {label} {filterLabel && <span className="text-black/20">{filterLabel}</span>}</div>
+      <div className="flex flex-col gap-1.5 pt-0 pb-4 w-full max-w-full overflow-hidden px-1">
+         <div className="text-[10px] font-bold text-gray-300 mb-0">0 Data {label} {filterLabel && <span className="text-gray-200">{filterLabel}</span>}</div>
       </div>
    );
    return (
-      <div className="flex flex-col gap-4 pt-2 pb-5 w-full max-w-full overflow-hidden px-1">
-         <div className="text-[10px] font-black text-black/30 mb-1 uppercase tracking-widest">1 DATA {label} {filterLabel && <span className="text-black/20">{filterLabel}</span>}</div>
+      <div className="flex flex-col gap-2 pt-0 pb-5 w-full max-w-full overflow-hidden px-1">
+         <div className="text-[10px] font-bold text-gray-400 mb-0 px-1">1 Data {label} {filterLabel && <span className="text-gray-300 font-medium ml-1">{filterLabel}</span>}</div>
          <DataCard item={data} highlightText={debouncedFilterText} />
       </div>
    );
@@ -252,9 +253,10 @@ export default function TrackingClient() {
    const [filterText, setFilterText] = useState('');
    const [debouncedFilterText, setDebouncedFilterText] = useState(''); // We use this for the actual table filtering
 
-   const handleSearchTrigger = () => {
-      setDebouncedFilterText(filterText);
-   };
+   useEffect(() => {
+      const handler = setTimeout(() => setDebouncedFilterText(filterText), 300);
+      return () => clearTimeout(handler);
+   }, [filterText]);
 
    const suggestionRef = useRef<HTMLDivElement>(null);
    const [open, setOpen] = useState(false);
@@ -489,53 +491,54 @@ export default function TrackingClient() {
    };
 
    return (
-      <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-700 overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in duration-700 overflow-hidden">
          {/* BOM SELECTOR SECTION */}
-         <div className="bg-white border-[3px] border-black p-6 shadow-[3.5px_3.5px_0_0_#000] flex flex-col gap-5 shrink-0 relative z-50">
-            <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
+         <div className="bg-white border border-gray-100 py-3.5 px-6 shadow-sm shadow-green-900/5 rounded-2xl flex flex-col shrink-0 relative z-50">
+            <div className="flex flex-wrap items-center justify-between relative z-10">
                <div className="flex-1">
-                  <div className="flex flex-col gap-1.5">
-                     <span className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Pilih BOM (Bill of Material) Utama</span>
+                  <div className="flex items-center gap-2 mb-2 pl-1">
+                     <span className="text-[13px] font-semibold text-gray-500">Pilih BOM (Bill of Material)</span>
                   </div>
-                  <div className="relative mt-2" ref={suggestionRef}>
+                  <div className="relative" ref={suggestionRef}>
                      <div
-                        className={`w-full bg-white border-[3px] border-black rounded-none px-4 h-14 text-sm flex items-center justify-between transition-all text-black cursor-pointer shadow-[2.5px_2.5px_0_0_#000] hover:shadow-[2.5px_2.5px_0_0_#000] hover:-translate-y-[2px] hover:-translate-x-[2px] ${open ? 'bg-[#fde047]' : ''}`}
+                        className={`w-full bg-white border border-gray-100 rounded-xl px-4 h-12 text-sm flex items-center justify-between transition-all text-gray-700 cursor-pointer shadow-sm hover:shadow-sm hover:shadow-green-900/5 hover:border-green-200 ${open ? 'ring-4 ring-green-500/5 border-green-200' : ''}`}
                         onClick={() => { setOpen(!open); setQ(''); }}
                      >
                         <div className="flex items-center gap-4 truncate">
-                           {loadingData ? (
-                              <RefreshCw size={20} className="animate-spin text-black" strokeWidth={3} />
-                           ) : (
-                              <Calculator size={20} className="text-black" strokeWidth={3} />
-                           )}
-                           <div className="flex flex-col truncate leading-tight">
-                              <span className="text-black/40 font-black text-[9px] uppercase tracking-widest">Target Pelacakan:</span>
-                              <span className="text-black truncate font-black text-[13px] uppercase tracking-tighter">
+                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${loadingData ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'}`}>
+                              {loadingData ? (
+                                 <RefreshCw size={16} className="animate-spin" />
+                              ) : (
+                                 <Calculator size={16} />
+                              )}
+                           </div>
+                           <div className="flex items-center truncate leading-tight">
+                              <span className="text-gray-800 truncate font-bold text-[13px]">
                                  {loadingData 
-                                    ? (selectedFaktur ? `[${selectedFaktur}] SINKRONISASI DATA...` : 'MENELUSURI JALUR...')
+                                    ? (selectedFaktur ? `[${selectedFaktur}] Sinkronisasi data...` : 'Menelusuri jalur...')
                                     : trackingData 
-                                      ? `[${trackingData?.bom?.faktur || trackingData?.productionOrder?.faktur}] ${trackingData?.bom?.nama_prd || trackingData?.productionOrder?.nama_prd}` 
-                                      : 'PILIH NOMOR BOM ATAU NAMA PRODUK...'}
+                                       ? `[${trackingData?.bom?.faktur || trackingData?.productionOrder?.faktur}] ${trackingData?.bom?.nama_prd || trackingData?.productionOrder?.nama_prd}` 
+                                       : 'Pilih nomor BOM atau nama produk...'}
                               </span>
                            </div>
                         </div>
-                        <ChevronDown size={20} strokeWidth={4} className={`text-black transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
+                        <ChevronDown size={20} className={`text-gray-300 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
                      </div>
 
                      {open && (
-                        <div className="absolute top-[calc(100%+12px)] left-0 right-0 bg-white border-[4px] border-black shadow-[3.5px_3.5px_0_0_#000] z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                           <div className="p-4 border-b-[4px] border-black bg-[#fde047]">
+                        <div className="absolute top-[calc(100%+12px)] left-0 right-0 bg-white border border-gray-100 rounded-xl shadow-md z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                           <div className="p-4 border-b border-gray-50 bg-gray-50/50">
                               <div className="relative">
-                                 <Search size={18} strokeWidth={3} className="absolute left-4 top-1/2 -translate-y-1/2 text-black" />
+                                 <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                                  <input 
                                     autoFocus 
                                     type="text" 
-                                    placeholder="CARI NOMOR BOM ATAU NAMA PRODUK..." 
-                                    className="w-full pl-12 pr-4 h-12 text-[13px] border-[3px] border-black rounded-none focus:outline-none focus:bg-white bg-white/50 font-black uppercase tracking-tighter placeholder:text-black/20" 
+                                    placeholder="Cari nomor BOM atau nama produk..." 
+                                    className="w-full pl-12 pr-4 h-12 text-[13px] border border-gray-100 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-500/5 focus:border-green-200 bg-white font-bold placeholder:text-gray-300" 
                                     value={q} 
                                     onChange={(e) => setQ(e.target.value)} 
                                  />
-                                 {loadingSuggestions && <div className="absolute right-4 top-1/2 -translate-y-1/2"><Loader2 size={18} className="animate-spin text-black" strokeWidth={3} /></div>}
+                                 {loadingSuggestions && <div className="absolute right-4 top-1/2 -translate-y-1/2"><Loader2 size={18} className="animate-spin text-green-600" /></div>}
                               </div>
                            </div>
                            <div className="max-h-[350px] overflow-y-auto custom-scrollbar p-2" onScroll={handleListScroll}>
@@ -543,17 +546,17 @@ export default function TrackingClient() {
                                  <button 
                                     key={`${s.faktur}-${idx}`} 
                                     onClick={() => handleSelect(s)} 
-                                    className={`w-full px-4 py-3 text-left rounded-none transition-all flex items-center justify-between group/item mb-1 last:mb-0 border-[2px] border-transparent hover:border-black hover:bg-[#fde047] ${trackingData?.id === s.faktur ? 'bg-black text-[#fde047]' : 'text-black'}`}
+                                    className={`w-full px-5 py-4 text-left rounded-lg transition-all flex items-center justify-between group/item mb-1 last:mb-0 ${trackingData?.id === s.faktur ? 'bg-green-600 text-white shadow-sm shadow-green-200' : 'text-gray-700 hover:bg-green-50 hover:text-green-600'}`}
                                  >
                                     <div className="flex flex-col min-w-0">
-                                       <span className="text-[12px] font-black truncate uppercase tracking-tighter">{s.faktur}</span>
-                                       <span className={`text-[11px] font-bold truncate uppercase tracking-tight ${trackingData?.id === s.faktur ? 'text-[#fde047]/60' : 'text-black/40'}`}>{s.nama_prd}</span>
+                                       <span className="text-[12px] font-bold truncate">{s.faktur}</span>
+                                       <span className={`text-[11px] font-bold truncate ${trackingData?.id === s.faktur ? 'text-white/70' : 'text-gray-400'}`}>{s.nama_prd}</span>
                                     </div>
-                                    <ArrowRight size={18} strokeWidth={4} className="shrink-0 opacity-0 group-hover/item:opacity-100 transition-all translate-x-2" />
+                                    <ArrowRight size={18} className={`shrink-0 opacity-0 group-hover/item:opacity-100 transition-all translate-x-2 ${trackingData?.id === s.faktur ? 'text-white' : 'text-green-600'}`} />
                                  </button>
                               )) : (
                                  <div className="p-12 text-center flex flex-col items-center gap-3">
-                                    <p className="text-[12px] font-black text-black/20 uppercase tracking-widest">Data Tidak Ditemukan</p>
+                                    <p className="text-[12px] font-bold text-gray-300">Data Tidak Ditemukan</p>
                                  </div>
                               )}
                            </div>
@@ -565,44 +568,39 @@ export default function TrackingClient() {
          </div>
 
          {error && (
-            <div className="p-4 bg-[#ff5e5e] text-white border-[3px] border-black shadow-[2.5px_2.5px_0_0_#000] text-sm flex items-start gap-4 animate-in fade-in shrink-0">
-               <AlertCircle size={20} strokeWidth={3} className="shrink-0 mt-0.5" />
-               <p className="font-black uppercase tracking-tight leading-tight">{error}</p>
+            <div className="p-5 bg-red-50 text-red-600 border border-red-100 rounded-xl shadow-sm shadow-red-900/5 text-sm flex items-start gap-4 animate-in fade-in shrink-0">
+               <AlertCircle size={20} className="shrink-0 mt-0.5" />
+               <p className="font-bold leading-tight">{error}</p>
             </div>
          )}
 
          {/* RESULTS SECTION */}
-         <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
-            <div className="flex flex-col gap-4 shrink-0">
+         <div className="flex-1 flex flex-col gap-3 overflow-hidden min-h-0 relative">
+            <div className="flex flex-col gap-4 shrink-0 px-1">
                <div className="flex items-center justify-between gap-4 min-h-[32px]">
-                  <h3 className="text-[14px] font-black text-black flex items-center gap-3 leading-none uppercase tracking-widest">
-                     <Clock size={20} className="text-black" strokeWidth={3} />
+                  <h3 className="text-[14px] font-bold text-gray-800 flex items-center gap-3 leading-none">
+                     <div className="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center shadow-sm shrink-0">
+                        <Clock size={16} />
+                     </div>
                      <span>Visualisasi Alur Manufaktur</span>
                   </h3>
                   {isAutoRefreshing && (
-                     <div className="flex items-center gap-2 text-[10px] font-black text-black animate-pulse bg-[#fde047] px-3 py-1.5 border-[2px] border-black shadow-[2px_2px_0_0_#000] uppercase tracking-tighter leading-none">
-                       <Loader2 size={12} className="animate-spin" strokeWidth={3} />
+                     <div className="flex items-center gap-3 text-[10px] font-bold text-green-600 animate-pulse bg-green-50 px-4 py-2 rounded-full border border-green-100 shadow-sm leading-none">
+                       <Loader2 size={12} className="animate-spin" />
                        <span>Sinkronisasi Otomatis...</span>
                      </div>
                   )}
                </div>
-               <div className="relative w-full group">
-                  <Search size={18} strokeWidth={3} className="absolute left-4 top-1/2 -translate-y-1/2 text-black/20 group-focus-within:text-black transition-colors" />
-                  <input 
-                     type="text" 
-                     placeholder="CARI DALAM HASIL PELACAKAN (FAKTUR, BARANG, PELANGGAN, DLL)..." 
-                     className="w-full pl-12 pr-4 h-12 bg-white border-[3px] border-black rounded-none focus:outline-none shadow-[2.5px_2.5px_0_0_#000] focus:-translate-y-[2px] focus:-translate-x-[2px] focus:shadow-[2.5px_2.5px_0_0_#000] transition-all text-[13px] font-black placeholder:text-black/20 uppercase tracking-tighter" 
-                     value={filterText} 
-                     onChange={(e) => setFilterText(e.target.value)} 
-                     onBlur={handleSearchTrigger}
-                     onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleSearchTrigger();
-                     }}
-                  />
-               </div>
+               <SearchAndReload 
+                  searchQuery={filterText} 
+                  setSearchQuery={setFilterText} 
+                  onReload={() => { if (selectedFaktur) fetchTrackingData(selectedFaktur); }} 
+                  loading={loadingData} 
+                  placeholder="Cari dalam hasil pelacakan (faktur, barang, pelanggan, dll)..." 
+               />
             </div>
             
-            <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
+            <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
                {useMemo(() => (
                   <DataTable
                      columns={columns} data={trackingData ? [trackingData] : []}
@@ -613,21 +611,21 @@ export default function TrackingClient() {
                ), [columns, trackingData, loadingData, columnWidths])}
                
                {/* FOOTER INFO BANNER */}
-               <div className="flex items-center justify-between shrink-0 px-1 mt-1">
-                  <span className="text-[12px] leading-none font-black text-black/30 uppercase tracking-tighter">
+               <div className="flex items-center justify-between shrink-0 px-2 min-h-[30px]">
+                  <span className="text-[11px] font-bold text-gray-400 tracking-wide flex items-center gap-2">
                      {loadingData ? (
-                        <span className="flex items-center gap-2">
-                           <Loader2 size={14} className="animate-spin text-black" strokeWidth={3} />
-                           SEDANG MENELUSURI ALUR PRODUKSI...
-                        </span>
-                     ) : trackingData ? 'STATUS: 1 SIKLUS PRODUKSI BERHASIL DILACAK' : 'INFO: SILAKAN PILIH NOMOR BOM UNTUK MEMULAI PELACAKAN'}
+                        <>
+                           <Loader2 size={14} className="animate-spin text-green-600" />
+                           Sedang menelusuri alur produksi...
+                        </>
+                     ) : trackingData ? 'Status: 1 siklus produksi berhasil dilacak' : 'Info: Silakan pilih nomor BOM untuk memulai pelacakan'}
                   </span>
                   {loadTime !== null && trackingData && (
-                     <div className="flex items-center gap-4">
-                        <span className={`text-[10px] px-2 py-0.5 rounded-none font-black flex items-center gap-1.5 shadow-[2px_2px_0_0_#000] border-[2px] border-black uppercase tracking-tight ${loadTime < 300 ? 'bg-[#93c5fd] text-black' : loadTime < 1000 ? 'bg-[#fde047] text-black' : 'bg-[#ff5e5e] text-white'}`}>
+                     <div className="flex items-center gap-6">
+                        <div className={`text-[9px] px-2 py-1 rounded-full font-bold flex items-center gap-1.5 border tracking-wide shadow-sm ${loadTime < 300 ? 'bg-green-50 text-green-600 border-green-100' : loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
                            <span className="animate-pulse">⚡</span>
-                           <span>{(loadTime / 1000).toFixed(2)}S</span>
-                        </span>
+                           <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
+                        </div>
                      </div>
                   )}
                </div>
@@ -635,4 +633,8 @@ export default function TrackingClient() {
          </div>
       </div>
    );
+;
 }
+
+
+

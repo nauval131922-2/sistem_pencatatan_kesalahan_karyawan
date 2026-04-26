@@ -4,6 +4,8 @@ import { useState, useTransition, useRef, useEffect, useCallback, useMemo } from
 import { useRouter } from 'next/navigation';
 import { Search, Pencil, Trash2, Calendar, FileText, Printer, RefreshCw, FileSpreadsheet, Clock, ClipboardList, Loader2 } from 'lucide-react';
 import { utils, writeFile } from 'xlsx';
+import SearchAndReload from '@/components/SearchAndReload';
+import TableFooter from '@/components/TableFooter';
 
 import ConfirmDialog, { DialogType } from '@/components/ConfirmDialog';
 import DatePicker from '@/components/DatePicker';
@@ -223,25 +225,25 @@ export default function InfractionsTable({
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 group-[.is-selected]:opacity-100 transition-opacity">
                     <button
                         onClick={(e) => { e.stopPropagation(); generateSinglePDF(inf); }}
-                        className="flex items-center gap-1.5 text-[10px] font-black text-black bg-[#fde047] hover:bg-black hover:text-white border-[2px] border-black px-2.5 py-1 rounded-none shadow-[2px_2px_0_0_#000] transition-all leading-none uppercase tracking-wider active:translate-x-[1px] active:translate-y-[1px] active:shadow-none"
+                        className="flex items-center gap-1.5 text-[10px] font-bold text-green-600 bg-green-50 hover:bg-green-600 hover:text-white border border-green-100 px-3 py-1.5 rounded-lg transition-all leading-none uppercase tracking-wider"
                         title="Cetak PDF Faktur"
                     >
-                        <FileText size={12} strokeWidth={3} />
+                        <FileText size={12} />
                         PDF
                     </button>
                     <button
                         onClick={(e) => { e.stopPropagation(); onEdit?.(inf); }}
-                        className="p-1.5 text-black hover:bg-[#93c5fd] border-[2px] border-transparent hover:border-black rounded-none transition-all active:translate-x-[1px] active:translate-y-[1px]"
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                         title="Edit Data"
                     >
-                        <Pencil size={15} strokeWidth={2.5} />
+                        <Pencil size={15} />
                     </button>
                     <button
                         onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(inf.id); }}
-                        className="p-1.5 text-black hover:bg-[#ff5e5e] hover:text-white border-[2px] border-transparent hover:border-black rounded-none transition-all active:translate-x-[1px] active:translate-y-[1px]"
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                         title="Hapus Data"
                     >
-                        <Trash2 size={15} strokeWidth={2.5} />
+                        <Trash2 size={15} />
                     </button>
                 </div>
             );
@@ -252,7 +254,7 @@ export default function InfractionsTable({
         header: 'Faktur',
         size: 110,
         cell: (info: any) => (
-            <span className="text-[11px] font-black text-black/40 font-mono tracking-widest leading-none">
+            <span className="text-[11px] font-bold text-gray-300 font-mono tracking-widest leading-none">
                 {info.getValue() || '---'}
             </span>
         )
@@ -264,8 +266,8 @@ export default function InfractionsTable({
         cell: (info: any) => {
             const isSelected = info.row.getIsSelected();
             return (
-                <div className={`flex items-center gap-2 text-[13px] font-black ${isSelected ? 'text-black' : 'text-black'}`}>
-                    <Calendar size={13} strokeWidth={2.5} className={isSelected ? 'text-black' : 'text-black/30'} />
+                <div className={`flex items-center gap-2 text-[13px] font-bold ${isSelected ? 'text-green-700' : 'text-gray-700'}`}>
+                    <Calendar size={14} className={isSelected ? 'text-green-500' : 'text-gray-300'} />
                     {formatIndoDateStr(info.getValue() as string)}
                 </div>
             );
@@ -277,11 +279,11 @@ export default function InfractionsTable({
         size: 200,
         cell: (info: any) => (
             <div className="flex flex-col gap-0.5 leading-snug overflow-hidden">
-                <span className="text-[13px] font-black text-black line-clamp-1 uppercase tracking-tight" title={info.getValue() as string}>
+                <span className="text-[13px] font-bold text-gray-800 line-clamp-1 tracking-tight" title={info.getValue() as string}>
                     {info.getValue() || 'Karyawan Dihapus'}
                 </span>
                 {info.row.original.employee_position && (
-                    <span className="text-[10px] font-black text-black/40 line-clamp-1 uppercase tracking-widest">
+                    <span className="text-[10px] font-bold text-gray-400 line-clamp-1">
                         {info.row.original.employee_position}
                     </span>
                 )}
@@ -293,7 +295,7 @@ export default function InfractionsTable({
         header: 'Deskripsi',
         size: 250,
         cell: (info: any) => (
-            <span className="text-[12px] text-gray-500 line-clamp-2 block leading-snug whitespace-normal" title={info.getValue() as string}>
+            <span className="text-[12px] text-gray-400 line-clamp-2 block leading-snug whitespace-normal" title={info.getValue() as string}>
                 {info.getValue() || '---'}
             </span>
         )
@@ -305,11 +307,11 @@ export default function InfractionsTable({
         cell: (info: any) => {
             const inf = info.row.original as Infraction;
             return (
-                <div className="flex flex-col gap-0.5 leading-snug overflow-hidden">
-                    <span className="text-[12px] font-black text-black line-clamp-1" title={inf.nama_barang_display || inf.nama_barang || '---'}>
+                <div className="flex flex-col gap-1 leading-snug overflow-hidden">
+                    <span className="text-[12px] font-bold text-gray-700 line-clamp-1" title={inf.nama_barang_display || inf.nama_barang || '---'}>
                         {inf.nama_barang_display || inf.nama_barang || '---'}
                     </span>
-                    <span className="text-[9px] font-black text-black bg-[#fde047] w-fit px-1.5 py-0.5 border-[1.5px] border-black uppercase tracking-widest leading-none">
+                    <span className="text-[9px] font-bold text-green-600 bg-green-50 w-fit px-2 py-0.5 rounded-md border border-green-100 uppercase tracking-widest leading-none">
                         {inf.jenis_barang || 'UMUM'}
                     </span>
                 </div>
@@ -323,7 +325,7 @@ export default function InfractionsTable({
         cell: (info: any) => {
             const val = info.getValue() as string;
             return val ? (
-                <span className="inline-block px-2.5 py-1 rounded-none border-[2px] border-black bg-white text-black text-[11px] font-black uppercase tracking-tight truncate max-w-full shadow-[2px_2px_0_0_#aaa]" title={val}>
+                <span className="inline-block px-3 py-1 rounded-lg bg-gray-50 text-gray-600 text-[11px] font-bold tracking-tight truncate max-w-full border border-gray-100" title={val}>
                     {val}
                 </span>
             ) : <span className="text-gray-200">—</span>;
@@ -335,7 +337,7 @@ export default function InfractionsTable({
         size: 80,
         meta: { align: 'right' },
         cell: (info: any) => (
-            <span className="font-mono font-black text-black text-[13px]">
+            <span className="font-mono font-bold text-gray-700 text-[13px]">
                 {info.getValue() || 0}
             </span>
         )
@@ -350,8 +352,8 @@ export default function InfractionsTable({
             if (!val) return <span className="text-gray-200">—</span>;
             const formatted = val.toLocaleString('id-ID', { minimumFractionDigits: 0 }).trim();
             return (
-                <div className="flex items-center justify-between w-full font-mono font-black text-black pr-1 text-[12px]">
-                    <span className="text-[9px] opacity-40">Rp</span>
+                <div className="flex items-center justify-between w-full font-mono font-bold text-gray-700 pr-1 text-[12px]">
+                    <span className="text-[9px] text-gray-300">Rp</span>
                     <span>{formatted}</span>
                 </div>
             );
@@ -367,9 +369,9 @@ export default function InfractionsTable({
             if (!val) return <span className="text-gray-200">—</span>;
             const formatted = val.toLocaleString('id-ID', { minimumFractionDigits: 0 }).trim();
             return (
-                <div className="flex items-center justify-between w-full font-mono font-black text-black pr-1 text-[14px]">
-                    <span className="text-[10px] opacity-40">Rp</span>
-                    <span>{formatted}</span>
+                <div className="flex items-center justify-between w-full font-mono font-bold text-gray-900 pr-1 text-[14px]">
+                    <span className="text-[10px] text-gray-300">Rp</span>
+                    <span className="font-extrabold">{formatted}</span>
                 </div>
             );
         }
@@ -377,23 +379,23 @@ export default function InfractionsTable({
   ], [onEdit, generateSinglePDF]);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-5 animate-in fade-in duration-500 overflow-hidden">
-      {/* Top Filter Bar - Neo-brutalist */}
-      <div className="bg-white rounded-none border-[3px] border-black p-6 shadow-[2.5px_2.5px_0_0_#000] flex flex-col gap-5 shrink-0 relative z-50">
-        <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
+    <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in duration-500 overflow-hidden">
+      {/* Top Filter Bar - Premium Light */}
+      <div className="bg-white rounded-2xl border border-gray-100 py-3.5 px-6 shadow-sm shadow-green-900/5 flex flex-col gap-4 shrink-0 relative z-50">
+        <div className="flex flex-wrap items-center justify-between gap-6 relative z-10">
           <div className="flex flex-col gap-2">
-            <span className="text-[10px] font-black text-black uppercase tracking-[0.2em] ml-1">Rentang Periode Kesalahan</span>
+            <span className="text-[13px] font-semibold text-gray-500 pl-1">Rentang Periode Kesalahan</span>
             <div className="flex items-center gap-3">
-              <div className="w-[150px] relative group">
+              <div className="w-[180px] relative group">
                 <DatePicker name="startDate" value={startDate} onChange={setStartDate} />
               </div>
-              <div className="w-6 h-[3px] bg-black"></div>
-              <div className="w-[150px] relative group">
+              <div className="w-4 h-0.5 bg-gray-200 rounded-full"></div>
+              <div className="w-[180px] relative group">
                 <DatePicker name="endDate" value={endDate} onChange={setEndDate} />
               </div>
               {isRefreshing && (
-                <div className="ml-2 flex items-center justify-center w-9 h-9 rounded-none bg-[#fde047] border-[2px] border-black shadow-[2px_2px_0_0_#000]">
-                  <RefreshCw size={14} strokeWidth={3} className="animate-spin text-black" />
+                <div className="ml-2 flex items-center justify-center w-10 h-10 rounded-lg bg-green-50 text-green-600">
+                  <RefreshCw size={18} className="animate-spin" />
                 </div>
               )}
             </div>
@@ -401,97 +403,76 @@ export default function InfractionsTable({
           <div className="shrink-0 flex items-center gap-4">
             <button 
               onClick={generateExcel}
-              className="px-6 h-12 bg-white text-black border-[3px] border-black font-black rounded-none hover:bg-[#fde047] transition-all flex items-center gap-3 shadow-[2.5px_2.5px_0_0_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none uppercase tracking-widest text-[11px]"
+              className="px-5 h-10 bg-white text-gray-600 border border-gray-100 font-semibold rounded-lg hover:bg-green-50 hover:text-green-600 hover:border-green-100 transition-all flex items-center gap-2 shadow-sm text-[12px]"
             >
-              <FileSpreadsheet size={18} strokeWidth={2.5} />
+              <FileSpreadsheet size={18} />
               <span>Ekspor Excel</span>
             </button>
             <button 
               onClick={generatePDF}
-              className="px-6 h-12 bg-white text-black border-[3px] border-black font-black rounded-none hover:bg-[#ff5e5e] hover:text-white transition-all flex items-center gap-3 shadow-[2.5px_2.5px_0_0_#000] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none uppercase tracking-widest text-[11px]"
+              className="px-5 h-10 bg-white text-gray-600 border border-gray-100 font-semibold rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all flex items-center gap-2 shadow-sm text-[12px]"
             >
-              <Printer size={18} strokeWidth={2.5} />
+              <Printer size={18} />
               <span>Cetak Rekap PDF</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Results View - Replicating Sales structure specifically */}
-      <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0 relative">
-        <div className="flex flex-col gap-4 shrink-0">
+      {/* Results View */}
+      <div className="flex-1 flex flex-col gap-3 overflow-hidden min-h-0 relative">
+        <div className="flex flex-col gap-4 shrink-0 px-1">
           <div className="flex items-center justify-between gap-4 min-h-[32px]">
             <div className="flex items-center gap-4">
-              <h3 className="text-sm font-black text-black flex items-center gap-2.5 leading-none uppercase tracking-widest">
-                <ClipboardList size={20} strokeWidth={3} className="text-black" />
+              <h3 className="text-[14px] font-bold text-gray-800 flex items-center gap-3 leading-none">
+                <div className="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center shadow-sm shrink-0">
+                  <ClipboardList size={16} />
+                </div>
                 <span>Riwayat Kesalahan Karyawan</span>
               </h3>
               {isRefreshing && data.length > 0 && (
-                <div className="text-[10px] font-black text-black flex items-center gap-2 bg-[#fde047] px-3 py-1.5 border-[2px] border-black animate-pulse uppercase tracking-[0.2em] leading-none shadow-[2px_2px_0_0_#000]">
-                  <RefreshCw size={12} strokeWidth={3} className="animate-spin" />
-                  <span>Sinkronisasi...</span>
+                <div className="text-[10px] font-bold text-green-600 flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full border border-green-100 animate-pulse leading-none shadow-sm">
+                  <RefreshCw size={12} className="animate-spin" />
+                  <span>Sinkronisasi Data...</span>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="relative w-full group">
-            <Search size={18} strokeWidth={3} className="absolute left-4 top-1/2 -translate-y-1/2 text-black group-focus-within:scale-110 transition-transform" />
-            <input 
-              type="text" 
-              placeholder="Cari nama karyawan, deskripsi, faktur..." 
-              className="w-full pl-12 pr-4 h-12 bg-white border-[3px] border-black rounded-none focus:outline-none shadow-[2.5px_2.5px_0_0_#000] focus:translate-x-[-1px] focus:translate-y-[-1px] focus:shadow-[2.5px_2.5px_0_0_#000] transition-all text-[13px] font-black uppercase tracking-tight placeholder:text-black/30" 
-              value={query} 
-              onChange={handleSearch} 
-            />
-          </div>
+          <SearchAndReload
+            searchQuery={query}
+            setSearchQuery={(v) => { setQuery(v); setVisibleCount(PAGE_SIZE); }}
+            onReload={fetchFilteredData}
+            loading={isRefreshing}
+            placeholder="Cari nama karyawan, deskripsi, faktur..."
+          />
         </div>
 
-        <DataTable
-            data={filtered}
-            columns={columns}
-            columnWidths={columnWidths}
-            onColumnWidthChange={handleResize}
-            isLoading={isRefreshing && data.length === 0}
-            selectedIds={selectedIds}
-            onRowClick={handleRowClick}
-            onRowDoubleClick={(id) => {
-                const inf = filtered.find(d => d.id === id);
-                if (inf && onEdit) onEdit(inf);
-            }}
-            rowHeight="h-12"
-        />
-
-        {/* Footer info Banner */}
-        <div className="flex items-center justify-between shrink-0 px-1 mt-1">
-          <span className="text-[12px] leading-none font-black text-black/50 uppercase tracking-widest">
-             {filtered.length === 0 ? 'Data Kosong' : `Menampilkan ${filtered.length} Rekaman`}
-          </span>
-          
-          <div className="flex items-center gap-4">
-            {selectedIds.size > 0 && (
-                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                   <span className="text-[12px] leading-none font-black text-black/40 uppercase tracking-widest">{selectedIds.size} dipilih</span>
-                   <button 
-                    onClick={clearSelection}
-                    className="text-[12px] leading-none font-black text-black bg-[#fde047] border-[2px] border-black px-3 py-1 shadow-[2px_2px_0_0_#000] hover:bg-black hover:text-white transition-all active:translate-x-[1px] active:translate-y-[1px] active:shadow-none uppercase tracking-[0.2em]"
-                   >
-                     BATAL
-                   </button>
-                </div>
-            )}
-            {loadTime !== null && (
-               <span className={`text-[10px] px-2 py-0.5 rounded-none font-black flex items-center gap-1.5 shadow-[2px_2px_0_0_#000] border-[2px] border-black uppercase tracking-tight ${
-                loadTime < 300 ? 'bg-[#93c5fd] text-black' : 
-                loadTime < 1000 ? 'bg-[#fde047] text-black' : 
-                'bg-[#ff5e5e] text-white'
-              }`}>
-                  <span className="animate-pulse">⚡</span>
-                  <span className="leading-none">{(loadTime / 1000).toFixed(2)}S</span>
-               </span>
-            )}
-          </div>
+        <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
+          <DataTable
+              data={filtered}
+              columns={columns}
+              columnWidths={columnWidths}
+              onColumnWidthChange={handleResize}
+              isLoading={isRefreshing && data.length === 0}
+              selectedIds={selectedIds}
+              onRowClick={handleRowClick}
+              onRowDoubleClick={(id) => {
+                  const inf = filtered.find(d => d.id === id);
+                  if (inf && onEdit) onEdit(inf);
+              }}
+              rowHeight="h-14"
+          />
+          <TableFooter
+            totalCount={filtered.length}
+            currentCount={filtered.length}
+            label="Rekaman Kesalahan"
+            selectedCount={selectedIds.size}
+            onClearSelection={clearSelection}
+            loadTime={loadTime}
+          />
         </div>
+
       </div>
 
       <ConfirmDialog
@@ -516,6 +497,9 @@ export default function InfractionsTable({
     </div>
   );
 }
+
+
+
 
 
 

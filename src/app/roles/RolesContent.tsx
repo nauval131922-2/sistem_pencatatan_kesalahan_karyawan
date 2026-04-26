@@ -25,19 +25,19 @@ interface RolesContentProps {
 }
 
 const GROUP_COLORS: Record<string, { text: string; bg: string; dot: string }> = {
-  'Dashboard':           { text: 'text-black', bg: 'bg-[#93c5fd]', dot: 'bg-black' },
-  'Data Digit':          { text: 'text-black', bg: 'bg-[#fde047]', dot: 'bg-black' },
-  'Data Digit - Pembelian':  { text: 'text-black', bg: 'bg-[#93c5fd]', dot: 'bg-black' },
-  'Data Digit - Produksi':   { text: 'text-black', bg: 'bg-[#fde047]', dot: 'bg-black' },
-  'Data Digit - Penjualan':  { text: 'text-black', bg: 'bg-[#ff5e5e]', dot: 'bg-black' },
+  'Dashboard':           { text: 'text-blue-700', bg: 'bg-emerald-50', dot: 'bg-emerald-500' },
+  'Data Digit':          { text: 'text-emerald-700', bg: 'bg-emerald-50', dot: 'bg-emerald-500' },
+  'Data Digit - Pembelian':  { text: 'text-blue-700', bg: 'bg-emerald-50', dot: 'bg-emerald-500' },
+  'Data Digit - Produksi':   { text: 'text-emerald-700', bg: 'bg-emerald-50', dot: 'bg-emerald-500' },
+  'Data Digit - Penjualan':  { text: 'text-indigo-700', bg: 'bg-indigo-50', dot: 'bg-indigo-500' },
 
-  'Sistem':              { text: 'text-black', bg: 'bg-white',     dot: 'bg-black' },
-  'Sistem - Umum':       { text: 'text-black', bg: 'bg-white',     dot: 'bg-black' },
-  'Sistem - HRD':        { text: 'text-black', bg: 'bg-[#ff5e5e]', dot: 'bg-black' },
-  'Sistem - Kalkulasi':  { text: 'text-black', bg: 'bg-[#fde047]', dot: 'bg-black' },
-  'Sistem - Produksi':   { text: 'text-black', bg: 'bg-[#93c5fd]', dot: 'bg-black' },
-  'Sistem - Penjualan':  { text: 'text-black', bg: 'bg-[#ff5e5e]', dot: 'bg-black' },
-  'Sistem - User':       { text: 'text-black', bg: 'bg-white',     dot: 'bg-black' },
+  'Sistem':              { text: 'text-slate-700', bg: 'bg-slate-50',     dot: 'bg-slate-500' },
+  'Sistem - Umum':       { text: 'text-slate-700', bg: 'bg-slate-50',     dot: 'bg-slate-500' },
+  'Sistem - HRD':        { text: 'text-rose-700', bg: 'bg-rose-50',     dot: 'bg-rose-500' },
+  'Sistem - Kalkulasi':  { text: 'text-amber-700', bg: 'bg-amber-50',     dot: 'bg-amber-500' },
+  'Sistem - Produksi':   { text: 'text-emerald-700', bg: 'bg-emerald-50',     dot: 'bg-emerald-500' },
+  'Sistem - Penjualan':  { text: 'text-indigo-700', bg: 'bg-indigo-50',     dot: 'bg-indigo-500' },
+  'Sistem - User':       { text: 'text-slate-700', bg: 'bg-slate-50',     dot: 'bg-slate-500' },
 };
 
 export default function RolesContent({ allPermissions, customRoles }: RolesContentProps) {
@@ -165,8 +165,12 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
   const groupedModules = useMemo(() => {
     const groups: Record<string, typeof MODULE_REGISTRY[number][]> = {};
     for (const m of MODULE_REGISTRY) {
-      if (!groups[m.group]) groups[m.group] = [];
-      groups[m.group].push(m);
+      let groupName = m.group;
+      if (groupName.startsWith('Data Digit - ')) groupName = 'Data Digit';
+      if (groupName.startsWith('Sistem - ')) groupName = 'Sistem';
+
+      if (!groups[groupName]) groups[groupName] = [];
+      groups[groupName].push(m);
     }
     return groups;
   }, []);
@@ -276,635 +280,436 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
   };
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-5 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700">
+    <div className="flex-1 min-h-0 flex flex-col gap-6 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-700">
       <PageHeader
-        title="Kelola Hak Akses"
-        description="Atur hak akses setiap role terhadap modul dalam sistem SINTAK."
+        title="Hak Akses & Role"
+        description="Konfigurasi izin penggunaan setiap modul operasional SINTAK."
       />
 
-      {/* Split Panel Layout */}
-      <div className="flex-1 min-h-0 flex gap-4 overflow-hidden max-w-[1100px] w-full mx-auto">
-
-        {/* ── LEFT PANEL ── */}
-        <div className="w-56 shrink-0 flex flex-col gap-2 overflow-y-auto custom-scrollbar px-2 py-1">
-
-          {/* Super Admin — locked badge (tidak bisa dipilih) */}
-          <p className="text-[10px] font-black text-black/30 uppercase tracking-widest px-1">
-            Role Sistem
-          </p>
-          <div className="w-full p-3 rounded-none border-[3px] border-black bg-black shadow-[4px_4px_0_0_#fde047]">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-none flex items-center justify-center bg-[#fde047] text-black border-2 border-black shrink-0">
-                <ShieldCheck size={18} strokeWidth={3} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[13px] font-black text-[#fde047] truncate uppercase tracking-tighter">Super Admin</span>
-                  <Lock size={12} className="text-[#fde047]/50 shrink-0" />
-                </div>
-                <span className="text-[10px] font-bold text-[#fde047]/50 uppercase">Full Access</span>
-              </div>
-            </div>
+      <div className="flex-1 min-h-0 flex gap-6 overflow-hidden max-w-[1200px] w-full mx-auto">
+        {/* LEFT PANEL: ROLES */}
+        <div className="w-72 shrink-0 flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-2 pb-10">
+          <div className="flex flex-col gap-2.5">
+             <h4 className="text-[12px] font-semibold text-gray-400 px-1">Role Sistem</h4>
+             <div className="p-4 bg-white rounded-xl border border-emerald-100 shadow-sm shadow-emerald-900/5 ring-1 ring-emerald-50/50">
+               <div className="flex items-center gap-4">
+                 <div className="w-11 h-11 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-sm shadow-emerald-900/10">
+                   <ShieldCheck size={20} />
+                 </div>
+                 <div>
+                   <h5 className="text-[14px] font-bold text-gray-800 tracking-tight">Super Admin</h5>
+                   <p className="text-[10px] text-emerald-600 font-bold">Akses Sistem Penuh</p>
+                 </div>
+               </div>
+             </div>
           </div>
 
-          {/* Configurable Roles */}
-          <div className="flex items-center justify-between px-1 mt-6 mb-2">
-            <p className="text-[10px] font-black text-black/30 uppercase tracking-widest">
-              Role Terkonfigurasi
-            </p>
-            <button 
-              onClick={() => { setIsAddingRole(true); setEditingRole(null); }}
-              className="p-1 hover:bg-[#fde047] border-2 border-transparent hover:border-black rounded-none text-black transition-all"
-              title="Tambah Role Baru"
-            >
-              <Plus size={16} strokeWidth={3} />
-            </button>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            {isAddingRole && (
-              <div className="w-full p-3 rounded-none border-[3px] border-black bg-[#fde047] shadow-[2.5px_2.5px_0_0_#000] animate-in fade-in slide-in-from-top-2 mb-4">
-                <input
-                  type="text"
-                  placeholder="NAMA ROLE..."
-                  className="w-full text-[12px] font-black px-3 py-2 bg-white border-[3px] border-black rounded-none mb-3 focus:outline-none uppercase tracking-tighter"
-                  value={newRoleName}
-                  onChange={e => setNewRoleName(e.target.value)}
-                  autoFocus
-                />
-                <input
-                  type="text"
-                  placeholder="DESKRIPSI ROLE..."
-                  className="w-full text-[11px] font-bold px-3 py-2 bg-white border-[3px] border-black rounded-none mb-3 focus:outline-none uppercase tracking-tighter"
-                  value={newRoleDesc}
-                  onChange={e => setNewRoleDesc(e.target.value)}
-                />
-                <div className="flex gap-3 justify-end">
-                  <button onClick={() => setIsAddingRole(false)} className="text-[10px] font-black text-black/40 hover:text-black uppercase">Batal</button>
-                  <button onClick={handleAddRole} disabled={saving} className="flex items-center gap-2 text-[10px] font-black text-[#fde047] bg-black px-3 py-1.5 rounded-none border-2 border-black hover:translate-y-[-1px] transition-all uppercase">
-                    <Save size={12} strokeWidth={3} /> Simpan
-                  </button>
-                </div>
-              </div>
-            )}
+          <div className="flex flex-col gap-2.5 mt-4">
+             <div className="flex items-center justify-between px-1">
+               <h4 className="text-[12px] font-semibold text-gray-400">Role Terkonfigurasi</h4>
+               <button 
+                 onClick={() => { setIsAddingRole(true); setEditingRole(null); }}
+                 className="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm border border-emerald-100"
+               >
+                 <Plus size={16} />
+               </button>
+             </div>
 
-            {customRoles.map(m => {
-              const role = m.name;
-              const isActive = selectedRole === role;
-              const { enabled, total } = getTotalStats(role);
-
-              if (editingRole === role) {
-                return (
-              <div key={`edit-${role}`} className="w-full p-3 rounded-none border-[3px] border-black bg-[#93c5fd] shadow-[2.5px_2.5px_0_0_#000] mb-4">
-                <input
-                  type="text"
-                  className="w-full text-[12px] font-black px-3 py-2 bg-white border-[3px] border-black rounded-none mb-3 focus:outline-none uppercase tracking-tighter"
-                  value={editRoleName}
-                  onChange={e => setEditRoleName(e.target.value)}
-                  autoFocus
-                />
-                <input
-                  type="text"
-                  className="w-full text-[11px] font-bold px-3 py-2 bg-white border-[3px] border-black rounded-none mb-3 focus:outline-none uppercase tracking-tighter"
-                  value={editRoleDesc}
-                  onChange={e => setEditRoleDesc(e.target.value)}
-                />
-                <div className="flex gap-3 justify-end">
-                  <button onClick={() => setEditingRole(null)} className="text-[10px] font-black text-black/40 hover:text-black uppercase">Batal</button>
-                  <button onClick={handleUpdateRole} disabled={saving} className="flex items-center gap-2 text-[10px] font-black text-white bg-black px-3 py-1.5 rounded-none border-2 border-black hover:translate-y-[-1px] transition-all uppercase">
-                    <Save size={12} strokeWidth={3} /> Simpan
-                  </button>
-                </div>
-              </div>
-                );
-              }
-
-              return (
-                <div key={role} className="relative group">
-                  <button
-                    onClick={() => { setSelectedRole(role); setEditingRole(null); setIsAddingRole(false); }}
-                    className={`relative w-full text-left p-3 rounded-none border-[3px] transition-all duration-200 mb-1 ${
-                      isActive
-                        ? 'bg-[#fde047] border-black shadow-[2.5px_2.5px_0_0_#000] -translate-y-[2px] -translate-x-[2px] z-10'
-                        : 'bg-white border-black/10 hover:border-black/30'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-none flex items-center justify-center shrink-0 border-2 ${
-                        isActive ? 'bg-black text-[#fde047] border-black' : 'bg-black/5 text-black/20 border-transparent'
-                      }`}>
-                        <UserCog size={18} strokeWidth={3} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`text-[13px] font-black truncate uppercase tracking-tighter ${isActive ? 'text-black' : 'text-black/60'}`}>
-                            {role}
-                          </span>
-                        </div>
-                        <span className={`text-[10px] font-bold uppercase tracking-tight ${isActive ? 'text-black/40' : 'text-black/20'}`}>
-                          {enabled}/{total} Modul
-                        </span>
-                      </div>
-                      {isActive && (
-                        <ChevronRight size={16} strokeWidth={4} className="text-black shrink-0" />
-                      )}
+             <div className="flex flex-col gap-2">
+               {isAddingRole && (
+                 <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-100 animate-in slide-in-from-top-2 duration-300 shadow-sm mb-2">
+                    <input
+                      type="text"
+                      placeholder="Nama Role..."
+                      className="w-full bg-white border border-emerald-100 rounded-lg px-4 py-2 text-[13px] font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 mb-3"
+                      value={newRoleName}
+                      onChange={e => setNewRoleName(e.target.value)}
+                      autoFocus
+                    />
+                    <input
+                      type="text"
+                      placeholder="Deskripsi..."
+                      className="w-full bg-white border border-emerald-100 rounded-lg px-4 py-2 text-[12px] font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 mb-4"
+                      value={newRoleDesc}
+                      onChange={e => setNewRoleDesc(e.target.value)}
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => setIsAddingRole(false)} className="text-[11px] font-bold text-gray-400 hover:text-gray-600 px-3">Batal</button>
+                      <button onClick={handleAddRole} disabled={saving} className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-[11px] font-bold shadow-sm shadow-emerald-900/10">Simpan</button>
                     </div>
-                  </button>
-                  <div className="absolute top-1/2 -translate-y-1/2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingRole(role);
-                        setEditRoleName(role);
-                        setEditRoleDesc(m.description || '');
-                        setIsAddingRole(false);
-                        setSelectedRole(role);
-                      }}
-                      className="p-1.5 rounded-none bg-white border-2 border-black text-black hover:bg-[#93c5fd] shadow-[2px_2px_0_0_#000] active:translate-y-[1px] active:translate-x-[1px] active:shadow-none transition-all"
-                      title="Edit Role"
-                    >
-                      <Pencil size={12} strokeWidth={3} />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteRole(role);
-                      }}
-                      className="p-1.5 rounded-none bg-white border-2 border-black text-black hover:bg-[#ff5e5e] hover:text-white shadow-[2px_2px_0_0_#000] active:translate-y-[1px] active:translate-x-[1px] active:shadow-none transition-all"
-                      title="Hapus Role"
-                    >
-                      <Trash2 size={12} strokeWidth={3} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          {/* Legend */}
-          <div className="mt-auto pt-4 border-t-2 border-black/10">
-            <p className="text-[9px] font-black text-black/30 uppercase tracking-widest mb-3">Grup Modul Legend</p>
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-black shrink-0" />
-                <span className="text-[10px] font-black text-black/40 uppercase tracking-tighter">Dashboard</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-[#fde047] border border-black shrink-0" />
-                <span className="text-[10px] font-black text-black/40 uppercase tracking-tighter">Operasional</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-white border-2 border-black shrink-0" />
-                <span className="text-[10px] font-black text-black/40 uppercase tracking-tighter">Sistem</span>
-              </div>
-            </div>
-          </div>    </div>
+                 </div>
+               )}
 
-        {/* ── RIGHT PANEL: Permission Matrix ── */}
-        <div className="flex-1 min-w-0 flex flex-col gap-3 min-h-0 pr-2">
+               {customRoles.map(m => {
+                 const role = m.name;
+                 const isActive = selectedRole === role;
+                 const { enabled, total } = getTotalStats(role);
+
+                 if (editingRole === role) {
+                    return (
+                      <div key={`edit-${role}`} className="p-4 bg-emerald-50 rounded-lg border border-emerald-100 shadow-sm mb-2">
+                        <input
+                          type="text"
+                          className="w-full bg-white border border-emerald-100 rounded-lg px-4 py-2 text-[13px] font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 mb-3"
+                          value={editRoleName}
+                          onChange={e => setEditRoleName(e.target.value)}
+                          autoFocus
+                        />
+                        <input
+                          type="text"
+                          className="w-full bg-white border border-emerald-100 rounded-lg px-4 py-2 text-[12px] font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 mb-4"
+                          value={editRoleDesc}
+                          onChange={e => setEditRoleDesc(e.target.value)}
+                        />
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => setEditingRole(null)} className="text-[11px] font-bold text-gray-400 hover:text-gray-600 px-3">Batal</button>
+                          <button onClick={handleUpdateRole} disabled={saving} className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-[11px] font-bold shadow-sm shadow-emerald-900/10">Update</button>
+                        </div>
+                      </div>
+                    );
+                 }
+
+                 return (
+                   <div key={role} className="group relative">
+                     <button
+                        onClick={() => { setSelectedRole(role); setEditingRole(null); setIsAddingRole(false); }}
+                        className={`w-full text-left p-4 rounded-xl border transition-all duration-300 flex items-center gap-4 ${
+                          isActive 
+                            ? 'bg-white border-emerald-200 shadow-sm shadow-emerald-900/5 ring-1 ring-emerald-50' 
+                            : 'bg-white/50 border-gray-100 hover:border-emerald-200 hover:bg-white'
+                        }`}
+                     >
+                       <div className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 border transition-colors ${
+                         isActive ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-gray-50 text-gray-400 border-gray-100'
+                       }`}>
+                         <UserCog size={20} />
+                       </div>
+                       <div className="flex-1 min-w-0">
+                         <h5 className={`text-[14px] font-bold truncate ${isActive ? 'text-gray-800' : 'text-gray-600'}`}>{role}</h5>
+                         <p className={`text-[10px] font-semibold ${isActive ? 'text-emerald-600' : 'text-gray-400'}`}>
+                           {enabled}/{total} Modul
+                         </p>
+                       </div>
+                       {isActive && <ChevronRight size={18} className="text-emerald-600" />}
+                     </button>
+                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={(e) => { e.stopPropagation(); setEditingRole(role); setEditRoleName(role); setEditRoleDesc(m.description || ''); }} className="p-2 bg-white rounded-lg border border-gray-100 shadow-sm text-gray-400 hover:text-blue-600 hover:border-emerald-100 transition-all"><Pencil size={14} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); handleDeleteRole(role); }} className="p-2 bg-white rounded-lg border border-gray-100 shadow-sm text-gray-400 hover:text-red-600 hover:border-red-100 transition-all"><Trash2 size={14} /></button>
+                     </div>
+                   </div>
+                 );
+               })}
+             </div>
+          </div>
+        </div>
+
+        {/* RIGHT PANEL: PERMISSIONS */}
+        <div className="flex-1 min-w-0 flex flex-col gap-6 overflow-hidden">
           {!selectedRole ? (
-            <div className="flex-1 flex flex-col items-center justify-center border-[3px] border-black rounded-none bg-white shadow-[2.5px_2.5px_0_0_#000]">
-              <div className="w-16 h-16 bg-[#fde047] border-[3px] border-black flex items-center justify-center mb-6">
-                <UserCog size={32} className="text-black" strokeWidth={3} />
-              </div>
-              <h3 className="text-black font-black text-lg mb-2 uppercase tracking-widest">PILIH ROLE SISTEM</h3>
-              <p className="text-black/40 text-xs max-w-xs text-center font-bold uppercase tracking-tight leading-relaxed">
-                Silakan pilih salah satu role dari panel kiri untuk mulai mengkonfigurasi hak akses modul operasional SINTAK.
-              </p>
+            <div className="flex-1 flex flex-col items-center justify-center bg-white border border-gray-100 rounded-xl shadow-sm shadow-green-900/5">
+               <div className="w-20 h-20 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600 mb-6 border border-emerald-100 shadow-sm">
+                 <ShieldCheck size={40} />
+               </div>
+               <h3 className="text-lg font-bold text-gray-800 mb-2">Pilih Role</h3>
+               <p className="text-[13px] text-gray-400 font-medium text-center max-w-sm px-8">
+                 Silakan pilih role di sebelah kiri untuk mengkonfigurasi hak akses modul operasional SINTAK.
+               </p>
             </div>
           ) : (
             <>
-              {/* Role Header Bar */}
-              <div className="shrink-0 flex items-center justify-between px-5 py-4 rounded-none border-[3px] border-black bg-[#fde047] shadow-[2.5px_2.5px_0_0_#000] mb-2">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-none flex items-center justify-center bg-black text-[#fde047] border-2 border-black">
-                    <UserCog size={20} strokeWidth={3} />
+              <div className="p-6 bg-white border border-gray-100 rounded-xl shadow-sm shadow-green-900/5 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-5">
+                  <div className="w-12 h-12 rounded-lg bg-emerald-600 flex items-center justify-center text-white shadow-sm shadow-emerald-900/10">
+                    <UserCog size={24} />
                   </div>
                   <div>
-                    <h3 className="text-[15px] font-black text-black uppercase tracking-widest">{selectedRole}</h3>
-                    <p className="text-[11px] text-black/60 font-bold uppercase tracking-tight">{currentRoleMeta.description || 'PENGATURAN HAK AKSES MODUL'}</p>
+                    <h3 className="text-lg font-bold text-gray-800">{selectedRole}</h3>
+                    <p className="text-[11px] text-gray-400 font-semibold">{currentRoleMeta.description || 'Pengaturan Hak Akses pada Sistem'}</p>
                   </div>
                 </div>
 
-            {/* Action Indicators */}
-            <div className="flex items-center gap-2">
-              {saving && (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black text-black/40 uppercase tracking-tighter">
-                  <Loader2 size={13} className="animate-spin" strokeWidth={3} />
-                  Saving...
+                <div className="flex items-center gap-4">
+                   {saving && (
+                     <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-full border border-gray-100 text-[11px] font-bold text-gray-400">
+                       <Loader2 size={14} className="animate-spin text-emerald-600" />
+                       Menyimpan...
+                     </div>
+                   )}
+                   {result && !saving && (
+                     <div className={`flex items-center gap-2 px-4 py-2 rounded-full border text-[11px] font-bold animate-in fade-in slide-in-from-top-2 ${
+                       result.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'
+                     }`}>
+                       {result.type === 'success' ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                       {result.msg}
+                     </div>
+                   )}
                 </div>
-              )}
-              {result && !saving && (
-                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-none border-2 border-black text-[11px] font-black animate-in fade-in uppercase tracking-tighter shadow-[2px_2px_0_0_#000] ${
-                  result.type === 'success'
-                    ? 'bg-[#93c5fd] text-black'
-                    : 'bg-[#ff5e5e] text-white'
-                }`}>
-                  {result.type === 'success' ? <CheckCircle2 size={13} strokeWidth={3} /> : <XCircle size={13} strokeWidth={3} />}
-                  {result.msg}
-                </div>
-              )}
-            </div>
-          </div>
+              </div>
 
-          {/* Module Groups — scrollable */}
-          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-3 pr-1">
-
-            {/* Helper to render a single module row */}
-            {(() => {
-              const renderModuleRow = (module: typeof MODULE_REGISTRY[number], gc: { text: string; bg: string; dot: string }, indent = 'px-6') => {
-                const isEnabled = permissions[selectedRole]?.[module.key] ?? false;
-                return (
-                  <div
-                    key={module.key}
-                    onClick={() => togglePermission(module.key)}
-                    className={`flex items-center justify-between ${indent} py-3 cursor-pointer hover:bg-[#fde047]/20 transition-all border-b-[2px] border-black/10 last:border-b-0`}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className={`w-3 h-3 rounded-none shrink-0 transition-colors border-[2px] border-black shadow-[1px_1px_0_0_#000] ${isEnabled ? 'bg-black' : 'bg-white'}`} />
-                      <span className={`text-[13px] font-black truncate transition-colors uppercase tracking-tighter ${isEnabled ? 'text-black' : 'text-black/20'}`}>
-                        {module.label}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0 ml-3">
-                      <button
-                        onClick={e => { e.stopPropagation(); togglePermission(module.key); }}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-none border-[2px] border-black transition-colors duration-200 ${isEnabled ? 'bg-[#93c5fd]' : 'bg-black/5'}`}
+              <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-6 pb-10">
+                {/* Module Tree Renderer */}
+                {(() => {
+                  const renderModuleRow = (module: typeof MODULE_REGISTRY[number], gc: { text: string; bg: string; dot: string }, indent = 'px-6') => {
+                    const isEnabled = permissions[selectedRole]?.[module.key] ?? false;
+                    return (
+                      <div
+                        key={module.key}
+                        onClick={() => togglePermission(module.key)}
+                        className={`flex items-center justify-between ${indent} py-3.5 cursor-pointer hover:bg-gray-50/30 transition-all border-b border-gray-50 last:border-b-0`}
                       >
-                        <span className={`inline-block h-4 w-4 transform border-[2px] border-black bg-white transition-transform duration-200 ${isEnabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                      </button>
-                      <span className={`text-[10px] font-black w-14 text-right transition-colors uppercase tracking-tight ${isEnabled ? 'text-black' : 'text-black/10'}`}>
-                        {isEnabled ? 'AKTIF' : 'OFF'}
-                      </span>
-                    </div>
-                  </div>
-                );
-              };
-
-
-              return Object.entries(groupedModules).map(([group, modules]) => {
-                // Skip sub-groups — rendered inside their parent tree
-                if (group.startsWith('Data Digit - ') || group.startsWith('Sistem - ')) return null;
-
-                const gc = GROUP_COLORS[group] || { text: 'text-gray-500', bg: 'bg-gray-100', dot: 'bg-gray-400' };
-
-                // DASHBOARD — flat rows, no collapse header
-                if (group === 'Dashboard') {
-                  return (
-                    <div key="Dashboard" className="bg-white border-[3px] border-black rounded-none overflow-hidden shadow-[2.5px_2.5px_0_0_#000] mb-6">
-                      <div className="px-5 py-3 bg-black border-b-[3px] border-black flex items-center gap-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-[#fde047]">Dashboard & Insight</span>
-                      </div>
-                      <div className="divide-y divide-black/5">
-                        {modules.map(m => renderModuleRow(m, gc))}
-                      </div>
-                    </div>
-                  );
-                }
-
-                // DATA DIGIT — tree mirrors sidebar exactly
-                if (group === 'Data Digit') {
-                  type TLeaf = { type: 'leaf'; key: string; label: string };
-                  type TNode = { type: 'node'; label: string; colorKey?: string; children: TItem[] };
-                  type TItem = TLeaf | TNode;
-
-                  const DD_TREE: TItem[] = [
-                    // Sinkronisasi (flat, rendered first from modules)
-                    { type: 'node', label: 'Pembelian', colorKey: 'Data Digit - Pembelian', children: [
-                      { type: 'node', label: 'Purchase Request (PR)', children: [
-                        { type: 'leaf', key: 'pembelian_pr', label: 'Purchase Request (PR)' }
-                      ]},
-                      { type: 'node', label: 'Penawaran', children: [
-                        { type: 'leaf', key: 'pembelian_spph', label: 'SPPH Keluar' },
-                        { type: 'leaf', key: 'pembelian_sph_in', label: 'SPH Masuk' },
-                      ]},
-                      { type: 'node', label: 'Purchase Order (PO)', children: [
-                        { type: 'leaf', key: 'pembelian_po', label: 'Purchase Order (PO)' }
-                      ]},
-                      { type: 'node', label: 'Pembelian Barang', children: [
-                        { type: 'leaf', key: 'pembelian_penerimaan', label: 'Penerimaan Barang' },
-                        { type: 'leaf', key: 'pembelian_rekap', label: 'Laporan Rekap Pembelian Barang' },
-                      ]},
-                      { type: 'node', label: 'Hutang', children: [
-                        { type: 'leaf', key: 'pembelian_hutang', label: 'Pelunasan Hutang' }
-                      ]},
-                    ]},
-                    { type: 'node', label: 'Produksi', colorKey: 'Data Digit - Produksi', children: [
-                      { type: 'leaf', key: 'produksi_bom', label: 'Bill of Material Produksi' },
-                      { type: 'leaf', key: 'produksi_orders', label: 'Order Produksi' },
-                      { type: 'node', label: 'Laporan', children: [
-                        { type: 'leaf', key: 'produksi_bahan_baku', label: 'BBB Produksi' },
-                        { type: 'leaf', key: 'produksi_barang_jadi', label: 'Penerimaan Barang Hasil Produksi' },
-                      ]},
-                    ]},
-                    { type: 'node', label: 'Penjualan', colorKey: 'Data Digit - Penjualan', children: [
-                      { type: 'node', label: 'Penawaran', children: [
-                        { type: 'leaf', key: 'penjualan_sph_out', label: 'SPH Keluar' }
-                      ]},
-                      { type: 'node', label: 'Sales Order (SO)', children: [
-                        { type: 'node', label: 'Laporan', children: [
-                          { type: 'leaf', key: 'penjualan_so', label: 'Sales Order Barang' }
-                        ]}
-                      ]},
-                      { type: 'node', label: 'Penjualan Barang', children: [
-                        { type: 'node', label: 'Laporan', children: [
-                          { type: 'leaf', key: 'penjualan_laporan', label: 'Laporan Penjualan' }
-                        ]}
-                      ]},
-                      { type: 'node', label: 'Piutang', children: [
-                        { type: 'node', label: 'Laporan', children: [
-                          { type: 'leaf', key: 'penjualan_piutang', label: 'Pelunasan Piutang Penjualan' }
-                        ]}
-                      ]},
-                      { type: 'node', label: 'Pengiriman (SJ)', children: [
-                        { type: 'node', label: 'Laporan', children: [
-                          { type: 'leaf', key: 'penjualan_pengiriman', label: 'Pengiriman' }
-                        ]}
-                      ]},
-                    ]},
-                  ];
-
-                  const ddCollectKeys = (items: TItem[]): string[] =>
-                    items.flatMap(item => item.type === 'leaf' ? [item.key] : ddCollectKeys(item.children));
-
-                  // include 'sync' from modules
-                  const syncKeys = modules.map(m => m.key);
-                  const allDDKeys = [...syncKeys, ...ddCollectKeys(DD_TREE)];
-                  const allDDEnabled = allDDKeys.filter(k => permissions[selectedRole]?.[k]).length;
-                  const isParentCollapsed = currentRoleCollapsed['Data Digit'];
-
-                  const renderDDTree = (items: TItem[], depth: number, parentColor?: { text: string; bg: string; dot: string }): React.ReactNode =>
-                    items.map((item, idx) => {
-                      if (item.type === 'leaf') {
-                        const isEnabled = permissions[selectedRole]?.[item.key] ?? false;
-                        return (
-                          <div
-                            key={item.key}
-                            onClick={() => togglePermission(item.key)}
-                            className="flex items-center justify-between py-2.5 pr-4 cursor-pointer hover:bg-[#fde047]/10 transition-all border-t-[2px] border-black/5"
-                            style={{ paddingLeft: `${16 + depth * 14}px` }}
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className={`text-[13px] font-bold truncate transition-colors ${isEnabled ? 'text-gray-800' : 'text-gray-300 font-medium'}`}>
+                            {module.label}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 shrink-0">
+                          <button
+                            onClick={e => { e.stopPropagation(); togglePermission(module.key); }}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 ${isEnabled ? 'bg-emerald-600' : 'bg-gray-200'}`}
                           >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <div className={`w-2.5 h-2.5 rounded-none shrink-0 transition-colors border-[2px] border-black ${isEnabled ? (parentColor?.dot || 'bg-black') : 'bg-white'}`} />
-                              <span className={`text-[12.5px] font-black truncate transition-colors uppercase tracking-tight ${isEnabled ? 'text-black' : 'text-black/20'}`}>{item.label}</span>
-                              <code className="hidden sm:block text-[9px] font-black text-black/20 bg-black/5 px-1.5 py-0.5 rounded-none border border-black/10 shrink-0">{item.key}</code>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0 ml-3">
-                              <button onClick={e => { e.stopPropagation(); togglePermission(item.key); }} className={`relative inline-flex h-5 w-9 items-center rounded-none border-[2px] border-black transition-colors duration-200 ${isEnabled ? 'bg-[#93c5fd]' : 'bg-black/5'}`}>
-                                <span className={`inline-block h-3.5 w-3.5 transform border-[2px] border-black bg-white transition-transform duration-200 ${isEnabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
-                              </button>
-                              <span className={`text-[10px] font-black w-14 text-right transition-colors uppercase tracking-tight ${isEnabled ? 'text-black' : 'text-black/10'}`}>{isEnabled ? 'Aktif' : 'OFF'}</span>
-                            </div>
-                          </div>
-                        );
-                      }
+                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-300 ${isEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                          </button>
+                          <span className={`text-[11px] font-bold w-16 text-right transition-colors ${isEnabled ? 'text-emerald-600' : 'text-gray-300'}`}>
+                            {isEnabled ? 'Aktif' : 'Off'}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  };
 
-                      const nodeColor = item.colorKey ? (GROUP_COLORS[item.colorKey] || parentColor) : parentColor;
-                      const nodeKeys = ddCollectKeys(item.children);
-                      const nodeEnabled = nodeKeys.filter(k => permissions[selectedRole]?.[k]).length;
-                      const collapseKey = `dd-${item.label.replace(/\s+/g, '-').toLowerCase()}-${depth}`;
-                      const isCollapsed = currentRoleCollapsed[collapseKey];
-                      const isTop = depth === 0;
+                  return Object.entries(groupedModules).map(([group, modules]) => {
+                    if (group.startsWith('Data Digit - ') || group.startsWith('Sistem - ')) return null;
+                    const gc = GROUP_COLORS[group] || { text: 'text-gray-500', bg: 'bg-gray-100', dot: 'bg-gray-400' };
 
+                    // Standard Group
+                    if (group === 'Dashboard' || (!group.includes('Data Digit') && !group.includes('Sistem'))) {
+                      const { enabled, total } = getGroupStats(selectedRole, group);
+                      const isCollapsed = currentRoleCollapsed[group] ?? (enabled === 0);
                       return (
-                        <div key={`${collapseKey}-${idx}`} className="border-t-[2px] border-black/10">
+                        <div key={group} className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
                           <div
-                            className={`flex items-center justify-between pr-4 ${isTop ? 'py-2.5 bg-black/5' : 'py-1.5 bg-black/[0.02]'} select-none cursor-pointer hover:bg-[#fde047]/10 transition-colors`}
-                            style={{ paddingLeft: `${16 + depth * 14}px` }}
-                            onClick={() => toggleCollapse(collapseKey)}
+                            className="flex items-center justify-between px-6 py-4 bg-gray-50/50 border-b border-gray-100 select-none cursor-pointer hover:bg-gray-100/50 transition-colors"
+                            onClick={() => toggleCollapse(group)}
                           >
-                            <div className="flex items-center gap-2">
-                              <ChevronRight size={isTop ? 13 : 11} strokeWidth={4} className={`transition-transform duration-200 ${isCollapsed ? 'text-black/20' : 'rotate-90 text-black/40'}`} />
-                              {nodeColor && <div className={`${isTop ? 'w-2 h-2' : 'w-1.5 h-1.5'} rounded-none border-[1.5px] border-black ${nodeColor.dot}`} />}
-                              <span className={`px-2 py-0.5 rounded-none border-2 border-black ${isTop ? 'text-[9px]' : 'text-[8.5px]'} font-black uppercase tracking-widest shadow-[2px_2px_0_0_#000] ${nodeColor?.bg || 'bg-white'} ${nodeColor?.text || 'text-black'}`}>
-                                {item.label}
-                              </span>
-                              <span className="text-[11px] font-black text-black/20 uppercase tracking-tighter">{nodeEnabled}/{nodeKeys.length} AKTIF</span>
+                            <div className="flex items-center gap-3">
+                              <ChevronRight size={16} className={`text-gray-400 transition-transform duration-300 ${isCollapsed ? '' : 'rotate-90'}`} />
+                              <span className="text-[13px] font-bold text-gray-800">{group}</span>
+                              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">{enabled}/{total} Aktif</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <button onClick={e => { e.stopPropagation(); toggleKeysList(nodeKeys, true); }} className="px-2 py-1 text-[10px] font-black text-black hover:bg-[#93c5fd] rounded-none border-2 border-transparent hover:border-black transition-all uppercase tracking-tighter">ALL ON</button>
-                              <span className="text-black/10 text-[10px]">|</span>
-                              <button onClick={e => { e.stopPropagation(); toggleKeysList(nodeKeys, false); }} className="px-2 py-1 text-[10px] font-black text-black/40 hover:text-white hover:bg-[#ff5e5e] rounded-none border-2 border-transparent hover:border-black transition-all uppercase tracking-tighter">ALL OFF</button>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button onClick={e => { e.stopPropagation(); toggleGroup(group, true); }} className="text-[11px] font-bold text-emerald-600 hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-all">On All</button>
+                              <div className="w-px h-3 bg-gray-200" />
+                              <button onClick={e => { e.stopPropagation(); toggleGroup(group, false); }} className="text-[11px] font-bold text-rose-600 hover:bg-rose-50 px-3 py-1.5 rounded-lg transition-all">Off All</button>
                             </div>
                           </div>
                           {!isCollapsed && (
-                            <div className="animate-in slide-in-from-top-1 fade-in duration-200">
-                              {renderDDTree(item.children, depth + 1, nodeColor || parentColor)}
+                            <div className="animate-in slide-in-from-top-2 fade-in duration-300">
+                              {modules.map(m => renderModuleRow(m, gc))}
                             </div>
                           )}
                         </div>
                       );
-                    });
+                    }
 
-                  return (
-                    <div key="Data Digit" className="bg-white border-[3px] border-black rounded-none overflow-hidden shadow-[2.5px_2.5px_0_0_#000] mb-6">
-                      <div
-                        className="flex items-center justify-between px-5 py-3 bg-black border-b-[3px] border-black select-none cursor-pointer"
-                        onClick={() => toggleCollapse('Data Digit')}
-                      >
-                        <div className="flex items-center gap-3">
-                          <ChevronRight size={16} strokeWidth={4} className={`text-[#fde047] transition-transform duration-200 ${isParentCollapsed ? '' : 'rotate-90'}`} />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-[#fde047]">Modul Operasional (Data Digit)</span>
-                          <span className="text-[10px] font-black text-[#fde047]/40 px-2 border-l border-[#fde047]/20">{allDDEnabled}/{allDDKeys.length} AKTIF</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button onClick={e => { e.stopPropagation(); toggleKeysList(allDDKeys, true); }} className="px-3 py-1.5 text-[10px] font-black text-black bg-[#93c5fd] border-2 border-black hover:translate-y-[-1px] transition-all uppercase tracking-widest shadow-[2px_2px_0_0_#000]">ON ALL</button>
-                          <button onClick={e => { e.stopPropagation(); toggleKeysList(allDDKeys, false); }} className="px-3 py-1.5 text-[10px] font-black text-black bg-[#ff5e5e] border-2 border-black hover:translate-y-[-1px] transition-all uppercase tracking-widest shadow-[2px_2px_0_0_#000]">OFF ALL</button>
-                        </div>
-                      </div>
-                      {!isParentCollapsed && (
-                        <div className="animate-in slide-in-from-top-2 fade-in duration-300">
-                          {/* Sinkronisasi All Data — flat row */}
-                          {modules.map(m => renderModuleRow(m, gc, 'px-8'))}
-                          {/* Sub-trees */}
-                          {renderDDTree(DD_TREE, 0)}
-                        </div>
-                      )}
-                    </div>
-                  );
-                }
+                    // Complex Tree Groups (Data Digit / Sistem)
+                    const isDD = group === 'Data Digit';
+                    const treeData = isDD ? [
+                      { type: 'node', label: 'Pembelian', colorKey: 'Data Digit - Pembelian', children: [
+                        { type: 'node', label: 'Purchase Request (PR)', children: [
+                          { type: 'leaf', key: 'pembelian_pr', label: 'Purchase Request (PR)' }
+                        ]},
+                        { type: 'node', label: 'Penawaran', children: [
+                          { type: 'leaf', key: 'pembelian_spph', label: 'SPPH Keluar' },
+                          { type: 'leaf', key: 'pembelian_sph_in', label: 'SPH Masuk' },
+                        ]},
+                        { type: 'node', label: 'Purchase Order (PO)', children: [
+                          { type: 'leaf', key: 'pembelian_po', label: 'Purchase Order (PO)' }
+                        ]},
+                        { type: 'node', label: 'Pembelian Barang', children: [
+                          { type: 'leaf', key: 'pembelian_penerimaan', label: 'Penerimaan Barang' },
+                          { type: 'leaf', key: 'pembelian_rekap', label: 'Laporan Rekap Pembelian Barang' },
+                        ]},
+                        { type: 'node', label: 'Hutang', children: [
+                          { type: 'leaf', key: 'pembelian_hutang', label: 'Pelunasan Hutang' }
+                        ]},
+                      ]},
+                      { type: 'node', label: 'Produksi', colorKey: 'Data Digit - Produksi', children: [
+                        { type: 'leaf', key: 'produksi_bom', label: 'Bill of Material Produksi' },
+                        { type: 'leaf', key: 'produksi_orders', label: 'Order Produksi' },
+                        { type: 'node', label: 'Laporan', children: [
+                          { type: 'leaf', key: 'produksi_bahan_baku', label: 'BBB Produksi' },
+                          { type: 'leaf', key: 'produksi_barang_jadi', label: 'Penerimaan Barang Hasil Produksi' },
+                        ]},
+                      ]},
+                      { type: 'node', label: 'Penjualan', colorKey: 'Data Digit - Penjualan', children: [
+                        { type: 'node', label: 'Penawaran', children: [
+                          { type: 'leaf', key: 'penjualan_sph_out', label: 'SPH Keluar' }
+                        ]},
+                        { type: 'node', label: 'Sales Order (SO)', children: [
+                          { type: 'node', label: 'Laporan', children: [
+                            { type: 'leaf', key: 'penjualan_so', label: 'Sales Order Barang' }
+                          ]}
+                        ]},
+                        { type: 'node', label: 'Penjualan Barang', children: [
+                          { type: 'node', label: 'Laporan', children: [
+                            { type: 'leaf', key: 'penjualan_laporan', label: 'Laporan Penjualan' }
+                          ]}
+                        ]},
+                        { type: 'node', label: 'Piutang', children: [
+                          { type: 'node', label: 'Laporan', children: [
+                            { type: 'leaf', key: 'penjualan_piutang', label: 'Pelunasan Piutang Penjualan' }
+                          ]}
+                        ]},
+                        { type: 'node', label: 'Pengiriman (SJ)', children: [
+                          { type: 'node', label: 'Laporan', children: [
+                            { type: 'leaf', key: 'penjualan_pengiriman', label: 'Pengiriman' }
+                          ]}
+                        ]},
+                      ]},
+                    ] : [
+                      { type: 'node', label: 'Umum', colorKey: 'Sistem - Umum', children: [
+                        { type: 'node', label: 'Data', children: [
+                          { type: 'leaf', key: 'karyawan', label: 'Karyawan' }
+                        ]},
+                        { type: 'leaf', key: 'tracking_manufaktur', label: 'Tracking Manufaktur' }
+                      ]},
+                      { type: 'node', label: 'HRD', colorKey: 'Sistem - HRD', children: [
+                        { type: 'node', label: 'Kesalahan Karyawan', children: [
+                          { type: 'leaf', key: 'catat_kesalahan', label: 'Catat Kesalahan' },
+                          { type: 'leaf', key: 'statistik', label: 'Statistik Performa' }
+                        ]}
+                      ]},
+                      { type: 'node', label: 'Kalkulasi', colorKey: 'Sistem - Kalkulasi', children: [
+                        { type: 'node', label: 'Data', children: [
+                          { type: 'leaf', key: 'hpp_kalkulasi', label: 'HPP Kalkulasi' }
+                        ]}
+                      ]},
+                      { type: 'node', label: 'Produksi', colorKey: 'Sistem - Produksi', children: [
+                        { type: 'node', label: 'Jurnal Harian Produksi', children: [
+                          { type: 'node', label: 'Data', children: [
+                            { type: 'leaf', key: 'produksi_jhp_sopd', label: 'SOPd' },
+                            { type: 'leaf', key: 'produksi_jhp_master_pekerjaan', label: 'Master Pekerjaan' },
+                            { type: 'leaf', key: 'produksi_jhp_master_target', label: 'Master Target Pekerjaan' }
+                          ]},
+                          { type: 'leaf', key: 'produksi_jhp', label: 'Jurnal Harian Produksi' },
+                          { type: 'leaf', key: 'produksi_jhp_target', label: 'Target Harian' }
+                        ]}
+                      ]},
+                      { type: 'node', label: 'Penjualan', colorKey: 'Sistem - Penjualan', children: [
+                        { type: 'leaf', key: 'kalkulasi_rekap_so', label: 'Rekap Sales Order Barang' }
+                      ]},
+                      { type: 'node', label: 'User', colorKey: 'Sistem - User', children: [
+                        { type: 'leaf', key: 'hak_akses', label: 'Hak Akses' },
+                        { type: 'leaf', key: 'kelola_user', label: 'Kelola User' }
+                      ]}
+                    ];
 
-                // SISTEM — handled by tree-based renderer after the loop
-                if (group === 'Sistem' || group.startsWith('Sistem -')) {
-                  return null;
-                }
+                    const collectKeys = (items: any[]): string[] =>
+                      items.flatMap(item => item.type === 'leaf' ? [item.key] : collectKeys(item.children));
 
-                // Regular group
-                const { enabled, total } = getGroupStats(selectedRole, group);
-                const isCollapsed = currentRoleCollapsed[group];
-                return (
-                  <div key={group} className="bg-white border-[3px] border-black rounded-none overflow-hidden shadow-[2.5px_2.5px_0_0_#000]">
-                    <div
-                      className="flex items-center justify-between px-5 py-3 bg-black/5 border-b-[3px] border-black select-none cursor-pointer hover:bg-[#fde047]/10 transition-colors"
-                      onClick={() => toggleCollapse(group)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <ChevronRight size={16} strokeWidth={4} className={`text-black transition-transform duration-200 ${isCollapsed ? '' : 'rotate-90'}`} />
-                        <div className={`w-2.5 h-2.5 rounded-none border-[2px] border-black ${gc.dot}`} />
-                        <span className={`px-2.5 py-1 rounded-none border-2 border-black text-[10px] font-black uppercase tracking-widest shadow-[2px_2px_0_0_#000] ${gc.bg} ${gc.text}`}>{group}</span>
-                        <span className="text-[11px] font-black text-black/20 uppercase tracking-tighter">{enabled}/{total} AKTIF</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button onClick={e => { e.stopPropagation(); toggleGroup(group, true); }} className="px-3 py-1.5 text-[10px] font-black text-black bg-[#93c5fd] border-2 border-black hover:translate-y-[-1px] transition-all uppercase tracking-widest shadow-[2px_2px_0_0_#000]">ON ALL</button>
-                        <button onClick={e => { e.stopPropagation(); toggleGroup(group, false); }} className="px-3 py-1.5 text-[10px] font-black text-black bg-[#ff5e5e] border-2 border-black hover:translate-y-[-1px] transition-all uppercase tracking-widest shadow-[2px_2px_0_0_#000]">OFF ALL</button>
-                      </div>
-                    </div>
-                    {!isCollapsed && (
-                      <div className="divide-y-[2px] divide-black/5 animate-in slide-in-from-top-1 fade-in duration-200">
-                        {modules.map(m => renderModuleRow(m, gc))}
-                      </div>
-                    )}
-                  </div>
-                );
-              });
-            })()}
+                    const syncKeys = isDD ? modules.map(m => m.key) : [];
+                    const allKeys = isDD ? [...syncKeys, ...collectKeys(treeData)] : collectKeys(treeData);
+                    const allEnabled = allKeys.filter(k => permissions[selectedRole]?.[k]).length;
+                    const isParentCollapsed = currentRoleCollapsed[group] ?? (allEnabled === 0);
 
-            {/* SISTEM parent collapse — tree mirrors sidebar exactly */}
-            {(() => {
-              type TreeLeaf = { type: 'leaf'; key: string; label: string };
-              type TreeNode = { type: 'node'; label: string; colorKey?: string; children: TreeItem[] };
-              type TreeItem = TreeLeaf | TreeNode;
+                    const renderTree = (items: any[], depth: number, parentColor?: any): React.ReactNode =>
+                      items.map((item, idx) => {
+                        if (item.type === 'leaf') {
+                          const isEnabled = permissions[selectedRole]?.[item.key] ?? false;
+                          return (
+                            <div
+                              key={item.key}
+                              onClick={() => togglePermission(item.key)}
+                              className="flex items-center justify-between py-3 pr-6 cursor-pointer hover:bg-gray-50/50 transition-all border-t border-gray-50"
+                              style={{ paddingLeft: `${24 + depth * 16}px` }}
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <span className={`text-[13px] font-bold truncate transition-colors tracking-tight ${isEnabled ? 'text-gray-800' : 'text-gray-300 font-medium'}`}>{item.label}</span>
+                                <code className="hidden sm:block text-[9px] font-bold text-gray-300 bg-gray-50 px-1.5 py-0.5 rounded-lg border border-gray-100 shrink-0">{item.key}</code>
+                              </div>
+                              <div className="flex items-center gap-3 shrink-0 ml-3">
+                                <button onClick={e => { e.stopPropagation(); togglePermission(item.key); }} className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors duration-300 ${isEnabled ? 'bg-emerald-600' : 'bg-gray-200'}`}>
+                                  <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow-sm transition-transform duration-300 ${isEnabled ? 'translate-x-5.5' : 'translate-x-1'}`} />
+                                </button>
+                                <span className={`text-[11px] font-bold w-12 text-right transition-colors tracking-tight ${isEnabled ? 'text-emerald-600' : 'text-gray-300'}`}>{isEnabled ? 'Aktif' : 'Off'}</span>
+                              </div>
+                            </div>
+                          );
+                        }
 
-              const SISTEM_TREE: TreeItem[] = [
-                { type: 'node', label: 'Umum', colorKey: 'Sistem - Umum', children: [
-                  { type: 'node', label: 'Data', children: [
-                    { type: 'leaf', key: 'karyawan', label: 'Karyawan' }
-                  ]},
-                  { type: 'leaf', key: 'tracking_manufaktur', label: 'Tracking Manufaktur' }
-                ]},
-                { type: 'node', label: 'HRD', colorKey: 'Sistem - HRD', children: [
-                  { type: 'node', label: 'Kesalahan Karyawan', children: [
-                    { type: 'leaf', key: 'catat_kesalahan', label: 'Catat Kesalahan' },
-                    { type: 'leaf', key: 'statistik', label: 'Statistik Performa' }
-                  ]}
-                ]},
-                { type: 'node', label: 'Kalkulasi', colorKey: 'Sistem - Kalkulasi', children: [
-                  { type: 'node', label: 'Data', children: [
-                    { type: 'leaf', key: 'hpp_kalkulasi', label: 'HPP Kalkulasi' }
-                  ]}
-                ]},
-                { type: 'node', label: 'Produksi', colorKey: 'Sistem - Produksi', children: [
-                  { type: 'node', label: 'Jurnal Harian Produksi', children: [
-                    { type: 'node', label: 'Data', children: [
-                      { type: 'leaf', key: 'produksi_jhp_sopd', label: 'SOPd' },
-                      { type: 'leaf', key: 'produksi_jhp_master_pekerjaan', label: 'Master Pekerjaan' },
-                      { type: 'leaf', key: 'produksi_jhp_master_target', label: 'Master Target Pekerjaan' }
-                    ]},
-                    { type: 'leaf', key: 'produksi_jhp', label: 'Jurnal Harian Produksi' },
-                    { type: 'leaf', key: 'produksi_jhp_target', label: 'Target Harian' }
-                  ]}
-                ]},
-                { type: 'node', label: 'Penjualan', colorKey: 'Sistem - Penjualan', children: [
-                  { type: 'leaf', key: 'kalkulasi_rekap_so', label: 'Rekap Sales Order Barang' }
-                ]},
-                { type: 'node', label: 'User', colorKey: 'Sistem - User', children: [
-                  { type: 'leaf', key: 'hak_akses', label: 'Hak Akses' },
-                  { type: 'leaf', key: 'kelola_user', label: 'Kelola User' }
-                ]}
-              ];
+                        const nodeColor = item.colorKey ? (GROUP_COLORS[item.colorKey] || parentColor) : parentColor;
+                        const nodeKeys = collectKeys(item.children);
+                        const nodeEnabled = nodeKeys.filter(k => permissions[selectedRole]?.[k]).length;
+                        const collapseKey = `${group.toLowerCase().replace(/\s+/g, '-')}-${item.label.replace(/\s+/g, '-').toLowerCase()}-${depth}`;
+                        const isNodeCollapsed = currentRoleCollapsed[collapseKey] ?? (nodeEnabled === 0);
+                        const isTop = depth === 0;
 
-              const collectKeys = (items: TreeItem[]): string[] =>
-                items.flatMap(item => item.type === 'leaf' ? [item.key] : collectKeys(item.children));
+                        return (
+                          <div key={`${collapseKey}-${idx}`} className="border-t border-gray-100">
+                            <div
+                              className={`flex items-center justify-between pr-6 ${isTop ? 'py-3.5 bg-gray-50/20' : 'py-2 bg-gray-50/10'} select-none cursor-pointer hover:bg-gray-100/30 transition-colors`}
+                              style={{ paddingLeft: `${24 + depth * 16}px` }}
+                              onClick={() => toggleCollapse(collapseKey)}
+                            >
+                              <div className="flex items-center gap-3">
+                                <ChevronRight size={14} className={`text-gray-400 transition-transform duration-300 ${isNodeCollapsed ? '' : 'rotate-90'}`} />
+                                <span className={`text-[13px] font-bold text-gray-700`}>
+                                  {item.label}
+                                </span>
+                                <span className="text-[9px] font-bold text-gray-400 bg-white border border-gray-100 px-2 py-0.5 rounded-full">{nodeEnabled}/{nodeKeys.length}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button onClick={e => { e.stopPropagation(); toggleKeysList(nodeKeys, true); }} className="text-[11px] font-bold text-emerald-600 hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-all">On All</button>
+                                <div className="w-px h-3 bg-gray-200" />
+                                <button onClick={e => { e.stopPropagation(); toggleKeysList(nodeKeys, false); }} className="text-[11px] font-bold text-rose-600 hover:bg-rose-50 px-3 py-1.5 rounded-lg transition-all">Off All</button>
+                              </div>
+                            </div>
+                            {!isNodeCollapsed && (
+                              <div className="animate-in slide-in-from-top-1 fade-in duration-200">
+                                {renderTree(item.children, depth + 1, nodeColor || parentColor)}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      });
 
-              const allSistemKeys = collectKeys(SISTEM_TREE);
-              const allEnabled = allSistemKeys.filter(k => permissions[selectedRole]?.[k]).length;
-              const gc = GROUP_COLORS['Sistem'] || { text: 'text-violet-600', bg: 'bg-violet-50', dot: 'bg-violet-400' };
-              const isParentCollapsed = currentRoleCollapsed['Sistem'];
-
-              const renderTree = (items: TreeItem[], depth: number, parentColor?: { text: string; bg: string; dot: string }): React.ReactNode =>
-                items.map((item, idx) => {
-                  if (item.type === 'leaf') {
-                    const isEnabled = permissions[selectedRole]?.[item.key] ?? false;
                     return (
-                      <div
-                        key={item.key}
-                        onClick={() => togglePermission(item.key)}
-                        className="flex items-center justify-between py-2.5 pr-4 cursor-pointer hover:bg-[#fde047]/10 transition-all border-t-[2px] border-black/5"
-                        style={{ paddingLeft: `${16 + depth * 14}px` }}
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className={`w-2.5 h-2.5 rounded-none shrink-0 transition-colors border-[2px] border-black ${isEnabled ? (parentColor?.dot || 'bg-black') : 'bg-white'}`} />
-                          <span className={`text-[12.5px] font-black truncate transition-colors uppercase tracking-tight ${isEnabled ? 'text-black' : 'text-black/20'}`}>{item.label}</span>
-                          <code className="hidden sm:block text-[9px] font-black text-black/20 bg-black/5 px-1.5 py-0.5 rounded-none border border-black/10 shrink-0">{item.key}</code>
+                      <div key={group} className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
+                        <div
+                          className="flex items-center justify-between px-6 py-4 bg-gray-50/50 border-b border-gray-100 select-none cursor-pointer hover:bg-gray-100/50 transition-colors"
+                          onClick={() => toggleCollapse(group)}
+                        >
+                           <div className="flex items-center gap-3">
+                             <ChevronRight size={16} className={`text-gray-400 transition-transform duration-300 ${isParentCollapsed ? '' : 'rotate-90'}`} />
+                             <span className="text-[13px] font-bold text-gray-800">{isDD ? 'Grup Data Digit' : 'Grup Sistem'}</span>
+                             <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-0.5 rounded-full">{allEnabled}/{allKeys.length} Aktif</span>
+                           </div>
+                           <div className="flex items-center gap-1.5 shrink-0">
+                             <button onClick={e => { e.stopPropagation(); toggleKeysList(allKeys, true); }} className="text-[11px] font-bold text-emerald-600 hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-all">On All</button>
+                             <div className="w-px h-3 bg-gray-200" />
+                             <button onClick={e => { e.stopPropagation(); toggleKeysList(allKeys, false); }} className="text-[11px] font-bold text-rose-600 hover:bg-rose-50 px-3 py-1.5 rounded-lg transition-all">Off All</button>
+                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0 ml-3">
-                          <button onClick={e => { e.stopPropagation(); togglePermission(item.key); }} className={`relative inline-flex h-5 w-9 items-center rounded-none border-[2px] border-black transition-colors duration-200 ${isEnabled ? 'bg-[#93c5fd]' : 'bg-black/5'}`}>
-                            <span className={`inline-block h-3.5 w-3.5 transform border-[2px] border-black bg-white transition-transform duration-200 ${isEnabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
-                          </button>
-                          <span className={`text-[10px] font-black w-14 text-right transition-colors uppercase tracking-tight ${isEnabled ? 'text-black' : 'text-black/10'}`}>{isEnabled ? 'Aktif' : 'OFF'}</span>
-                        </div>
+                        {!isParentCollapsed && (
+                          <div className="animate-in slide-in-from-top-2 fade-in duration-300">
+                            {renderTree(treeData, 0)}
+                          </div>
+                        )}
                       </div>
                     );
-                  }
-
-                  const nodeColor = item.colorKey ? (GROUP_COLORS[item.colorKey] || parentColor) : parentColor;
-                  const nodeKeys = collectKeys(item.children);
-                  const nodeEnabled = nodeKeys.filter(k => permissions[selectedRole]?.[k]).length;
-                  const collapseKey = `sistem-${item.label.replace(/\s+/g, '-').toLowerCase()}`;
-                  const isCollapsed = currentRoleCollapsed[collapseKey];
-                  const isTop = depth === 0;
-
-                  return (
-                    <div key={`${collapseKey}-${idx}`} className="border-t-[2px] border-black/10">
-                      <div
-                        className={`flex items-center justify-between pr-4 ${isTop ? 'py-2.5 bg-black/5' : 'py-1.5 bg-black/[0.02]'} select-none cursor-pointer hover:bg-[#fde047]/10 transition-colors`}
-                        style={{ paddingLeft: `${16 + depth * 14}px` }}
-                        onClick={() => toggleCollapse(collapseKey)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <ChevronRight size={isTop ? 13 : 11} strokeWidth={4} className={`transition-transform duration-200 ${isCollapsed ? 'text-black/20' : 'rotate-90 text-black/40'}`} />
-                          {nodeColor && <div className={`${isTop ? 'w-2 h-2' : 'w-1.5 h-1.5'} rounded-none border-[1.5px] border-black ${nodeColor.dot}`} />}
-                          <span className={`px-2 py-0.5 rounded-none border-2 border-black ${isTop ? 'text-[9px]' : 'text-[8.5px]'} font-black uppercase tracking-widest shadow-[2px_2px_0_0_#000] ${nodeColor?.bg || 'bg-white'} ${nodeColor?.text || 'text-black'}`}>
-                            {item.label}
-                          </span>
-                          <span className="text-[11px] font-black text-black/20 uppercase tracking-tighter">{nodeEnabled}/{nodeKeys.length} AKTIF</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button onClick={e => { e.stopPropagation(); toggleKeysList(nodeKeys, true); }} className="px-2 py-1 text-[10px] font-black text-black hover:bg-[#93c5fd] rounded-none border-2 border-transparent hover:border-black transition-all uppercase tracking-tighter">ALL ON</button>
-                          <span className="text-black/10 text-[10px]">|</span>
-                          <button onClick={e => { e.stopPropagation(); toggleKeysList(nodeKeys, false); }} className="px-2 py-1 text-[10px] font-black text-black/40 hover:text-white hover:bg-[#ff5e5e] rounded-none border-2 border-transparent hover:border-black transition-all uppercase tracking-tighter">ALL OFF</button>
-                        </div>
-                      </div>
-                      {!isCollapsed && (
-                        <div className="animate-in slide-in-from-top-1 fade-in duration-200">
-                          {renderTree(item.children, depth + 1, nodeColor || parentColor)}
-                        </div>
-                      )}
-                    </div>
-                  );
-                });
-
-              return (
-                <div className="bg-white border-[3px] border-black rounded-none overflow-hidden shadow-[2.5px_2.5px_0_0_#000]">
-                  <div
-                    className="flex items-center justify-between px-5 py-3 bg-black border-b-[3px] border-black select-none cursor-pointer"
-                    onClick={() => toggleCollapse('Sistem')}
-                  >
-                    <div className="flex items-center gap-3">
-                      <ChevronRight size={16} strokeWidth={4} className={`text-[#fde047] transition-transform duration-200 ${isParentCollapsed ? '' : 'rotate-90'}`} />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-[#fde047]">Modul Sistem</span>
-                      <span className="text-[10px] font-black text-[#fde047]/40 px-2 border-l border-[#fde047]/20">{allEnabled}/{allSistemKeys.length} AKTIF</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button onClick={e => { e.stopPropagation(); toggleKeysList(allSistemKeys, true); }} className="px-3 py-1.5 text-[10px] font-black text-black bg-[#93c5fd] border-2 border-black hover:translate-y-[-1px] transition-all uppercase tracking-widest shadow-[2px_2px_0_0_#000]">ON ALL</button>
-                      <button onClick={e => { e.stopPropagation(); toggleKeysList(allSistemKeys, false); }} className="px-3 py-1.5 text-[10px] font-black text-black bg-[#ff5e5e] border-2 border-black hover:translate-y-[-1px] transition-all uppercase tracking-widest shadow-[2px_2px_0_0_#000]">OFF ALL</button>
-                    </div>
-                  </div>
-                  {!isParentCollapsed && (
-                    <div className="divide-y-[2px] divide-black/5 animate-in slide-in-from-top-1 fade-in duration-200">
-                      {renderTree(SISTEM_TREE, 0)}
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-
-          </div>
-          </>
+                  });
+                })()}
+              </div>
+            </>
           )}
         </div>
       </div>
     </div>
   );
 }
+
+
+
 
 
 
