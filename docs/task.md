@@ -2,22 +2,15 @@
 
 ## 🔄 Sedang Dikerjakan (In Progress)
 
-- [ ] Melanjutkan Migrasi Neobrutalism pada modul lainnya
-      → Sudah: Manajemen, SOPD, Master Pekerjaan, HPP Kalkulasi, Produksi (BOM, Barang Jadi, Bahan Baku), Global Components (Sidebar, Table)
-      → Belum: Penjualan & Pembelian, Dashboard & Analytics, dsb.
+- [ ] Melanjutkan Modernisasi Desain Premium pada modul Penjualan & Pembelian
+- [ ] Optimasi Dashboard & Analytics dengan visualisasi Recharts terbaru
 
 ---
 
 ## 📌 Akan Dikerjakan (Backlog)
 
-> _Belum ada task dalam backlog._
-
-<!--
-Contoh format:
-- [ ] Buat halaman dashboard admin
-- [ ] Integrasi payment gateway Midtrans
-- [ ] Setup email notification
--->
+- [ ] Integrasi Audit Log yang lebih detail untuk setiap aksi User
+- [ ] Setup sistem backup database otomatis ke Cloud Storage
 
 ---
 
@@ -33,6 +26,11 @@ Contoh format:
 - [x] Migrasi Neobrutalism SOPD & Master Pekerjaan — 2026-04-21
 - [x] Migrasi Neobrutalism HPP Kalkulasi — 2026-04-21
 - [x] Migrasi Neobrutalism Produksi (BOM, Barang Jadi, Bahan Baku) — 2026-04-21
+- [x] Perbaikan modul Hak Akses (Grouping Sistem/Digit & Smart Expand) — 2026-04-26
+- [x] Modernisasi Manajemen User (Full Width, SearchAndReload, Premium Style) — 2026-04-26
+- [x] Modernisasi Halaman Profil (Typography No All-Caps & Layout Compact) — 2026-04-26
+- [x] Implementasi Modul Jurnal Harian Produksi & Hasil Produksi — 2026-04-26
+- [x] Transisi desain sistem dari Neobrutalism ke Modern Premium — 2026-04-26
 
 ---
 
@@ -40,38 +38,24 @@ Contoh format:
 
 > _Belum ada bug yang tercatat._
 
-<!--
-Contoh format:
-- [ ] Form validasi tidak muncul di mobile Safari
-      → Ditemukan: 2024-01-16
-      → Prioritas: Medium
-      → Catatan: kemungkinan masalah CSS flex
--->
-
 ---
 
 ## 💡 Ide & Improvement (Someday)
 
-> _Belum ada ide yang tercatat._
-
-<!--
-Contoh format:
-- [ ] Tambah fitur dark mode
-- [ ] Optimasi query database dengan indexing
-- [ ] Buat unit test untuk semua endpoint
--->
+- [ ] Implementasi Dark Mode dengan aksen Emerald
+- [ ] Fitur export laporan ke Excel dengan format yang lebih rapi (Styling)
 
 ---
 
 ## 📊 Statistik
 
 ```
-Total task    : 11
-Selesai       : 10
-In progress   : 1
-Backlog       : 0
+Total task    : 17
+Selesai       : 15
+In progress   : 2
+Backlog       : 2
 Bug diketahui : 0
-Progress      : 91%
+Progress      : 88%
 ```
 
 ---
