@@ -14,6 +14,7 @@ interface DateRangeCardProps {
   fetchText?: string;
   title?: string;
   children?: React.ReactNode;
+  fetchDisabled?: boolean;
 }
 
 export default function DateRangeCard({
@@ -27,7 +28,8 @@ export default function DateRangeCard({
   statusText,
   fetchText = 'Tarik Data',
   title = 'Rentang Tanggal',
-  children
+  children,
+  fetchDisabled = false
 }: DateRangeCardProps) {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 py-3.5 px-6 shadow-sm shadow-green-900/5 flex flex-col gap-4 shrink-0 relative z-50">
@@ -68,10 +70,10 @@ export default function DateRangeCard({
           )}
           <button
             onClick={onFetch}
-            disabled={isFetching}
+            disabled={isFetching || fetchDisabled}
             className={`
               px-8 h-12 rounded-lg font-bold text-[13px] border transition-all flex items-center justify-center gap-3 shadow-sm
-              ${isFetching 
+              ${isFetching || fetchDisabled
                 ? 'bg-gray-50 text-gray-400 cursor-not-allowed border-gray-100' 
                 : 'bg-green-600 text-white border-green-500 hover:bg-green-700 shadow-green-100 ring-4 ring-green-500/0 hover:ring-green-500/5'}
             `}
