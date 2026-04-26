@@ -13,6 +13,7 @@ interface SopdOption {
   nama_order: string;
   qty: number;
   unit: string;
+  pelanggan: string;
 }
 
 // Helper to format date strings to DD MMM YYYY (Indonesian)
