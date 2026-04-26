@@ -11,6 +11,7 @@ import {
   AlertCircle,
   RefreshCw,
   X,
+  Loader2,
 } from "lucide-react";
 import { updateProfile } from "@/lib/auth";
 import PageHeader from "@/components/PageHeader";
