@@ -842,7 +842,8 @@ export default function HasilProduksiClient() {
                             fontWeight={700} 
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#9ca3af', angle: -30, textAnchor: 'end' }}
+                            tick={{ fill: '#9ca3af', textAnchor: 'end' }}
+                            angle={-30}
                             height={80}
                             dy={4}
                             label={{ value: 'Tanggal', position: 'insideBottom', offset: -10, fill: '#9ca3af', fontSize: 10, fontWeight: 700 }}
