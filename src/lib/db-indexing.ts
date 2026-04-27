@@ -21,8 +21,16 @@ export async function initIndexing(database: any) {
     "CREATE INDEX IF NOT EXISTS idx_orders_faktur ON orders(faktur);",
     "CREATE INDEX IF NOT EXISTS idx_bahan_baku_faktur_prd ON bahan_baku(faktur_prd);",
     "CREATE INDEX IF NOT EXISTS idx_barang_jadi_faktur_prd ON barang_jadi(faktur_prd);",
+    "CREATE INDEX IF NOT EXISTS idx_barang_jadi_nama_prd ON barang_jadi(nama_prd);",
     "CREATE INDEX IF NOT EXISTS idx_sales_reports_faktur ON sales_reports(faktur);",
     
+    // 4b. Jurnal Harian Produksi Optimization (Dashboard)
+    "CREATE INDEX IF NOT EXISTS idx_jurnal_no_order ON jurnal_harian_produksi(no_order);",
+    "CREATE INDEX IF NOT EXISTS idx_jurnal_no_order_2 ON jurnal_harian_produksi(no_order_2);",
+    "CREATE INDEX IF NOT EXISTS idx_jurnal_tgl_desc ON jurnal_harian_produksi(tgl DESC);",
+    "CREATE INDEX IF NOT EXISTS idx_jurnal_filter_composite ON jurnal_harian_produksi(bagian, jenis_pekerjaan);",
+    "CREATE INDEX IF NOT EXISTS idx_jurnal_bagian_pekerjaan_2 ON jurnal_harian_produksi(bagian, jenis_pekerjaan_2);",
+
     // 5. Rekap Pembelian Barang Optimization
     "CREATE INDEX IF NOT EXISTS idx_rekap_pembelian_barang_tgl ON rekap_pembelian_barang(tgl DESC);",
     "CREATE INDEX IF NOT EXISTS idx_rekap_pembelian_barang_faktur ON rekap_pembelian_barang(faktur);",

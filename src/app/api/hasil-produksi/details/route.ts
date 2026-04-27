@@ -16,34 +16,31 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'no_sopd is required' }, { status: 400 });
     }
 
-    // Fetch available sections for this SOPd (for the filter dropdown)
-    const sectionsRes = await db.execute({
+    // 1. Prepare all queries for batch execution to reduce round-trips (Turso optimization)
+    const queries: any[] = [];
+
+    // Query 1: Available sections
+    queries.push({
       sql: `SELECT DISTINCT bagian FROM jurnal_harian_produksi WHERE (no_order = ? OR no_order_2 = ?) AND bagian != ''`,
       args: [noSopd, noSopd]
     });
-    const availableBagian = (sectionsRes.rows as any[]).map(r => r.bagian);
 
-    // Fetch available jobs (jenis_pekerjaan) for this SOPd and Bagian
-    let jobSql = `SELECT DISTINCT jenis_pekerjaan FROM jurnal_harian_produksi WHERE (no_order = ? OR no_order_2 = ?) AND jenis_pekerjaan != ''`;
+    // Query 2: Available jobs (using jenis_pekerjaan_2 to match frontend)
+    let jobSql = `SELECT DISTINCT jenis_pekerjaan_2 as jenis_pekerjaan FROM jurnal_harian_produksi WHERE (no_order = ? OR no_order_2 = ?) AND jenis_pekerjaan_2 != ''`;
     const jobArgs: any[] = [noSopd, noSopd];
     if (bagian) {
       jobSql += ` AND bagian = ?`;
       jobArgs.push(bagian);
     }
-    const jobsRes = await db.execute({
-      sql: jobSql,
-      args: jobArgs
-    });
-    const availablePekerjaan = (jobsRes.rows as any[]).map(r => r.jenis_pekerjaan);
+    queries.push({ sql: jobSql, args: jobArgs });
 
-    // Build conditions for barang_jadi
+    // Query 3: Barang Jadi Items
     let bjSql = `SELECT tgl, qty, satuan, faktur, nama_barang, nama_prd, raw_data 
                  FROM barang_jadi 
                  WHERE (faktur_prd LIKE ? OR nama_prd LIKE ?)`;
     const bjArgs: any[] = [`%${noSopd}%`, `%${noSopd}%`];
 
     if (startDate) {
-      // Convert DD-MM-YYYY to YYYY-MM-DD for comparison
       bjSql += ` AND (substr(tgl, 7, 4) || '-' || substr(tgl, 4, 2) || '-' || substr(tgl, 1, 2)) >= ?`;
       bjArgs.push(startDate);
     }
@@ -52,15 +49,9 @@ export async function GET(request: NextRequest) {
       bjArgs.push(endDate);
     }
     bjSql += ` ORDER BY substr(tgl, 7, 4) DESC, substr(tgl, 4, 2) DESC, substr(tgl, 1, 2) DESC`;
+    queries.push({ sql: bjSql, args: bjArgs });
 
-    const res = await db.execute({
-      sql: bjSql,
-      args: bjArgs
-    });
-
-    const rows = res.rows as any[];
-    
-    // Build conditions for jurnal
+    // Query 4: Jurnal Items
     let jSql = `SELECT tgl, nama_karyawan, realisasi, target, keterangan, jam, kendala, bagian,
                        no_order_2, nama_order_2, jenis_pekerjaan_2, bahan_kertas, jml_plate, warna, inscheet, rijek
                 FROM jurnal_harian_produksi
@@ -80,30 +71,29 @@ export async function GET(request: NextRequest) {
       jArgs.push(bagian);
     }
     if (pekerjaan) {
-      jSql += ` AND jenis_pekerjaan = ?`;
+      jSql += ` AND jenis_pekerjaan_2 = ?`;
       jArgs.push(pekerjaan);
     }
     jSql += ` ORDER BY tgl DESC`;
+    queries.push({ sql: jSql, args: jArgs });
 
-    const jurnalRes = await db.execute({
-      sql: jSql,
-      args: jArgs
-    });
-    const jurnalRows = jurnalRes.rows as any[];
+    // Execute all in one go
+    const batchResults = await db.batch(queries);
+    
+    const availableBagian = (batchResults[0].rows as any[]).map(r => r.bagian);
+    const availablePekerjaan = (batchResults[1].rows as any[]).map(r => r.jenis_pekerjaan);
+    const bjRows = batchResults[2].rows as any[];
+    const jurnalRows = batchResults[3].rows as any[];
 
     // Group barang_jadi by date
     const groupedByDate: Record<string, { date: string, items: any[], total: number }> = {};
     let grandTotal = 0;
 
-    rows.forEach(row => {
-      // Parse raw_data if exists to get missing fields like 'satuan'
+    bjRows.forEach(row => {
       let parsedRaw = {};
       if (row.raw_data) {
-        try {
-          parsedRaw = JSON.parse(row.raw_data);
-        } catch (e) {}
+        try { parsedRaw = JSON.parse(row.raw_data); } catch (e) {}
       }
-      
       const mergedRow = { ...row, ...parsedRaw };
       const date = mergedRow.tgl;
       if (!groupedByDate[date]) {
@@ -120,7 +110,6 @@ export async function GET(request: NextRequest) {
     let grandTotalRijek = 0;
 
     jurnalRows.forEach(row => {
-      // Date in jurnal is YYYY-MM-DD
       const date = row.tgl; 
       if (!groupedJurnal[date]) {
         groupedJurnal[date] = { date, items: [], totalRealisasi: 0, totalRijek: 0 };
@@ -139,7 +128,7 @@ export async function GET(request: NextRequest) {
       grandTotal,
       grandTotalRealisasi,
       grandTotalRijek,
-      unit: rows[0]?.satuan || '',
+      unit: bjRows[0]?.satuan || '',
       availableBagian,
       availablePekerjaan
     });
