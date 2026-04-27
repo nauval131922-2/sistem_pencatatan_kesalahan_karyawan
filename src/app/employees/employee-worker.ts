@@ -35,8 +35,8 @@ self.addEventListener('message', async (e) => {
       throw new Error("Tidak dapat menemukan data karyawan pada file yang diunggah.");
     }
 
-    // 2. Konfigurasi Chunking
-    const CHUNK_SIZE = 3000;
+    // 2. Konfigurasi Chunking (Disesuaikan agar tidak melebihi limit 4.5MB Vercel)
+    const CHUNK_SIZE = 8000;
     const totalChunks = Math.ceil(validData.length / CHUNK_SIZE);
     let totalImported = 0;
 
@@ -55,10 +55,19 @@ self.addEventListener('message', async (e) => {
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || data.details || `Gagal mengimpor bagian ${index + 1}.`);
+      if (!res.ok) {
+        const text = await res.text();
+        let errorMsg = `Server error (${res.status}): ${res.statusText}`;
+        try {
+          const json = JSON.parse(text);
+          errorMsg = json.error || json.details || errorMsg;
+        } catch (e) {
+          if (res.status === 413) errorMsg = "File terlalu besar untuk diproses sekaligus (413 Payload Too Large).";
+        }
+        throw new Error(errorMsg);
       }
+
+      const data = await res.json();
       return data.imported || 0;
     };
 

@@ -44,8 +44,8 @@ self.addEventListener('message', async (e) => {
     }
     
     self.postMessage({ type: 'status', message: `Berhasil membedah ${mappedData.length.toLocaleString('id-ID')} baris data. Menyiapkan pengiriman...` });
-    // 3. Konfigurasi Chunking (Dioptimalkan Maksimal)
-    const CHUNK_SIZE = 15000;
+    // 3. Konfigurasi Chunking (Disesuaikan agar tidak melebihi limit 4.5MB Vercel)
+    const CHUNK_SIZE = 8000;
     const totalChunks = Math.ceil(mappedData.length / CHUNK_SIZE);
     let totalImported = 0;
 
@@ -65,10 +65,20 @@ self.addEventListener('message', async (e) => {
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || data.details || `Gagal mengimpor data pada bagian ${index + 1}.`);
+      if (!res.ok) {
+        const text = await res.text();
+        let errorMsg = `Server error (${res.status}): ${res.statusText}`;
+        try {
+          const json = JSON.parse(text);
+          errorMsg = json.error || json.details || errorMsg;
+        } catch (e) {
+          // Jika bukan JSON, tampilkan teks mentah atau status
+          if (res.status === 413) errorMsg = "File terlalu besar untuk diproses sekaligus (413 Payload Too Large).";
+        }
+        throw new Error(errorMsg);
       }
+
+      const data = await res.json();
       return data.importedCount || 0;
     };
 
