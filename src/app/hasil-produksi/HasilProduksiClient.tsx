@@ -1283,6 +1283,18 @@ export default function HasilProduksiClient() {
                     : (totalBarangJadiItems === 0 ? 'Tidak ada data' : `Menampilkan ${Math.min(barangJadiPage * PAGE_SIZE, totalBarangJadiItems)} dari ${totalBarangJadiItems} baris`)
                   }
                 </span>
+
+                {/* Load Speed Badge - moved next to Text Info */}
+                {loadTime !== null && loadTime !== undefined && (
+                  <div className={`hidden md:flex text-[9px] px-2 py-1 rounded-full font-bold items-center gap-1.5 border tracking-wide shadow-sm ${
+                    loadTime < 300  ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                    loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                      'bg-rose-50 text-rose-600 border-rose-100'
+                  }`}>
+                    <span className="animate-pulse">⚡</span>
+                    <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
+                  </div>
+                )}
               </div>
 
               {/* Center: Pagination Controls */}
@@ -1326,18 +1338,6 @@ export default function HasilProduksiClient() {
 
               {/* Right Side: Load Speed & Totals */}
               <div className="flex items-center gap-6">
-                {/* Load Speed Badge */}
-                {loadTime !== null && loadTime !== undefined && (
-                  <div className={`hidden lg:flex text-[9px] px-2 py-1 rounded-full font-bold items-center gap-1.5 border tracking-wide shadow-sm ${
-                    loadTime < 300  ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                    loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                                      'bg-rose-50 text-rose-600 border-rose-100'
-                  }`}>
-                    <span className="animate-pulse">⚡</span>
-                    <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
-                  </div>
-                )}
-
                 {/* Totals Section */}
                 {(activeTab === 'barang_jadi' || (activeTab === 'jurnal' && selectedPekerjaan)) && (
                   <div className="flex flex-wrap items-center gap-4 border-l border-gray-100 pl-4">
