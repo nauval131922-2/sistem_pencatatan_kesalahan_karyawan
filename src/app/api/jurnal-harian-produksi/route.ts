@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     const idxBagian = getIdx('Bagian', 23);
     
     // Fungsi untuk eksekusi bulk insert guna performa maksimal
-    const BATCH_SIZE = 100;
+    const BATCH_SIZE = 1000;
     let pendingRows: any[][] = [];
     
     const flushRows = async (rows: any[][]) => {

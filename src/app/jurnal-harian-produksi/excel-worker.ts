@@ -6,7 +6,7 @@ self.addEventListener('message', async (e) => {
     const apiUrl = `${origin}/api/jurnal-harian-produksi`;
     
     // 1. Parsing Excel
-    self.postMessage({ type: 'status', message: 'Membaca file Excel (proses ini mungkin memakan waktu)...' });
+    self.postMessage({ type: 'status', message: 'Menganalisa struktur file Excel...' });
     
     const workbook = XLSX.read(arrayBuffer, {
       type: 'array',
@@ -41,9 +41,10 @@ self.addEventListener('message', async (e) => {
         break;
       }
     }
-
-    // 3. Konfigurasi Chunking (Dioptimalkan untuk 200k+ data)
-    const CHUNK_SIZE = 8000;
+    
+    self.postMessage({ type: 'status', message: `Berhasil membedah ${mappedData.length.toLocaleString('id-ID')} baris data. Menyiapkan pengiriman...` });
+    // 3. Konfigurasi Chunking (Dioptimalkan Maksimal)
+    const CHUNK_SIZE = 15000;
     const totalChunks = Math.ceil(mappedData.length / CHUNK_SIZE);
     let totalImported = 0;
 
