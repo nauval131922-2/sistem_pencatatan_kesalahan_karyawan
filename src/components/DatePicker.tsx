@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Calendar } from 'lucide-react';
+import Portal from './Portal';
+import { Calendar, X } from 'lucide-react';
 
 const MONTHS_ID = [
   'Januari','Februari','Maret','April','Mei','Juni',
@@ -53,15 +54,20 @@ export default function DatePicker({ name, required, label, onChange, value, cus
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [open, setOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'days' | 'months' | 'years'>(selectionMode === 'month' ? 'months' : 'days');
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        if (triggerRef.current && triggerRef.current.contains(e.target as Node)) return;
+        setOpen(false);
+      }
     };
-    document.addEventListener('mousedown', handler);
+    if (open) document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
-  }, []);
+  }, [open]);
 
   useEffect(() => {
     if (value) {
@@ -77,6 +83,18 @@ export default function DatePicker({ name, required, label, onChange, value, cus
       if (selectionMode === 'month') setViewMode('months');
     }
   }, [open, selectionMode]);
+
+  const toggleOpen = () => {
+    if (!open && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+    setOpen(!open);
+  };
 
   const prevView = () => {
     if (viewMode === 'days') {
@@ -242,56 +260,66 @@ export default function DatePicker({ name, required, label, onChange, value, cus
   };
 
   return (
-    <div ref={ref} className="relative">
+    <div className="relative">
       {label && (
         <label className="block text-[12px] font-semibold text-gray-500 mb-1.5 ml-1">{label}</label>
       )}
       <input type="hidden" name={name} value={valueStr} required={required} />
 
-      {customTrigger ? customTrigger(() => setOpen(o => !o)) : (
-        <div
-          onClick={() => setOpen(o => !o)}
-          className="w-full h-11 bg-white border border-gray-100 rounded-lg px-4 text-sm cursor-pointer flex items-center justify-between shadow-sm transition-all hover:border-green-500 group"
-        >
-          <span className={`font-semibold ${formatted ? 'text-gray-800' : 'text-gray-300'}`}>
-            {formatted || 'Pilih tanggal...'}
-          </span>
-          <Calendar size={18} className="text-gray-300 group-hover:text-green-500 transition-colors" />
-        </div>
-      )}
+      <div ref={triggerRef} onClick={toggleOpen}>
+        {customTrigger ? customTrigger(toggleOpen) : (
+          <div
+            className="w-full h-11 bg-white border border-gray-100 rounded-lg px-2.5 sm:px-4 text-xs sm:text-sm cursor-pointer flex items-center justify-between shadow-sm transition-all hover:border-green-500 group"
+          >
+            <span className={`font-bold sm:font-semibold whitespace-nowrap ${formatted ? 'text-gray-800' : 'text-gray-300'}`}>
+              {formatted || 'Pilih tanggal...'}
+            </span>
+            <Calendar size={16} className="text-gray-300 group-hover:text-green-500 transition-colors ml-1 shrink-0" />
+          </div>
+        )}
+      </div>
 
       {open && (
-        <div className={`absolute z-[200] mt-3 bg-white border border-gray-100 rounded-xl shadow-md p-4 w-[280px] animate-in fade-in zoom-in-95 duration-200 ${popupAlign === 'right' ? 'right-0' : 'left-0'}`}>
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-50">
-            <button type="button" onClick={prevView} className="w-9 h-9 rounded-lg bg-gray-50 text-gray-500 hover:bg-green-50 hover:text-green-600 transition-all flex items-center justify-center font-bold">
-              ‹
-            </button>
-            <button 
-              type="button" 
-              onClick={() => {
-                if (viewMode === 'days') setViewMode('months');
-                else if (viewMode === 'months') setViewMode('years');
-              }}
-              className="text-[13px] font-bold text-gray-800 hover:text-green-600 transition-all px-2"
-              disabled={viewMode === 'years'}
-            >
-              {viewMode === 'days' && `${MONTHS_ID[viewMonth]} ${viewYear}`}
-              {viewMode === 'months' && `${viewYear}`}
-              {viewMode === 'years' && `${startDecade}-${startDecade + 9}`}
-            </button>
-            <button type="button" onClick={nextView} className="w-9 h-9 rounded-lg bg-gray-50 text-gray-500 hover:bg-green-50 hover:text-green-600 transition-all flex items-center justify-center font-bold">
-              ›
-            </button>
-          </div>
+        <Portal>
+          <div 
+            ref={ref}
+            style={{ 
+              position: 'absolute', 
+              top: `${coords.top + 8}px`, 
+              left: popupAlign === 'right' ? `${coords.left + coords.width - 280}px` : `${coords.left}px`,
+              zIndex: 9999
+            }}
+            className="bg-white border border-gray-100 rounded-xl shadow-2xl p-4 w-[280px] animate-in fade-in zoom-in-95 duration-200"
+          >
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-50">
+              <button type="button" onClick={prevView} className="w-9 h-9 rounded-lg bg-gray-50 text-gray-500 hover:bg-green-50 hover:text-green-600 transition-all flex items-center justify-center font-bold">
+                ‹
+              </button>
+              <button 
+                type="button" 
+                onClick={() => {
+                  if (viewMode === 'days') setViewMode('months');
+                  else if (viewMode === 'months') setViewMode('years');
+                }}
+                className="text-[13px] font-bold text-gray-800 hover:text-green-600 transition-all px-2"
+                disabled={viewMode === 'years'}
+              >
+                {viewMode === 'days' && `${MONTHS_ID[viewMonth]} ${viewYear}`}
+                {viewMode === 'months' && `${viewYear}`}
+                {viewMode === 'years' && `${startDecade}-${startDecade + 9}`}
+              </button>
+              <button type="button" onClick={nextView} className="w-9 h-9 rounded-lg bg-gray-50 text-gray-500 hover:bg-green-50 hover:text-green-600 transition-all flex items-center justify-center font-bold">
+                ›
+              </button>
+            </div>
 
-          {/* Body */}
-          <div className="px-1">
-            {viewMode === 'days' && renderDays()}
-            {viewMode === 'months' && renderMonths()}
-            {viewMode === 'years' && renderYears()}
+            <div className="px-1">
+              {viewMode === 'days' && renderDays()}
+              {viewMode === 'months' && renderMonths()}
+              {viewMode === 'years' && renderYears()}
+            </div>
           </div>
-        </div>
+        </Portal>
       )}
     </div>
   );

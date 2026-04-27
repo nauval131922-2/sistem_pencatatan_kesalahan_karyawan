@@ -90,7 +90,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
   const sidebarRef = useRef<HTMLElement>(null);
   const navRef = useRef<HTMLElement>(null);
 
-  const isExpanded = !isCollapsed || isHovered;
+  const isExpanded = (!isCollapsed || isHovered) || isMobileOpen;
   const currentWidth = isExpanded ? expandedWidth : COLLAPSED_WIDTH;
 
   useEffect(() => {
@@ -299,8 +299,8 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
       style={{ width: currentWidth }}
       className={`
         fixed xl:relative h-screen bg-white border-r border-gray-100 shrink-0 flex flex-col z-[100] transition-all duration-300 ease-in-out
-        ${isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full xl:translate-x-0'}
-        ${isResizing ? '' : 'transition-[width,transform]'}
+        ${isMobileOpen ? 'translate-x-0 shadow-2xl opacity-100 visible' : '-translate-x-full xl:translate-x-0 xl:opacity-100 xl:visible opacity-0 invisible'}
+        ${isResizing ? '' : 'transition-[width,transform,opacity,visibility]'}
       `}
     >
       {/* Resizer Handle */}
@@ -348,7 +348,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
           setIsHovered(false);
           setActivePath([]);
         }}
-        className={`absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-100 rounded-full flex items-center justify-center text-gray-400 shadow-sm hover:text-green-600 z-50 transition-all ${
+        className={`absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-100 rounded-full flex items-center justify-center text-gray-400 shadow-sm hover:text-green-600 z-50 transition-all xl:flex hidden ${
           !isExpanded && isCollapsed ? 'opacity-0' : 'opacity-100'
         }`}
       >
