@@ -71,7 +71,13 @@ self.addEventListener('message', async (e) => {
     };
 
     // 4. Proses Upload - Chunk pertama harus sinkron (karena ada proses DELETE di server)
-    self.postMessage({ type: 'status', message: `Memulai pengunggahan (1/${totalChunks})...`, progress: 0 });
+    self.postMessage({ 
+      type: 'status', 
+      message: `Memproses bagian 1 dari ${totalChunks}...`, 
+      progress: 0,
+      totalRows: mappedData.length,
+      currentRows: 0
+    });
     totalImported += await uploadChunk(0);
 
     // 5. Chunk sisanya dikirim secara PARALEL (Concurrency 5) untuk kecepatan maksimal
@@ -91,7 +97,9 @@ self.addEventListener('message', async (e) => {
         self.postMessage({ 
           type: 'status', 
           message: `Mengunggah... (${completedChunks}/${totalChunks})`,
-          progress: Math.round((completedChunks / totalChunks) * 100)
+          progress: Math.round((completedChunks / totalChunks) * 100),
+          totalRows: mappedData.length,
+          currentRows: Math.min(completedChunks * CHUNK_SIZE, mappedData.length)
         });
       }
     };
@@ -99,7 +107,7 @@ self.addEventListener('message', async (e) => {
     // Jalankan worker paralel
     await Promise.all(Array.from({ length: CONCURRENCY }, runWorker));
 
-    self.postMessage({ type: 'done', totalImported });
+    self.postMessage({ type: 'done', totalImported, totalRows: mappedData.length });
   } catch (err: any) {
     self.postMessage({ type: 'error', error: err.message });
   }

@@ -8,6 +8,9 @@ interface ExcelUploadCardProps {
   errorMessage?: string;
   onFileSelect: (file: File) => void;
   acceptedFormats?: string;
+  progress?: number;
+  currentRows?: number;
+  totalRows?: number;
 }
 
 export default function ExcelUploadCard({
@@ -16,7 +19,10 @@ export default function ExcelUploadCard({
   status,
   errorMessage,
   onFileSelect,
-  acceptedFormats = ".xls, .xlsx, .xlsm"
+  acceptedFormats = ".xls, .xlsx, .xlsm",
+  progress = 0,
+  currentRows = 0,
+  totalRows = 0
 }: ExcelUploadCardProps) {
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -39,6 +45,23 @@ export default function ExcelUploadCard({
           <p className="text-[11px] text-gray-400 font-medium leading-relaxed">
             {description}
           </p>
+
+          {status === 'loading' && (
+            <div className="mt-3 space-y-2">
+              <div className="flex items-center justify-between text-[10px] font-bold tracking-tight">
+                <span className="text-emerald-600">
+                  Data: {currentRows.toLocaleString('id-ID')} / {totalRows.toLocaleString('id-ID')}
+                </span>
+                <span className="text-gray-400">{progress}% Selesai</span>
+              </div>
+              <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-emerald-500 transition-all duration-300 ease-out shadow-[0_0_8px_rgba(16,185,129,0.4)]"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

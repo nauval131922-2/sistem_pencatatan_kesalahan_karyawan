@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import ExcelUploadCard from '@/components/ExcelUploadCard';
@@ -14,7 +14,32 @@ export default function JurnalUpload() {
     title: '',
     message: ''
   });
+  const [progress, setProgress] = useState(0);
+  const [totalRows, setTotalRows] = useState(0);
+  const [currentRows, setCurrentRows] = useState(0);
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
   const router = useRouter();
+
+  // Timer effect
+  useEffect(() => {
+    let interval: any;
+    if (status === 'loading' && startTime) {
+      interval = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+      }, 1000);
+    } else if (status !== 'loading') {
+      setElapsedTime(0);
+      setStartTime(null);
+    }
+    return () => clearInterval(interval);
+  }, [status, startTime]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
 
   const handleFile = async (file: File) => {
     if (!file) return;
@@ -28,6 +53,10 @@ export default function JurnalUpload() {
 
     setStatus('loading');
     setMessage('Membaca file Excel (proses ini mungkin memakan waktu)...');
+    setStartTime(Date.now());
+    setProgress(0);
+    setTotalRows(0);
+    setCurrentRows(0);
 
     try {
       // Memberi jeda agar UI sempat me-render status 'Membaca file Excel...' sebelum main thread diblokir oleh XLSX
@@ -44,10 +73,13 @@ export default function JurnalUpload() {
       });
 
       worker.onmessage = (e) => {
-        const { type, message, error, totalImported } = e.data;
+        const { type, message, error, totalImported, totalRows: rowsTotal, currentRows: rowsCurrent, progress: p } = e.data;
 
         if (type === 'status') {
           setMessage(message);
+          if (rowsTotal) setTotalRows(rowsTotal);
+          if (rowsCurrent) setCurrentRows(rowsCurrent);
+          if (p !== undefined) setProgress(p);
         } else if (type === 'done') {
           setStatus('idle');
           setDialog({
@@ -82,10 +114,13 @@ export default function JurnalUpload() {
     <div className="h-full flex flex-col shrink-0 animate-in fade-in slide-in-from-bottom-2 duration-500">
       <ExcelUploadCard
         title="Upload Jurnal Harian"
-        description="Unggah file Excel (Sheet JURNAL) untuk sinkronisasi Data Jurnal Harian Produksi."
+        description={status === 'loading' ? `Durasi: ${formatTime(elapsedTime)}` : "Unggah file Excel (Sheet JURNAL) untuk sinkronisasi Data Jurnal Harian Produksi."}
         status={status}
         errorMessage={message}
         onFileSelect={handleFile}
+        progress={progress}
+        currentRows={currentRows}
+        totalRows={totalRows}
       />
 
       <ConfirmDialog 
