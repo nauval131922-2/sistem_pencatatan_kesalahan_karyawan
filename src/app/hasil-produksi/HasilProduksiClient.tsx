@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Portal from '@/components/Portal';
-import { BarChart3, Construction, Search, ChevronDown, Filter, RotateCcw, ClipboardList, TrendingUp, CheckCircle, X, Target, Box, AlertCircle, Package } from 'lucide-react';
+import { BarChart3, Construction, Search, ChevronDown, Filter, RotateCcw, ClipboardList, TrendingUp, CheckCircle, X, Target, Box, AlertCircle, Package, ChevronLeft, ChevronRight } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   BarChart, Bar, Cell 
@@ -114,6 +114,7 @@ export default function HasilProduksiClient() {
   const [grandTotalRijek, setGrandTotalRijek] = useState(0);
   const [unit, setUnit] = useState('');
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [loadTime, setLoadTime] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'barang_jadi' | 'jurnal'>('jurnal');
   const [selectedBagian, setSelectedBagian] = useState('');
   const [selectedPekerjaan, setSelectedPekerjaan] = useState('');
@@ -213,6 +214,8 @@ export default function HasilProduksiClient() {
     }
 
     setLoadingDetails(true);
+    setLoadTime(null);
+    const startTime = performance.now();
     try {
       const fmtDate = (d: Date | null) => {
          if (!d) return '';
@@ -241,6 +244,7 @@ export default function HasilProduksiClient() {
       console.error('Error fetching details:', error);
     } finally {
       setLoadingDetails(false);
+      setLoadTime(performance.now() - startTime);
     }
   };
 
@@ -515,14 +519,27 @@ export default function HasilProduksiClient() {
         const headerHeight = header.offsetHeight - 24; // subtract the -mt-6 (24px) pull-up offset
         document.documentElement.style.setProperty('--sticky-header-h', `${headerHeight}px`);
       }
-      if (tabs) {
-        document.documentElement.style.setProperty('--sticky-tabs-h', `${tabs.offsetHeight}px`);
+      
+      const isDesktop = window.innerWidth >= 1024;
+      const desktopControlBar = document.getElementById('desktop-sticky-control-bar');
+      const mobileTabs = document.getElementById('sticky-tabs-container');
+      
+      let stickyHeight = 0;
+      if (isDesktop && desktopControlBar) {
+        stickyHeight = desktopControlBar.offsetHeight;
+      } else if (!isDesktop && mobileTabs) {
+        stickyHeight = mobileTabs.offsetHeight;
       }
+      
+      document.documentElement.style.setProperty('--sticky-tabs-h', `${stickyHeight}px`);
     };
 
     const observer = new ResizeObserver(updateOffsets);
     if (header) observer.observe(header);
-    if (tabs) observer.observe(tabs);
+    const tabsContainer = document.getElementById('sticky-tabs-container');
+    const desktopContainer = document.getElementById('desktop-sticky-control-bar');
+    if (tabsContainer) observer.observe(tabsContainer);
+    if (desktopContainer) observer.observe(desktopContainer);
     
     updateOffsets();
     window.addEventListener('scroll', updateOffsets);
@@ -855,7 +872,7 @@ export default function HasilProduksiClient() {
 
         {/* Unified Dashboard Control Bar - Split into 3 Cards, Combined on LG */}
         {selectedSopd && (
-          <div className="lg:sticky lg:top-[var(--sticky-header-h,72px)] lg:z-[70] lg:bg-[var(--bg-deep)] lg:pb-1.5 lg:-mx-4 lg:px-4 xl:lg:-mx-8 xl:lg:px-8">
+          <div id="desktop-sticky-control-bar" className="lg:sticky lg:top-[var(--sticky-header-h,72px)] lg:z-[70] lg:bg-[var(--bg-deep)] lg:pb-1.5 lg:-mx-4 lg:px-4 xl:lg:-mx-8 xl:lg:px-8">
             <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 sm:gap-4">
               {/* Card 1 & 2 Container */}
               <div className="flex flex-col md:flex-row flex-wrap lg:flex-nowrap items-stretch lg:items-center gap-3 sm:gap-4 flex-1">
@@ -906,12 +923,12 @@ export default function HasilProduksiClient() {
                 </div>
               </div>
 
-              {/* Tab Navigation (Card 3) */}
-              <div id="sticky-tabs-container" className="sticky top-[var(--sticky-header-h,72px)] z-[70] bg-[var(--bg-deep)] pb-1.5 lg:static lg:z-auto lg:bg-transparent lg:pb-0 lg:flex lg:items-stretch shrink-0 -mx-4 px-4 lg:mx-0 lg:px-0">
-                <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-1.5 flex items-center gap-1 w-full lg:w-fit mx-auto lg:mx-0 shrink-0">
+              {/* Tab Navigation (Card 3) — only visible at LG+, mobile tabs rendered separately below */}
+              <div className="hidden lg:flex lg:items-stretch shrink-0">
+                <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-1.5 flex items-center gap-1 w-fit shrink-0">
                   <button 
                     onClick={() => setActiveTab('jurnal')}
-                    className={`flex-1 lg:px-10 py-2.5 rounded-lg text-[12px] font-bold capitalize tracking-tight whitespace-nowrap transition-all duration-300 ${
+                    className={`lg:px-10 py-2.5 rounded-lg text-[12px] font-bold capitalize tracking-tight whitespace-nowrap transition-all duration-300 ${
                       activeTab === 'jurnal' 
                       ? 'bg-gray-100 text-emerald-600 border border-gray-200/50 shadow-inner' 
                       : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
@@ -921,7 +938,7 @@ export default function HasilProduksiClient() {
                   </button>
                   <button 
                     onClick={() => setActiveTab('barang_jadi')}
-                    className={`flex-1 lg:px-10 py-2.5 rounded-lg text-[12px] font-bold capitalize tracking-tight whitespace-nowrap transition-all duration-300 ${
+                    className={`lg:px-10 py-2.5 rounded-lg text-[12px] font-bold capitalize tracking-tight whitespace-nowrap transition-all duration-300 ${
                       activeTab === 'barang_jadi' 
                       ? 'bg-gray-100 text-emerald-600 border border-gray-200/50 shadow-inner' 
                       : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
@@ -931,6 +948,34 @@ export default function HasilProduksiClient() {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab Navigation — Mobile/MD sticky (shown below cards, separate sticky layer) */}
+        {selectedSopd && (
+          <div id="sticky-tabs-container" className="sticky top-[var(--sticky-header-h,72px)] z-[70] bg-[var(--bg-deep)] pb-1.5 -mx-4 px-4 lg:hidden">
+            <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-1.5 flex items-center gap-1 w-full">
+              <button 
+                onClick={() => setActiveTab('jurnal')}
+                className={`flex-1 py-2.5 rounded-lg text-[12px] font-bold capitalize tracking-tight whitespace-nowrap transition-all duration-300 ${
+                  activeTab === 'jurnal' 
+                  ? 'bg-gray-100 text-emerald-600 border border-gray-200/50 shadow-inner' 
+                  : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                Jurnal Produksi
+              </button>
+              <button 
+                onClick={() => setActiveTab('barang_jadi')}
+                className={`flex-1 py-2.5 rounded-lg text-[12px] font-bold capitalize tracking-tight whitespace-nowrap transition-all duration-300 ${
+                  activeTab === 'barang_jadi' 
+                  ? 'bg-gray-100 text-emerald-600 border border-gray-200/50 shadow-inner' 
+                  : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                Barang Jadi
+              </button>
             </div>
           </div>
         )}
@@ -1068,12 +1113,9 @@ export default function HasilProduksiClient() {
             )}
         
         {selectedSopd ? (
-          <div
-            className="bg-white border border-gray-100 rounded-xl shadow-sm shadow-green-900/5 flex flex-col -mt-2"
-            style={{ height: 'calc(100dvh - var(--sticky-header-h, 72px) - var(--sticky-tabs-h, 60px))' }}
-          >
+          <div className="bg-white border border-gray-100 rounded-xl shadow-sm shadow-green-900/5 flex flex-col -mt-2">
             {activeTab === 'barang_jadi' ? (
-            <div className="flex flex-col flex-1 min-h-0">
+            <div className="flex flex-col">
               {/* Gap Filler to prevent scrolling text from showing between tabs and table header */}
               <div className="sticky z-20 bg-white" style={{ height: '40px', top: 'calc(var(--sticky-header-h, 72px) + var(--sticky-tabs-h, 60px) - 40px)', marginBottom: '-40px' }} />
               {/* Sticky Header - outside overflow-x-auto */}
@@ -1102,7 +1144,7 @@ export default function HasilProduksiClient() {
               {/* Scrollable Body */}
               <div
                 ref={barangJadiBodyRef}
-                className="flex-1 min-h-0 overflow-x-auto overflow-y-auto custom-scrollbar bg-gray-50/20"
+                className="overflow-x-auto custom-scrollbar bg-gray-50/20"
                 onScroll={(e) => {
                   if (barangJadiHeaderRef.current) barangJadiHeaderRef.current.scrollLeft = e.currentTarget.scrollLeft;
                 }}
@@ -1121,7 +1163,7 @@ export default function HasilProduksiClient() {
               </div>
             </div>
            ) : (
-            <div className="flex flex-col flex-1 min-h-0">
+            <div className="flex flex-col">
               {/* Operator Efficiency Summary - Horizontal scrollable row */}
               {jurnalResults.length > 0 && !loadingDetails && selectedPekerjaan && (
                 <div className="bg-white border-b border-gray-100 px-6 py-2.5 flex items-center gap-4 shrink-0 overflow-hidden">
@@ -1198,7 +1240,7 @@ export default function HasilProduksiClient() {
               {/* Scrollable Body */}
               <div
                 ref={jurnalBodyRef}
-                className="flex-1 min-h-0 overflow-x-auto overflow-y-auto custom-scrollbar"
+                className="overflow-x-auto custom-scrollbar"
                 onScroll={(e) => {
                   if (jurnalHeaderRef.current) jurnalHeaderRef.current.scrollLeft = e.currentTarget.scrollLeft;
                 }}
@@ -1233,52 +1275,93 @@ export default function HasilProduksiClient() {
           {/* Fixed Footer for Totals & Pagination */}
           {((activeTab === 'barang_jadi' && results.length > 0) || (activeTab === 'jurnal' && jurnalResults.length > 0)) && !loadingDetails && (
             <div className="bg-white text-gray-800 border-t border-gray-100 px-6 xl:px-8 py-3 sm:py-2.5 flex flex-col sm:flex-row justify-between items-center sm:items-center shrink-0 relative z-20 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.05)] gap-3 sm:gap-4">
-              
-              {/* Pagination Controls */}
-              <div className="flex items-center gap-2">
-                <button 
-                  onClick={() => activeTab === 'jurnal' ? setJurnalPage(p => Math.max(1, p - 1)) : setBarangJadiPage(p => Math.max(1, p - 1))}
-                  disabled={activeTab === 'jurnal' ? jurnalPage === 1 : barangJadiPage === 1}
-                  className="px-3 py-1.5 text-[11px] font-bold bg-white border border-gray-200 rounded-lg text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors shadow-sm shadow-emerald-900/5"
-                >
-                  Prev
-                </button>
-                <div className="px-3 py-1.5 text-[11px] font-bold text-gray-500 bg-gray-50 rounded-lg border border-gray-100 tabular-nums">
-                  {activeTab === 'jurnal' ? jurnalPage : barangJadiPage} / {activeTab === 'jurnal' ? totalJurnalPages : totalBarangJadiPages}
-                </div>
-                <button 
-                  onClick={() => activeTab === 'jurnal' ? setJurnalPage(p => Math.min(totalJurnalPages, p + 1)) : setBarangJadiPage(p => Math.min(totalBarangJadiPages, p + 1))}
-                  disabled={activeTab === 'jurnal' ? jurnalPage === totalJurnalPages : barangJadiPage === totalBarangJadiPages}
-                  className="px-3 py-1.5 text-[11px] font-bold bg-white border border-gray-200 rounded-lg text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors shadow-sm shadow-emerald-900/5"
-                >
-                  Next
-                </button>
-              </div>
+              {/* Left Side: Text Info & Totals */}
+              <div className="flex items-center gap-6">
+                {/* Text Info - hidden on mobile */}
+                <span className="hidden md:block text-[11px] font-bold text-gray-400 tracking-wide">
+                  {activeTab === 'jurnal' 
+                    ? (totalJurnalItems === 0 ? 'Tidak ada data' : `Menampilkan ${Math.min(jurnalPage * PAGE_SIZE, totalJurnalItems)} dari ${totalJurnalItems} baris`)
+                    : (totalBarangJadiItems === 0 ? 'Tidak ada data' : `Menampilkan ${Math.min(barangJadiPage * PAGE_SIZE, totalBarangJadiItems)} dari ${totalBarangJadiItems} baris`)
+                  }
+                </span>
 
-              {/* Totals Section */}
-              {(activeTab === 'barang_jadi' || (activeTab === 'jurnal' && selectedPekerjaan)) && (
-                <div className="flex flex-wrap items-center justify-end gap-6 xl:gap-8">
-                  {activeTab === 'jurnal' && grandTotalRijek > 0 && (
-                    <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-bold tracking-wide text-rose-400">Total Rijek</span>
-                      <div className="text-lg font-semibold tabular-nums tracking-tight text-rose-600">
-                        {grandTotalRijek.toLocaleString('id-ID')}
+                {/* Totals Section */}
+                {(activeTab === 'barang_jadi' || (activeTab === 'jurnal' && selectedPekerjaan)) && (
+                  <div className="flex flex-wrap items-center gap-4 border-l border-gray-100 pl-4">
+                    {activeTab === 'jurnal' && grandTotalRijek > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold tracking-wide text-rose-400">Total Rijek</span>
+                        <div className="text-[13px] font-semibold tabular-nums tracking-tight text-rose-600">
+                          {grandTotalRijek.toLocaleString('id-ID')}
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold tracking-wide text-gray-500">
+                        {activeTab === 'barang_jadi' ? 'Total Barang Masuk (Gudang)' : `Total Realisasi — ${selectedPekerjaan}`}
+                      </span>
+                      <div className="text-[13px] font-bold tabular-nums tracking-tight text-emerald-600">
+                        {activeTab === 'barang_jadi' 
+                          ? `${grandTotal.toLocaleString('id-ID')} ${results[0]?.items[0]?.satuan || results[0]?.items[0]?.unit || unit}`
+                          : `${grandTotalJurnal.toLocaleString('id-ID')}`
+                        }
                       </div>
                     </div>
-                  )}
-                  <div className="flex items-center gap-3">
-                    <span className="text-[11px] font-bold tracking-wide text-gray-500">
-                      {activeTab === 'barang_jadi' ? 'Total Barang Masuk (Gudang)' : `Total Realisasi — ${selectedPekerjaan}`}
+                  </div>
+                )}
+              </div>
+
+              {/* Right Side: Pagination & Load Speed */}
+              <div className="flex items-center gap-6 w-full md:w-auto justify-center md:justify-end mt-2 md:mt-0">
+                {/* Pagination Controls */}
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1">
+                    <button
+                      disabled={activeTab === 'jurnal' ? jurnalPage <= 1 : barangJadiPage <= 1}
+                      onClick={() => activeTab === 'jurnal' ? setJurnalPage(1) : setBarangJadiPage(1)}
+                      className="w-8 h-8 flex items-center justify-center text-[12px] font-bold border border-gray-100 bg-white hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-100 rounded-lg disabled:opacity-30 transition-all shadow-sm"
+                      title="Halaman Pertama"
+                    >«</button>
+                    <button
+                      disabled={activeTab === 'jurnal' ? jurnalPage <= 1 : barangJadiPage <= 1}
+                      onClick={() => activeTab === 'jurnal' ? setJurnalPage(p => Math.max(1, p - 1)) : setBarangJadiPage(p => Math.max(1, p - 1))}
+                      className="w-8 h-8 flex items-center justify-center border border-gray-100 bg-white hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-100 rounded-lg disabled:opacity-30 transition-all shadow-sm"
+                      title="Halaman Sebelumnya"
+                    ><ChevronLeft size={14} /></button>
+                  </div>
+                  <div className="flex items-center px-4 py-1.5 bg-gray-50/50 border border-gray-100 rounded-full shadow-inner">
+                    <span className="text-[11px] font-bold tracking-wide text-gray-400">
+                      Hal. <span className="text-gray-800">{activeTab === 'jurnal' ? jurnalPage : barangJadiPage}</span> <span className="mx-1.5 opacity-30">/</span> {activeTab === 'jurnal' ? totalJurnalPages : totalBarangJadiPages}
                     </span>
-                    <div className="text-lg font-bold tabular-nums tracking-tight text-emerald-600">
-                      {activeTab === 'barang_jadi' 
-                        ? `${grandTotal.toLocaleString('id-ID')} ${results[0]?.items[0]?.satuan || results[0]?.items[0]?.unit || unit}`
-                        : `${grandTotalJurnal.toLocaleString('id-ID')}`
-                      }
-                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      disabled={activeTab === 'jurnal' ? jurnalPage >= totalJurnalPages : barangJadiPage >= totalBarangJadiPages}
+                      onClick={() => activeTab === 'jurnal' ? setJurnalPage(p => Math.min(totalJurnalPages, p + 1)) : setBarangJadiPage(p => Math.min(totalBarangJadiPages, p + 1))}
+                      className="w-8 h-8 flex items-center justify-center border border-gray-100 bg-white hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-100 rounded-lg disabled:opacity-30 transition-all shadow-sm"
+                      title="Halaman Berikutnya"
+                    ><ChevronRight size={14} /></button>
+                    <button
+                      disabled={activeTab === 'jurnal' ? jurnalPage >= totalJurnalPages : barangJadiPage >= totalBarangJadiPages}
+                      onClick={() => activeTab === 'jurnal' ? setJurnalPage(totalJurnalPages) : setBarangJadiPage(totalBarangJadiPages)}
+                      className="w-8 h-8 flex items-center justify-center text-[12px] font-bold border border-gray-100 bg-white hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-100 rounded-lg disabled:opacity-30 transition-all shadow-sm"
+                      title="Halaman Terakhir"
+                    >»</button>
                   </div>
                 </div>
-              )}
+
+                {/* Load Speed Badge - hidden on mobile */}
+                {loadTime !== null && loadTime !== undefined && (
+                  <div className={`hidden md:flex text-[9px] px-2 py-1 rounded-full font-bold items-center gap-1.5 border tracking-wide shadow-sm ${
+                    loadTime < 300  ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                    loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                      'bg-rose-50 text-rose-600 border-rose-100'
+                  }`}>
+                    <span className="animate-pulse">⚡</span>
+                    <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
