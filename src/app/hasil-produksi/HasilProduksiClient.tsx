@@ -392,7 +392,7 @@ export default function HasilProduksiClient() {
           <td className="px-4 py-3 xl:py-4 text-[10px] xl:text-[11px] font-bold border-r border-gray-100 truncate max-w-[100px] text-gray-600" title={item.warna || ''}>{item.warna || '-'}</td>
           <td className="px-4 py-3 xl:py-4 text-[11px] xl:text-[12px] font-bold border-r border-gray-100 text-right tabular-nums text-gray-700">{Number(item.inscheet || 0).toLocaleString('id-ID')}</td>
           <td className="px-4 py-3 xl:py-4 text-[11px] xl:text-[12px] font-bold border-r border-gray-100 text-right tabular-nums text-rose-600">{Number(item.rijek || 0).toLocaleString('id-ID')}</td>
-          <td className="px-4 py-3 xl:py-4 text-[11px] xl:text-[12px] font-bold border-r border-gray-100 whitespace-nowrap text-gray-700">{item.jam || '-'}</td>
+          <td className="px-4 py-3 xl:py-4 text-[11px] xl:text-[12px] font-bold border-r border-gray-100 text-gray-700 truncate max-w-[80px]" title={item.jam || ''}>{item.jam || '-'}</td>
           <td className="px-4 py-3 xl:py-4 text-[10px] xl:text-[11px] font-bold border-r border-gray-100 truncate max-w-[120px] text-rose-600 italic" title={item.kendala || ''}>{item.kendala || '-'}</td>
           <td className="px-4 py-3 xl:py-4 text-[10px] xl:text-[11px] font-bold border-r border-gray-100 text-gray-500 italic max-w-[120px] truncate" title={item.keterangan || ''}>{item.keterangan || '-'}</td>
           <td className="px-4 py-3 xl:py-4 text-[13px] xl:text-[15px] font-semibold text-right tabular-nums bg-emerald-50 text-emerald-900">{Number(item.realisasi).toLocaleString('id-ID')}</td>
@@ -1275,8 +1275,8 @@ export default function HasilProduksiClient() {
           {/* Fixed Footer for Totals & Pagination */}
           {((activeTab === 'barang_jadi' && results.length > 0) || (activeTab === 'jurnal' && jurnalResults.length > 0)) && !loadingDetails && (
             <div className="bg-white text-gray-800 border-t border-gray-100 px-6 xl:px-8 py-3 sm:py-2.5 flex flex-col sm:flex-row justify-between items-center sm:items-center shrink-0 relative z-20 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.05)] gap-3 sm:gap-4">
-              {/* Left Side: Text Info */}
-              <div className="flex items-center">
+              {/* Left Side: Text Info & Load Speed */}
+              <div className="flex items-center gap-3">
                 <span className="hidden md:block text-[11px] font-bold text-gray-400 tracking-wide">
                   {activeTab === 'jurnal' 
                     ? (totalJurnalItems === 0 ? 'Tidak ada data' : `Menampilkan ${Math.min(jurnalPage * PAGE_SIZE, totalJurnalItems)} dari ${totalJurnalItems} baris`)
