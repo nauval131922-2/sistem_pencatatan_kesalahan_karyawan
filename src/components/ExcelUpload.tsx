@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Upload, FileSpreadsheet, CheckCircle, XCircle, Loader2, X, Clock } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
@@ -107,22 +107,6 @@ export default function ExcelUpload() {
       setStatus('error');
       setMessage('Terjadi kesalahan saat memproses file.');
     }
-  };
-
-    // Reset file input
-    if (fileRef.current) fileRef.current.value = '';
-  };
-
-  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
-  };
-
-  const onDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleFile(file);
   };
 
   return (
