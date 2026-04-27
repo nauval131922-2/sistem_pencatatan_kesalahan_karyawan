@@ -42,48 +42,62 @@ self.addEventListener('message', async (e) => {
       }
     }
 
-    // 3. Upload Chunks secara berurutan langsung dari Worker
-    // Ukuran chunk diperbesar untuk mengurangi jumlah request (200k baris / 4k = 50 request)
-    const CHUNK_SIZE = 4000; 
+    // 3. Konfigurasi Chunking
+    const CHUNK_SIZE = 4000;
     const totalChunks = Math.ceil(mappedData.length / CHUNK_SIZE);
     let totalImported = 0;
 
-    for (let i = 0; i < totalChunks; i++) {
-      let chunkData = mappedData.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-      
-      // Sisipkan header ke chunk ke-2 dan seterusnya agar API bisa mendeteksi kolom
-      if (i > 0) {
-        chunkData = [headerRow, ...chunkData];
-      }
+    // 4. Fungsi pembantu untuk mengunggah satu chunk
+    const uploadChunk = async (index: number) => {
+      const chunkData = mappedData.slice(index * CHUNK_SIZE, (index + 1) * CHUNK_SIZE);
+      const dataWithHeader = index > 0 ? [headerRow, ...chunkData] : chunkData;
 
-      self.postMessage({ 
-        type: 'status', 
-        message: `Mengunggah bagian ${i + 1} dari ${totalChunks}...`,
-        progress: Math.round(((i + 1) / totalChunks) * 100)
-      });
-
-      // Gunakan fetch dengan URL absolut
       const res = await fetch(apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           filename: filename,
-          data: chunkData,
-          chunkIndex: i,
+          data: dataWithHeader,
+          chunkIndex: index,
           totalChunks
         }),
       });
 
       const data = await res.json();
-
       if (!res.ok || !data.success) {
-        throw new Error(data.error || data.details || `Gagal mengimpor data pada bagian ${i + 1}.`);
+        throw new Error(data.error || data.details || `Gagal mengimpor data pada bagian ${index + 1}.`);
       }
+      return data.importedCount || 0;
+    };
 
-      totalImported += (data.importedCount || 0);
-    }
+    // 4. Proses Upload - Chunk pertama harus sinkron (karena ada proses DELETE di server)
+    self.postMessage({ type: 'status', message: `Memulai pengunggahan (1/${totalChunks})...`, progress: 0 });
+    totalImported += await uploadChunk(0);
+
+    // 5. Chunk sisanya dikirim secara PARALEL (Concurrency 5) untuk kecepatan maksimal
+    const remainingChunks = Array.from({ length: totalChunks - 1 }, (_, i) => i + 1);
+    const CONCURRENCY = 5;
+    let completedChunks = 1;
+
+    const runWorker = async () => {
+      while (remainingChunks.length > 0) {
+        const index = remainingChunks.shift();
+        if (index === undefined) break;
+
+        const count = await uploadChunk(index);
+        totalImported += count;
+        completedChunks++;
+
+        self.postMessage({ 
+          type: 'status', 
+          message: `Mengunggah... (${completedChunks}/${totalChunks})`,
+          progress: Math.round((completedChunks / totalChunks) * 100)
+        });
+      }
+    };
+
+    // Jalankan worker paralel
+    await Promise.all(Array.from({ length: CONCURRENCY }, runWorker));
 
     self.postMessage({ type: 'done', totalImported });
   } catch (err: any) {
