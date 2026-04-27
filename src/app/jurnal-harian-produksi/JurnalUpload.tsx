@@ -33,84 +33,39 @@ export default function JurnalUpload() {
       // Memberi jeda agar UI sempat me-render status 'Membaca file Excel...' sebelum main thread diblokir oleh XLSX
       await new Promise(resolve => setTimeout(resolve, 50));
 
-      // Menggunakan Web Worker agar parsing Excel (komputasi CPU intensif) berjalan di background
-      // sehingga tidak membuat UI browser "Not Responding"
+      // Menggunakan Web Worker agar seluruh proses berat berjalan di background
       const arrayBuffer = await file.arrayBuffer();
       const worker = new Worker(new URL('./excel-worker.ts', import.meta.url));
       
-      const parsedData: any[][] = await new Promise((resolve, reject) => {
-        worker.postMessage(arrayBuffer);
-        worker.onmessage = (e) => {
-          if (e.data.success) {
-            resolve(e.data.mappedData);
-          } else {
-            reject(new Error(e.data.error || "Gagal memproses file Excel"));
-          }
+      worker.postMessage({ arrayBuffer, filename: file.name });
+
+      worker.onmessage = (e) => {
+        const { type, message, error, totalImported } = e.data;
+
+        if (type === 'status') {
+          setMessage(message);
+        } else if (type === 'done') {
+          setStatus('idle');
+          setDialog({
+            isOpen: true,
+            type: 'success',
+            title: 'Berhasil',
+            message: `Berhasil mengimpor ${totalImported} data Jurnal Harian Produksi.`
+          });
           worker.terminate();
-        };
-        worker.onerror = (err) => {
-          reject(new Error("Terjadi kesalahan fatal pada Web Worker saat membaca Excel"));
+        } else if (type === 'error') {
+          setStatus('error');
+          setMessage(error || 'Gagal memproses file Excel');
           worker.terminate();
-        };
-      });
-
-      const mappedData = parsedData;
-
-      // Temukan baris header agar bisa disertakan di setiap chunk (jika format dinamis)
-      let headerRow = mappedData[0];
-      for (let i = 0; i < Math.min(mappedData.length, 20); i++) {
-        if (mappedData[i] && mappedData[i].includes('Tanggal') && mappedData[i].includes('Nama Karyawan')) {
-          headerRow = mappedData[i];
-          break;
         }
-      }
+      };
 
-      const CHUNK_SIZE = 2500;
-      const totalChunks = Math.ceil(mappedData.length / CHUNK_SIZE);
-      let totalImported = 0;
-
-      for (let i = 0; i < totalChunks; i++) {
-        let chunkData = mappedData.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
-        
-        // Sisipkan header ke chunk ke-2 dan seterusnya agar API bisa mendeteksi kolom
-        if (i > 0) {
-          chunkData = [headerRow, ...chunkData];
-        }
-
-        setMessage(`Mengunggah bagian ${i + 1} dari ${totalChunks}...`);
-        
-        // Jeda sangat singkat (10ms) untuk melepaskan thread utama agar React bisa me-render pesan "Mengunggah..." ke layar
-        await new Promise(resolve => setTimeout(resolve, 10));
-
-        const res = await fetch('/api/jurnal-harian-produksi', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            filename: file.name,
-            data: chunkData,
-            chunkIndex: i,
-            totalChunks
-          }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok || !data.success) {
-          throw new Error(data.error || data.details || `Gagal mengimpor data pada bagian ${i + 1}.`);
-        }
-
-        totalImported += (data.importedCount || 0);
-      }
-
-      setStatus('idle');
-      setDialog({
-        isOpen: true,
-        type: 'success',
-        title: 'Berhasil',
-        message: `Berhasil mengimpor ${totalImported} data Jurnal Harian Produksi.`
-      });
+      worker.onerror = (err) => {
+        console.error('Worker Error:', err);
+        setStatus('error');
+        setMessage('Terjadi kesalahan fatal pada sistem upload background.');
+        worker.terminate();
+      };
 
     } catch (err: any) {
       console.error('Upload Error:', err);
