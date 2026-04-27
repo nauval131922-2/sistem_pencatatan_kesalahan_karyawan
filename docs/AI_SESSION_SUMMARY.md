@@ -1,39 +1,29 @@
-# AI Session Summary — 2026-04-26
+# AI Session Summary — 2026-04-27
 
 ## 📝 Detail Sesi
-- **Tanggal**: 26 April 2026
-- **Waktu Selesai**: 10:10 WIB
-- **PC**: Lokal (Rumah)
+- **Tanggal**: 27 April 2026
+- **Waktu Selesai**: 09:40 WIB
+- **PC**: Lokal (Kantor)
 
 ## 🚀 Fitur & Perbaikan yang Dikerjakan
-### 1. Modul Hak Akses (Roles & Permissions)
-- Memperbaiki logika pengelompokan (Grouping) sehingga modul "Sistem - *" dan "Data Digit - *" terintegrasi dengan benar.
-- Mengimplementasikan fitur **Smart Expand**: Semua grup tertutup secara default, namun otomatis terbuka jika memiliki hak akses aktif (> 0 permission).
-- Standardisasi tipografi header grup menjadi **13px Bold**.
-- Mengubah deskripsi modul menjadi "Pengaturan Hak Akses pada Sistem".
+### 1. Dashboard Hasil Produksi (Layouting & Sticky)
+- **Optimasi 2XL**: Menggabungkan seluruh kontrol filter (SOPd, Rentang Tanggal, Bagian, Pekerjaan, Refresh) ke dalam satu baris horizontal pada layar ultra-lebar untuk efisiensi ruang.
+- **Fix Sticky Header Leak**: Menambahkan teknik `background extension` menggunakan elemen absolute di atas header untuk menutupi konten yang "mengintip" saat di-scroll.
+- **Flex Card Optimization**: Mengatur distribusi lebar kartu dashboard sehingga kartu **Tren** mendapatkan ruang maksimal (`flex-1`), sementara kartu **Target & Sisa** tetap ringkas (`shrink-0`).
+- **Tab Stability**: Menambahkan `whitespace-nowrap` pada label tab untuk mencegah teks pecah menjadi dua baris.
 
-### 2. Manajemen User (Kelola User)
-- Perombakan total tata letak menjadi **Full Width** (menghapus pembatas kontainer).
-- Integrasi komponen **SearchAndReload** untuk standarisasi bar pencarian dan fitur penyegaran data.
-- Menghapus kebijakan `uppercase` (All-Caps) pada seluruh elemen UI (Nama, Role, Tombol, Modal).
-- Mengubah gaya visual Role "Super Admin" menjadi lebih ringan (Emerald Theme).
-- Menyesuaikan gap antar elemen menjadi `gap-3` agar identik dengan modul Rekap Sales Order.
+### 2. Optimasi Performa UI
+- **Render Limiting**: Membatasi jumlah item yang di-render pada dropdown **Pekerjaan** dan **Bagian** menjadi maksimal 30 item. Ini menghilangkan lag saat membuka dropdown yang memiliki data ratusan baris.
+- **Search Filtering**: Integrasi filter pencarian real-time dengan indikator "+X lainnya" untuk memberikan feedback visual jika ada data yang tersembunyi.
 
-### 3. Halaman Profil & Modal Form
-- Modernisasi halaman Profil dengan gaya **Modern Premium** (rounded-xl, bg-gray-50/30).
-- Desain ulang `UserFormModal.tsx` menjadi lebih ringkas (*compact*) dan profesional.
-- Memperbaiki bug dropdown Role yang terpotong akibat properti `overflow-hidden`.
-- Menyelaraskan radius sudut dan bayangan (*shadow*) di seluruh elemen modal.
-
-### 4. Transisi Desain Sistem
-- Melakukan transisi identitas visual dari Neobrutalism murni (rounded-none, uppercase) ke **Modern Premium** (rounded-xl, sentence case, emerald accents).
-- Memperbarui file panduan `BUILD_FROM_SCRATCH.md` untuk mencerminkan standar desain baru ini.
+### 3. Stabilitas Komponen (Portal Migration)
+- **DatePicker Portal**: Memindahkan popup DatePicker ke **React Portal** untuk mencegah popup terpotong oleh kontainer dengan `overflow-hidden`.
+- **Sidebar Fixes**: Memperbaiki visibilitas sidebar pada perangkat mobile dan menyembunyikan resizer handle saat sidebar dalam kondisi mobile open.
 
 ## 💡 Keputusan Teknis Penting
-- **Peralihan Tipografi**: Menghapus kelas `uppercase` secara paksa di seluruh aplikasi untuk meningkatkan keterbacaan dan kesan desain yang lebih ramah.
-- **Konsistensi Komponen**: Mewajibkan penggunaan `SearchAndReload` dan `TableFooter` pada setiap halaman manajemen data untuk menjaga pengalaman pengguna yang seragam.
-- **Logika Default Role**: Memperbaiki logika form agar memilih role pertama yang tersedia dari database (biasanya Super Admin) sebagai nilai awal, alih-alih menggunakan teks statis "Admin".
+- **Penggunaan Portal**: Mewajibkan semua elemen popup (dropdown, datepicker) menggunakan Portal agar posisi sticky dan overflow kontainer induk tidak merusak tampilan popup.
+- **Virtualization Ringan**: Memilih pendekatan `slice(0, 30)` pada memoized filtered data sebagai solusi performa yang lebih sederhana dan cepat dibanding library virtualization berat untuk kasus dropdown.
 
 ## 📌 Hal yang Belum Selesai / Perlu Dilanjutkan
-- Melanjutkan implementasi desain Modern Premium pada modul-modul transaksi (Penjualan & Pembelian).
-- Audit visual pada dashboard utama untuk memastikan keselarasan dengan gaya Modern Premium.
+- Melakukan audit pada filter di modul lain (BOM, Bahan Baku) untuk mengimplementasikan pembatasan render dropdown yang sama.
+- Sinkronisasi desain sticky header di modul Rekap Sales Order agar memiliki stabilitas yang sama dengan Hasil Produksi.
