@@ -82,11 +82,12 @@ export default function JurnalUpload() {
           if (p !== undefined) setProgress(p);
         } else if (type === 'done') {
           setStatus('idle');
+          const finalDuration = formatTime(Math.floor((Date.now() - (startTime || Date.now())) / 1000));
           setDialog({
             isOpen: true,
             type: 'success',
             title: 'Berhasil',
-            message: `Berhasil mengimpor ${totalImported} data Jurnal Harian Produksi.`
+            message: `Berhasil mengimpor ${totalImported} data Jurnal Harian Produksi dalam waktu ${finalDuration}.`
           });
           worker.terminate();
         } else if (type === 'error') {

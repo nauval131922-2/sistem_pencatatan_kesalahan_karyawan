@@ -82,11 +82,12 @@ export default function ExcelUpload() {
           if (p !== undefined) setProgress(p);
         } else if (type === 'done') {
           setStatus('idle');
+          const finalDuration = formatTime(Math.floor((Date.now() - (startTime || Date.now())) / 1000));
           setDialog({
             isOpen: true,
             type: 'success',
             title: 'Berhasil',
-            message: `Berhasil mengimpor ${totalImported} data karyawan.`
+            message: `Berhasil mengimpor ${totalImported} data karyawan dalam waktu ${finalDuration}.`
           });
           worker.terminate();
         } else if (type === 'error') {
