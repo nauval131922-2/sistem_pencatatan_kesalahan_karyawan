@@ -27,9 +27,12 @@ export default function JurnalUpload() {
     }
 
     setStatus('loading');
-    setMessage('');
+    setMessage('Membaca file Excel (proses ini mungkin memakan waktu)...');
 
     try {
+      // Memberi jeda agar UI sempat me-render status 'Membaca file Excel...' sebelum main thread diblokir oleh XLSX
+      await new Promise(resolve => setTimeout(resolve, 50));
+
       const XLSX = await import('xlsx');
       const arrayBuffer = await file.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, {
@@ -69,7 +72,7 @@ export default function JurnalUpload() {
         }
       }
 
-      const CHUNK_SIZE = 500;
+      const CHUNK_SIZE = 2500;
       const totalChunks = Math.ceil(mappedData.length / CHUNK_SIZE);
       let totalImported = 0;
 
@@ -82,6 +85,9 @@ export default function JurnalUpload() {
         }
 
         setMessage(`Mengunggah bagian ${i + 1} dari ${totalChunks}...`);
+        
+        // Jeda sangat singkat (10ms) untuk melepaskan thread utama agar React bisa me-render pesan "Mengunggah..." ke layar
+        await new Promise(resolve => setTimeout(resolve, 10));
 
         const res = await fetch('/api/jurnal-harian-produksi', {
           method: 'POST',
