@@ -429,8 +429,8 @@ export default function HasilProduksiClient() {
           <td className="px-4 py-3 xl:py-4 text-[11px] xl:text-[12px] font-bold border-r border-gray-100 text-right tabular-nums text-gray-700">{Number(item.inscheet || 0).toLocaleString('id-ID')}</td>
           <td className="px-4 py-3 xl:py-4 text-[11px] xl:text-[12px] font-bold border-r border-gray-100 text-right tabular-nums text-rose-600">{Number(item.rijek || 0).toLocaleString('id-ID')}</td>
           <td className="px-4 py-3 xl:py-4 text-[11px] xl:text-[12px] font-bold border-r border-gray-100 text-gray-700 truncate max-w-[80px]" title={item.jam || ''}>{item.jam || '-'}</td>
-          <td className="px-4 py-3 xl:py-4 text-[10px] xl:text-[11px] font-bold border-r border-gray-100 truncate max-w-[120px] text-rose-600 italic" title={item.kendala || ''}>{item.kendala || '-'}</td>
-          <td className="px-4 py-3 xl:py-4 text-[10px] xl:text-[11px] font-bold border-r border-gray-100 text-gray-500 italic max-w-[120px] truncate" title={item.keterangan || ''}>{item.keterangan || '-'}</td>
+          <td className="px-4 py-3 xl:py-4 text-[10px] xl:text-[11px] font-bold border-r border-gray-100 truncate max-w-[120px] text-rose-600" title={item.kendala || ''}>{item.kendala || '-'}</td>
+          <td className="px-4 py-3 xl:py-4 text-[10px] xl:text-[11px] font-bold border-r border-gray-100 text-gray-500 max-w-[120px] truncate" title={item.keterangan || ''}>{item.keterangan || '-'}</td>
           <td className="px-4 py-3 xl:py-4 text-[13px] xl:text-[15px] font-semibold text-right tabular-nums bg-emerald-50 text-emerald-900">{Number(item.realisasi).toLocaleString('id-ID')}</td>
         </tr>
       );
