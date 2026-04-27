@@ -60,31 +60,59 @@ export default function JurnalUpload() {
         throw new Error("Tidak dapat menemukan data transaksi pada baris yang dipindai.");
       }
 
-      const res = await fetch('/api/jurnal-harian-produksi', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          filename: file.name,
-          data: mappedData
-        }),
+      // Temukan baris header agar bisa disertakan di setiap chunk (jika format dinamis)
+      let headerRow = mappedData[0];
+      for (let i = 0; i < Math.min(mappedData.length, 20); i++) {
+        if (mappedData[i] && mappedData[i].includes('Tanggal') && mappedData[i].includes('Nama Karyawan')) {
+          headerRow = mappedData[i];
+          break;
+        }
+      }
+
+      const CHUNK_SIZE = 500;
+      const totalChunks = Math.ceil(mappedData.length / CHUNK_SIZE);
+      let totalImported = 0;
+
+      for (let i = 0; i < totalChunks; i++) {
+        let chunkData = mappedData.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+        
+        // Sisipkan header ke chunk ke-2 dan seterusnya agar API bisa mendeteksi kolom
+        if (i > 0) {
+          chunkData = [headerRow, ...chunkData];
+        }
+
+        setMessage(`Mengunggah bagian ${i + 1} dari ${totalChunks}...`);
+
+        const res = await fetch('/api/jurnal-harian-produksi', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            filename: file.name,
+            data: chunkData,
+            chunkIndex: i,
+            totalChunks
+          }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || data.details || `Gagal mengimpor data pada bagian ${i + 1}.`);
+        }
+
+        totalImported += (data.importedCount || 0);
+      }
+
+      setStatus('idle');
+      setDialog({
+        isOpen: true,
+        type: 'success',
+        title: 'Berhasil',
+        message: `Berhasil mengimpor ${totalImported} data Jurnal Harian Produksi.`
       });
 
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        setStatus('idle');
-        setDialog({
-          isOpen: true,
-          type: 'success',
-          title: 'Berhasil',
-          message: `Berhasil mengimpor ${data.imported} data Jurnal Harian Produksi.`
-        });
-      } else {
-        setStatus('error');
-        setMessage(data.error || data.details || 'Gagal mengimpor data.');
-      }
     } catch (err: any) {
       console.error('Upload Error:', err);
       setStatus('error');

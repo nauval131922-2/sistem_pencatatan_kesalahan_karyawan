@@ -64,14 +64,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { filename, data: rawData } = await request.json();
+    const { filename, data: rawData, chunkIndex = 0, totalChunks = 1 } = await request.json();
 
     if (!rawData || !Array.isArray(rawData) || rawData.length === 0) {
        return NextResponse.json({ error: "Data Excel kosong atau format tidak sesuai." }, { status: 400 });
     }
 
-    // Start transaction: Clear existing data
-    await db.execute("DELETE FROM jurnal_harian_produksi");
+    // Hanya hapus data lama jika ini adalah chunk pertama atau tanpa chunking
+    if (chunkIndex === 0) {
+      await db.execute("DELETE FROM jurnal_harian_produksi");
+    }
 
     let importedCount = 0;
     let debugInfo: any = null;
@@ -190,19 +192,22 @@ export async function POST(request: NextRequest) {
       await db.batch(currentBatch, "write");
     }
 
-    const session = await getSession();
-    await db.execute({
-      sql: `INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by) 
-            VALUES (?, ?, ?, ?, ?, ?)`,
-      args: [
-        'UPLOAD', 
-        'jurnal_harian_produksi', 
-        0, 
-        `Upload Jurnal Harian Produksi dari Excel (${importedCount} data)`, 
-        JSON.stringify({ fileName: filename, imported: importedCount }),
-        session?.username || 'System'
-      ]
-    });
+    // Log activity hanya pada chunk terakhir atau jika tidak ada chunking
+    if (chunkIndex === totalChunks - 1) {
+      const session = await getSession();
+      await db.execute({
+        sql: `INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by) 
+              VALUES (?, ?, ?, ?, ?, ?)`,
+        args: [
+          'UPLOAD', 
+          'jurnal_harian_produksi', 
+          0, 
+          `Upload Jurnal Harian Produksi dari Excel (${filename})`, 
+          JSON.stringify({ fileName: filename, chunks: totalChunks }),
+          session?.username || 'System'
+        ]
+      });
+    }
 
     return NextResponse.json({ 
       success: true, 
