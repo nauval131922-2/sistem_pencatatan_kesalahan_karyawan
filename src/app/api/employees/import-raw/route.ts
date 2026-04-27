@@ -4,8 +4,6 @@ import db from '@/lib/db';
 import { getSession } from '@/lib/session';
 
 const SHEET_NAME = 'A.DATA KARYAWAN';
-const START_ROW = 6; 
-
 const COL_A = 0; // ID Karyawan (employee_no)
 const COL_B = 1; // filter: tidak kosong (baris valid)
 const COL_C = 2; // Nama
@@ -13,18 +11,25 @@ const COL_J = 9; // Jabatan/Bagian
 
 export async function POST(req: NextRequest) {
   try {
-    const { filename, rows } = await req.json();
+    const { filename, rows, chunkIndex = 0, totalChunks = 1 } = await req.json();
 
     if (!rows || !Array.isArray(rows)) {
       return NextResponse.json({ error: 'Data tidak valid.' }, { status: 400 });
     }
 
-    const dataRows = rows.slice(START_ROW - 1);
+    const dataRows = rows;
 
 
-    const batchOps: any[] = [
-        { sql: `UPDATE employees SET is_active = 0 WHERE employee_no IS NOT NULL AND employee_no != ''`, args: [] }
-    ];
+    const batchOps: any[] = [];
+    
+    // Hanya reset status aktif pada chunk pertama
+    if (chunkIndex === 0) {
+      batchOps.push({ 
+        sql: `UPDATE employees SET is_active = 0 WHERE employee_no IS NOT NULL AND employee_no != ''`, 
+        args: [] 
+      });
+    }
+
     let importedCount = 0;
 
     const session = await getSession();
@@ -55,23 +60,26 @@ export async function POST(req: NextRequest) {
         importedCount++;
     }
 
-    const chunkSize = 100;
+    const chunkSize = 500;
     for (let i = 0; i < batchOps.length; i += chunkSize) {
         await db.batch(batchOps.slice(i, i + chunkSize), "write");
     }
 
-    await db.execute({
-        sql: `INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by) 
-              VALUES (?, ?, ?, ?, ?, ?)`,
-        args: [
-            'IMPORT', 
-            'employees', 
-            0, 
-            `Import Karyawan dari Excel (${importedCount} data)`, 
-            JSON.stringify({ filename, imported: importedCount }),
-            currentUser
-        ]
-    });
+    // Hanya catat log pada chunk terakhir
+    if (chunkIndex === totalChunks - 1) {
+      await db.execute({
+          sql: `INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by) 
+                VALUES (?, ?, ?, ?, ?, ?)`,
+          args: [
+              'IMPORT', 
+              'employees', 
+              0, 
+              `Import Karyawan dari Excel (Selesai)`, 
+              JSON.stringify({ filename }),
+              currentUser
+          ]
+      });
+    }
     return NextResponse.json({ success: true, imported: importedCount });
   } catch (err: any) {
     console.error('Import error:', err);
