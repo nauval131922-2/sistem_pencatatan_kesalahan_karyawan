@@ -1275,45 +1275,18 @@ export default function HasilProduksiClient() {
           {/* Fixed Footer for Totals & Pagination */}
           {((activeTab === 'barang_jadi' && results.length > 0) || (activeTab === 'jurnal' && jurnalResults.length > 0)) && !loadingDetails && (
             <div className="bg-white text-gray-800 border-t border-gray-100 px-6 xl:px-8 py-3 sm:py-2.5 flex flex-col sm:flex-row justify-between items-center sm:items-center shrink-0 relative z-20 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.05)] gap-3 sm:gap-4">
-              {/* Left Side: Text Info & Totals */}
-              <div className="flex items-center gap-6">
-                {/* Text Info - hidden on mobile */}
+              {/* Left Side: Text Info */}
+              <div className="flex items-center">
                 <span className="hidden md:block text-[11px] font-bold text-gray-400 tracking-wide">
                   {activeTab === 'jurnal' 
                     ? (totalJurnalItems === 0 ? 'Tidak ada data' : `Menampilkan ${Math.min(jurnalPage * PAGE_SIZE, totalJurnalItems)} dari ${totalJurnalItems} baris`)
                     : (totalBarangJadiItems === 0 ? 'Tidak ada data' : `Menampilkan ${Math.min(barangJadiPage * PAGE_SIZE, totalBarangJadiItems)} dari ${totalBarangJadiItems} baris`)
                   }
                 </span>
-
-                {/* Totals Section */}
-                {(activeTab === 'barang_jadi' || (activeTab === 'jurnal' && selectedPekerjaan)) && (
-                  <div className="flex flex-wrap items-center gap-4 border-l border-gray-100 pl-4">
-                    {activeTab === 'jurnal' && grandTotalRijek > 0 && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold tracking-wide text-rose-400">Total Rijek</span>
-                        <div className="text-[13px] font-semibold tabular-nums tracking-tight text-rose-600">
-                          {grandTotalRijek.toLocaleString('id-ID')}
-                        </div>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-bold tracking-wide text-gray-500">
-                        {activeTab === 'barang_jadi' ? 'Total Barang Masuk (Gudang)' : `Total Realisasi — ${selectedPekerjaan}`}
-                      </span>
-                      <div className="text-[13px] font-bold tabular-nums tracking-tight text-emerald-600">
-                        {activeTab === 'barang_jadi' 
-                          ? `${grandTotal.toLocaleString('id-ID')} ${results[0]?.items[0]?.satuan || results[0]?.items[0]?.unit || unit}`
-                          : `${grandTotalJurnal.toLocaleString('id-ID')}`
-                        }
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
 
-              {/* Right Side: Pagination & Load Speed */}
-              <div className="flex items-center gap-6 w-full md:w-auto justify-center md:justify-end mt-2 md:mt-0">
-                {/* Pagination Controls */}
+              {/* Center: Pagination Controls */}
+              <div className="flex-1 flex justify-center">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1">
                     <button
@@ -1349,16 +1322,44 @@ export default function HasilProduksiClient() {
                     >»</button>
                   </div>
                 </div>
+              </div>
 
-                {/* Load Speed Badge - hidden on mobile */}
+              {/* Right Side: Load Speed & Totals */}
+              <div className="flex items-center gap-6">
+                {/* Load Speed Badge */}
                 {loadTime !== null && loadTime !== undefined && (
-                  <div className={`hidden md:flex text-[9px] px-2 py-1 rounded-full font-bold items-center gap-1.5 border tracking-wide shadow-sm ${
+                  <div className={`hidden lg:flex text-[9px] px-2 py-1 rounded-full font-bold items-center gap-1.5 border tracking-wide shadow-sm ${
                     loadTime < 300  ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                     loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' :
                                       'bg-rose-50 text-rose-600 border-rose-100'
                   }`}>
                     <span className="animate-pulse">⚡</span>
                     <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
+                  </div>
+                )}
+
+                {/* Totals Section */}
+                {(activeTab === 'barang_jadi' || (activeTab === 'jurnal' && selectedPekerjaan)) && (
+                  <div className="flex flex-wrap items-center gap-4 border-l border-gray-100 pl-4">
+                    {activeTab === 'jurnal' && grandTotalRijek > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold tracking-wide text-rose-400 uppercase">Total Rijek</span>
+                        <div className="text-[14px] font-bold tabular-nums tracking-tight text-rose-600">
+                          {grandTotalRijek.toLocaleString('id-ID')}
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold tracking-wide text-gray-500 uppercase">
+                        {activeTab === 'barang_jadi' ? 'Total Masuk' : `Realisasi`}
+                      </span>
+                      <div className="text-[14px] font-bold tabular-nums tracking-tight text-emerald-600">
+                        {activeTab === 'barang_jadi' 
+                          ? `${grandTotal.toLocaleString('id-ID')} ${results[0]?.items[0]?.satuan || results[0]?.items[0]?.unit || unit}`
+                          : `${grandTotalJurnal.toLocaleString('id-ID')}`
+                        }
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
