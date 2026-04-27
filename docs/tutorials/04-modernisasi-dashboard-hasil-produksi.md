@@ -70,3 +70,21 @@ Elemen seperti **DatePicker** dan **Custom Dropdown** sering kali terpotong jika
 
 > [!TIP]
 > Gunakan `whitespace-nowrap` pada teks tab atau tombol panjang untuk mencegah teks pecah menjadi dua baris di layar menengah.
+
+## 5. Sinkronisasi Sticky UI dan Native Scrolling
+
+Masalah terbesar pada versi sebelumnya adalah efek *layout jumping* dan *nested scroll* yang membuat pergerakan halaman menjadi tersendat-sendat, serta tab menu yang tidak menempel dengan baik saat layar di-_scroll_.
+
+### Langkah-langkah Perbaikan:
+1. **Pemisahan Kontainer Tab**: Mengeluarkan elemen navigasi (tab) dari dalam kontainer filter menjadi elemen mandiri dengan _behavior_ `sticky` sehingga dapat tetap menempel mulus pada saat _scroll_ meskipun di perangkat _mobile_.
+2. **Kalkulasi Offset Dinamis**: Memperbarui kalkulasi `ResizeObserver` agar mampu mendeteksi perubahan tinggi secara dinamis antara mode _desktop_ (di mana filter memiliki _sticky_) dan _mobile_.
+3. **Penghapusan Nested Scroll**: Menghapus kelas seperti `overflow-y-auto`, `flex-1`, dan tinggi statis (`calc(100dvh - ...)`) dari kontainer isi tabel. Ini mengizinkan _native document scrolling_, mengeliminasi masalah "terperangkap" dalam _scrollbar_ ganda dan menjadikan pergerakan halaman satu-kesatuan yang _smooth_.
+
+## 6. Standarisasi Komponen Footer Pagination
+
+Tampilan footer yang berisi pagination dirombak ulang agar sejalan secara presisi dengan gaya yang ada di layar `SOPdClient` (serta seluruh desain _Neobrutalism_).
+
+### Detail Standarisasi:
+- **Layout Terbagi (Kiri-Kanan)**: Memisahkan tampilan ke sisi kiri untuk "Keterangan Data" dan "Total Rekapitulasi", serta sisi kanan untuk "Kontrol Pagination" dan "Load Speed Badge".
+- **Penyembunyian Responsif**: Menggunakan `hidden md:flex` dan `hidden md:block` pada teks informasi (Menampilkan X dari Y) serta *badge load speed*, memastikan di layar ponsel hanya tombol kontrol angka halamannya saja yang tampil agar UI tidak kepenuhan.
+- **Konsistensi Ikonografi**: Mengganti teks statis "Prev" dan "Next" menggunakan ikon panah dari `lucide-react` dengan desain tombol presisi (proporsi 1:1, lebar dan tinggi sama `w-8 h-8`) persis dengan standardisasi komponen.

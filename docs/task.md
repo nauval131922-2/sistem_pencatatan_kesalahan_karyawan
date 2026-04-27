@@ -34,6 +34,8 @@
 - [x] Optimasi Layout & Sticky Header Hasil Produksi (2XL Row, Background Extension) — 2026-04-27
 - [x] Stabilisasi Popup UI (Migrasi DatePicker & Sidebar ke Portal) — 2026-04-27
 - [x] Optimasi Performa Dropdown (Render Limiting 30 items) — 2026-04-27
+- [x] Penghapusan Nested Scroll & Sinkronisasi Native Page Scroll pada Tabel Produksi — 2026-04-27
+- [x] Standarisasi Footer Pagination Dashboard (Responsif Kiri-Kanan) — 2026-04-27
 
 ---
 
@@ -53,12 +55,12 @@
 ## 📊 Statistik
 
 ```
-Total task    : 20
-Selesai       : 18
+Total task    : 22
+Selesai       : 20
 In progress   : 2
 Backlog       : 2
 Bug diketahui : 0
-Progress      : 90%
+Progress      : 91%
 ```
 
 ---

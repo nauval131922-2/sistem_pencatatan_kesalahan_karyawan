@@ -49,6 +49,8 @@ SINTAK ERP kini menggunakan identitas visual **Modern Premium** (evolusi dari Ne
 7. **Sticky Header Stability**: Jika menggunakan sticky header, tambahkan elemen `absolute` di dalam header yang memanjang ke atas (background extension) untuk menutupi kebocoran konten saat scroll.
 8. **Popup & Dropdown (Portal)**: Semua elemen popup (DatePicker, Dropdown kustom) wajib menggunakan **React Portal** agar tidak terpotong oleh kontainer `overflow-hidden` atau `z-index` yang rendah.
 9. **Performance Rendering**: Untuk dropdown dengan data besar (>100 item), batasi jumlah render ke 30-50 item pertama menggunakan `slice` di `useMemo` untuk menjaga responsivitas UI.
+10. **Native Page Scrolling**: Hindari *nested scrollbar* (scroll bersarang). Kontainer utama seperti tabel tidak boleh memiliki `overflow-y-auto` dengan tinggi tetap. Biarkan tabel memanjang secara alami mengikuti isi agar pengguna dapat men-scroll halaman dengan mulus (*native page scroll*).
+11. **Tabel Footer Pagination**: Footer pagination untuk tabel harus selalu menggunakan gaya responsif dua sisi. Sisi Kiri: Teks keterangan jumlah data. Sisi Kanan: Tombol kontrol halaman (`w-8 h-8`) dan *badge load speed*. Teks kiri wajib disembunyikan di layar ponsel (`hidden md:block`) agar tombol kontrol tersisa di tengah layar.
 
 ---
 
