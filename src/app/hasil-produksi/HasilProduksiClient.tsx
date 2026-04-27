@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import Portal from '@/components/Portal';
 import { BarChart3, Construction, Search, ChevronDown, Filter, RotateCcw, ClipboardList, TrendingUp, CheckCircle, X, Target, Box, AlertCircle, Package } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
@@ -122,19 +123,32 @@ export default function HasilProduksiClient() {
   const [hideGudang, setHideGudang] = useState(false);
   const [hideJurnal, setHideJurnal] = useState(false);
   const [jurnalDisplayLimit, setJurnalDisplayLimit] = useState(50);
+  const PAGE_SIZE = 50;
+  const [jurnalPage, setJurnalPage] = useState(1);
+  const [barangJadiPage, setBarangJadiPage] = useState(1);
   
   // Custom dropdown states
   const [isBagianDropdownOpen, setIsBagianDropdownOpen] = useState(false);
-  const [isPekerjaanDropdownOpen, setIsPekerjaanDropdownOpen] = useState(false);
   const [bagianSearchQuery, setBagianSearchQuery] = useState('');
+  const [focusedBagianIndex, setFocusedBagianIndex] = useState(-1);
+  const [bagianCoords, setBagianCoords] = useState({ top: 0, left: 0, width: 0 });
+  const bagianTriggerRef = useRef<HTMLButtonElement>(null);
+
+  const [isPekerjaanDropdownOpen, setIsPekerjaanDropdownOpen] = useState(false);
   const [pekerjaanSearchQuery, setPekerjaanSearchQuery] = useState('');
+  const [focusedPekerjaanIndex, setFocusedPekerjaanIndex] = useState(-1);
+  const [pekerjaanCoords, setPekerjaanCoords] = useState({ top: 0, left: 0, width: 0 });
+  const pekerjaanTriggerRef = useRef<HTMLButtonElement>(null);
   
   // Keyboard navigation states
   const [focusedSopdIndex, setFocusedSopdIndex] = useState(-1);
-  const [focusedBagianIndex, setFocusedBagianIndex] = useState(-1);
-  const [focusedPekerjaanIndex, setFocusedPekerjaanIndex] = useState(-1);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
+  // Table scroll sync refs
+  const jurnalHeaderRef = useRef<HTMLDivElement>(null);
+  const jurnalBodyRef = useRef<HTMLDivElement>(null);
+  const barangJadiHeaderRef = useRef<HTMLDivElement>(null);
+  const barangJadiBodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -174,13 +188,15 @@ export default function HasilProduksiClient() {
     ).slice(0, 50);
   }, [sopdOptions, searchQuery]);
 
-  const filteredBagian = useMemo(() => {
-    return ['', ...availableBagian].filter(c => (c?.toLowerCase() || '').includes(bagianSearchQuery.toLowerCase()));
-  }, [availableBagian, bagianSearchQuery]);
-
   const filteredPekerjaan = useMemo(() => {
-    return ['', ...availablePekerjaan].filter(c => (c?.toLowerCase() || '').includes(pekerjaanSearchQuery.toLowerCase()));
+    const all = ['', ...availablePekerjaan].filter(c => (c?.toLowerCase() || '').includes(pekerjaanSearchQuery.toLowerCase()));
+    return { items: all.slice(0, 30), total: all.length };
   }, [availablePekerjaan, pekerjaanSearchQuery]);
+
+  const filteredBagian = useMemo(() => {
+    const all = ['', ...availableBagian].filter(c => (c?.toLowerCase() || '').includes(bagianSearchQuery.toLowerCase()));
+    return { items: all.slice(0, 30), total: all.length };
+  }, [availableBagian, bagianSearchQuery]);
 
   // Reset indices when search or open state changes
   useEffect(() => { setFocusedSopdIndex(-1); }, [searchQuery, isDropdownOpen]);
@@ -212,7 +228,8 @@ export default function HasilProduksiClient() {
         const json = await res.json();
         setResults(json.barang_jadi || []);
         setJurnalResults(json.jurnal || []);
-        setJurnalDisplayLimit(50); // Reset limit on fetch
+        setJurnalPage(1);
+        setBarangJadiPage(1);
         setGrandTotal(json.grandTotal || 0);
         setGrandTotalJurnal(json.grandTotalRealisasi || 0);
         setGrandTotalRijek(json.grandTotalRijek || 0);
@@ -326,136 +343,216 @@ export default function HasilProduksiClient() {
       );
     }
 
-    let currentItemCount = 0;
-    const renderedGroups = [];
+    // Flatten all items with group info, then paginate
+    const allItems: Array<{ item: any; group: any; iIdx: number; gIdx: number; isFirstInGroup: boolean; isLastInGroup: boolean }> = [];
+    jurnalResults.forEach((group: any, gIdx: number) => {
+      group.items.forEach((item: any, iIdx: number) => {
+        allItems.push({ item, group, iIdx, gIdx, isFirstInGroup: iIdx === 0, isLastInGroup: iIdx === group.items.length - 1 });
+      });
+    });
 
-    for (let gIdx = 0; gIdx < jurnalResults.length; gIdx++) {
-      const group = jurnalResults[gIdx];
-      if (currentItemCount >= jurnalDisplayLimit) break;
-
-      const itemsToRender = group.items.slice(0, jurnalDisplayLimit - currentItemCount);
-      currentItemCount += itemsToRender.length;
+    const totalItems = allItems.length;
+    const startIdx = (jurnalPage - 1) * PAGE_SIZE;
+    const pageItems = allItems.slice(startIdx, startIdx + PAGE_SIZE);
       
-      const isGroupComplete = itemsToRender.length === group.items.length;
-      const allJobsSame = group.items.length > 0 && group.items.every((it: any) => it.jenis_pekerjaan_2 === group.items[0].jenis_pekerjaan_2);
 
+    const allJobsSame = (group: any) => group.items.length > 0 && group.items.every((it: any) => it.jenis_pekerjaan_2 === group.items[0].jenis_pekerjaan_2);
+
+    // ---- Rebuild rendered rows from paged items ----
+    const renderedGroups: React.ReactNode[] = [];
+    pageItems.forEach(({ item, group, iIdx, gIdx, isLastInGroup }) => {
       renderedGroups.push(
-        <React.Fragment key={group.date}>
-          {itemsToRender.map((item: any, iIdx: number) => (
-            <tr key={`${gIdx}-${iIdx}`} className="bg-white hover:bg-emerald-50/30 even:bg-gray-50/50 transition-colors group cursor-default">
-              <td className="px-4 py-4 text-[13px] font-bold border-r border-gray-100 tabular-nums text-gray-800">
-                {iIdx === 0 ? formatToDayMonthYear(group.date) : ''}
-              </td>
-              <td className="px-4 py-4 border-r border-gray-100">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-1">{item.bagian}</span>
-                  <span className="text-[12px] font-bold text-gray-800 leading-tight whitespace-nowrap">{item.nama_karyawan}</span>
-                </div>
-              </td>
-              <td className="px-4 py-4 border-r border-gray-100 bg-blue-50/20 max-w-[200px]">
-                <div className="flex flex-col truncate">
-                  <span className="text-[10px] font-bold text-gray-400 leading-none mb-1 truncate" title={item.no_order_2 || '-'}>{item.no_order_2 || '-'}</span>
-                  <span className="text-[12px] font-bold text-gray-700 leading-tight truncate" title={item.nama_order_2 || '-'}>{item.nama_order_2 || '-'}</span>
-                </div>
-              </td>
-              <td className="px-4 py-4 text-[12px] border-r border-gray-100 bg-blue-50/20 whitespace-nowrap">
-                <span className="font-bold bg-white px-2 py-1 rounded-lg border border-gray-100 shadow-sm text-gray-700 capitalize">
-                  {(item.jenis_pekerjaan_2 || '-').toLowerCase()}
-                </span>
-              </td>
-              <td className="px-4 py-4 text-[11px] font-bold border-r border-gray-100 bg-blue-50/20 truncate max-w-[120px] text-gray-600">
-                {item.bahan_kertas || '-'}
-              </td>
-              <td className="px-4 py-4 text-[12px] font-bold border-r border-gray-100 bg-blue-50/20 text-right tabular-nums text-gray-700">
-                {Number(item.jml_plate || 0).toLocaleString('id-ID')}
-              </td>
-              <td className="px-4 py-4 text-[11px] font-bold border-r border-gray-100 bg-blue-50/20 truncate max-w-[100px] text-gray-600">
-                {item.warna || '-'}
-              </td>
-              <td className="px-4 py-4 text-[12px] font-bold border-r border-gray-100 bg-blue-50/20 text-right tabular-nums text-gray-700">
-                {Number(item.inscheet || 0).toLocaleString('id-ID')}
-              </td>
-              <td className="px-4 py-4 text-[12px] font-bold border-r border-gray-100 bg-blue-50/20 text-right tabular-nums text-rose-600">
-                {Number(item.rijek || 0).toLocaleString('id-ID')}
-              </td>
-              <td className="px-4 py-4 text-[12px] font-bold border-r border-gray-100 bg-blue-50/20 whitespace-nowrap text-gray-700">
-                {item.jam || '-'}
-              </td>
-              <td className="px-4 py-4 text-[11px] font-bold border-r border-gray-100 bg-blue-50/20 truncate max-w-[120px] text-rose-600 italic">
-                {item.kendala || '-'}
-              </td>
-              <td className="px-4 py-4 text-[11px] font-bold border-r border-gray-100 text-gray-500 italic max-w-[120px] truncate">
-                {item.keterangan || '-'}
-              </td>
-              <td className="px-4 py-4 text-[15px] font-semibold text-right tabular-nums bg-emerald-50 text-emerald-900 border-b border-white">
-                {Number(item.realisasi).toLocaleString('id-ID')}
-              </td>
-            </tr>
-          ))}
-          {isGroupComplete && group.items.length > 1 && allJobsSame && (
-            <tr className="bg-emerald-50/50 border-t border-emerald-100">
-              <td colSpan={8} className="px-4 py-3 text-right text-[12px] font-bold tracking-wide text-emerald-800 border-r border-emerald-100">
-                Total Harian {formatToDayMonthYear(group.date)}
-              </td>
-              <td className="px-4 py-3 text-right text-[13px] font-bold tabular-nums text-rose-600 bg-rose-50/30 border-r border-emerald-100">
-                {group.totalRijek.toLocaleString('id-ID')}
-              </td>
-              <td colSpan={3} className="px-4 py-3 border-r border-emerald-100"></td>
-              <td className="px-4 py-3 text-right text-[14px] font-bold tabular-nums text-emerald-900 bg-emerald-100/50">
-                 {group.totalRealisasi.toLocaleString('id-ID')}
-              </td>
-            </tr>
-          )}
-        </React.Fragment>
+        <tr key={`${gIdx}-${iIdx}`} className="bg-white hover:bg-emerald-50/30 even:bg-gray-50/50 transition-colors group cursor-default">
+          <td className="sticky left-0 z-10 px-4 py-3 xl:py-4 text-[11px] xl:text-[13px] font-bold border-r border-gray-100 tabular-nums text-gray-800 bg-white group-even:bg-[#f9fafb] group-hover:bg-[#f0fdf4] min-w-[100px] max-w-[100px] md:shadow-none shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
+            {iIdx === 0 ? formatToDayMonthYear(group.date) : ''}
+          </td>
+          <td className="md:sticky md:left-[100px] md:z-10 px-4 py-3 xl:py-4 border-r border-gray-100 bg-white group-even:bg-[#f9fafb] group-hover:bg-[#f0fdf4] min-w-[160px] max-w-[160px] md:shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] lg:shadow-none">
+            <div className="flex flex-col min-w-0">
+              <span className="text-[9px] xl:text-[10px] font-bold text-gray-400 uppercase leading-none mb-1 truncate" title={item.bagian}>{item.bagian}</span>
+              <span className="text-[11px] xl:text-[12px] font-bold text-gray-800 leading-tight whitespace-nowrap truncate" title={item.nama_karyawan}>{item.nama_karyawan}</span>
+            </div>
+          </td>
+          <td className="lg:sticky lg:left-[260px] z-10 px-4 py-3 xl:py-4 border-r border-gray-100 bg-white group-even:bg-[#f9fafb] group-hover:bg-[#f0fdf4] min-w-[240px] max-w-[240px] lg:shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
+            <div className="flex flex-col min-w-0">
+              <span className="text-[9px] xl:text-[10px] font-bold text-gray-400 leading-none mb-1 truncate" title={item.no_order_2 || ''}>{item.no_order_2 || '-'}</span>
+              <span className="text-[11px] xl:text-[12px] font-bold text-gray-700 leading-tight truncate" title={item.nama_order_2 || ''}>{item.nama_order_2 || '-'}</span>
+            </div>
+          </td>
+          <td className="px-4 py-3 xl:py-4 text-[11px] xl:text-[12px] border-r border-gray-100">
+            <div className="font-bold bg-white px-2 py-1 rounded-lg border border-gray-100 shadow-sm text-gray-700 capitalize inline-block max-w-full truncate align-middle" title={item.jenis_pekerjaan_2 || ''}>
+              {(item.jenis_pekerjaan_2 || '-').toLowerCase()}
+            </div>
+          </td>
+          <td className="px-4 py-3 xl:py-4 text-[10px] xl:text-[11px] font-bold border-r border-gray-100 truncate max-w-[120px] text-gray-600" title={item.bahan_kertas || ''}>{item.bahan_kertas || '-'}</td>
+          <td className="px-4 py-3 xl:py-4 text-[11px] xl:text-[12px] font-bold border-r border-gray-100 text-right tabular-nums text-gray-700">{Number(item.jml_plate || 0).toLocaleString('id-ID')}</td>
+          <td className="px-4 py-3 xl:py-4 text-[10px] xl:text-[11px] font-bold border-r border-gray-100 truncate max-w-[100px] text-gray-600" title={item.warna || ''}>{item.warna || '-'}</td>
+          <td className="px-4 py-3 xl:py-4 text-[11px] xl:text-[12px] font-bold border-r border-gray-100 text-right tabular-nums text-gray-700">{Number(item.inscheet || 0).toLocaleString('id-ID')}</td>
+          <td className="px-4 py-3 xl:py-4 text-[11px] xl:text-[12px] font-bold border-r border-gray-100 text-right tabular-nums text-rose-600">{Number(item.rijek || 0).toLocaleString('id-ID')}</td>
+          <td className="px-4 py-3 xl:py-4 text-[11px] xl:text-[12px] font-bold border-r border-gray-100 whitespace-nowrap text-gray-700">{item.jam || '-'}</td>
+          <td className="px-4 py-3 xl:py-4 text-[10px] xl:text-[11px] font-bold border-r border-gray-100 truncate max-w-[120px] text-rose-600 italic" title={item.kendala || ''}>{item.kendala || '-'}</td>
+          <td className="px-4 py-3 xl:py-4 text-[10px] xl:text-[11px] font-bold border-r border-gray-100 text-gray-500 italic max-w-[120px] truncate" title={item.keterangan || ''}>{item.keterangan || '-'}</td>
+          <td className="px-4 py-3 xl:py-4 text-[13px] xl:text-[15px] font-semibold text-right tabular-nums bg-emerald-50 text-emerald-900">{Number(item.realisasi).toLocaleString('id-ID')}</td>
+        </tr>
+      );
+      // Daily subtotal row - show after last item of group IF all items of group are visible on this page
+      if (isLastInGroup && group.items.length > 1 && allJobsSame(group)) {
+        renderedGroups.push(
+          <tr key={`${gIdx}-subtotal`} className="bg-emerald-50/50 border-t border-emerald-100">
+            <td colSpan={8} className="px-4 py-3 text-right text-[12px] font-bold tracking-wide text-emerald-800 border-r border-emerald-100">
+              Total Harian {formatToDayMonthYear(group.date)}
+            </td>
+            <td className="px-4 py-3 text-right text-[13px] font-bold tabular-nums text-rose-600 bg-rose-50/30 border-r border-emerald-100">{group.totalRijek.toLocaleString('id-ID')}</td>
+            <td colSpan={3} className="px-4 py-3 border-r border-emerald-100"></td>
+            <td className="px-4 py-3 text-right text-[14px] font-bold tabular-nums text-emerald-900 bg-emerald-100/50">{group.totalRealisasi.toLocaleString('id-ID')}</td>
+          </tr>
+        );
+      }
+    });
+
+    if (pageItems.length === 0 && !loadingDetails) {
+      renderedGroups.push(
+        <tr key="empty"><td colSpan={14} className="px-6 py-24 text-center">
+          <div className="flex flex-col items-center gap-4 opacity-30">
+            <AlertCircle size={28} />
+            <span className="text-[11px] font-bold uppercase tracking-wide">Tidak ada data</span>
+          </div>
+        </td></tr>
       );
     }
 
-    const totalItems = jurnalResults.reduce((acc, g) => acc + g.items.length, 0);
-    if (currentItemCount < totalItems) {
+    return renderedGroups;
+  }, [jurnalResults, loadingDetails, jurnalPage]);
+
+  const memoizedBarangJadiRows = useMemo(() => {
+    if (loadingDetails) {
+      return [...Array(6)].map((_, i) => (
+        <tr key={i} className="animate-pulse">
+          <td className="px-4 py-3"><div className="h-4 w-20 bg-gray-100 rounded-full"></div></td>
+          <td className="px-4 py-3"><div className="h-4 w-full bg-gray-50 rounded-full"></div></td>
+          <td className="px-4 py-3"><div className="h-4 w-16 bg-gray-100 rounded-full"></div></td>
+          <td className="px-4 py-3 text-right"><div className="h-4 w-10 bg-gray-50 rounded-full ml-auto"></div></td>
+        </tr>
+      ));
+    }
+
+    const allItems: Array<{ item: any; group: any; iIdx: number; gIdx: number; isLastInGroup: boolean }> = [];
+    results.forEach((group: any, gIdx: number) => {
+      group.items.forEach((item: any, iIdx: number) => {
+        allItems.push({ item, group, iIdx, gIdx, isLastInGroup: iIdx === group.items.length - 1 });
+      });
+    });
+
+    const startIdx = (barangJadiPage - 1) * PAGE_SIZE;
+    const pageItems = allItems.slice(startIdx, startIdx + PAGE_SIZE);
+
+    const renderedGroups: React.ReactNode[] = [];
+    pageItems.forEach(({ item, group, iIdx, gIdx, isLastInGroup }) => {
       renderedGroups.push(
-        <tr key="load-more">
-          <td colSpan={14} className="p-10 bg-gray-50/30 text-center">
-            <button
-              onClick={() => setJurnalDisplayLimit(prev => prev + 50)}
-              className="px-10 h-12 bg-white border border-gray-200 text-[12px] font-bold text-gray-600 rounded-lg hover:bg-gray-50 transition-all shadow-sm shadow-green-900/5 inline-flex items-center gap-3"
-            >
-              <span>Muat Lebih Banyak Data</span>
-              <span className="text-gray-400 font-medium">({totalItems - currentItemCount} baris lagi)</span>
-            </button>
+        <tr key={`${gIdx}-${iIdx}`} className="bg-white hover:bg-emerald-50/30 even:bg-gray-50/50 transition-colors group cursor-default">
+          <td className="sticky left-0 z-10 px-4 py-3 xl:py-4 text-[11px] xl:text-[13px] font-bold text-gray-800 border-r border-gray-50 tabular-nums bg-white group-even:bg-[#f9fafb] group-hover:bg-[#f8faf9] shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
+            {iIdx === 0 ? formatToDayMonthYear(group.date) : ''}
+          </td>
+          <td className="px-4 py-3 xl:py-4 text-[11px] xl:text-[13px] font-bold text-gray-600 border-r border-gray-50 tracking-tight">
+            <div className="truncate max-w-[400px]" title={item.nama_barang}>{item.nama_barang}</div>
+          </td>
+          <td className="px-4 py-3 xl:py-4 text-[10px] xl:text-[11px] font-bold text-gray-400 border-r border-gray-50 tabular-nums uppercase tracking-wide">
+            {item.faktur}
+          </td>
+          <td className="px-4 py-3 xl:py-4 text-[13px] xl:text-[15px] font-bold text-emerald-900 bg-emerald-50 text-right tabular-nums">
+            {Number(item.qty).toLocaleString('id-ID')} <span className="text-[9px] xl:text-[10px] font-bold text-emerald-600/50 ml-1 uppercase">{item.satuan || unit}</span>
+          </td>
+        </tr>
+      );
+
+      if (isLastInGroup && group.items.length > 1) {
+        renderedGroups.push(
+          <tr key={`${gIdx}-subtotal`} className="bg-emerald-50/50 border-t border-emerald-100">
+            <td colSpan={3} className="px-5 py-3 text-right text-[12px] font-bold tracking-wide text-emerald-800 border-r border-emerald-100">Total Harian {formatToDayMonthYear(group.date)}</td>
+            <td className="px-5 py-3 text-right text-[14px] font-bold tabular-nums text-emerald-900 bg-emerald-100/50">
+               {group.total.toLocaleString('id-ID')} <span className="text-[10px] opacity-40 ml-1 uppercase">{group.items[0].satuan || unit}</span>
+            </td>
+          </tr>
+        );
+      }
+    });
+
+    if (pageItems.length === 0 && !loadingDetails) {
+      renderedGroups.push(
+        <tr key="empty">
+          <td colSpan={4} className="px-6 py-24 text-center">
+            <div className="flex flex-col items-center gap-4 opacity-30">
+              <div className="w-16 h-16 bg-gray-50 rounded-lg flex items-center justify-center text-gray-300">
+                <BarChart3 size={32} />
+              </div>
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Belum ada data barang jadi</span>
+            </div>
           </td>
         </tr>
       );
     }
 
     return renderedGroups;
-  }, [jurnalResults, loadingDetails, jurnalDisplayLimit]);
+  }, [results, loadingDetails, barangJadiPage, unit]);
 
-  // Close dropdown on outside click
+  // Close dropdown on outside click & Dynamic Sticky Calculation
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as HTMLElement;
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
       }
-      if (!target.closest('.bagian-dropdown-container')) setIsBagianDropdownOpen(false);
-      if (!target.closest('.pekerjaan-dropdown-container')) setIsPekerjaanDropdownOpen(false);
+      if (!target.closest('.bagian-dropdown-container') && !target.closest('.bagian-portal-content')) setIsBagianDropdownOpen(false);
+      if (!target.closest('.pekerjaan-dropdown-container') && !target.closest('.pekerjaan-portal-content')) setIsPekerjaanDropdownOpen(false);
     }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
+    // Dynamic Sticky Calculation
+    const header = document.getElementById('sticky-page-header');
+    const tabs = document.getElementById('sticky-tabs-container');
+    
+    const updateOffsets = () => {
+      if (header) {
+        const headerHeight = header.offsetHeight - 24; // subtract the -mt-6 (24px) pull-up offset
+        document.documentElement.style.setProperty('--sticky-header-h', `${headerHeight}px`);
+      }
+      if (tabs) {
+        document.documentElement.style.setProperty('--sticky-tabs-h', `${tabs.offsetHeight}px`);
+      }
+    };
+
+    const observer = new ResizeObserver(updateOffsets);
+    if (header) observer.observe(header);
+    if (tabs) observer.observe(tabs);
+    
+    updateOffsets();
+    window.addEventListener('scroll', updateOffsets);
+    window.addEventListener('resize', updateOffsets);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      observer.disconnect();
+      window.removeEventListener('scroll', updateOffsets);
+      window.removeEventListener('resize', updateOffsets);
+    };
+  }, []);
 
 
   if (!isMounted) return null;
 
+  const totalJurnalItems = jurnalResults.reduce((acc, group) => acc + group.items.length, 0);
+  const totalJurnalPages = Math.max(1, Math.ceil(totalJurnalItems / PAGE_SIZE));
+  
+  const totalBarangJadiItems = results.reduce((acc, group) => acc + group.items.length, 0);
+  const totalBarangJadiPages = Math.max(1, Math.ceil(totalBarangJadiItems / PAGE_SIZE));
+
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-4 animate-in fade-in duration-500 overflow-hidden">
+    <div className="flex flex-col gap-4 animate-in fade-in duration-500">
       {/* 1. Header Section - Fixed */}
-      <div className="flex flex-col gap-8 shrink-0">
+      <div id="filter-control-container" className="flex flex-col gap-4 shrink-0 relative">
         {/* 1. Filter Control Center */}
-        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 flex flex-col items-stretch gap-6 lg:gap-8 relative z-[60]">
-          {/* Left side: SOPd Selection Group */}
-          <div className="flex-1 min-w-0">
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 flex flex-col 2xl:flex-row items-stretch 2xl:items-end gap-6 lg:gap-8 relative">
+          {/* SOPd Selection Group */}
+          <div className="flex-1 min-w-[300px]">
             <label className="block text-[13px] font-semibold text-gray-500 mb-2 ml-1 tracking-tight select-none">
               Pilih Order Produksi (SOPd)
             </label>
@@ -469,13 +566,15 @@ export default function HasilProduksiClient() {
                 }`}
               >
                 {selectedSopd ? (
-                  <div className="flex items-center gap-4 min-w-0">
+                  <div className="flex flex-1 items-center gap-3 sm:gap-4 min-w-0 mr-4">
                     <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-sm shrink-0">
                       <ClipboardList size={16} />
                     </div>
-                    <div className="flex flex-col items-start min-w-0">
+                    <div className="flex flex-col items-start flex-1 min-w-0 overflow-hidden">
                       <span className="text-[11px] font-semibold text-emerald-700 leading-none mb-1">{selectedSopd.no_sopd}</span>
-                      <span className="text-[13px] font-semibold text-gray-800 truncate tracking-tight">{selectedSopd.pelanggan} — {selectedSopd.nama_order}</span>
+                      <span className="text-[13px] font-semibold text-gray-800 truncate tracking-tight w-full text-left" title={`${selectedSopd.pelanggan} — ${selectedSopd.nama_order}`}>
+                        {selectedSopd.pelanggan} — {selectedSopd.nama_order}
+                      </span>
                     </div>
                   </div>
                 ) : (
@@ -488,7 +587,7 @@ export default function HasilProduksiClient() {
               </button>
 
               {isDropdownOpen && (
-                <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-gray-100 rounded-2xl shadow-xl z-[70] animate-in fade-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[450px]">
+                <div className="absolute top-[calc(100%+8px)] left-0 w-full bg-white border border-gray-100 rounded-2xl shadow-xl z-[90] animate-in fade-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[450px]">
                   <div className="p-4 border-b border-gray-50 bg-gray-50/30">
                     <div className="relative">
                       <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
@@ -540,15 +639,15 @@ export default function HasilProduksiClient() {
                           : focusedSopdIndex === idx ? 'bg-emerald-50 border-emerald-200 ring-1 ring-emerald-200' : 'hover:bg-emerald-50'
                         }`}
                       >
-                        <div className="flex flex-col items-start min-w-0">
+                        <div className="flex flex-col items-start min-w-0 flex-1 mr-3 text-left">
                           <span className={`text-[10px] font-semibold uppercase tracking-wide mb-1 ${selectedSopd?.no_sopd === opt.no_sopd ? 'text-emerald-100' : 'text-emerald-600'}`}>
                             {opt.no_sopd}
                           </span>
-                          <span className={`text-[13px] font-semibold truncate max-w-full ${selectedSopd?.no_sopd === opt.no_sopd ? 'text-white' : 'text-gray-800'}`}>
+                          <span className={`text-[13px] font-semibold truncate w-full ${selectedSopd?.no_sopd === opt.no_sopd ? 'text-white' : 'text-gray-800'}`} title={`${opt.pelanggan} — ${opt.nama_order}`}>
                             {opt.pelanggan} — {opt.nama_order}
                           </span>
                         </div>
-                        <div className={`px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-tighter ${selectedSopd?.no_sopd === opt.no_sopd ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                        <div className={`px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-tighter shrink-0 whitespace-nowrap ${selectedSopd?.no_sopd === opt.no_sopd ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
                           {opt.qty?.toLocaleString('id-ID')} {opt.unit}
                         </div>
                       </button>
@@ -566,214 +665,280 @@ export default function HasilProduksiClient() {
             </div>
           </div>
 
-          <div className="hidden w-px h-12 bg-gray-100"></div>
-
-          {/* Right side: Secondary Filters */}
-          <div className="flex flex-wrap items-end gap-5">
-            {/* Date Group - always visible */}
-            <div className="flex flex-col">
+          {/* Combined Row for Date, Bagian, Pekerjaan & Refresh on LG */}
+          <div className="flex flex-col lg:flex-row lg:items-end gap-6 lg:gap-8 flex-[2]">
+            {/* Rentang Tanggal */}
+            <div className="flex flex-col lg:w-[320px] shrink-0">
               <label className="block text-[13px] font-semibold text-gray-500 mb-2 ml-1 tracking-tight select-none">Rentang Tanggal</label>
-              <div className="flex items-center gap-2">
-                <div className="w-[170px]"><DatePicker name="startDate" value={startDate} onChange={(d) => setStartDate(d)} /></div>
-                <div className="w-4 h-px bg-gray-200"></div>
-                <div className="w-[170px]"><DatePicker name="endDate" value={endDate} onChange={(d) => setEndDate(d)} popupAlign="right" /></div>
+              <div className="flex items-center gap-2 sm:gap-4">
+                <div className="flex-1"><DatePicker name="startDate" value={startDate} onChange={(d) => setStartDate(d)} /></div>
+                <div className="w-3 sm:w-6 h-px bg-gray-200 shrink-0"></div>
+                <div className="flex-1"><DatePicker name="endDate" value={endDate} onChange={(d) => setEndDate(d)} popupAlign="right" /></div>
               </div>
             </div>
 
-            {/* Bagian & Pekerjaan - only on Jurnal tab */}
-            {activeTab === 'jurnal' && (
-              <>
-                <div className="w-px h-8 bg-gray-100 hidden xl:block"></div>
-                <div className="flex items-center gap-4">
-                  <div className="flex flex-col min-w-[160px]">
+            {/* Bagian, Pekerjaan & Refresh */}
+            <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-end gap-4">
+              {activeTab === 'jurnal' && (
+                <div className="flex flex-1 items-center gap-4">
+                  <div className="flex flex-col flex-1 min-w-0">
                     <label className="block text-[13px] font-semibold text-gray-500 mb-2 ml-1 tracking-tight select-none">Bagian</label>
                     <div className="relative bagian-dropdown-container">
-                      <button onClick={() => setIsBagianDropdownOpen(!isBagianDropdownOpen)}
-                        className="w-full h-11 px-4 bg-gray-50/50 border border-gray-100 rounded-xl text-[12px] font-semibold text-gray-700 flex items-center justify-between hover:border-emerald-500 transition-all">
-                        <span className="truncate">{selectedBagian || 'Semua Bagian'}</span>
-                        <ChevronDown size={14} className={`text-gray-300 transition-transform ${isBagianDropdownOpen ? 'rotate-180' : ''}`} />
-                      </button>
-                      {isBagianDropdownOpen && (
-                        <div className="absolute top-[calc(100%+8px)] left-0 w-[250px] bg-white border border-gray-100 rounded-2xl shadow-xl py-3 z-[100] animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[350px]">
-                          <div className="px-3 pb-2 mb-2 border-b border-gray-50">
-                            <input type="text" autoFocus placeholder="Cari..." className="w-full px-3 py-2 bg-gray-50 rounded-lg text-xs font-bold outline-none" 
-                              value={bagianSearchQuery} 
-                              onChange={(e) => setBagianSearchQuery(e.target.value)} 
-                              onKeyDown={(e) => {
-                                if (e.key === 'ArrowDown') {
-                                  e.preventDefault();
-                                  setFocusedBagianIndex(prev => (prev < filteredBagian.length - 1 ? prev + 1 : prev));
-                                } else if (e.key === 'ArrowUp') {
-                                  e.preventDefault();
-                                  setFocusedBagianIndex(prev => (prev > 0 ? prev - 1 : prev));
-                                } else if (e.key === 'Enter' && focusedBagianIndex >= 0) {
-                                  e.preventDefault();
-                                  setSelectedBagian(filteredBagian[focusedBagianIndex]);
-                                  setIsBagianDropdownOpen(false);
-                                }
+                        <button 
+                          ref={bagianTriggerRef}
+                          onClick={() => {
+                            if (!isBagianDropdownOpen && bagianTriggerRef.current) {
+                              const rect = bagianTriggerRef.current.getBoundingClientRect();
+                              setBagianCoords({ top: rect.bottom + window.scrollY, left: rect.left + window.scrollX, width: rect.width });
+                            }
+                            setIsBagianDropdownOpen(!isBagianDropdownOpen);
+                          }}
+                          className="w-full h-11 px-4 bg-gray-50/50 border border-gray-100 rounded-xl text-[12px] font-semibold text-gray-700 flex items-center justify-between hover:border-emerald-500 transition-all">
+                          <span className="truncate" title={selectedBagian || 'Semua Bagian'}>{selectedBagian || 'Semua Bagian'}</span>
+                          <ChevronDown size={14} className={`text-gray-300 transition-transform ${isBagianDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isBagianDropdownOpen && (
+                          <Portal>
+                            <div 
+                              style={{ 
+                                position: 'absolute', 
+                                top: `${bagianCoords.top + 8}px`, 
+                                left: `${Math.max(8, Math.min(window.innerWidth - 258, bagianCoords.left))}px`, 
+                                width: '250px', 
+                                zIndex: 9999 
                               }}
-                            />
-                          </div>
-                          <div className="overflow-y-auto px-2 custom-scrollbar">
-                            {filteredBagian.length > 0 ? filteredBagian.map((cat, idx) => (
-                              <button key={cat} 
-                                ref={focusedBagianIndex === idx ? (el) => { if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } : null}
-                                onClick={() => { setSelectedBagian(cat); setIsBagianDropdownOpen(false); }}
-                                className={`w-full text-left px-4 py-2 text-xs font-bold rounded-lg mb-1 tracking-tight ${selectedBagian === cat ? 'bg-emerald-600 text-white' : focusedBagianIndex === idx ? 'bg-emerald-50 ring-1 ring-emerald-100' : 'text-gray-600 hover:bg-emerald-50'}`}>
-                                {cat || 'Semua Bagian'}
-                              </button>
-                            )) : (
-                              <div className="py-8 text-center opacity-30">
-                                <span className="text-[10px] font-semibold uppercase tracking-wide">Tidak ada hasil</span>
+                              className="bg-white border border-gray-100 rounded-2xl shadow-2xl py-3 animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[350px] bagian-portal-content">
+                              <div className="px-3 pb-2 my-2 border-b border-gray-50">
+                                <input type="text" autoFocus placeholder="Cari bagian..." className="w-full px-3 py-2 bg-gray-50 rounded-lg text-xs font-bold outline-none border border-transparent focus:border-emerald-200 transition-all" 
+                                  value={bagianSearchQuery} 
+                                  onChange={(e) => setBagianSearchQuery(e.target.value)} 
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'ArrowDown') {
+                                      e.preventDefault();
+                                      setFocusedBagianIndex(prev => (prev < filteredBagian.items.length - 1 ? prev + 1 : prev));
+                                    } else if (e.key === 'ArrowUp') {
+                                      e.preventDefault();
+                                      setFocusedBagianIndex(prev => (prev > 0 ? prev - 1 : prev));
+                                    } else if (e.key === 'Enter' && focusedBagianIndex >= 0) {
+                                      e.preventDefault();
+                                      setSelectedBagian(filteredBagian.items[focusedBagianIndex]);
+                                      setIsBagianDropdownOpen(false);
+                                    } else if (e.key === 'Escape') {
+                                      setIsBagianDropdownOpen(false);
+                                    }
+                                  }}
+                                />
                               </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                              <div className="overflow-y-auto px-2 custom-scrollbar">
+                                {filteredBagian.items.length > 0 ? (
+                                  <>
+                                    {filteredBagian.items.map((cat, idx) => (
+                                      <button key={cat} 
+                                        ref={focusedBagianIndex === idx ? (el) => { if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } : null}
+                                        onClick={() => { setSelectedBagian(cat); setIsBagianDropdownOpen(false); }}
+                                        className={`w-full text-left px-4 py-2 text-xs font-bold rounded-lg mb-1 tracking-tight ${selectedBagian === cat ? 'bg-emerald-600 text-white shadow-md' : focusedBagianIndex === idx ? 'bg-emerald-50 ring-1 ring-emerald-100' : 'text-gray-600 hover:bg-emerald-50'}`}>
+                                        {cat || 'Semua Bagian'}
+                                      </button>
+                                    ))}
+                                    {filteredBagian.total > 30 && (
+                                      <div className="px-4 py-2 text-[10px] text-gray-400 font-semibold text-center border-t border-gray-50 mt-1">
+                                        +{filteredBagian.total - 30} lainnya — ketik untuk mempersempit
+                                      </div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <div className="py-8 text-center opacity-30">
+                                    <AlertCircle size={24} className="mx-auto mb-2" />
+                                    <span className="text-[10px] font-semibold uppercase tracking-wide">Tidak ada hasil</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </Portal>
+                        )}
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="flex flex-col min-w-[160px]">
+                  <div className="flex flex-col flex-1 min-w-0">
                     <label className="block text-[13px] font-semibold text-gray-500 mb-2 ml-1 tracking-tight select-none">Pekerjaan</label>
                     <div className="relative pekerjaan-dropdown-container">
-                      <button onClick={() => setIsPekerjaanDropdownOpen(!isPekerjaanDropdownOpen)}
-                        className="w-full h-11 px-4 bg-gray-50/50 border border-gray-100 rounded-xl text-[12px] font-semibold text-gray-700 flex items-center justify-between hover:border-emerald-500 transition-all">
-                        <span className="truncate">{selectedPekerjaan || 'Semua Pekerjaan'}</span>
-                        <ChevronDown size={14} className={`text-gray-300 transition-transform ${isPekerjaanDropdownOpen ? 'rotate-180' : ''}`} />
-                      </button>
-                      {isPekerjaanDropdownOpen && (
-                        <div className="absolute top-[calc(100%+8px)] right-0 w-[280px] bg-white border border-gray-100 rounded-2xl shadow-xl py-3 z-[100] animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[350px]">
-                          <div className="px-3 pb-2 mb-2 border-b border-gray-50">
-                            <input type="text" autoFocus placeholder="Cari..." className="w-full px-3 py-2 bg-gray-50 rounded-lg text-xs font-bold outline-none" 
-                              value={pekerjaanSearchQuery} 
-                              onChange={(e) => setPekerjaanSearchQuery(e.target.value)} 
-                              onKeyDown={(e) => {
-                                if (e.key === 'ArrowDown') {
-                                  e.preventDefault();
-                                  setFocusedPekerjaanIndex(prev => (prev < filteredPekerjaan.length - 1 ? prev + 1 : prev));
-                                } else if (e.key === 'ArrowUp') {
-                                  e.preventDefault();
-                                  setFocusedPekerjaanIndex(prev => (prev > 0 ? prev - 1 : prev));
-                                } else if (e.key === 'Enter' && focusedPekerjaanIndex >= 0) {
-                                  e.preventDefault();
-                                  setSelectedPekerjaan(filteredPekerjaan[focusedPekerjaanIndex]);
-                                  setIsPekerjaanDropdownOpen(false);
-                                }
+                        <button 
+                          ref={pekerjaanTriggerRef}
+                          onClick={() => {
+                            if (!isPekerjaanDropdownOpen && pekerjaanTriggerRef.current) {
+                              const rect = pekerjaanTriggerRef.current.getBoundingClientRect();
+                              setPekerjaanCoords({ top: rect.bottom + window.scrollY, left: rect.left + window.scrollX, width: rect.width });
+                            }
+                            setIsPekerjaanDropdownOpen(!isPekerjaanDropdownOpen);
+                          }}
+                          className="w-full h-11 px-4 bg-gray-50/50 border border-gray-100 rounded-xl text-[12px] font-semibold text-gray-700 flex items-center justify-between hover:border-emerald-500 transition-all">
+                          <span className="truncate" title={selectedPekerjaan || 'Semua Pekerjaan'}>{selectedPekerjaan || 'Semua Pekerjaan'}</span>
+                          <ChevronDown size={14} className={`text-gray-300 transition-transform ${isPekerjaanDropdownOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isPekerjaanDropdownOpen && (
+                          <Portal>
+                            <div 
+                              style={{ 
+                                position: 'absolute', 
+                                top: `${pekerjaanCoords.top + 8}px`, 
+                                left: `${Math.max(8, Math.min(window.innerWidth - 288, pekerjaanCoords.left + pekerjaanCoords.width - 280))}px`, 
+                                width: '280px', 
+                                zIndex: 9999 
                               }}
-                            />
-                          </div>
-                          <div className="overflow-y-auto px-2 custom-scrollbar">
-                            {filteredPekerjaan.length > 0 ? filteredPekerjaan.map((cat, idx) => (
-                              <button key={cat} 
-                                ref={focusedPekerjaanIndex === idx ? (el) => { if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } : null}
-                                onClick={() => { setSelectedPekerjaan(cat); setIsPekerjaanDropdownOpen(false); }}
-                                className={`w-full text-left px-4 py-2 text-xs font-bold rounded-lg mb-1 tracking-tight ${selectedPekerjaan === cat ? 'bg-emerald-600 text-white' : focusedPekerjaanIndex === idx ? 'bg-emerald-50 ring-1 ring-emerald-100' : 'text-gray-600 hover:bg-emerald-50'}`}>
-                                {cat || 'Semua Pekerjaan'}
-                              </button>
-                            )) : (
-                              <div className="py-8 text-center opacity-30">
-                                <span className="text-[10px] font-semibold uppercase tracking-wide">Tidak ada hasil</span>
+                              className="bg-white border border-gray-100 rounded-2xl shadow-2xl py-3 animate-in fade-in zoom-in-95 duration-200 flex flex-col max-h-[350px] pekerjaan-portal-content">
+                              <div className="px-3 pb-2 my-2 border-b border-gray-50">
+                                <input type="text" autoFocus placeholder="Cari pekerjaan..." className="w-full px-3 py-2 bg-gray-50 rounded-lg text-xs font-bold outline-none border border-transparent focus:border-emerald-200 transition-all" 
+                                  value={pekerjaanSearchQuery} 
+                                  onChange={(e) => setPekerjaanSearchQuery(e.target.value)} 
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'ArrowDown') {
+                                      e.preventDefault();
+                                      setFocusedPekerjaanIndex(prev => (prev < filteredPekerjaan.items.length - 1 ? prev + 1 : prev));
+                                    } else if (e.key === 'ArrowUp') {
+                                      e.preventDefault();
+                                      setFocusedPekerjaanIndex(prev => (prev > 0 ? prev - 1 : prev));
+                                    } else if (e.key === 'Enter' && focusedPekerjaanIndex >= 0) {
+                                      e.preventDefault();
+                                      setSelectedPekerjaan(filteredPekerjaan.items[focusedPekerjaanIndex]);
+                                      setIsPekerjaanDropdownOpen(false);
+                                    } else if (e.key === 'Escape') {
+                                      setIsPekerjaanDropdownOpen(false);
+                                    }
+                                  }}
+                                />
                               </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                              <div className="overflow-y-auto px-2 custom-scrollbar">
+                                {filteredPekerjaan.items.length > 0 ? (
+                                  <>
+                                    {filteredPekerjaan.items.map((cat, idx) => (
+                                      <button key={cat} 
+                                        ref={focusedPekerjaanIndex === idx ? (el) => { if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } : null}
+                                        onClick={() => { setSelectedPekerjaan(cat); setIsPekerjaanDropdownOpen(false); }}
+                                        className={`w-full text-left px-4 py-2 text-xs font-bold rounded-lg mb-1 tracking-tight ${selectedPekerjaan === cat ? 'bg-emerald-600 text-white shadow-md' : focusedPekerjaanIndex === idx ? 'bg-emerald-50 ring-1 ring-emerald-100' : 'text-gray-600 hover:bg-emerald-50'}`}>
+                                        {cat || 'Semua Pekerjaan'}
+                                      </button>
+                                    ))}
+                                    {filteredPekerjaan.total > 30 && (
+                                      <div className="px-4 py-2 text-[10px] text-gray-400 font-semibold text-center border-t border-gray-50 mt-1">
+                                        +{filteredPekerjaan.total - 30} lainnya — ketik untuk mempersempit
+                                      </div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <div className="py-8 text-center opacity-30">
+                                    <AlertCircle size={24} className="mx-auto mb-2" />
+                                    <span className="text-[10px] font-semibold uppercase tracking-wide">Tidak ada hasil</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </Portal>
+                        )}
+                      </div>
                     </div>
-                  </div>
                 </div>
-              </>
-            )}
+              )}
 
-            {/* Refresh Button */}
-            <button
-              onClick={() => fetchDetails()}
-              className="h-11 w-11 flex items-center justify-center shrink-0 bg-white text-gray-500 border border-gray-200 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all group shadow-sm"
-              title="Refresh Data"
-            >
-              <RotateCcw size={18} className={`group-hover:rotate-[-180deg] transition-transform duration-500 ${loadingDetails ? 'animate-spin' : ''}`} />
-            </button>
+              {/* Refresh Button */}
+              <button
+                onClick={() => fetchDetails()}
+                className="h-11 px-5 sm:w-auto flex items-center justify-center gap-2 shrink-0 bg-gray-50 text-gray-600 font-bold text-[12px] border border-gray-200 rounded-xl hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-200 transition-all group shadow-sm"
+                title="Refresh Data"
+              >
+                <RotateCcw size={16} className={`group-hover:rotate-[-180deg] transition-transform duration-500 ${loadingDetails ? 'animate-spin' : ''}`} />
+                <span className="sm:hidden md:inline">Refresh Data</span>
+              </button>
+            </div>
           </div>
         </div>
         </div>
 
 
-        {/* Unified Dashboard Control Bar - Split into 3 Cards */}
+        {/* Unified Dashboard Control Bar - Split into 3 Cards, Combined on LG */}
         {selectedSopd && (
-          <div className="flex flex-col xl:flex-row items-stretch xl:items-center gap-4 animate-in fade-in duration-300 mt-6">
-            {/* Card 1: Target & Sisa */}
-            <div className="bg-white border border-gray-100 rounded-xl shadow-sm px-6 py-3.5 flex items-center gap-10 shrink-0">
-              <div className="flex items-center gap-3">
-                <span className="text-[12px] font-bold text-gray-400 capitalize tracking-tight">Target</span>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-xl font-semibold text-gray-800 tabular-nums">{selectedSopd.qty.toLocaleString('id-ID')}</span>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{selectedSopd.unit}</span>
+          <div className="lg:sticky lg:top-[var(--sticky-header-h,72px)] lg:z-[70] lg:bg-[var(--bg-deep)] lg:pb-1.5 lg:-mx-4 lg:px-4 xl:lg:-mx-8 xl:lg:px-8">
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 sm:gap-4">
+              {/* Card 1 & 2 Container */}
+              <div className="flex flex-col md:flex-row flex-wrap lg:flex-nowrap items-stretch lg:items-center gap-3 sm:gap-4 flex-1">
+                {/* Card 1: Target & Sisa */}
+                <div className="bg-white border border-gray-100 rounded-xl shadow-sm px-3 sm:px-5 py-2.5 sm:py-3.5 flex items-center justify-between shrink-0 min-w-0">
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <span className="text-[11px] sm:text-[12px] font-bold text-gray-400 capitalize tracking-tight shrink-0">Target</span>
+                    <div className="flex items-baseline gap-1 min-w-0">
+                      <span className="text-lg sm:text-xl font-semibold text-gray-800 tabular-nums truncate" title={selectedSopd.qty.toLocaleString('id-ID')}>{selectedSopd.qty.toLocaleString('id-ID')}</span>
+                      <span className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-tighter shrink-0">{selectedSopd.unit}</span>
+                    </div>
+                  </div>
+
+                  <div className="w-px h-6 bg-gray-100 shrink-0 mx-2"></div>
+
+                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                    <span className="text-[11px] sm:text-[12px] font-bold text-gray-400 capitalize tracking-tight shrink-0">Sisa</span>
+                    <div className="flex items-baseline gap-1 min-w-0">
+                      <span className="text-lg sm:text-xl font-semibold text-rose-600 tabular-nums truncate" title={(selectedSopd.qty - grandTotal).toLocaleString('id-ID')}>{(selectedSopd.qty - grandTotal).toLocaleString('id-ID')}</span>
+                      <span className="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-tighter shrink-0">{selectedSopd.unit}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 2: Tren & Progress Bar */}
+                <div className="flex-1 min-w-0 bg-white border border-gray-100 rounded-xl shadow-sm px-3 sm:px-5 py-2.5 sm:py-3.5 flex items-center gap-2 sm:gap-6">
+                  <button 
+                    onClick={() => setShowChart(!showChart)} 
+                    className={`px-4 py-1.5 rounded-lg border text-[10px] font-semibold uppercase tracking-wide transition-all shadow-sm shrink-0 ${
+                      showChart 
+                      ? 'bg-emerald-600 text-white border-emerald-600' 
+                      : 'border-emerald-100 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white'
+                    }`}
+                  >
+                    Tren
+                  </button>
+                  <div className="flex-1 flex items-center gap-4 min-w-0">
+                    <div className="flex-1 h-2.5 bg-gray-200/50 rounded-full relative overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-1000 ease-out rounded-full ${grandTotal >= selectedSopd.qty ? 'bg-emerald-500 shadow-sm' : 'bg-emerald-400'}`} 
+                        style={{ width: `${Math.min(100, (grandTotal / selectedSopd.qty) * 100)}%` }} 
+                      />
+                    </div>
+                    <span className="text-[14px] font-semibold tabular-nums text-gray-800 w-14 text-right shrink-0">
+                      {((grandTotal / selectedSopd.qty) * 100).toFixed(1)}%
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="w-px h-6 bg-gray-100"></div>
-
-              <div className="flex items-center gap-3">
-                <span className="text-[12px] font-bold text-gray-400 capitalize tracking-tight">Sisa</span>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-xl font-semibold text-rose-600 tabular-nums">{(selectedSopd.qty - grandTotal).toLocaleString('id-ID')}</span>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">{selectedSopd.unit}</span>
+              {/* Tab Navigation (Card 3) */}
+              <div id="sticky-tabs-container" className="sticky top-[var(--sticky-header-h,72px)] z-[70] bg-[var(--bg-deep)] pb-1.5 lg:static lg:z-auto lg:bg-transparent lg:pb-0 lg:flex lg:items-stretch shrink-0 -mx-4 px-4 lg:mx-0 lg:px-0">
+                <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-1.5 flex items-center gap-1 w-full lg:w-fit mx-auto lg:mx-0 shrink-0">
+                  <button 
+                    onClick={() => setActiveTab('jurnal')}
+                    className={`flex-1 lg:px-10 py-2.5 rounded-lg text-[12px] font-bold capitalize tracking-tight whitespace-nowrap transition-all duration-300 ${
+                      activeTab === 'jurnal' 
+                      ? 'bg-gray-100 text-emerald-600 border border-gray-200/50 shadow-inner' 
+                      : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    Jurnal Produksi
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('barang_jadi')}
+                    className={`flex-1 lg:px-10 py-2.5 rounded-lg text-[12px] font-bold capitalize tracking-tight whitespace-nowrap transition-all duration-300 ${
+                      activeTab === 'barang_jadi' 
+                      ? 'bg-gray-100 text-emerald-600 border border-gray-200/50 shadow-inner' 
+                      : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    Barang Jadi
+                  </button>
                 </div>
               </div>
             </div>
-
-            {/* Card 2: Tren & Progress Bar */}
-            <div className="flex-1 bg-white border border-gray-100 rounded-xl shadow-sm px-6 py-3.5 flex items-center gap-6 min-w-0">
-              <button 
-                onClick={() => setShowChart(!showChart)} 
-                className={`px-4 py-1.5 rounded-lg border text-[10px] font-semibold uppercase tracking-wide transition-all shadow-sm shrink-0 ${
-                  showChart 
-                  ? 'bg-emerald-600 text-white border-emerald-600' 
-                  : 'border-emerald-100 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white'
-                }`}
-              >
-                Tren
-              </button>
-              <div className="flex-1 flex items-center gap-4 min-w-0">
-                <div className="flex-1 h-2.5 bg-gray-200/50 rounded-full relative overflow-hidden">
-                  <div 
-                    className={`h-full transition-all duration-1000 ease-out rounded-full ${grandTotal >= selectedSopd.qty ? 'bg-emerald-500 shadow-sm' : 'bg-emerald-400'}`} 
-                    style={{ width: `${Math.min(100, (grandTotal / selectedSopd.qty) * 100)}%` }} 
-                  />
-                </div>
-                <span className="text-[14px] font-semibold tabular-nums text-gray-800 w-14 text-right shrink-0">
-                  {((grandTotal / selectedSopd.qty) * 100).toFixed(1)}%
-                </span>
-              </div>
-            </div>
-
-            {/* Card 3: Tab Navigation */}
-            <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-1.5 flex items-center gap-1 shrink-0">
-              <button 
-                onClick={() => setActiveTab('jurnal')}
-                className={`px-8 py-2.5 rounded-lg text-[12px] font-bold capitalize tracking-tight transition-all duration-300 ${
-                  activeTab === 'jurnal' 
-                  ? 'bg-gray-100 text-emerald-600 border border-gray-200/50' 
-                  : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                Jurnal Produksi
-              </button>
-              <button 
-                onClick={() => setActiveTab('barang_jadi')}
-                className={`px-8 py-2.5 rounded-lg text-[12px] font-bold capitalize tracking-tight transition-all duration-300 ${
-                  activeTab === 'barang_jadi' 
-                  ? 'bg-gray-100 text-emerald-600 border border-gray-200/50' 
-                  : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                Barang Jadi
-              </button>
-            </div>
+          </div>
+        )}
 
             {/* Daily Trend Chart - MODAL VERSION */}
             {showChart && chartData.length > 0 && (
               <div 
-                className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-10 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300 cursor-pointer"
+                className="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-10 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300 cursor-pointer"
                 onClick={() => setShowChart(false)}
               >
                 <div 
@@ -781,15 +946,15 @@ export default function HasilProduksiClient() {
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Modal Header */}
-                  <div className="flex items-center justify-between px-6 py-4 border-b border-gray-50 bg-gray-50/50">
+                  <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-50 bg-gray-50/50">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center shrink-0">
                         <TrendingUp size={16} />
                       </div>
                       <div className="flex flex-col">
-                        <h3 className="text-xl font-bold tracking-tight text-gray-800 leading-tight">Tren Produksi Harian</h3>
-                        <span className="text-[12px] font-medium text-gray-500 mt-1">
-                          Grafik perbandingan Barang Jadi dan Realisasi Pekerjaan Produksi
+                        <h3 className="text-lg sm:text-xl font-bold tracking-tight text-gray-800 leading-tight">Tren Produksi Harian</h3>
+                        <span className="text-[10px] sm:text-[12px] font-medium text-gray-500 mt-1">
+                          Grafik perbandingan Barang Jadi dan Realisasi Pekerjaan
                         </span>
                       </div>
                     </div>
@@ -802,8 +967,8 @@ export default function HasilProduksiClient() {
                   </div>
 
                   {/* Modal Content */}
-                  <div className="p-10 min-h-[450px] flex flex-col">
-                    <div className="mb-10 flex gap-8 text-[11px] font-bold uppercase tracking-wide">
+                  <div className="p-4 sm:p-10 min-h-[300px] sm:min-h-[450px] flex flex-col">
+                    <div className="mb-6 sm:mb-10 flex flex-wrap gap-4 sm:gap-8 text-[11px] font-bold uppercase tracking-wide">
                       <button 
                         onClick={() => setHideGudang(!hideGudang)}
                         className={`flex items-center gap-3 cursor-pointer transition-all hover:opacity-80 ${hideGudang ? 'opacity-40' : 'opacity-100'}`}
@@ -901,79 +1066,62 @@ export default function HasilProduksiClient() {
                 </div>
               </div>
             )}
-
-          </div>
-        )}
-
+        
         {selectedSopd ? (
-          <div className="flex-1 min-h-0 bg-white border border-gray-100 rounded-xl shadow-sm shadow-green-900/5 overflow-hidden flex flex-col">
+          <div
+            className="bg-white border border-gray-100 rounded-xl shadow-sm shadow-green-900/5 flex flex-col -mt-2"
+            style={{ height: 'calc(100dvh - var(--sticky-header-h, 72px) - var(--sticky-tabs-h, 60px))' }}
+          >
             {activeTab === 'barang_jadi' ? (
-            <div className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50/20">
-              <table className="w-full text-left border-separate border-spacing-0">
-                <thead>
-                  <tr className="bg-white">
-                    <th className="sticky top-0 z-20 px-5 py-4 w-[200px] text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white">Tanggal</th>
-                    <th className="sticky top-0 z-20 px-5 py-4 text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white">Nama Barang</th>
-                    <th className="sticky top-0 z-20 px-5 py-4 w-[180px] text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white">No. Faktur</th>
-                    <th className="sticky top-0 z-20 px-5 py-4 w-[150px] text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-emerald-50 text-right">Quantity</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {loadingDetails ? (
-                    [...Array(6)].map((_, i) => (
-                      <tr key={i} className="animate-pulse">
-                        <td className="px-5 py-4"><div className="h-4 w-24 bg-gray-100 rounded-full"></div></td>
-                        <td className="px-5 py-4"><div className="h-4 w-full bg-gray-50 rounded-full"></div></td>
-                        <td className="px-5 py-4"><div className="h-4 w-20 bg-gray-100 rounded-full"></div></td>
-                        <td className="px-5 py-4 text-right"><div className="h-4 w-12 bg-gray-50 rounded-full ml-auto"></div></td>
-                      </tr>
-                    ))
-                  ) : results.length > 0 ? (
-                    results.map((group, gIdx) => (
-                      <React.Fragment key={group.date}>
-                        {group.items.map((item: any, iIdx: number) => (
-                          <tr key={`${gIdx}-${iIdx}`} className="bg-white hover:bg-green-50/20 transition-colors group cursor-default">
-                            <td className="px-5 py-3.5 text-[12px] font-bold text-gray-800 border-r border-gray-50 tabular-nums">
-                              {iIdx === 0 ? formatToDayMonthYear(group.date) : ''}
-                            </td>
-                            <td className="px-5 py-3.5 text-[12px] font-bold text-gray-600 border-r border-gray-50 tracking-tight">
-                              <div className="truncate max-w-[400px]" title={item.nama_barang}>{item.nama_barang}</div>
-                            </td>
-                            <td className="px-5 py-3.5 text-[11px] font-bold text-gray-400 border-r border-gray-50 tabular-nums uppercase tracking-wide">
-                              {item.faktur}
-                            </td>
-                            <td className="px-5 py-3.5 text-[14px] font-bold text-emerald-900 bg-emerald-50 text-right tabular-nums">
-                              {Number(item.qty).toLocaleString('id-ID')} <span className="text-[10px] font-bold text-emerald-600/50 ml-1 uppercase">{item.satuan || unit}</span>
-                            </td>
-                          </tr>
-                        ))}
-                        {group.items.length > 1 && (
-                          <tr className="bg-emerald-50/50 border-t border-emerald-100">
-                            <td colSpan={3} className="px-5 py-3 text-right text-[12px] font-bold tracking-wide text-emerald-800 border-r border-emerald-100">Total Harian {formatToDayMonthYear(group.date)}</td>
-                            <td className="px-5 py-3 text-right text-[14px] font-bold tabular-nums text-emerald-900 bg-emerald-100/50">
-                               {group.total.toLocaleString('id-ID')} <span className="text-[10px] opacity-40 ml-1 uppercase">{group.items[0].satuan || unit}</span>
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={4} className="px-6 py-24 text-center">
-                        <div className="flex flex-col items-center gap-4 opacity-30">
-                          <div className="w-16 h-16 bg-gray-50 rounded-lg flex items-center justify-center text-gray-300">
-                            <BarChart3 size={32} />
-                          </div>
-                          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Belum ada data barang jadi</span>
-                        </div>
-                      </td>
+            <div className="flex flex-col flex-1 min-h-0">
+              {/* Gap Filler to prevent scrolling text from showing between tabs and table header */}
+              <div className="sticky z-20 bg-white" style={{ height: '40px', top: 'calc(var(--sticky-header-h, 72px) + var(--sticky-tabs-h, 60px) - 40px)', marginBottom: '-40px' }} />
+              {/* Sticky Header - outside overflow-x-auto */}
+              <div
+                ref={barangJadiHeaderRef}
+                className="overflow-x-hidden sticky z-20 bg-white"
+                style={{ top: 'calc(var(--sticky-header-h, 72px) + var(--sticky-tabs-h, 60px))' }}
+              >
+                <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed', minWidth: '700px' }}>
+                  <colgroup>
+                    <col style={{ width: '130px' }} />
+                    <col />
+                    <col style={{ width: '150px' }} />
+                    <col style={{ width: '120px' }} />
+                  </colgroup>
+                  <thead>
+                    <tr className="bg-white">
+                      <th className="sticky left-0 z-30 px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-r border-gray-100 bg-white whitespace-nowrap shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">Tanggal</th>
+                      <th className="px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white whitespace-nowrap">Nama Barang</th>
+                      <th className="px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white whitespace-nowrap">No. Faktur</th>
+                      <th className="px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-emerald-50 text-right whitespace-nowrap">Quantity</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                </table>
+              </div>
+              {/* Scrollable Body */}
+              <div
+                ref={barangJadiBodyRef}
+                className="flex-1 min-h-0 overflow-x-auto overflow-y-auto custom-scrollbar bg-gray-50/20"
+                onScroll={(e) => {
+                  if (barangJadiHeaderRef.current) barangJadiHeaderRef.current.scrollLeft = e.currentTarget.scrollLeft;
+                }}
+              >
+                <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed', minWidth: '700px' }}>
+                  <colgroup>
+                    <col style={{ width: '130px' }} />
+                    <col />
+                    <col style={{ width: '150px' }} />
+                    <col style={{ width: '120px' }} />
+                  </colgroup>
+                <tbody className="divide-y divide-gray-50">
+                  {memoizedBarangJadiRows}
+                 </tbody>
+               </table>
+              </div>
             </div>
-          ) : (
-            <div className="flex-1 flex flex-col min-h-0">
+           ) : (
+            <div className="flex flex-col flex-1 min-h-0">
               {/* Operator Efficiency Summary - Horizontal scrollable row */}
               {jurnalResults.length > 0 && !loadingDetails && selectedPekerjaan && (
                 <div className="bg-white border-b border-gray-100 px-6 py-2.5 flex items-center gap-4 shrink-0 overflow-hidden">
@@ -999,25 +1147,78 @@ export default function HasilProduksiClient() {
                 </div>
               )}
 
-              <div className="flex-1 overflow-y-auto custom-scrollbar">
-                <table className="w-full text-left border-separate border-spacing-0 min-w-[1500px]">
+              {/* Gap Filler to prevent scrolling text from showing between tabs and table header */}
+              <div className="sticky z-20 bg-white" style={{ height: '40px', top: 'calc(var(--sticky-header-h, 72px) + var(--sticky-tabs-h, 60px) - 40px)', marginBottom: '-40px' }} />
+              {/* Sticky Table Header - sticky to viewport, scroll synced with body */}
+              <div
+                ref={jurnalHeaderRef}
+                className="sticky z-20 bg-white"
+                style={{
+                  top: 'calc(var(--sticky-header-h, 72px) + var(--sticky-tabs-h, 60px))',
+                  overflowX: 'auto',
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                }}
+              >
+                <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed', minWidth: '1700px' }}>
+                  <colgroup>
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '160px' }} />
+                    <col style={{ width: '240px' }} />
+                    <col style={{ width: '150px' }} />
+                    <col style={{ width: '150px' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '80px' }} />
+                    <col style={{ width: '200px' }} />
+                    <col style={{ width: '200px' }} />
+                    <col style={{ width: '120px' }} />
+                  </colgroup>
                   <thead>
                     <tr className="bg-white">
-                      <th className="sticky top-0 z-20 px-5 py-5 text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white whitespace-nowrap">Tanggal</th>
-                      <th className="sticky top-0 z-20 px-5 py-5 text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white whitespace-nowrap">Bagian / Karyawan</th>
-                      <th className="sticky top-0 z-20 px-5 py-5 text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white whitespace-nowrap">No. & Nama Order</th>
-                      <th className="sticky top-0 z-20 px-5 py-5 text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white whitespace-nowrap">Jenis Pekerjaan</th>
-                      <th className="sticky top-0 z-20 px-5 py-5 text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white whitespace-nowrap">Bahan Kertas</th>
-                      <th className="sticky top-0 z-20 px-5 py-5 text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white whitespace-nowrap text-right">Jml. Plate</th>
-                      <th className="sticky top-0 z-20 px-5 py-5 text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white whitespace-nowrap">Warna</th>
-                      <th className="sticky top-0 z-20 px-5 py-5 text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white whitespace-nowrap text-right">Inscheet</th>
-                      <th className="sticky top-0 z-20 px-5 py-5 text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white whitespace-nowrap text-right">Rijek</th>
-                      <th className="sticky top-0 z-20 px-5 py-5 text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white whitespace-nowrap">Jam</th>
-                      <th className="sticky top-0 z-20 px-5 py-5 text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white whitespace-nowrap">Kendala</th>
-                      <th className="sticky top-0 z-20 px-5 py-5 text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white whitespace-nowrap">Keterangan</th>
-                      <th className="sticky top-0 z-20 px-5 py-5 text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-emerald-50 whitespace-nowrap text-right">Realisasi</th>
+                      <th className="sticky left-0 z-30 px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-r border-gray-100 bg-white whitespace-nowrap md:shadow-none shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">Tanggal</th>
+                      <th className="md:sticky md:left-[100px] md:z-30 px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-r border-gray-100 bg-white whitespace-nowrap md:shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] lg:shadow-none">Bagian / Karyawan</th>
+                      <th className="lg:sticky lg:left-[260px] lg:z-30 px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-r border-gray-100 bg-white whitespace-nowrap lg:shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">No. & Nama Order</th>
+                      <th className="px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-r border-gray-100 bg-white whitespace-nowrap">Jenis Pekerjaan</th>
+                      <th className="px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-r border-gray-100 bg-white whitespace-nowrap">Bahan Kertas</th>
+                      <th className="px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-r border-gray-100 bg-white whitespace-nowrap text-right">Jml. Plate</th>
+                      <th className="px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-r border-gray-100 bg-white whitespace-nowrap">Warna</th>
+                      <th className="px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-r border-gray-100 bg-white whitespace-nowrap text-right">Inscheet</th>
+                      <th className="px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-r border-gray-100 bg-white whitespace-nowrap text-right">Rijek</th>
+                      <th className="px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-r border-gray-100 bg-white whitespace-nowrap">Jam</th>
+                      <th className="px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-r border-gray-100 bg-white whitespace-nowrap">Kendala</th>
+                      <th className="px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-r border-gray-100 bg-white whitespace-nowrap">Keterangan</th>
+                      <th className="px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-emerald-50 whitespace-nowrap text-right">Realisasi</th>
                     </tr>
                   </thead>
+                </table>
+              </div>
+              {/* Scrollable Body */}
+              <div
+                ref={jurnalBodyRef}
+                className="flex-1 min-h-0 overflow-x-auto overflow-y-auto custom-scrollbar"
+                onScroll={(e) => {
+                  if (jurnalHeaderRef.current) jurnalHeaderRef.current.scrollLeft = e.currentTarget.scrollLeft;
+                }}
+              >
+                <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed', minWidth: '1700px' }}>
+                  <colgroup>
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '160px' }} />
+                    <col style={{ width: '240px' }} />
+                    <col style={{ width: '150px' }} />
+                    <col style={{ width: '150px' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '100px' }} />
+                    <col style={{ width: '80px' }} />
+                    <col style={{ width: '200px' }} />
+                    <col style={{ width: '200px' }} />
+                    <col style={{ width: '120px' }} />
+                  </colgroup>
                   <tbody className="divide-y divide-gray-50">
                     {memoizedJurnalRows}
                   </tbody>
@@ -1029,28 +1230,55 @@ export default function HasilProduksiClient() {
 
 
 
-          {/* Fixed Footer for Totals */}
-          {((activeTab === 'barang_jadi' && results.length > 0) || (activeTab === 'jurnal' && jurnalResults.length > 0 && selectedPekerjaan)) && !loadingDetails && (
-            <div className="bg-white text-gray-800 border-t border-gray-100 px-8 py-2.5 flex flex-wrap justify-end items-center shrink-0 relative z-20 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.05)] gap-8">
-              {activeTab === 'jurnal' && grandTotalRijek > 0 && (
-                <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-bold tracking-wide text-rose-400">Total Rijek</span>
-                  <div className="text-lg font-semibold tabular-nums tracking-tight text-rose-600">
-                    {grandTotalRijek.toLocaleString('id-ID')}
+          {/* Fixed Footer for Totals & Pagination */}
+          {((activeTab === 'barang_jadi' && results.length > 0) || (activeTab === 'jurnal' && jurnalResults.length > 0)) && !loadingDetails && (
+            <div className="bg-white text-gray-800 border-t border-gray-100 px-6 xl:px-8 py-3 sm:py-2.5 flex flex-col sm:flex-row justify-between items-center sm:items-center shrink-0 relative z-20 shadow-[0_-10px_30px_-15px_rgba(0,0,0,0.05)] gap-3 sm:gap-4">
+              
+              {/* Pagination Controls */}
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => activeTab === 'jurnal' ? setJurnalPage(p => Math.max(1, p - 1)) : setBarangJadiPage(p => Math.max(1, p - 1))}
+                  disabled={activeTab === 'jurnal' ? jurnalPage === 1 : barangJadiPage === 1}
+                  className="px-3 py-1.5 text-[11px] font-bold bg-white border border-gray-200 rounded-lg text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors shadow-sm shadow-emerald-900/5"
+                >
+                  Prev
+                </button>
+                <div className="px-3 py-1.5 text-[11px] font-bold text-gray-500 bg-gray-50 rounded-lg border border-gray-100 tabular-nums">
+                  {activeTab === 'jurnal' ? jurnalPage : barangJadiPage} / {activeTab === 'jurnal' ? totalJurnalPages : totalBarangJadiPages}
+                </div>
+                <button 
+                  onClick={() => activeTab === 'jurnal' ? setJurnalPage(p => Math.min(totalJurnalPages, p + 1)) : setBarangJadiPage(p => Math.min(totalBarangJadiPages, p + 1))}
+                  disabled={activeTab === 'jurnal' ? jurnalPage === totalJurnalPages : barangJadiPage === totalBarangJadiPages}
+                  className="px-3 py-1.5 text-[11px] font-bold bg-white border border-gray-200 rounded-lg text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors shadow-sm shadow-emerald-900/5"
+                >
+                  Next
+                </button>
+              </div>
+
+              {/* Totals Section */}
+              {(activeTab === 'barang_jadi' || (activeTab === 'jurnal' && selectedPekerjaan)) && (
+                <div className="flex flex-wrap items-center justify-end gap-6 xl:gap-8">
+                  {activeTab === 'jurnal' && grandTotalRijek > 0 && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] font-bold tracking-wide text-rose-400">Total Rijek</span>
+                      <div className="text-lg font-semibold tabular-nums tracking-tight text-rose-600">
+                        {grandTotalRijek.toLocaleString('id-ID')}
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] font-bold tracking-wide text-gray-500">
+                      {activeTab === 'barang_jadi' ? 'Total Barang Masuk (Gudang)' : `Total Realisasi — ${selectedPekerjaan}`}
+                    </span>
+                    <div className="text-lg font-bold tabular-nums tracking-tight text-emerald-600">
+                      {activeTab === 'barang_jadi' 
+                        ? `${grandTotal.toLocaleString('id-ID')} ${results[0]?.items[0]?.satuan || results[0]?.items[0]?.unit || unit}`
+                        : `${grandTotalJurnal.toLocaleString('id-ID')}`
+                      }
+                    </div>
                   </div>
                 </div>
               )}
-              <div className="flex items-center gap-3">
-                <span className="text-[11px] font-bold tracking-wide text-gray-500">
-                  {activeTab === 'barang_jadi' ? 'Total Barang Masuk (Gudang)' : selectedPekerjaan ? `Total Realisasi — ${selectedPekerjaan}` : 'Total Realisasi Semua Pekerjaan'}
-                </span>
-                <div className="text-lg font-bold tabular-nums tracking-tight text-emerald-600">
-                  {activeTab === 'barang_jadi' 
-                    ? `${grandTotal.toLocaleString('id-ID')} ${results[0]?.items[0]?.satuan || results[0]?.items[0]?.unit || unit}`
-                    : `${grandTotalJurnal.toLocaleString('id-ID')}`
-                  }
-                </div>
-              </div>
             </div>
           )}
         </div>
@@ -1081,6 +1309,4 @@ export default function HasilProduksiClient() {
     </div>
   );
 }
-
-
 
