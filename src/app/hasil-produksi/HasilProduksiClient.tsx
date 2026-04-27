@@ -900,7 +900,7 @@ export default function HasilProduksiClient() {
 
         {/* Unified Dashboard Control Bar - Split into 3 Cards, Combined on LG */}
         {selectedSopd && (
-          <div id="desktop-sticky-control-bar" className="lg:sticky lg:top-[var(--sticky-header-h,72px)] lg:z-[70] lg:bg-[var(--bg-deep)] lg:pb-1.5 lg:-mx-4 lg:px-4 xl:lg:-mx-8 xl:lg:px-8">
+          <div id="desktop-sticky-control-bar" className="lg:sticky lg:top-[calc(var(--sticky-header-h,72px)-1px)] lg:z-[70] lg:bg-[var(--bg-deep)] lg:pb-1.5 lg:-mx-4 lg:px-4 xl:lg:-mx-8 xl:lg:px-8">
             <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 sm:gap-4">
               {/* Card 1 & 2 Container */}
               <div className="flex flex-col md:flex-row flex-wrap lg:flex-nowrap items-stretch lg:items-center gap-3 sm:gap-4 flex-1">
@@ -982,7 +982,7 @@ export default function HasilProduksiClient() {
 
         {/* Tab Navigation — Mobile/MD sticky (shown below cards, separate sticky layer) */}
         {selectedSopd && (
-          <div id="sticky-tabs-container" className="sticky top-[var(--sticky-header-h,72px)] z-[70] bg-[var(--bg-deep)] pb-1.5 -mx-4 px-4 lg:hidden">
+          <div id="sticky-tabs-container" className="sticky top-[calc(var(--sticky-header-h,72px)-1px)] z-[70] bg-[var(--bg-deep)] pb-1.5 -mx-4 px-4 lg:hidden">
             <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-1.5 flex items-center gap-1 w-full">
               <button 
                 onClick={() => setActiveTab('jurnal')}
@@ -1145,12 +1145,12 @@ export default function HasilProduksiClient() {
             {activeTab === 'barang_jadi' ? (
             <div className="flex flex-col">
               {/* Gap Filler to prevent scrolling text from showing between tabs and table header */}
-              <div className="sticky z-20 bg-white" style={{ height: '40px', top: 'calc(var(--sticky-header-h, 72px) + var(--sticky-tabs-h, 60px) - 40px)', marginBottom: '-40px' }} />
+              <div className="sticky z-20 bg-white" style={{ height: '40px', top: 'calc(var(--sticky-header-h, 72px) + var(--sticky-tabs-h, 60px) - 41px)', marginBottom: '-40px' }} />
               {/* Sticky Header - outside overflow-x-auto */}
               <div
                 ref={barangJadiHeaderRef}
                 className="overflow-x-hidden sticky z-20 bg-white"
-                style={{ top: 'calc(var(--sticky-header-h, 72px) + var(--sticky-tabs-h, 60px))' }}
+                style={{ top: 'calc(var(--sticky-header-h, 72px) + var(--sticky-tabs-h, 60px) - 1px)' }}
               >
                 <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed', minWidth: '700px' }}>
                   <colgroup>
@@ -1218,13 +1218,13 @@ export default function HasilProduksiClient() {
               )}
 
               {/* Gap Filler to prevent scrolling text from showing between tabs and table header */}
-              <div className="sticky z-20 bg-white" style={{ height: '40px', top: 'calc(var(--sticky-header-h, 72px) + var(--sticky-tabs-h, 60px) - 40px)', marginBottom: '-40px' }} />
+              <div className="sticky z-20 bg-white" style={{ height: '40px', top: 'calc(var(--sticky-header-h, 72px) + var(--sticky-tabs-h, 60px) - 41px)', marginBottom: '-40px' }} />
               {/* Sticky Table Header - sticky to viewport, scroll synced with body */}
               <div
                 ref={jurnalHeaderRef}
                 className="sticky z-20 bg-white"
                 style={{
-                  top: 'calc(var(--sticky-header-h, 72px) + var(--sticky-tabs-h, 60px))',
+                  top: 'calc(var(--sticky-header-h, 72px) + var(--sticky-tabs-h, 60px) - 1px)',
                   overflowX: 'auto',
                   scrollbarWidth: 'none',
                   msOverflowStyle: 'none',
