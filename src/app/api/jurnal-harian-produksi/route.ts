@@ -117,9 +117,20 @@ export async function POST(request: NextRequest) {
     const idxKendala = getIdx('Kendala', 21);
     const idxBagian = getIdx('Bagian', 23);
     
-    // Tingkatkan chunk size dari 200 menjadi 2500 untuk meminimalkan network latency ke Turso Cloud
-    const CHUNK_SIZE = 2500;
-    let currentBatch: any[] = [];
+    // Fungsi untuk eksekusi bulk insert guna performa maksimal
+    const BATCH_SIZE = 100;
+    let pendingRows: any[][] = [];
+    
+    const flushRows = async (rows: any[][]) => {
+      if (rows.length === 0) return;
+      const placeholders = rows.map(() => `(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).join(', ');
+      const args = rows.flat();
+      const sql = `INSERT INTO jurnal_harian_produksi (
+                posisi, absensi, tgl, shift, nama_karyawan, no_order, nama_order, jenis_pekerjaan, keterangan, target, realisasi,
+                no_order_2, nama_order_2, jenis_pekerjaan_2, bahan_kertas, jml_plate, warna, inscheet, rijek, jam, kendala, bagian
+              ) VALUES ${placeholders}`;
+      await db.execute({ sql, args });
+    };
 
     for (let i = 0; i < rawData.length; i++) {
       const row = rawData[i];
@@ -168,30 +179,22 @@ export async function POST(request: NextRequest) {
       const kendala = String(row[idxKendala] || '').trim();
       const bagian = String(row[idxBagian] || '').trim();
 
-      currentBatch.push({
-        sql: `INSERT INTO jurnal_harian_produksi (
-                posisi, absensi, tgl, shift, nama_karyawan, no_order, nama_order, jenis_pekerjaan, keterangan, target, realisasi,
-                no_order_2, nama_order_2, jenis_pekerjaan_2, bahan_kertas, jml_plate, warna, inscheet, rijek, jam, kendala, bagian
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        args: [
-          posisi, absensi, tgl, shift, namaKaryawan, noOrder, namaOrder, jenisPekerjaan, keterangan, target, realisasi,
-          noOrder2, namaOrder2, jenisPekerjaan2, bahanKertas, jmlPlate, warna, inscheet, rijek, jam, kendala, bagian
-        ]
-      });
+      pendingRows.push([
+        posisi, absensi, tgl, shift, namaKaryawan, noOrder, namaOrder, jenisPekerjaan, keterangan, target, realisasi,
+        noOrder2, namaOrder2, jenisPekerjaan2, bahanKertas, jmlPlate, warna, inscheet, rijek, jam, kendala, bagian
+      ]);
 
       importedCount++;
 
-      // Execute batch when chunk size is reached
-      if (currentBatch.length >= CHUNK_SIZE) {
-        await db.batch(currentBatch, "write");
-        currentBatch = [];
+      // Eksekusi batch saat ukuran batch tercapai
+      if (pendingRows.length >= BATCH_SIZE) {
+        await flushRows(pendingRows);
+        pendingRows = [];
       }
     }
 
-    // Execute remaining items
-    if (currentBatch.length > 0) {
-      await db.batch(currentBatch, "write");
-    }
+    // Eksekusi sisa baris
+    await flushRows(pendingRows);
 
     // Log activity hanya pada chunk terakhir atau jika tidak ada chunking
     if (chunkIndex === totalChunks - 1) {

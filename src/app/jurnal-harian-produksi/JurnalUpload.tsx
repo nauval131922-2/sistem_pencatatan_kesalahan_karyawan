@@ -53,7 +53,8 @@ export default function JurnalUpload() {
 
     setStatus('loading');
     setMessage('Membaca file Excel (proses ini mungkin memakan waktu)...');
-    setStartTime(Date.now());
+    const startTimeInternal = Date.now();
+    setStartTime(startTimeInternal);
     setProgress(0);
     setTotalRows(0);
     setCurrentRows(0);
@@ -82,7 +83,7 @@ export default function JurnalUpload() {
           if (p !== undefined) setProgress(p);
         } else if (type === 'done') {
           setStatus('idle');
-          const finalDuration = formatTime(Math.floor((Date.now() - (startTime || Date.now())) / 1000));
+          const finalDuration = formatTime(Math.floor((Date.now() - startTimeInternal) / 1000));
           setDialog({
             isOpen: true,
             type: 'success',

@@ -42,8 +42,8 @@ self.addEventListener('message', async (e) => {
       }
     }
 
-    // 3. Konfigurasi Chunking
-    const CHUNK_SIZE = 4000;
+    // 3. Konfigurasi Chunking (Dioptimalkan untuk 200k+ data)
+    const CHUNK_SIZE = 8000;
     const totalChunks = Math.ceil(mappedData.length / CHUNK_SIZE);
     let totalImported = 0;
 
@@ -80,9 +80,9 @@ self.addEventListener('message', async (e) => {
     });
     totalImported += await uploadChunk(0);
 
-    // 5. Chunk sisanya dikirim secara PARALEL (Concurrency 5) untuk kecepatan maksimal
+    // 5. Chunk sisanya dikirim secara PARALEL (Concurrency 8) untuk kecepatan maksimal
     const remainingChunks = Array.from({ length: totalChunks - 1 }, (_, i) => i + 1);
-    const CONCURRENCY = 5;
+    const CONCURRENCY = 8;
     let completedChunks = 1;
 
     const runWorker = async () => {
