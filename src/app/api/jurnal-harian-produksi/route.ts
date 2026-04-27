@@ -158,8 +158,13 @@ export async function POST(request: NextRequest) {
       const shift = String(row[idxShift] || '').trim();
       const namaKaryawan = String(row[idxNama] || '').trim();
       
-      // Skip invalid / empty row - Harus ada tanggal (Col D) dan nama karyawan (Col F)
-      if (!tgl || !namaKaryawan || namaKaryawan === 'null' || namaKaryawan === '') continue;
+      // Validasi ketat: 
+      // 1. Nama karyawan tidak boleh kosong, 'null', atau diawali tanda '-' (baris kategori)
+      // 2. Tanggal harus valid (mengandung '-' untuk format YYYY-MM-DD atau merupakan angka Excel)
+      const isValidDate = tgl && (tgl.includes('-') || typeof row[idxTgl] === 'number');
+      const isCategoryRow = namaKaryawan.startsWith('-') || namaKaryawan.toLowerCase().includes('setting') || namaKaryawan.toLowerCase().includes('quality control');
+
+      if (!tgl || !namaKaryawan || namaKaryawan === 'null' || !isValidDate || isCategoryRow) continue;
 
       const noOrder = String(row[idxNoOrder] || '').trim();
       const namaOrder = String(row[idxNamaOrder] || '').trim();
