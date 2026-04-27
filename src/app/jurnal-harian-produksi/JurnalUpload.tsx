@@ -71,7 +71,7 @@ export default function JurnalUpload() {
         arrayBuffer, 
         filename: file.name,
         origin: window.location.origin
-      });
+      }, [arrayBuffer]);
 
       worker.onmessage = (e) => {
         const { type, message, error, totalImported, totalRows: rowsTotal, currentRows: rowsCurrent, progress: p } = e.data;

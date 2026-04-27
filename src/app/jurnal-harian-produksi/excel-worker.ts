@@ -14,7 +14,8 @@ self.addEventListener('message', async (e) => {
       cellHTML: false,
       cellStyles: false,
       cellText: false,
-      cellDates: false
+      cellDates: false,
+      dense: true
     });
 
     const sheetName = 'JURNAL';
