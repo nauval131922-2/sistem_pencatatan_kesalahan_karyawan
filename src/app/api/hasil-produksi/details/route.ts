@@ -37,10 +37,10 @@ export async function GET(request: NextRequest) {
     const availablePekerjaan = (jobsRes.rows as any[]).map(r => r.jenis_pekerjaan);
 
     // Build conditions for barang_jadi
-    let bjSql = `SELECT tgl, qty, satuan, faktur, nama_barang, raw_data 
+    let bjSql = `SELECT tgl, qty, satuan, faktur, nama_barang, nama_prd, raw_data 
                  FROM barang_jadi 
-                 WHERE faktur_prd LIKE ?`;
-    const bjArgs: any[] = [`%${noSopd}%`];
+                 WHERE (faktur_prd LIKE ? OR nama_prd LIKE ?)`;
+    const bjArgs: any[] = [`%${noSopd}%`, `%${noSopd}%`];
 
     if (startDate) {
       // Convert DD-MM-YYYY to YYYY-MM-DD for comparison
