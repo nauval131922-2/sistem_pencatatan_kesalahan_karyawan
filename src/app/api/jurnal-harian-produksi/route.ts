@@ -117,7 +117,8 @@ export async function POST(request: NextRequest) {
     const idxKendala = getIdx('Kendala', 21);
     const idxBagian = getIdx('Bagian', 23);
     
-    const CHUNK_SIZE = 200;
+    // Tingkatkan chunk size dari 200 menjadi 2500 untuk meminimalkan network latency ke Turso Cloud
+    const CHUNK_SIZE = 2500;
     let currentBatch: any[] = [];
 
     for (let i = 0; i < rawData.length; i++) {

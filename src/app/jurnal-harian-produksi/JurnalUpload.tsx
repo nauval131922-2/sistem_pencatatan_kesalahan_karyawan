@@ -33,35 +33,28 @@ export default function JurnalUpload() {
       // Memberi jeda agar UI sempat me-render status 'Membaca file Excel...' sebelum main thread diblokir oleh XLSX
       await new Promise(resolve => setTimeout(resolve, 50));
 
-      const XLSX = await import('xlsx');
+      // Menggunakan Web Worker agar parsing Excel (komputasi CPU intensif) berjalan di background
+      // sehingga tidak membuat UI browser "Not Responding"
       const arrayBuffer = await file.arrayBuffer();
-      const workbook = XLSX.read(arrayBuffer, {
-        cellFormula: false,
-        cellHTML: false,
-        cellStyles: false,
-        cellText: false,
-        cellDates: false
+      const worker = new Worker(new URL('./excel-worker.ts', import.meta.url));
+      
+      const parsedData: any[][] = await new Promise((resolve, reject) => {
+        worker.postMessage(arrayBuffer);
+        worker.onmessage = (e) => {
+          if (e.data.success) {
+            resolve(e.data.mappedData);
+          } else {
+            reject(new Error(e.data.error || "Gagal memproses file Excel"));
+          }
+          worker.terminate();
+        };
+        worker.onerror = (err) => {
+          reject(new Error("Terjadi kesalahan fatal pada Web Worker saat membaca Excel"));
+          worker.terminate();
+        };
       });
 
-      const sheetName = 'JURNAL';
-      let worksheet = workbook.Sheets[sheetName];
-      if (!worksheet) {
-        throw new Error(`Sheet '${sheetName}' tidak ditemukan di dalam file Excel.`);
-      }
-
-      // Ambil data sebagai array of arrays
-      const rawData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: null }) as any[][];
-
-      if (rawData.length === 0) {
-        throw new Error("File Excel kosong atau format tidak sesuai.");
-      }
-
-      // Kirim seluruh data mentah (termasuk header) ke server agar bisa dideteksi secara dinamis
-      const mappedData = rawData.filter((row: any) => row && Array.isArray(row) && row.length > 0);
-
-      if (mappedData.length === 0) {
-        throw new Error("Tidak dapat menemukan data transaksi pada baris yang dipindai.");
-      }
+      const mappedData = parsedData;
 
       // Temukan baris header agar bisa disertakan di setiap chunk (jika format dinamis)
       let headerRow = mappedData[0];
