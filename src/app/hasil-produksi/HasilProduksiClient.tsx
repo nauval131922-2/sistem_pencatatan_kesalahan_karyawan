@@ -364,10 +364,46 @@ export default function HasilProduksiClient() {
 
     // ---- Rebuild rendered rows from paged items ----
     const renderedGroups: React.ReactNode[] = [];
-    pageItems.forEach(({ item, group, iIdx, gIdx, isLastInGroup }) => {
+    
+    // Grouping by Job streak within the paged items
+    let currentJobStreak: any[] = [];
+    let currentJobName = '';
+    let lastDate = '';
+
+    const pushSubtotalRow = (streak: any[], jobDisplayName: string, date: string, gIdx: number) => {
+      if (streak.length > 1) {
+        const totalR = streak.reduce((sum, s) => sum + Number(s.realisai || s.realisasi || 0), 0);
+        const totalRijek = streak.reduce((sum, s) => sum + Number(s.rijek || 0), 0);
+        renderedGroups.push(
+          <tr key={`subtotal-${gIdx}-${jobDisplayName}-${date}`} className="bg-emerald-50/50 border-t border-emerald-100">
+            <td colSpan={8} className="px-4 py-3 text-right text-[11px] font-bold tracking-tight text-emerald-800 border-r border-emerald-100">
+              Total {jobDisplayName || 'Pekerjaan'} — {formatToDayMonthYear(date)}
+            </td>
+            <td className="px-4 py-3 text-right text-[12px] font-bold tabular-nums text-rose-600 bg-rose-50/30 border-r border-emerald-100">{totalRijek.toLocaleString('id-ID')}</td>
+            <td colSpan={3} className="px-4 py-3 border-r border-emerald-100"></td>
+            <td className="px-4 py-3 text-right text-[13px] font-bold tabular-nums text-emerald-900 bg-emerald-100/50">{totalR.toLocaleString('id-ID')}</td>
+          </tr>
+        );
+      }
+    };
+
+    pageItems.forEach(({ item, group, iIdx, gIdx, isLastInGroup }, pIdx) => {
+      const jobKey = (item.jenis_pekerjaan_2 || '').toLowerCase();
+      const jobDisplayName = item.jenis_pekerjaan_2 || 'Pekerjaan';
+      
+      // If job changes or day changes, finish previous streak
+      if (pIdx > 0 && (jobKey !== currentJobName || group.date !== lastDate)) {
+        pushSubtotalRow(currentJobStreak, currentJobStreak[0]?.jenis_pekerjaan_2 || 'Pekerjaan', lastDate, gIdx - 1);
+        currentJobStreak = [];
+      }
+
+      currentJobName = jobKey;
+      lastDate = group.date;
+      currentJobStreak.push(item);
+
       renderedGroups.push(
         <tr key={`${gIdx}-${iIdx}`} className="bg-white hover:bg-emerald-50/30 even:bg-gray-50/50 transition-colors group cursor-default">
-          <td className="sticky left-0 z-10 px-4 py-3 xl:py-4 text-[11px] xl:text-[13px] font-bold border-r border-gray-100 tabular-nums text-gray-800 bg-white group-even:bg-[#f9fafb] group-hover:bg-[#f0fdf4] min-w-[100px] max-w-[100px] md:shadow-none shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
+          <td className="sticky left-0 z-10 px-4 py-3 xl:py-4 text-[11px] xl:text-[12px] font-bold border-r border-gray-100 tabular-nums text-gray-800 bg-white group-even:bg-[#f9fafb] group-hover:bg-[#f0fdf4] min-w-[100px] max-w-[100px] md:shadow-none shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
             {iIdx === 0 ? formatToDayMonthYear(group.date) : ''}
           </td>
           <td className="md:sticky md:left-[100px] md:z-10 px-4 py-3 xl:py-4 border-r border-gray-100 bg-white group-even:bg-[#f9fafb] group-hover:bg-[#f0fdf4] min-w-[160px] max-w-[160px] md:shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] lg:shadow-none">
@@ -398,18 +434,10 @@ export default function HasilProduksiClient() {
           <td className="px-4 py-3 xl:py-4 text-[13px] xl:text-[15px] font-semibold text-right tabular-nums bg-emerald-50 text-emerald-900">{Number(item.realisasi).toLocaleString('id-ID')}</td>
         </tr>
       );
-      // Daily subtotal row - show after last item of group IF all items of group are visible on this page
-      if (isLastInGroup && group.items.length > 1 && allJobsSame(group)) {
-        renderedGroups.push(
-          <tr key={`${gIdx}-subtotal`} className="bg-emerald-50/50 border-t border-emerald-100">
-            <td colSpan={8} className="px-4 py-3 text-right text-[12px] font-bold tracking-wide text-emerald-800 border-r border-emerald-100">
-              Total Harian {formatToDayMonthYear(group.date)}
-            </td>
-            <td className="px-4 py-3 text-right text-[13px] font-bold tabular-nums text-rose-600 bg-rose-50/30 border-r border-emerald-100">{group.totalRijek.toLocaleString('id-ID')}</td>
-            <td colSpan={3} className="px-4 py-3 border-r border-emerald-100"></td>
-            <td className="px-4 py-3 text-right text-[14px] font-bold tabular-nums text-emerald-900 bg-emerald-100/50">{group.totalRealisasi.toLocaleString('id-ID')}</td>
-          </tr>
-        );
+
+      // Final streak push for the very last item in paged results
+      if (pIdx === pageItems.length - 1) {
+        pushSubtotalRow(currentJobStreak, currentJobStreak[0]?.jenis_pekerjaan_2 || 'Pekerjaan', lastDate, gIdx);
       }
     });
 
@@ -453,10 +481,10 @@ export default function HasilProduksiClient() {
     pageItems.forEach(({ item, group, iIdx, gIdx, isLastInGroup }) => {
       renderedGroups.push(
         <tr key={`${gIdx}-${iIdx}`} className="bg-white hover:bg-emerald-50/30 even:bg-gray-50/50 transition-colors group cursor-default">
-          <td className="sticky left-0 z-10 px-4 py-3 xl:py-4 text-[11px] xl:text-[13px] font-bold text-gray-800 border-r border-gray-50 tabular-nums bg-white group-even:bg-[#f9fafb] group-hover:bg-[#f8faf9] shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
+          <td className="sticky left-0 z-10 px-4 py-3 xl:py-4 text-[11px] xl:text-[12px] font-bold text-gray-800 border-r border-gray-50 tabular-nums bg-white group-even:bg-[#f9fafb] group-hover:bg-[#f8faf9] shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
             {iIdx === 0 ? formatToDayMonthYear(group.date) : ''}
           </td>
-          <td className="px-4 py-3 xl:py-4 text-[11px] xl:text-[13px] font-bold text-gray-600 border-r border-gray-50 tracking-tight">
+          <td className="px-4 py-3 xl:py-4 text-[11px] xl:text-[12px] font-bold text-gray-600 border-r border-gray-50 tracking-tight">
             <div className="truncate max-w-[400px]" title={item.nama_barang}>{item.nama_barang}</div>
           </td>
           <td className="px-4 py-3 xl:py-4 text-[10px] xl:text-[11px] font-bold text-gray-400 border-r border-gray-50 tabular-nums uppercase tracking-wide">
