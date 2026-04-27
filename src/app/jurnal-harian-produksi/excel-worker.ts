@@ -2,7 +2,8 @@ import * as XLSX from 'xlsx';
 
 self.addEventListener('message', async (e) => {
   try {
-    const { arrayBuffer, filename } = e.data;
+    const { arrayBuffer, filename, origin } = e.data;
+    const apiUrl = `${origin}/api/jurnal-harian-produksi`;
     
     // 1. Parsing Excel
     self.postMessage({ type: 'status', message: 'Membaca file Excel (proses ini mungkin memakan waktu)...' });
@@ -61,8 +62,8 @@ self.addEventListener('message', async (e) => {
         progress: Math.round(((i + 1) / totalChunks) * 100)
       });
 
-      // Gunakan fetch dengan path absolut dari origin worker
-      const res = await fetch('/api/jurnal-harian-produksi', {
+      // Gunakan fetch dengan URL absolut
+      const res = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

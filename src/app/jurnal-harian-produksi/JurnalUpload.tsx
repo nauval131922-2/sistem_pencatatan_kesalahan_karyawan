@@ -37,7 +37,11 @@ export default function JurnalUpload() {
       const arrayBuffer = await file.arrayBuffer();
       const worker = new Worker(new URL('./excel-worker.ts', import.meta.url));
       
-      worker.postMessage({ arrayBuffer, filename: file.name });
+      worker.postMessage({ 
+        arrayBuffer, 
+        filename: file.name,
+        origin: window.location.origin
+      });
 
       worker.onmessage = (e) => {
         const { type, message, error, totalImported } = e.data;
