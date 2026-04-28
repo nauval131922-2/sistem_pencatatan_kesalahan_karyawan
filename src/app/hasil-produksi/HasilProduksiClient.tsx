@@ -485,7 +485,7 @@ export default function HasilProduksiClient() {
             {iIdx === 0 ? formatToDayMonthYear(group.date) : ''}
           </td>
           <td className="px-4 py-3 xl:py-4 text-[11px] xl:text-[12px] font-bold text-gray-600 border-r border-gray-50 tracking-tight">
-            <div className="truncate max-w-[400px]" title={item.produk || item.nama_barang}>{item.produk || item.nama_barang}</div>
+            <div className="truncate max-w-[400px]" title={item.nama_prd}>{item.nama_prd}</div>
           </td>
           <td className="px-4 py-3 xl:py-4 text-[10px] xl:text-[11px] font-bold text-gray-400 border-r border-gray-50 tabular-nums uppercase tracking-wide">
             {item.faktur}
@@ -1162,7 +1162,7 @@ export default function HasilProduksiClient() {
                   <thead>
                     <tr className="bg-white">
                       <th className="sticky left-0 z-30 px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-r border-gray-100 bg-white whitespace-nowrap shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">Tanggal</th>
-                      <th className="px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white whitespace-nowrap">Produk</th>
+                      <th className="px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white whitespace-nowrap">Nama Produksi</th>
                       <th className="px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-white whitespace-nowrap">No. Faktur</th>
                       <th className="px-4 py-3 xl:py-5 text-[10px] xl:text-xs font-bold text-gray-400 tracking-tight border-b border-gray-100 bg-emerald-50 text-right whitespace-nowrap">Quantity</th>
                     </tr>
