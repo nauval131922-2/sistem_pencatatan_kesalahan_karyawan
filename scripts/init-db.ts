@@ -46,19 +46,35 @@ async function main() {
 
   try {
     console.log('[INIT-DB] Calling initSchema...');
-    await initSchema(db);
+    
+    // Check if tables already exist before trying to init
+    let tablesExist = false;
+    try {
+      const checkResult = await db.execute("SELECT name FROM sqlite_master WHERE type='table'");
+      tablesExist = checkResult.rows.length > 0;
+    } catch (e) {}
+
+    try {
+      await initSchema(db);
+      console.log('[INIT-DB] Schema initialization successful.');
+    } catch (schemaError: any) {
+      const isBlocked = schemaError.code === 'BLOCKED' || 
+                        (schemaError.message && schemaError.message.toLowerCase().includes('blocked'));
+      
+      if (isBlocked && tablesExist) {
+        console.warn('\n[INIT-DB] ⚠️ WARNING: SQL write operations are BLOCKED by Turso (Quota exceeded?).');
+        console.warn('[INIT-DB] ⚠️ Skipping schema update because tables already exist. Build will continue.\n');
+      } else {
+        throw schemaError;
+      }
+    }
     
     const result = await db.execute("SELECT name FROM sqlite_master WHERE type='table'");
     const tables = result.rows.map(t => t.name);
-    console.log('[INIT-DB] Tables after init:', JSON.stringify(tables));
+    console.log('[INIT-DB] Tables found:', JSON.stringify(tables));
     
-    if (tables.length === 0) {
-      console.error('[INIT-DB] WARNING: No tables were created!');
-    } else {
-      console.log('[INIT-DB] Schema initialization successful.');
-    }
-  } catch (error) {
-    console.error('[INIT-DB] Schema initialization failed:', error);
+  } catch (error: any) {
+    console.error('[INIT-DB] Critical Error:', error.message || error);
     process.exit(1);
   }
 }
