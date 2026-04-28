@@ -196,7 +196,8 @@ TURSO_AUTH_TOKEN=
 # Rahasia JWT
 JWT_SECRET=super_secret_key_change_in_production
 
-# Flag penggunaan database
+# Flag penggunaan database cloud (Turso)
+# Set ke false untuk menggunakan SQLite lokal di komputer Anda
 USE_REMOTE_DB=false
 ```
 
@@ -222,6 +223,8 @@ import path from 'path';
 
 const isDev = process.env.NODE_ENV === 'development';
 const isVercel = !!process.env.VERCEL;
+
+// Policy: Use Turso when on Vercel OR when USE_REMOTE_DB is explicitly set to true.
 const useRemote = (isVercel || process.env.USE_REMOTE_DB === 'true') && !!process.env.TURSO_DATABASE_URL;
 
 let dbUrl = '';
@@ -329,10 +332,37 @@ import path from 'path';
 import { initSchema } from '../src/lib/schema';
 
 async function main() {
-  const dbUrl = `file:${path.join(process.cwd(), 'database_dev.sqlite')}`;
-  const db = createClient({ url: dbUrl });
-  await initSchema(db);
-  console.log("DB Init Success!");
+  const isDev = process.env.NODE_ENV === 'development';
+  const isVercel = !!process.env.VERCEL;
+  
+  // Policy: Use Turso when on Vercel OR when USE_REMOTE_DB is explicitly set to true.
+  const isRemote = (isVercel || process.env.USE_REMOTE_DB === 'true') && !!process.env.TURSO_DATABASE_URL;
+
+  let dbUrl = '';
+  if (isRemote) {
+    dbUrl = process.env.TURSO_DATABASE_URL!;
+  } else {
+    const defaultDbName = isDev ? 'database_dev.sqlite' : 'database.sqlite';
+    const dbPath = path.join(process.cwd(), process.env.DB_PATH || defaultDbName);
+    dbUrl = `file:${dbPath}`;
+  }
+
+  const db = createClient({ url: dbUrl, authToken: process.env.TURSO_AUTH_TOKEN });
+
+  try {
+    await initSchema(db);
+    console.log(`[INIT-DB] Success! Connected to: ${dbUrl} (Remote: ${isRemote})`);
+  } catch (error: any) {
+    // Resilience: Skip error if write is blocked (Turso quota full) but tables already exist
+    if (error.code === 'BLOCKED' || error.message.includes('blocked')) {
+      const tables = await db.execute("SELECT name FROM sqlite_master WHERE type='table'");
+      if (tables.rows.length > 0) {
+        console.warn("[INIT-DB] WARNING: Turso write is BLOCKED but tables already exist. Skipping init.");
+        return;
+      }
+    }
+    throw error;
+  }
 }
 main();
 ```

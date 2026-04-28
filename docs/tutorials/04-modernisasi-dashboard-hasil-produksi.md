@@ -66,6 +66,14 @@ Elemen seperti **DatePicker** dan **Custom Dropdown** sering kali terpotong jika
 2. Me-render popup di luar struktur DOM komponen menggunakan `<Portal>`.
 3. Menyesuaikan posisi popup secara dinamis agar selalu terlihat di viewport.
 
+## 7. Standarisasi Nama Kolom dan Sumber Data
+
+Untuk meningkatkan akurasi data yang ditampilkan, kolom identitas produk pada tab **Barang Jadi** disesuaikan agar menggunakan data dari modul produksi pusat.
+
+### Langkah-langkah:
+1. **Rename Header**: Mengubah label kolom dari **"Nama Barang"** menjadi **"Nama Produksi"** agar lebih spesifik menggambarkan hasil proses manufaktur.
+2. **Prioritas Data**: Mengubah pemetaan data dari `item.nama_barang` menjadi `item.nama_prd` (nama produksi) yang merupakan data asli dari sistem MDT Host, memastikan konsistensi antara apa yang diinput di gudang dan apa yang tampil di dashboard.
+
 ---
 
 > [!TIP]

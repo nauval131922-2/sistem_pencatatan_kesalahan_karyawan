@@ -36,6 +36,10 @@
 - [x] Optimasi Performa Dropdown (Render Limiting 30 items) — 2026-04-27
 - [x] Penghapusan Nested Scroll & Sinkronisasi Native Page Scroll pada Tabel Produksi — 2026-04-27
 - [x] Standarisasi Footer Pagination Dashboard (Responsif Kiri-Kanan) — 2026-04-27
+- [x] Implementasi Fallback Logika Tracking Manufaktur (via BOM Faktur) — 2026-04-28
+- [x] Resiliensi Build Database (Penanganan Error Turso BLOCKED) — 2026-04-28
+- [x] Standarisasi Nama Produksi & Sumber Data di Dashboard Hasil Produksi — 2026-04-28
+- [x] Arsitektur Pemisahan 3 Database (Dev Lokal, Prod Lokal, Turso Cloud) — 2026-04-28
 
 ---
 
@@ -55,12 +59,12 @@
 ## 📊 Statistik
 
 ```
-Total task    : 22
-Selesai       : 20
+Total task    : 26
+Selesai       : 24
 In progress   : 2
 Backlog       : 2
 Bug diketahui : 0
-Progress      : 91%
+Progress      : 92%
 ```
 
 ---
