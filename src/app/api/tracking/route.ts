@@ -78,6 +78,15 @@ export async function GET(request: NextRequest) {
       productionOrder = fuzzyRes.rows[0] as any || null;
     }
 
+    // Third try: via BOM Faktur (Fallback if SO link fails or SO is missing)
+    if (!productionOrder && bom?.faktur) {
+      const bomResOnly = await db.execute({
+        sql: `SELECT * FROM orders WHERE json_extract(raw_data, '$.faktur_bom') = ? LIMIT 1`,
+        args: [bom.faktur]
+      });
+      productionOrder = bomResOnly.rows[0] as any || null;
+    }
+
     // --- LEVEL 4: Sub-branches (Dependent on Production Order & Reports) ---
     // 1. Production Branch: PRs, Bahan Baku, Penerimaan Barang Hasil Produksi
     // 2. Sales Branch: Pengiriman, Pelunasan Piutang Penjualan

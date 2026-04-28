@@ -324,7 +324,7 @@ export default function TrackingClient() {
         {
            id: 'production', header: 'Order Produksi', accessorKey: 'productionOrder', size: columnWidths.production,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }: any) => <RenderColumnContent label="Order Produksi" data={row.original.productionOrder} extraLabel="(VIA SO.FAKTUR = PRD.FAKTUR_SO)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+            cell: ({ row }: any) => <RenderColumnContent label="Order Produksi" data={row.original.productionOrder} extraLabel="(VIA SO.FAKTUR = PRD.FAKTUR_SO ATAU BOM.FAKTUR = PRD.FAKTUR_BOM)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
         },
         {
          id: 'pr', header: 'Purchase Request (PR)', accessorKey: 'purchaseRequests', size: columnWidths.pr,
