@@ -26,7 +26,8 @@ loadEnv();
 async function main() {
   const isDev = process.env.NODE_ENV === 'development';
   const isVercel = !!process.env.VERCEL;
-  const isRemote = isVercel && !!process.env.TURSO_DATABASE_URL;
+  // Policy: Use Turso when on Vercel OR when USE_REMOTE_DB is explicitly set to true.
+  const isRemote = (isVercel || process.env.USE_REMOTE_DB === 'true') && !!process.env.TURSO_DATABASE_URL;
   
   let dbUrl = '';
   if (isRemote) {
