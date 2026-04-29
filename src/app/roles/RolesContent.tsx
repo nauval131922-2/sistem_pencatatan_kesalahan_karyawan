@@ -84,11 +84,11 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
     } catch {}
   }, []);
 
-  const toggleCollapse = (group: string) => {
+  const toggleCollapse = (group: string, currentIsCollapsed: boolean) => {
     if (!selectedRole) return;
     setCollapsedGroups(prev => {
       const roleCollapsed = prev[selectedRole] || {};
-      const nextRoleCollapsed = { ...roleCollapsed, [group]: !roleCollapsed[group] };
+      const nextRoleCollapsed = { ...roleCollapsed, [group]: !currentIsCollapsed };
       const next = { ...prev, [selectedRole]: nextRoleCollapsed };
       try {
         localStorage.setItem('sintak_roles_collapsed', JSON.stringify(next));
@@ -484,15 +484,17 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
                     // Standard Group
                     if (group === 'Dashboard' || (!group.includes('Data Digit') && !group.includes('Sistem'))) {
                       const { enabled, total } = getGroupStats(selectedRole, group);
-                      const isCollapsed = currentRoleCollapsed[group] ?? (enabled === 0);
+                      const isDashboard = group === 'Dashboard';
+                      const isCollapsed = isDashboard ? false : (currentRoleCollapsed[group] ?? (enabled === 0));
+                      
                       return (
                         <div key={group} className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
                           <div
-                            className="flex items-center justify-between px-6 py-4 bg-gray-50/50 border-b border-gray-100 select-none cursor-pointer hover:bg-gray-100/50 transition-colors"
-                            onClick={() => toggleCollapse(group)}
+                            className={`flex items-center justify-between px-6 py-4 bg-gray-50/50 border-b border-gray-100 select-none ${isDashboard ? '' : 'cursor-pointer hover:bg-gray-100/50'} transition-colors`}
+                            onClick={() => !isDashboard && toggleCollapse(group, isCollapsed)}
                           >
                             <div className="flex items-center gap-3">
-                              <ChevronRight size={16} className={`text-gray-400 transition-transform duration-300 ${isCollapsed ? '' : 'rotate-90'}`} />
+                              {!isDashboard && <ChevronRight size={16} className={`text-gray-400 transition-transform duration-300 ${isCollapsed ? '' : 'rotate-90'}`} />}
                               <span className="text-[13px] font-bold text-gray-800">{group}</span>
                               <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">{enabled}/{total} Aktif</span>
                             </div>
@@ -514,6 +516,7 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
                     // Complex Tree Groups (Data Digit / Sistem)
                     const isDD = group === 'Data Digit';
                     const treeData = isDD ? [
+                      { type: 'leaf', key: 'sync', label: 'Sinkronisasi All Data' },
                       { type: 'node', label: 'Pembelian', colorKey: 'Data Digit - Pembelian', children: [
                         { type: 'node', label: 'Purchase Request (PR)', children: [
                           { type: 'leaf', key: 'pembelian_pr', label: 'Purchase Request (PR)' }
@@ -589,11 +592,11 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
                           { type: 'node', label: 'Data', children: [
                             { type: 'leaf', key: 'produksi_jhp_sopd', label: 'SOPd' },
                             { type: 'leaf', key: 'produksi_jhp_master_pekerjaan', label: 'Master Pekerjaan' },
-                            { type: 'leaf', key: 'produksi_jhp_master_target', label: 'Master Target Pekerjaan' }
                           ]},
                           { type: 'leaf', key: 'produksi_jhp', label: 'Jurnal Harian Produksi' },
                           { type: 'leaf', key: 'produksi_jhp_target', label: 'Target Harian' }
-                        ]}
+                        ]},
+                        { type: 'leaf', key: 'produksi_hasil', label: 'Hasil Produksi' }
                       ]},
                       { type: 'node', label: 'Penjualan', colorKey: 'Sistem - Penjualan', children: [
                         { type: 'leaf', key: 'kalkulasi_rekap_so', label: 'Rekap Sales Order Barang' }
@@ -649,7 +652,7 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
                             <div
                               className={`flex items-center justify-between pr-6 ${isTop ? 'py-3.5 bg-gray-50/20' : 'py-2 bg-gray-50/10'} select-none cursor-pointer hover:bg-gray-100/30 transition-colors`}
                               style={{ paddingLeft: `${24 + depth * 16}px` }}
-                              onClick={() => toggleCollapse(collapseKey)}
+                              onClick={() => toggleCollapse(collapseKey, isNodeCollapsed)}
                             >
                               <div className="flex items-center gap-3">
                                 <ChevronRight size={14} className={`text-gray-400 transition-transform duration-300 ${isNodeCollapsed ? '' : 'rotate-90'}`} />
@@ -677,11 +680,11 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
                       <div key={group} className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden">
                         <div
                           className="flex items-center justify-between px-6 py-4 bg-gray-50/50 border-b border-gray-100 select-none cursor-pointer hover:bg-gray-100/50 transition-colors"
-                          onClick={() => toggleCollapse(group)}
+                          onClick={() => toggleCollapse(group, isParentCollapsed)}
                         >
                            <div className="flex items-center gap-3">
                              <ChevronRight size={16} className={`text-gray-400 transition-transform duration-300 ${isParentCollapsed ? '' : 'rotate-90'}`} />
-                             <span className="text-[13px] font-bold text-gray-800">{isDD ? 'Grup Data Digit' : 'Grup Sistem'}</span>
+                             <span className="text-[13px] font-bold text-gray-800">{isDD ? 'Data Digit' : 'Sistem'}</span>
                              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-0.5 rounded-full">{allEnabled}/{allKeys.length} Aktif</span>
                            </div>
                            <div className="flex items-center gap-1.5 shrink-0">
