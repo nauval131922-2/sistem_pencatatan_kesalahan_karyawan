@@ -1,30 +1,31 @@
-# AI Session Summary - 2026-04-29
+# AI Session Summary - 2026-04-29 (Sesi Sore)
 
 ## 📅 Detail Sesi
 - **Tanggal**: 2026-04-29
-- **Waktu**: 08:30 - 10:00 WIB
-- **PC**: Lokal
+- **Waktu**: 14:00 - 15:15 WIB
+- **PC**: Lokal (Kantor)
 
 ## 🚀 Fitur & Perbaikan
-1. **Optimasi Jurnal Produksi**: Implementasi pengurutan kronologis ASC dan pengelompokan berdasarkan Nama Pekerjaan (Job-based grouping). Menambahkan label rentang tanggal otomatis pada subtotal.
-2. **Perbaikan UX Hak Akses**: Memperbaiki bug klik ganda pada folder modul, membersihkan label grup, dan menjadikan Dashboard sebagai menu utama non-collapsible.
-3. **Standarisasi UI Tabel**: Mengatur lebar kolom "Jenis Pekerjaan" menjadi 280px (Auto-fit simulation), mengubah pagination menjadi 20 data per halaman, dan menerapkan kebijakan *Sentence Case* pada semua pesan status/loading.
-4. **Smart Date Display**: Logika penyembunyian tanggal pada tabel yang lebih cerdas (hanya muncul jika tanggal berbeda dengan baris sebelumnya).
-5. **UI Sinkronisasi**: Menghapus gaya miring (*italic*) pada tampilan rentang tanggal di kartu modul sinkronisasi agar lebih bersih.
-6. **Robust Tracking Manufaktur**: Implementasi pencarian *Fuzzy Match* (operator `LIKE`) dan pembersihan HTML otomatis pada jalur pelacakan SPPH untuk menangani data referensi yang tidak bersih dari sistem scraper.
+1. **Optimasi Tracking Manufaktur Dua Jalur**: Implementasi filter ganda (Pilih BOM & Pilih Nama Barang) dengan lebar 50/50. Menghapus tombol reset manual untuk UI yang lebih minimalis.
+2. **Backward Tracing Engine**: Mengembangkan logika pelacakan mundur di API jika pencarian dimulai dari Rekap Pembelian (Faktur PB). Alur: `Rekap -> PO -> SPH In -> SPPH -> PR -> Order Produksi -> BOM`.
+3. **Deep Linking Bahan Baku (BBB)**: Menambahkan kemampuan pencarian pemakaian material spesifik dengan membedah JSON `raw_data` (field `hp_detil`) di tabel `bahan_baku` menggunakan filter Faktur PB.
+4. **Dynamic Column & Labeling**: 
+   - Menyembunyikan kolom produksi secara otomatis jika sumber pelacakan adalah Rekap Barang.
+   - Implementasi label dinamis pada kolom PO dan BBB Produksi yang berubah teksnya sesuai jalur pelacakan (BOM vs Rekap).
+5. **Aesthetics & Readability**: Menerapkan kebijakan *Sentence Case* (menghapus kapital semua) pada seluruh label keterangan logika di tabel tracking.
+6. **Bug Fix TypeScript**: Memperbaiki error kompilasi "implicit any" pada variabel `conditions` dan `args` di API route tracking.
 
 ## ⚙️ Keputusan Teknis Penting
-- **Job Grouping Logic**: Memutuskan untuk melakukan *in-memory grouping* di backend agar data dengan tanggal berbeda tetap bisa berkumpul jika merupakan bagian dari pekerjaan yang sama.
-- **Fixed vs Auto Width**: Mempertahankan `table-layout: fixed` untuk kestabilan *sticky header*, namun dengan memperlebar kolom secara manual guna mencapai efek *auto-fit content*.
-- **No All-Caps Policy**: Menghapus kelas `uppercase` pada semua elemen teks status untuk meningkatkan estetika modern dan keterbacaan.
+- **Mutual Exclusion Filters**: Memutuskan untuk mengosongkan state filter lawan saat salah satu filter dipilih untuk mencegah kebingungan data di satu tampilan tabel.
+- **JSON String Matching**: Menggunakan `LIKE %targetFaktur%` pada kolom `raw_data` untuk menghubungkan Rekap PB ke pemakaian bahan baku tanpa merombak skema database yang sudah ada.
+- **User-Centric Dynamic Labeling**: Memberikan informasi relasi database yang berbeda (`via SPH In` vs `via Rekap`) agar user memahami asal-usul data berdasarkan cara mereka mencari.
 
 ## 📌 Status Task & Hal yang Perlu Dilanjutkan
-- ✅ 3 Task utama selesai hari ini.
-- 🔄 Lanjutkan integrasi Audit Log yang lebih detail untuk setiap aksi User.
-- 📌 Pantau feedback pengguna mengenai lebar kolom 280px pada layar dengan resolusi rendah.
+- ✅ Fitur pelacakan dua jalur selesai dan stabil.
+- 🔄 Lakukan verifikasi data untuk Faktur PB yang sangat lama (historical data) guna memastikan konsistensi JSON `hp_detil`.
+- 📌 Evaluasi performa pencarian `LIKE` pada `raw_data` jika volume data `bahan_baku` meningkat drastis di masa depan.
 
-## 📂 Dokumentasi Baru
-- Update `docs/tutorials/02-perbaikan-modul-hak-akses.md`
-- Update `docs/tutorials/04-modernisasi-dashboard-hasil-produksi.md`
+## 📂 Dokumentasi Baru/Diperbarui
+- New `docs/tutorials/07-optimasi-pencarian-tracking-dua-jalur.md`
 - Update `docs/BUILD_FROM_SCRATCH.md`
 - Update `docs/task.md`

@@ -43,6 +43,7 @@
 - [x] Optimasi User Experience Hak Akses (Fix Click Bug, Group Cleanup, & Dashboard Focus) — 2026-04-29
 - [x] Implementasi Job-Based Grouping & Kronologis ASC pada Jurnal Produksi — 2026-04-29
 - [x] Standarisasi UI Tabel (Auto-fit Column, Pagination 20, & Sentence Case Policy) — 2026-04-29
+- [x] Implementasi Tracking Manufaktur Dua Jalur & Backward Tracing Engine — 2026-04-29
 
 ---
 
@@ -62,12 +63,12 @@
 ## 📊 Statistik
 
 ```
-Total task    : 31
-Selesai       : 27
+Total task    : 32
+Selesai       : 28
 In progress   : 2
 Backlog       : 2
 Bug diketahui : 0
-Progress      : 87%
+Progress      : 88%
 ```
 
 ---
