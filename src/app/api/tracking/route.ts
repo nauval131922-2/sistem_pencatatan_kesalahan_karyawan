@@ -14,12 +14,82 @@ export async function GET(request: NextRequest) {
     }
 
     // --- LEVEL 1: BOM (The root of the tracking) ---
-    const bomRes = await db.execute({
+    // We try to find the root BOM. If targetFaktur is not a BOM, we try to trace it back from rekap_pembelian_barang.
+    let bomRes = await db.execute({
       sql: `SELECT * FROM bill_of_materials WHERE faktur = ? OR faktur_prd = ? OR raw_data LIKE ? LIMIT 1`,
       args: [targetFaktur, targetFaktur, `%${targetFaktur}%`]
     });
 
     let bom = bomRes.rows[0] as any || null;
+
+    let purchaseOrders: any[] = [];
+    let pembelianBarang: any[] = [];
+    let purchaseRequests: any[] = [];
+
+    // If not found in BOM, check if it's a Rekap Pembelian record and trace back
+    if (!bom) {
+      const rekapRes = await db.execute({
+        sql: `SELECT * FROM rekap_pembelian_barang WHERE faktur = ? LIMIT 1`,
+        args: [targetFaktur]
+      });
+      const rekap = rekapRes.rows[0] as any;
+
+      if (rekap) {
+        pembelianBarang = [rekap];
+        
+        if (rekap.faktur_po) {
+          // Trace: Rekap -> PO
+          const poRes = await db.execute({
+            sql: `SELECT * FROM purchase_orders WHERE faktur = ? LIMIT 1`,
+            args: [rekap.faktur_po]
+          });
+          const po = poRes.rows[0] as any;
+
+          if (po) {
+            purchaseOrders = [po];
+
+            if (po.faktur_sph) {
+              // Trace: PO -> SPH In -> SPPH -> PR -> PRD -> BOM
+              const sphInRes = await db.execute({
+                sql: `SELECT * FROM sph_in WHERE faktur = ? LIMIT 1`,
+                args: [po.faktur_sph]
+              });
+              const sphIn = sphInRes.rows[0] as any;
+
+              if (sphIn?.faktur_spph) {
+                const spphRes = await db.execute({
+                  sql: `SELECT * FROM spph_out WHERE faktur = ? LIMIT 1`,
+                  args: [sphIn.faktur_spph]
+                });
+                const spph = spphRes.rows[0] as any;
+                const prFaktur = spph?.faktur_pr;
+
+                if (prFaktur) {
+                  const prRes = await db.execute({
+                    sql: `SELECT * FROM purchase_requests WHERE faktur = ? LIMIT 1`,
+                    args: [prFaktur]
+                  });
+                  const pr = prRes.rows[0] as any;
+                  if (pr) {
+                    purchaseRequests = [pr];
+                    const prdFaktur = pr.faktur_prd;
+
+                    if (prdFaktur) {
+                      // Now we have PRD Faktur, find the BOM
+                      const bomFromPrd = await db.execute({
+                        sql: `SELECT * FROM bill_of_materials WHERE faktur_prd = ? LIMIT 1`,
+                        args: [prdFaktur]
+                      });
+                      bom = bomFromPrd.rows[0] as any || null;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
 
     // --- LEVEL 2: SPH Keluar & Sales Order Barang (Dependent on BOM) ---
     // These can be run in parallel
@@ -93,7 +163,6 @@ export async function GET(request: NextRequest) {
     const prdFaktur = productionOrder?.faktur;
     const lpFakturs = laporanPenjualanList.map(lp => lp.faktur).filter(Boolean);
 
-    let purchaseRequests: any[] = [];
     let bahanBaku: any[] = [];
     let barangJadi: any[] = [];
     let pengiriman: any[] = [];
@@ -105,9 +174,12 @@ export async function GET(request: NextRequest) {
         args: [prdFaktur, `%${prdFaktur}%`]
       }) : Promise.resolve({ rows: [] }),
       prdFaktur ? db.execute({
-        sql: `SELECT * FROM bahan_baku WHERE faktur_prd = ?`,
-        args: [prdFaktur]
-      }) : Promise.resolve({ rows: [] }),
+        sql: `SELECT * FROM bahan_baku WHERE faktur_prd = ? OR raw_data LIKE ?`,
+        args: [prdFaktur, `%${targetFaktur}%`]
+      }) : (targetFaktur.startsWith('PB') || targetFaktur.startsWith('RQ') ? db.execute({
+        sql: `SELECT * FROM bahan_baku WHERE raw_data LIKE ?`,
+        args: [`%${targetFaktur}%`]
+      }) : Promise.resolve({ rows: [] })),
       prdFaktur ? db.execute({
         sql: `SELECT * FROM barang_jadi WHERE faktur_prd = ?`,
         args: [prdFaktur]
@@ -122,7 +194,7 @@ export async function GET(request: NextRequest) {
       }) : Promise.resolve({ rows: [] })
     ]);
 
-    purchaseRequests = prRes.rows;
+    purchaseRequests = [...purchaseRequests, ...prRes.rows];
     bahanBaku = bbRes.rows;
     barangJadi = bjRes.rows;
     pengiriman = pgRes.rows;
@@ -139,8 +211,8 @@ export async function GET(request: NextRequest) {
     }).filter(Boolean);
 
     if (prFakturs.length > 0 || prSpphFakturs.length > 0) {
-      const conditions = [];
-      const args = [];
+      const conditions: string[] = [];
+      const args: any[] = [];
 
       // Path A: Search in SPPH where faktur_pr contains the PR ID
       if (prFakturs.length > 0) {
@@ -177,19 +249,17 @@ export async function GET(request: NextRequest) {
     }
 
     // --- LEVEL 7: Purchase Orders (Dependent on SPH In) ---
-    let purchaseOrders: any[] = [];
     const sphFakturs = sphInList.map((sph: any) => sph.faktur).filter(Boolean);
     if (sphFakturs.length > 0) {
       const poRes = await db.execute({
         sql: `SELECT * FROM purchase_orders WHERE faktur_sph IN (${sphFakturs.map(() => '?').join(',')})`,
         args: sphFakturs
       });
-      purchaseOrders = poRes.rows;
+      purchaseOrders = [...purchaseOrders, ...poRes.rows];
     }
 
     // --- LEVEL 8: Penerimaan & Rekap Pembelian (Dependent on POs) ---
     let penerimaanPembelian: any[] = [];
-    let pembelianBarang: any[] = [];
     const poFakturs = purchaseOrders.map((po: any) => po.faktur).filter(Boolean);
     if (poFakturs.length > 0) {
       const poPlaceholders = poFakturs.map(() => '?').join(',');
@@ -204,7 +274,12 @@ export async function GET(request: NextRequest) {
         })
       ]);
       penerimaanPembelian = pbRes1.rows;
-      pembelianBarang = pbRes2.rows;
+      
+      // Append only unique records to pembelianBarang
+      const newPbRows = pbRes2.rows.filter((newRow: any) => 
+        !pembelianBarang.some(existing => existing.faktur === newRow.faktur)
+      );
+      pembelianBarang = [...pembelianBarang, ...newPbRows];
     }
 
     // --- LEVEL 9: Pelunasan Hutang (Dependent on Pembelian Barang) ---

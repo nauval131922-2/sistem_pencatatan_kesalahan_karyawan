@@ -534,6 +534,17 @@ autoTable(doc, {
 doc.save('laporan.pdf');
 ```
 
+### Fitur 7: Tracking Manufaktur Dua Jalur (BOM & Rekap)
+**Deskripsi:** Sistem pelacakan canggih yang mendukung pencarian *top-down* (dari BOM) dan *bottom-up* (dari Rekap Pembelian/Barang).
+
+**Poin Kunci Implementasi:**
+1. **Backward Tracing (API)**: Jika pencarian dimulai dari Faktur PB (Rekap), sistem merunut balik hierarki dokumen: `Rekap -> PO -> SPH In -> SPPH -> PR -> Order Produksi -> BOM`.
+2. **Deep Search JSON (`raw_data`)**: Untuk menghubungkan pembelian ke pemakaian bahan baku, sistem melakukan *string search* di dalam kolom JSON `raw_data` (field `hp_detil`) untuk menemukan nomor Faktur PB yang spesifik.
+3. **Dynamic UI Rendering**:
+   - **Column Filtering**: Menyembunyikan kolom produksi jika sumber pelacakan adalah Rekap Barang untuk menjaga fokus data.
+   - **Smart Labeling**: Menggunakan logika `isBomTrack ? "label_a" : "label_b"` untuk menampilkan deskripsi relasi database yang akurat sesuai jalur pencarian.
+   - **Mutual Exclusion Filters**: Memastikan hanya satu jalur pelacakan yang aktif di UI dalam satu waktu.
+
 ---
 
 ## 📌 Bagian 8: Integrasi & Konfigurasi Tambahan

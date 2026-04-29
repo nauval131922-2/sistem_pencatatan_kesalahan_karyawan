@@ -250,6 +250,15 @@ export default function TrackingClient() {
    const [hasMoreSuggestions, setHasMoreSuggestions] = useState(true);
    const [loadTime, setLoadTime] = useState<number | null>(null);
 
+   // State for Rekap Pembelian filter
+   const [qRekap, setQRekap] = useState('');
+   const [rekapSuggestions, setRekapSuggestions] = useState<any[]>([]);
+   const [loadingRekapSuggestions, setLoadingRekapSuggestions] = useState(false);
+   const [rekapPage, setRekapPage] = useState(1);
+   const [hasMoreRekapSuggestions, setHasMoreRekapSuggestions] = useState(true);
+   const [openRekap, setOpenRekap] = useState(false);
+   const rekapSuggestionRef = useRef<HTMLDivElement>(null);
+
    const [filterText, setFilterText] = useState('');
    const [debouncedFilterText, setDebouncedFilterText] = useState(''); // We use this for the actual table filtering
 
@@ -305,88 +314,135 @@ export default function TrackingClient() {
    }, []);
 
    // Table Columns Definition
-   const columns = useMemo<ColumnDef<any>[]>(() => [
-       {
-          id: 'bom', header: 'Bill of Material Produksi', accessorKey: 'bom', size: columnWidths.bom,
+    // Table Columns Definition
+    const columns = useMemo<ColumnDef<any>[]>(() => {
+       const allCols = [
+        {
+           id: 'bom', header: 'Bill of Material Produksi', accessorKey: 'bom', size: columnWidths.bom,
+           meta: { wrap: true, valign: 'top' },
+           cell: ({ row }: any) => <RenderColumnContent label="Bill of Material Produksi" data={row.original.bom} debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+         },
+         {
+            id: 'sph', header: 'SPH Keluar', accessorKey: 'sphOut', size: columnWidths.sph,
+            meta: { wrap: true, valign: 'top' },
+            cell: ({ row }: any) => <RenderColumnContent label="SPH Keluar" data={row.original.sphOut} extraLabel="(via BOM.faktur = SPH Keluar.faktur_bom)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+         },
+         {
+            id: 'so', header: 'Sales Order Barang', accessorKey: 'salesOrder', size: columnWidths.so,
+            meta: { wrap: true, valign: 'top' },
+            cell: ({ row }: any) => <RenderColumnContent label="Sales Order Barang" data={row.original.salesOrder} extraLabel="(via SPH Keluar.faktur = SO.faktur_sph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+         },
+         {
+            id: 'production', header: 'Order Produksi', accessorKey: 'productionOrder', size: columnWidths.production,
+            meta: { wrap: true, valign: 'top' },
+             cell: ({ row }: any) => <RenderColumnContent label="Order Produksi" data={row.original.productionOrder} extraLabel="(via SO.faktur = PRD.faktur_so atau BOM.faktur = PRD.faktur_bom)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+         },
+         {
+          id: 'pr', header: 'Purchase Request (PR)', accessorKey: 'purchaseRequests', size: columnWidths.pr,
           meta: { wrap: true, valign: 'top' },
-          cell: ({ row }: any) => <RenderColumnContent label="Bill of Material Produksi" data={row.original.bom} debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
-        },
+          cell: ({ row }: any) => <RenderColumnContent label="Purchase Request (PR)" items={row.original.purchaseRequests} extraLabel="(via PRD.faktur = PR.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+         },
+         {
+             id: 'spph', header: 'SPPH Keluar', accessorKey: 'spphOut', size: columnWidths.spph,
+            meta: { wrap: true, valign: 'top' },
+             cell: ({ row }: any) => <RenderColumnContent label="SPPH Keluar" items={row.original.spphOut} extraLabel="(via PR.faktur = SPPH.faktur_pr)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+         },
+         {
+            id: 'sph_in', header: 'SPH Masuk', accessorKey: 'sphIn', size: columnWidths.sph_in,
+            meta: { wrap: true, valign: 'top' },
+            cell: ({ row }: any) => <RenderColumnContent label="SPH Masuk" items={row.original.sphIn} extraLabel="(via SPPH.faktur = SPH In.faktur_spph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+         },
+         {
+            id: 'purchase_orders', header: 'Purchase Order (PO)', accessorKey: 'purchaseOrders', size: columnWidths.purchase_orders,
+            meta: { wrap: true, valign: 'top' },
+            cell: ({ row }: any) => {
+               const isBomTrack = !!trackingData?.bom;
+               const label = isBomTrack 
+                  ? "(via SPH In.faktur = PO.faktur_sph)" 
+                  : "(via Rekap.faktur_po = PO.faktur)";
+               return <RenderColumnContent 
+                  label="Purchase Order (PO)" 
+                  items={row.original.purchaseOrders} 
+                  extraLabel={label} 
+                  debouncedFilterText={debouncedFilterText} 
+                  matchesFilter={matchesFilter} 
+               />;
+            }
+         },
         {
-           id: 'sph', header: 'SPH Keluar', accessorKey: 'sphOut', size: columnWidths.sph,
+           id: 'penerimaan_pembelian', header: 'Penerimaan Barang', accessorKey: 'penerimaanPembelian', size: columnWidths.penerimaan_pembelian,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }: any) => <RenderColumnContent label="SPH Keluar" data={row.original.sphOut} extraLabel="(VIA BOM.FAKTUR = SPH KELUAR.FAKTUR_BOM)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
-        },
-        {
-           id: 'so', header: 'Sales Order Barang', accessorKey: 'salesOrder', size: columnWidths.so,
-           meta: { wrap: true, valign: 'top' },
-           cell: ({ row }: any) => <RenderColumnContent label="Sales Order Barang" data={row.original.salesOrder} extraLabel="(VIA SPH KELUAR.FAKTUR = SO.FAKTUR_SPH)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
-        },
-        {
-           id: 'production', header: 'Order Produksi', accessorKey: 'productionOrder', size: columnWidths.production,
-           meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => <RenderColumnContent label="Order Produksi" data={row.original.productionOrder} extraLabel="(VIA SO.FAKTUR = PRD.FAKTUR_SO ATAU BOM.FAKTUR = PRD.FAKTUR_BOM)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
-        },
-        {
-         id: 'pr', header: 'Purchase Request (PR)', accessorKey: 'purchaseRequests', size: columnWidths.pr,
-         meta: { wrap: true, valign: 'top' },
-         cell: ({ row }: any) => <RenderColumnContent label="Purchase Request (PR)" items={row.original.purchaseRequests} extraLabel="(VIA PRD.FAKTUR = PR.FAKTUR_PRD)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
-        },
-        {
-            id: 'spph', header: 'SPPH Keluar', accessorKey: 'spphOut', size: columnWidths.spph,
-           meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => <RenderColumnContent label="SPPH Keluar" items={row.original.spphOut} extraLabel="(VIA PR.FAKTUR = SPPH.FAKTUR_PR)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
-        },
-        {
-           id: 'sph_in', header: 'SPH Masuk', accessorKey: 'sphIn', size: columnWidths.sph_in,
-           meta: { wrap: true, valign: 'top' },
-           cell: ({ row }: any) => <RenderColumnContent label="SPH Masuk" items={row.original.sphIn} extraLabel="(VIA SPPH.FAKTUR = SPH IN.FAKTUR_SPPH)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
-        },
-        {
-           id: 'purchase_orders', header: 'Purchase Order (PO)', accessorKey: 'purchaseOrders', size: columnWidths.purchase_orders,
-           meta: { wrap: true, valign: 'top' },
-           cell: ({ row }: any) => <RenderColumnContent label="Purchase Order (PO)" items={row.original.purchaseOrders} extraLabel="(VIA SPH IN.FAKTUR = PO.FAKTUR_SPH)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
-        },
-       {
-          id: 'penerimaan_pembelian', header: 'Penerimaan Barang', accessorKey: 'penerimaanPembelian', size: columnWidths.penerimaan_pembelian,
-          meta: { wrap: true, valign: 'top' },
-          cell: ({ row }: any) => <RenderColumnContent label="Penerimaan Barang" items={row.original.penerimaanPembelian} extraLabel="(VIA PO.FAKTUR = PB.FAKTUR_PO)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
-        },
-        {
-           id: 'pembelian_barang', header: 'Rekap Pembelian Barang', accessorKey: 'pembelianBarang', size: columnWidths.pembelian_barang,
-           meta: { wrap: true, valign: 'top' },
-           cell: ({ row }: any) => <RenderColumnContent label="Rekap Pembelian Barang" items={row.original.pembelianBarang} extraLabel="(VIA PB.FAKTUR = BELI.FAKTUR_PB)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
-        },
-        {
-           id: 'pelunasan_hutang', header: 'Pelunasan Hutang', accessorKey: 'pelunasanHutang', size: columnWidths.pelunasan_hutang,
-           meta: { wrap: true, valign: 'top' },
-           cell: ({ row }: any) => <RenderColumnContent label="Pelunasan Hutang" items={row.original.pelunasanHutang} extraLabel="(VIA BELI.FAKTUR = HUTANG.FAKTUR_PB)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
-        },
-        {
-           id: 'bahan_baku', header: 'BBB Produksi', accessorKey: 'bahanBaku', size: columnWidths.bahan_baku,
-           meta: { wrap: true, valign: 'top' },
-           cell: ({ row }: any) => <RenderColumnContent label="BBB Produksi" items={row.original.bahanBaku} extraLabel="(VIA PRD.FAKTUR = BBB.FAKTUR_PRD)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
-        },
-        {
-           id: 'barang_jadi', header: 'Barang Hasil Produksi', accessorKey: 'barangJadi', size: columnWidths.barang_jadi,
-           meta: { wrap: true, valign: 'top' },
-           cell: ({ row }: any) => <RenderColumnContent label="Barang Hasil Produksi" items={row.original.barangJadi} extraLabel="(VIA PRD.FAKTUR = JADI.FAKTUR_PRD)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
-        },
-        {
-           id: 'laporan_penjualan', header: 'Laporan Penjualan', accessorKey: 'laporanPenjualan', size: columnWidths.laporan_penjualan,
-           meta: { wrap: true, valign: 'top' },
-           cell: ({ row }: any) => <RenderColumnContent label="Laporan Penjualan" items={row.original.laporanPenjualan} extraLabel="(VIA SO.FAKTUR = JUAL.FAKTUR_SO)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
-        },
-        {
-           id: 'pengiriman', header: 'Pengiriman', accessorKey: 'pengiriman', size: columnWidths.pengiriman,
-           meta: { wrap: true, valign: 'top' },
-           cell: ({ row }: any) => <RenderColumnContent label="Pengiriman" items={row.original.pengiriman} extraLabel="(VIA JUAL.FAKTUR = KIRIM.FAKTUR)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
-        },
-        {
-           id: 'pelunasan_piutang', header: 'Pelunasan Piutang', accessorKey: 'pelunasanPiutang', size: columnWidths.pelunasan_piutang,
-           meta: { wrap: true, valign: 'top' },
-           cell: ({ row }: any) => <RenderColumnContent label="Pelunasan Piutang" items={row.original.pelunasanPiutang} extraLabel="(VIA JUAL.FAKTUR = PIUTANG.FKT)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
-        }
-    ], [columnWidths, debouncedFilterText, matchesFilter]);
+           cell: ({ row }: any) => <RenderColumnContent label="Penerimaan Barang" items={row.original.penerimaanPembelian} extraLabel="(via PO.faktur = PB.faktur_po)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+         },
+         {
+            id: 'pembelian_barang', header: 'Rekap Pembelian Barang', accessorKey: 'pembelianBarang', size: columnWidths.pembelian_barang,
+            meta: { wrap: true, valign: 'top' },
+            cell: ({ row }: any) => {
+               const isBomTrack = !!trackingData?.bom;
+               const label = isBomTrack 
+                  ? "(via PB.faktur = Beli.faktur_pb)" 
+                  : "(titik awal pelacakan)";
+               return <RenderColumnContent 
+                  label="Rekap Pembelian Barang" 
+                  items={row.original.pembelianBarang} 
+                  extraLabel={label} 
+                  debouncedFilterText={debouncedFilterText} 
+                  matchesFilter={matchesFilter} 
+               />;
+            }
+         },
+         {
+            id: 'pelunasan_hutang', header: 'Pelunasan Hutang', accessorKey: 'pelunasanHutang', size: columnWidths.pelunasan_hutang,
+            meta: { wrap: true, valign: 'top' },
+            cell: ({ row }: any) => <RenderColumnContent label="Pelunasan Hutang" items={row.original.pelunasanHutang} extraLabel="(via Beli.faktur = Hutang.faktur_pb)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+         },
+         {
+            id: 'bahan_baku', header: 'BBB Produksi', accessorKey: 'bahanBaku', size: columnWidths.bahan_baku,
+            meta: { wrap: true, valign: 'top' },
+            cell: ({ row }: any) => {
+               const isBomTrack = !!trackingData?.bom;
+               const label = isBomTrack 
+                  ? "(via PRD.faktur = BBB.faktur_prd)" 
+                  : "(via Rekap.faktur_pb di hp_detil)";
+               return <RenderColumnContent 
+                  label="BBB Produksi" 
+                  items={row.original.bahanBaku} 
+                  extraLabel={label} 
+                  debouncedFilterText={debouncedFilterText} 
+                  matchesFilter={matchesFilter} 
+               />;
+            }
+         },
+         {
+            id: 'barang_jadi', header: 'Barang Hasil Produksi', accessorKey: 'barangJadi', size: columnWidths.barang_jadi,
+            meta: { wrap: true, valign: 'top' },
+            cell: ({ row }: any) => <RenderColumnContent label="Barang Hasil Produksi" items={row.original.barangJadi} extraLabel="(via PRD.faktur = Jadi.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+         },
+         {
+            id: 'laporan_penjualan', header: 'Laporan Penjualan', accessorKey: 'laporanPenjualan', size: columnWidths.laporan_penjualan,
+            meta: { wrap: true, valign: 'top' },
+            cell: ({ row }: any) => <RenderColumnContent label="Laporan Penjualan" items={row.original.laporanPenjualan} extraLabel="(via SO.faktur = Jual.faktur_so)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+         },
+         {
+            id: 'pengiriman', header: 'Pengiriman', accessorKey: 'pengiriman', size: columnWidths.pengiriman,
+            meta: { wrap: true, valign: 'top' },
+            cell: ({ row }: any) => <RenderColumnContent label="Pengiriman" items={row.original.pengiriman} extraLabel="(via Jual.faktur = Kirim.faktur)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+         },
+         {
+            id: 'pelunasan_piutang', header: 'Pelunasan Piutang', accessorKey: 'pelunasanPiutang', size: columnWidths.pelunasan_piutang,
+            meta: { wrap: true, valign: 'top' },
+            cell: ({ row }: any) => <RenderColumnContent label="Pelunasan Piutang" items={row.original.pelunasanPiutang} extraLabel="(via Jual.faktur = Piutang.fkt)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+         }
+       ];
+
+       // If not BOM tracking (meaning we started from Rekap Pembelian), hide specific columns
+       if (trackingData && !trackingData.bom) {
+          const hideIds = ['bom', 'sph', 'so', 'production', 'pr', 'spph', 'sph_in', 'penerimaan_pembelian', 'pelunasan_hutang', 'laporan_penjualan', 'pengiriman', 'pelunasan_piutang'];
+          return allCols.filter(col => !hideIds.includes(col.id as string));
+       }
+
+       return allCols;
+    }, [columnWidths, debouncedFilterText, matchesFilter, trackingData]);
 
    // Search logic for dropdown
    useEffect(() => {
@@ -416,11 +472,42 @@ export default function TrackingClient() {
       return () => { active = false; };
    }, [q, open]);
 
+   // Search logic for Rekap dropdown
+   useEffect(() => {
+      let active = true;
+      const fetchRekapNames = async (query: string, pageNum: number) => {
+         if (pageNum === 1) setLoadingRekapSuggestions(true);
+         try {
+            const res = await fetch(`/api/tracking/rekap-names?q=${encodeURIComponent(query)}&page=${pageNum}&pageSize=20`);
+            const json = await res.json();
+            if (json.success && active) {
+               if (pageNum === 1) { setRekapSuggestions(json.data); }
+               else { setRekapSuggestions(prev => [...prev, ...json.data]); }
+               setHasMoreRekapSuggestions(json.data.length === 20);
+            }
+         } catch (e) { } finally {
+            if (active && pageNum === 1) setLoadingRekapSuggestions(false);
+         }
+      };
+
+      if (openRekap) {
+         if (qRekap.trim().length === 0) { fetchRekapNames('', 1); }
+         else if (qRekap.trim().length >= 2) {
+            const handler = setTimeout(() => fetchRekapNames(qRekap, 1), 300);
+            return () => { active = false; clearTimeout(handler); };
+         }
+      }
+      return () => { active = false; };
+   }, [qRekap, openRekap]);
+
    // Click outside listener
    useEffect(() => {
       function handleClickOutside(event: MouseEvent) {
          if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
             setOpen(false);
+         }
+         if (rekapSuggestionRef.current && !rekapSuggestionRef.current.contains(event.target as Node)) {
+            setOpenRekap(false);
          }
       }
       document.addEventListener("mousedown", handleClickOutside);
@@ -492,11 +579,12 @@ export default function TrackingClient() {
 
    return (
       <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in duration-700 overflow-hidden">
-         {/* BOM SELECTOR SECTION */}
-         <div className="bg-white border border-gray-100 py-3.5 px-6 shadow-sm shadow-green-900/5 rounded-2xl flex flex-col shrink-0 relative z-50">
-            <div className="flex flex-wrap items-center justify-between relative z-10">
-               <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2 pl-1">
+         {/* SELECTORS SECTION */}
+         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 shrink-0 relative z-50">
+            {/* BOM Selector Card */}
+            <div className="bg-white border border-gray-100 py-4 px-6 shadow-sm shadow-green-900/5 rounded-2xl flex flex-col relative transition-all duration-300">
+               <div className="flex flex-col relative z-10">
+                  <div className="flex items-center justify-between mb-2 pl-1">
                      <span className="text-[13px] font-semibold text-gray-500">Pilih BOM (Bill of Material)</span>
                   </div>
                   <div className="relative" ref={suggestionRef}>
@@ -505,8 +593,8 @@ export default function TrackingClient() {
                         onClick={() => { setOpen(!open); setQ(''); }}
                      >
                         <div className="flex items-center gap-4 truncate">
-                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${loadingData ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'}`}>
-                              {loadingData ? (
+                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${loadingData && trackingData?.bom ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'}`}>
+                              {loadingData && trackingData?.bom ? (
                                  <RefreshCw size={16} className="animate-spin" />
                               ) : (
                                  <Calculator size={16} />
@@ -514,11 +602,9 @@ export default function TrackingClient() {
                            </div>
                            <div className="flex items-center truncate leading-tight">
                               <span className="text-gray-800 truncate font-bold text-[13px]">
-                                 {loadingData 
-                                    ? (selectedFaktur ? `[${selectedFaktur}] Sinkronisasi data...` : 'Menelusuri jalur...')
-                                    : trackingData 
-                                       ? `[${trackingData?.bom?.faktur || trackingData?.productionOrder?.faktur}] ${trackingData?.bom?.nama_prd || trackingData?.productionOrder?.nama_prd}` 
-                                       : 'Pilih nomor BOM atau nama produk...'}
+                                 {trackingData?.bom 
+                                    ? `[${trackingData?.bom?.faktur}] ${trackingData?.bom?.nama_prd}` 
+                                    : 'Pilih nomor BOM atau nama produk...'}
                               </span>
                            </div>
                         </div>
@@ -546,13 +632,92 @@ export default function TrackingClient() {
                                  <button 
                                     key={`${s.faktur}-${idx}`} 
                                     onClick={() => handleSelect(s)} 
-                                    className={`w-full px-5 py-4 text-left rounded-lg transition-all flex items-center justify-between group/item mb-1 last:mb-0 ${trackingData?.id === s.faktur ? 'bg-green-600 text-white shadow-sm shadow-green-200' : 'text-gray-700 hover:bg-green-50 hover:text-green-600'}`}
+                                    className={`w-full px-5 py-4 text-left rounded-lg transition-all flex items-center justify-between group/item mb-1 last:mb-0 ${selectedFaktur === s.faktur && trackingData?.bom ? 'bg-green-600 text-white shadow-sm shadow-green-200' : 'text-gray-700 hover:bg-green-50 hover:text-green-600'}`}
                                  >
                                     <div className="flex flex-col min-w-0">
                                        <span className="text-[12px] font-bold truncate">{s.faktur}</span>
-                                       <span className={`text-[11px] font-bold truncate ${trackingData?.id === s.faktur ? 'text-white/70' : 'text-gray-400'}`}>{s.nama_prd}</span>
+                                       <span className={`text-[11px] font-bold truncate ${selectedFaktur === s.faktur && trackingData?.bom ? 'text-white/70' : 'text-gray-400'}`}>{s.nama_prd}</span>
                                     </div>
-                                    <ArrowRight size={18} className={`shrink-0 opacity-0 group-hover/item:opacity-100 transition-all translate-x-2 ${trackingData?.id === s.faktur ? 'text-white' : 'text-green-600'}`} />
+                                    <ArrowRight size={18} className={`shrink-0 opacity-0 group-hover/item:opacity-100 transition-all translate-x-2 ${selectedFaktur === s.faktur && trackingData?.bom ? 'text-white' : 'text-green-600'}`} />
+                                 </button>
+                              )) : (
+                                 <div className="p-12 text-center flex flex-col items-center gap-3">
+                                    <p className="text-[12px] font-bold text-gray-300">Data Tidak Ditemukan</p>
+                                 </div>
+                              )}
+                           </div>
+                        </div>
+                     )}
+                  </div>
+               </div>
+            </div>
+
+            {/* Nama Barang Selector Card */}
+            <div className="bg-white border border-gray-100 py-4 px-6 shadow-sm shadow-green-900/5 rounded-2xl flex flex-col relative transition-all duration-300">
+               <div className="flex flex-col relative z-10">
+                  <div className="flex items-center justify-between mb-2 pl-1">
+                     <span className="text-[13px] font-semibold text-gray-500">Pilih Nama Barang (Rekap Pembelian)</span>
+                  </div>
+                  <div className="relative" ref={rekapSuggestionRef}>
+                     <div
+                        className={`w-full bg-white border border-gray-100 rounded-xl px-4 h-12 text-sm flex items-center justify-between transition-all text-gray-700 cursor-pointer shadow-sm hover:shadow-sm hover:shadow-green-900/5 hover:border-green-200 ${openRekap ? 'ring-4 ring-green-500/5 border-green-200' : ''}`}
+                        onClick={() => { setOpenRekap(!openRekap); setQRekap(''); }}
+                     >
+                        <div className="flex items-center gap-4 truncate">
+                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${loadingData && !trackingData?.bom ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'}`}>
+                              {loadingData && !trackingData?.bom ? (
+                                 <RefreshCw size={16} className="animate-spin" />
+                              ) : (
+                                 <Search size={16} />
+                              )}
+                           </div>
+                           <div className="flex items-center truncate leading-tight">
+                              <span className="text-gray-800 truncate font-bold text-[13px]">
+                                 {selectedFaktur && !trackingData?.bom 
+                                    ? `[${selectedFaktur}] ${selectedNama}` 
+                                    : 'Cari Faktur PB atau Barang'}
+                              </span>
+                           </div>
+                        </div>
+                        <ChevronDown size={20} className={`text-gray-300 transition-transform duration-300 ${openRekap ? 'rotate-180' : ''}`} />
+                     </div>
+
+                     {openRekap && (
+                        <div className="absolute top-[calc(100%+12px)] left-0 right-0 bg-white border border-gray-100 rounded-xl shadow-md z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                           <div className="p-4 border-b border-gray-50 bg-gray-50/50">
+                              <div className="relative">
+                                 <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                                 <input 
+                                    autoFocus 
+                                    type="text" 
+                                    placeholder="Cari faktur atau kode barang..." 
+                                    className="w-full pl-12 pr-4 h-12 text-[13px] border border-gray-100 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-500/5 focus:border-green-200 bg-white font-bold placeholder:text-gray-300" 
+                                    value={qRekap} 
+                                    onChange={(e) => setQRekap(e.target.value)} 
+                                 />
+                                 {loadingRekapSuggestions && <div className="absolute right-4 top-1/2 -translate-y-1/2"><Loader2 size={18} className="animate-spin text-blue-600" /></div>}
+                              </div>
+                           </div>
+                           <div className="max-h-[350px] overflow-y-auto custom-scrollbar p-2">
+                              {rekapSuggestions.length > 0 ? rekapSuggestions.map((s: any, idx: number) => (
+                                 <button 
+                                    key={`${s.faktur}-${s.kd_barang}-${idx}`} 
+                                    onClick={() => {
+                                       setOpenRekap(false);
+                                       setQRekap('');
+                                       setSelectedFaktur(s.faktur);
+                                       setSelectedNama(s.kd_barang || '');
+                                       localStorage.setItem('tracking_selected_faktur', s.faktur);
+                                       localStorage.setItem('tracking_selected_nama', s.kd_barang || '');
+                                       fetchTrackingData(s.faktur);
+                                    }} 
+                                    className={`w-full px-5 py-4 text-left rounded-lg transition-all flex items-center justify-between group/item mb-1 last:mb-0 ${selectedFaktur === s.faktur && !trackingData?.bom ? 'bg-blue-600 text-white shadow-sm shadow-blue-200' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'}`}
+                                 >
+                                    <div className="flex flex-col min-w-0">
+                                       <span className="text-[12px] font-bold truncate">{s.faktur}</span>
+                                       <span className={`text-[11px] font-bold truncate ${selectedFaktur === s.faktur && !trackingData?.bom ? 'text-white/70' : 'text-gray-400'}`}>{s.kd_barang}</span>
+                                    </div>
+                                    <ArrowRight size={18} className={`shrink-0 opacity-0 group-hover/item:opacity-100 transition-all translate-x-2 ${selectedFaktur === s.faktur && !trackingData?.bom ? 'text-white' : 'text-blue-600'}`} />
                                  </button>
                               )) : (
                                  <div className="p-12 text-center flex flex-col items-center gap-3">
