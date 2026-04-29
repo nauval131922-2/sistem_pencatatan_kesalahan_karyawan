@@ -10,6 +10,7 @@
 2. **Perbaikan UX Hak Akses**: Memperbaiki bug klik ganda pada folder modul, membersihkan label grup, dan menjadikan Dashboard sebagai menu utama non-collapsible.
 3. **Standarisasi UI Tabel**: Mengatur lebar kolom "Jenis Pekerjaan" menjadi 280px (Auto-fit simulation), mengubah pagination menjadi 20 data per halaman, dan menerapkan kebijakan *Sentence Case* pada semua pesan status/loading.
 4. **Smart Date Display**: Logika penyembunyian tanggal pada tabel yang lebih cerdas (hanya muncul jika tanggal berbeda dengan baris sebelumnya).
+5. **UI Sinkronisasi**: Menghapus gaya miring (*italic*) pada tampilan rentang tanggal di kartu modul sinkronisasi agar lebih bersih.
 
 ## ⚙️ Keputusan Teknis Penting
 - **Job Grouping Logic**: Memutuskan untuk melakukan *in-memory grouping* di backend agar data dengan tanggal berbeda tetap bisa berkumpul jika merupakan bagian dari pekerjaan yang sama.
