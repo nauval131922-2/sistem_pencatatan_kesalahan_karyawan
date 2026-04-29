@@ -131,10 +131,30 @@ export async function GET(request: NextRequest) {
     // --- LEVEL 5: SPPH (Dependent on PRs) ---
     let spphOutList: any[] = [];
     const prFakturs = purchaseRequests.map((pr: any) => pr.faktur).filter(Boolean);
-    if (prFakturs.length > 0) {
+    
+    // Extract SPPH fakturs directly from PRs and clean them from HTML tags
+    const prSpphFakturs = purchaseRequests.map((pr: any) => {
+      const raw = pr.faktur_spph || "";
+      return raw.replace(/<[^>]*>?/gm, '').trim();
+    }).filter(Boolean);
+
+    if (prFakturs.length > 0 || prSpphFakturs.length > 0) {
+      const conditions = [];
+      const args = [];
+
+      if (prFakturs.length > 0) {
+        conditions.push(`faktur_pr IN (${prFakturs.map(() => '?').join(',')})`);
+        args.push(...prFakturs);
+      }
+
+      if (prSpphFakturs.length > 0) {
+        conditions.push(`faktur IN (${prSpphFakturs.map(() => '?').join(',')})`);
+        args.push(...prSpphFakturs);
+      }
+
       const spphRes = await db.execute({
-        sql: `SELECT * FROM spph_out WHERE faktur_pr IN (${prFakturs.map(() => '?').join(',')})`,
-        args: prFakturs
+        sql: `SELECT * FROM spph_out WHERE ${conditions.join(' OR ')}`,
+        args: args
       });
       spphOutList = spphRes.rows;
     }
