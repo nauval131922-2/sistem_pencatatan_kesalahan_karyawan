@@ -123,8 +123,8 @@ export default function HasilProduksiClient() {
   const [showChart, setShowChart] = useState(false);
   const [hideGudang, setHideGudang] = useState(false);
   const [hideJurnal, setHideJurnal] = useState(false);
-  const [jurnalDisplayLimit, setJurnalDisplayLimit] = useState(50);
-  const PAGE_SIZE = 50;
+  const [jurnalDisplayLimit, setJurnalDisplayLimit] = useState(20);
+  const PAGE_SIZE = 20;
   const [jurnalPage, setJurnalPage] = useState(1);
   const [barangJadiPage, setBarangJadiPage] = useState(1);
   
@@ -374,10 +374,21 @@ export default function HasilProduksiClient() {
       if (streak.length > 1) {
         const totalR = streak.reduce((sum, s) => sum + Number(s.realisai || s.realisasi || 0), 0);
         const totalRijek = streak.reduce((sum, s) => sum + Number(s.rijek || 0), 0);
+        
+        // Calculate date range within this streak
+        const dates = streak.map(s => s.tgl).filter(Boolean).sort();
+        const minDate = dates[0];
+        const maxDate = dates[dates.length - 1];
+        
+        let dateLabel = formatToDayMonthYear(minDate);
+        if (minDate && maxDate && minDate !== maxDate) {
+          dateLabel = `${formatToDayMonthYear(minDate)} s.d. ${formatToDayMonthYear(maxDate)}`;
+        }
+
         renderedGroups.push(
-          <tr key={`subtotal-${gIdx}-${jobDisplayName}-${date}`} className="bg-emerald-50/50 border-t border-emerald-100">
+          <tr key={`subtotal-${gIdx}-${jobDisplayName}-${minDate}-${maxDate}`} className="bg-emerald-50/50 border-t border-emerald-100">
             <td colSpan={8} className="px-4 py-3 text-right text-[11px] font-bold tracking-tight text-emerald-800 border-r border-emerald-100">
-              Total {jobDisplayName || 'Pekerjaan'} — {formatToDayMonthYear(date)}
+              Total {jobDisplayName || 'Pekerjaan'} — {dateLabel}
             </td>
             <td className="px-4 py-3 text-right text-[12px] font-bold tabular-nums text-rose-600 bg-rose-50/30 border-r border-emerald-100">{totalRijek.toLocaleString('id-ID')}</td>
             <td colSpan={3} className="px-4 py-3 border-r border-emerald-100"></td>
@@ -404,7 +415,7 @@ export default function HasilProduksiClient() {
       renderedGroups.push(
         <tr key={`${gIdx}-${iIdx}`} className="bg-white hover:bg-emerald-50/30 even:bg-gray-50/50 transition-colors group cursor-default">
           <td className="sticky left-0 z-10 px-4 py-3 xl:py-4 text-[11px] xl:text-[12px] font-bold border-r border-gray-100 tabular-nums text-gray-800 bg-white group-even:bg-[#f9fafb] group-hover:bg-[#f0fdf4] min-w-[100px] max-w-[100px] md:shadow-none shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]">
-            {iIdx === 0 ? formatToDayMonthYear(group.date) : ''}
+            {pIdx === 0 || item.tgl !== pageItems[pIdx-1].item.tgl ? formatToDayMonthYear(item.tgl) : ''}
           </td>
           <td className="md:sticky md:left-[100px] md:z-10 px-4 py-3 xl:py-4 border-r border-gray-100 bg-white group-even:bg-[#f9fafb] group-hover:bg-[#f0fdf4] min-w-[160px] max-w-[160px] md:shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] lg:shadow-none">
             <div className="flex flex-col min-w-0">
@@ -419,7 +430,7 @@ export default function HasilProduksiClient() {
             </div>
           </td>
           <td className="px-4 py-3 xl:py-4 text-[11px] xl:text-[12px] border-r border-gray-100">
-            <div className="font-bold bg-white px-2 py-1 rounded-lg border border-gray-100 shadow-sm text-gray-700 capitalize inline-block max-w-full truncate align-middle" title={item.jenis_pekerjaan_2 || ''}>
+            <div className="font-bold bg-white px-2 py-1 rounded-lg border border-gray-100 shadow-sm text-gray-700 capitalize inline-block whitespace-nowrap align-middle" title={item.jenis_pekerjaan_2 || ''}>
               {(item.jenis_pekerjaan_2 || '-').toLowerCase()}
             </div>
           </td>
@@ -446,7 +457,7 @@ export default function HasilProduksiClient() {
         <tr key="empty"><td colSpan={14} className="px-6 py-24 text-center">
           <div className="flex flex-col items-center gap-4 opacity-30">
             <AlertCircle size={28} />
-            <span className="text-[11px] font-bold uppercase tracking-wide">Tidak ada data</span>
+            <span className="text-[11px] font-bold tracking-wide">Tidak ada data</span>
           </div>
         </td></tr>
       );
@@ -516,7 +527,7 @@ export default function HasilProduksiClient() {
               <div className="w-16 h-16 bg-gray-50 rounded-lg flex items-center justify-center text-gray-300">
                 <BarChart3 size={32} />
               </div>
-              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">Belum ada data barang jadi</span>
+              <span className="text-[11px] font-bold text-gray-400 tracking-wide">Belum ada data barang jadi</span>
             </div>
           </td>
         </tr>
@@ -665,7 +676,7 @@ export default function HasilProduksiClient() {
                     {loadingSopd ? (
                       <div className="flex flex-col items-center justify-center py-10 gap-3 opacity-40">
                         <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-[10px] font-semibold uppercase tracking-wide">Mencari Data...</span>
+                        <span className="text-[10px] font-semibold tracking-wide">Mencari data...</span>
                       </div>
                     ) : (
                       <>
@@ -699,7 +710,7 @@ export default function HasilProduksiClient() {
                         )) : (
                           <div className="flex flex-col items-center justify-center py-10 gap-2 opacity-30 text-center px-6">
                             <AlertCircle size={24} />
-                            <span className="text-[11px] font-semibold uppercase tracking-wide leading-relaxed">Data tidak ditemukan untuk kata kunci ini</span>
+                            <span className="text-[11px] font-semibold tracking-wide leading-relaxed">Data tidak ditemukan untuk kata kunci ini</span>
                           </div>
                         )}
                       </>
@@ -794,7 +805,7 @@ export default function HasilProduksiClient() {
                                 ) : (
                                   <div className="py-8 text-center opacity-30">
                                     <AlertCircle size={24} className="mx-auto mb-2" />
-                                    <span className="text-[10px] font-semibold uppercase tracking-wide">Tidak ada hasil</span>
+                                    <span className="text-[10px] font-semibold tracking-wide">Tidak ada hasil</span>
                                   </div>
                                 )}
                               </div>
@@ -1195,7 +1206,7 @@ export default function HasilProduksiClient() {
               {/* Operator Efficiency Summary - Horizontal scrollable row */}
               {jurnalResults.length > 0 && !loadingDetails && selectedPekerjaan && (
                 <div className="bg-white border-b border-gray-100 px-6 py-2.5 flex items-center gap-4 shrink-0 overflow-hidden">
-                  <div className="flex items-center gap-2 text-[10px] font-semibold text-emerald-600 uppercase tracking-wide shrink-0">
+                  <div className="flex items-center gap-2 text-[10px] font-semibold text-emerald-600 tracking-wide shrink-0">
                     <TrendingUp size={14} />
                     <span>Realisasi:</span>
                   </div>
@@ -1230,12 +1241,12 @@ export default function HasilProduksiClient() {
                   msOverflowStyle: 'none',
                 }}
               >
-                <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed', minWidth: '1700px' }}>
+                <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed', minWidth: '1850px' }}>
                   <colgroup>
                     <col style={{ width: '100px' }} />
                     <col style={{ width: '160px' }} />
                     <col style={{ width: '240px' }} />
-                    <col style={{ width: '150px' }} />
+                    <col style={{ width: '280px' }} />
                     <col style={{ width: '150px' }} />
                     <col style={{ width: '100px' }} />
                     <col style={{ width: '100px' }} />
@@ -1273,12 +1284,12 @@ export default function HasilProduksiClient() {
                   if (jurnalHeaderRef.current) jurnalHeaderRef.current.scrollLeft = e.currentTarget.scrollLeft;
                 }}
               >
-                <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed', minWidth: '1700px' }}>
+                <table className="w-full text-left border-separate border-spacing-0" style={{ tableLayout: 'fixed', minWidth: '1850px' }}>
                   <colgroup>
                     <col style={{ width: '100px' }} />
                     <col style={{ width: '160px' }} />
                     <col style={{ width: '240px' }} />
-                    <col style={{ width: '150px' }} />
+                    <col style={{ width: '280px' }} />
                     <col style={{ width: '150px' }} />
                     <col style={{ width: '100px' }} />
                     <col style={{ width: '100px' }} />
@@ -1371,14 +1382,14 @@ export default function HasilProduksiClient() {
                   <div className="flex flex-wrap items-center gap-4 border-l border-gray-100 pl-4">
                     {activeTab === 'jurnal' && grandTotalRijek > 0 && (
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold tracking-wide text-rose-400 uppercase">Total Rijek</span>
+                        <span className="text-[10px] font-bold tracking-wide text-rose-400">Total rijek</span>
                         <div className="text-[14px] font-bold tabular-nums tracking-tight text-rose-600">
                           {grandTotalRijek.toLocaleString('id-ID')}
                         </div>
                       </div>
                     )}
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold tracking-wide text-gray-500 uppercase">
+                      <span className="text-[10px] font-bold tracking-wide text-gray-500">
                         {activeTab === 'barang_jadi' ? 'Total Masuk' : `Realisasi`}
                       </span>
                       <div className="text-[14px] font-bold tabular-nums tracking-tight text-emerald-600">

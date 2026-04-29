@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       jSql += ` AND jenis_pekerjaan_2 = ?`;
       jArgs.push(pekerjaan);
     }
-    jSql += ` ORDER BY tgl DESC`;
+    jSql += ` ORDER BY tgl ASC`;
     queries.push({ sql: jSql, args: jArgs });
 
     // Execute all in one go
@@ -83,9 +83,30 @@ export async function GET(request: NextRequest) {
     const availableBagian = (batchResults[0].rows as any[]).map(r => r.bagian);
     const availablePekerjaan = (batchResults[1].rows as any[]).map(r => r.jenis_pekerjaan);
     const bjRows = batchResults[2].rows as any[];
-    const jurnalRows = batchResults[3].rows as any[];
+    let jurnalRows = batchResults[3].rows as any[];
 
-    // Group barang_jadi by date
+    // 1. Calculate first occurrence for each job to enable grouping by job starting date
+    const jobFirstDate: Record<string, string> = {};
+    jurnalRows.forEach(row => {
+      const job = row.jenis_pekerjaan_2 || '';
+      if (!jobFirstDate[job] || row.tgl < jobFirstDate[job]) {
+        jobFirstDate[job] = row.tgl;
+      }
+    });
+
+    // 2. Sort rows: by Job's first appearance (ASC), then by Job name, then by actual row date (ASC)
+    jurnalRows.sort((a, b) => {
+      const jobA = a.jenis_pekerjaan_2 || '';
+      const jobB = b.jenis_pekerjaan_2 || '';
+      const firstA = jobFirstDate[jobA] || '9999-12-31';
+      const firstB = jobFirstDate[jobB] || '9999-12-31';
+      
+      if (firstA !== firstB) return firstA.localeCompare(firstB);
+      if (jobA !== jobB) return jobA.localeCompare(jobB);
+      return a.tgl.localeCompare(b.tgl);
+    });
+
+    // Group barang_jadi by date (keep original logic)
     const groupedByDate: Record<string, { date: string, items: any[], total: number }> = {};
     let grandTotal = 0;
 
@@ -104,19 +125,27 @@ export async function GET(request: NextRequest) {
       grandTotal += Number(mergedRow.qty || 0);
     });
 
-    // Group jurnal by date
-    const groupedJurnal: Record<string, { date: string, items: any[], totalRealisasi: number, totalRijek: number }> = {};
+    // 3. Group jurnal by Job (since they are now sorted by job)
+    const groupedJurnal: Array<{ date: string, items: any[], totalRealisasi: number, totalRijek: number }> = [];
+    let currentGroup: any = null;
     let grandTotalRealisasi = 0;
     let grandTotalRijek = 0;
 
     jurnalRows.forEach(row => {
-      const date = row.tgl; 
-      if (!groupedJurnal[date]) {
-        groupedJurnal[date] = { date, items: [], totalRealisasi: 0, totalRijek: 0 };
+      const job = row.jenis_pekerjaan_2 || '';
+      if (!currentGroup || currentGroup.job !== job) {
+        currentGroup = { 
+          job, 
+          date: jobFirstDate[job], // Use first date as the group date
+          items: [], 
+          totalRealisasi: 0, 
+          totalRijek: 0 
+        };
+        groupedJurnal.push(currentGroup);
       }
-      groupedJurnal[date].items.push(row);
-      groupedJurnal[date].totalRealisasi += Number(row.realisasi || 0);
-      groupedJurnal[date].totalRijek += Number(row.rijek || 0);
+      currentGroup.items.push(row);
+      currentGroup.totalRealisasi += Number(row.realisasi || 0);
+      currentGroup.totalRijek += Number(row.rijek || 0);
       grandTotalRealisasi += Number(row.realisasi || 0);
       grandTotalRijek += Number(row.rijek || 0);
     });
@@ -124,7 +153,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       barang_jadi: Object.values(groupedByDate),
-      jurnal: Object.values(groupedJurnal),
+      jurnal: groupedJurnal,
       grandTotal,
       grandTotalRealisasi,
       grandTotalRijek,
