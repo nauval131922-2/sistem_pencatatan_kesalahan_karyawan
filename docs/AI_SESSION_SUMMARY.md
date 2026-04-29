@@ -11,6 +11,7 @@
 3. **Standarisasi UI Tabel**: Mengatur lebar kolom "Jenis Pekerjaan" menjadi 280px (Auto-fit simulation), mengubah pagination menjadi 20 data per halaman, dan menerapkan kebijakan *Sentence Case* pada semua pesan status/loading.
 4. **Smart Date Display**: Logika penyembunyian tanggal pada tabel yang lebih cerdas (hanya muncul jika tanggal berbeda dengan baris sebelumnya).
 5. **UI Sinkronisasi**: Menghapus gaya miring (*italic*) pada tampilan rentang tanggal di kartu modul sinkronisasi agar lebih bersih.
+6. **Robust Tracking Manufaktur**: Implementasi pencarian *Fuzzy Match* (operator `LIKE`) dan pembersihan HTML otomatis pada jalur pelacakan SPPH untuk menangani data referensi yang tidak bersih dari sistem scraper.
 
 ## ⚙️ Keputusan Teknis Penting
 - **Job Grouping Logic**: Memutuskan untuk melakukan *in-memory grouping* di backend agar data dengan tanggal berbeda tetap bisa berkumpul jika merupakan bagian dari pekerjaan yang sama.
