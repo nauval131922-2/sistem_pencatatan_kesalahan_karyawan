@@ -142,14 +142,20 @@ export async function GET(request: NextRequest) {
       const conditions = [];
       const args = [];
 
+      // Path A: Search in SPPH where faktur_pr contains the PR ID
       if (prFakturs.length > 0) {
-        conditions.push(`faktur_pr IN (${prFakturs.map(() => '?').join(',')})`);
-        args.push(...prFakturs);
+        prFakturs.forEach(f => {
+          conditions.push(`faktur_pr LIKE ?`);
+          args.push(`%${f}%`);
+        });
       }
 
+      // Path B: Search in SPPH where faktur contains the cleaned SPPH ID from PR table
       if (prSpphFakturs.length > 0) {
-        conditions.push(`faktur IN (${prSpphFakturs.map(() => '?').join(',')})`);
-        args.push(...prSpphFakturs);
+        prSpphFakturs.forEach(f => {
+          conditions.push(`faktur LIKE ?`);
+          args.push(`%${f}%`);
+        });
       }
 
       const spphRes = await db.execute({
