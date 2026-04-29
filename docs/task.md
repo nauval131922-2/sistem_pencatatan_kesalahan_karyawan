@@ -40,6 +40,9 @@
 - [x] Resiliensi Build Database (Penanganan Error Turso BLOCKED) — 2026-04-28
 - [x] Standarisasi Nama Produksi & Sumber Data di Dashboard Hasil Produksi — 2026-04-28
 - [x] Arsitektur Pemisahan 3 Database (Dev Lokal, Prod Lokal, Turso Cloud) — 2026-04-28
+- [x] Optimasi User Experience Hak Akses (Fix Click Bug, Group Cleanup, & Dashboard Focus) — 2026-04-29
+- [x] Implementasi Job-Based Grouping & Kronologis ASC pada Jurnal Produksi — 2026-04-29
+- [x] Standarisasi UI Tabel (Auto-fit Column, Pagination 20, & Sentence Case Policy) — 2026-04-29
 
 ---
 
@@ -59,12 +62,12 @@
 ## 📊 Statistik
 
 ```
-Total task    : 26
-Selesai       : 24
+Total task    : 31
+Selesai       : 27
 In progress   : 2
 Backlog       : 2
 Bug diketahui : 0
-Progress      : 92%
+Progress      : 87%
 ```
 
 ---

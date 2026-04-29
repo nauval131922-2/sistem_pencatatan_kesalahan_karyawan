@@ -96,3 +96,18 @@ Tampilan footer yang berisi pagination dirombak ulang agar sejalan secara presis
 - **Layout Terbagi (Kiri-Kanan)**: Memisahkan tampilan ke sisi kiri untuk "Keterangan Data" dan "Total Rekapitulasi", serta sisi kanan untuk "Kontrol Pagination" dan "Load Speed Badge".
 - **Penyembunyian Responsif**: Menggunakan `hidden md:flex` dan `hidden md:block` pada teks informasi (Menampilkan X dari Y) serta *badge load speed*, memastikan di layar ponsel hanya tombol kontrol angka halamannya saja yang tampil agar UI tidak kepenuhan.
 - **Konsistensi Ikonografi**: Mengganti teks statis "Prev" dan "Next" menggunakan ikon panah dari `lucide-react` dengan desain tombol presisi (proporsi 1:1, lebar dan tinggi sama `w-8 h-8`) persis dengan standardisasi komponen.
+
+## 7. Optimasi Tab Jurnal Produksi (Sesi Terbaru)
+
+Pembaruan besar dilakukan pada logika penyajian data di tab Jurnal Produksi untuk memudahkan pelacakan pekerjaan yang berkelanjutan:
+
+### A. Pengurutan & Pengelompokan Kronologis
+*   **Urutan ASC**: Data kini diurutkan dari yang terlama ke terbaru.
+*   **Job-Based Grouping**: Jika pekerjaan yang sama dilakukan di hari yang berbeda, baris tersebut akan ditarik ke atas agar berkumpul di bawah tanggal pertama pekerjaan itu dimulai.
+*   **Label Subtotal Rentang**: Label subtotal kini otomatis mendeteksi rentang tanggal (misal: "18 Okt s.d. 20 Okt") jika pekerjaan berlangsung lebih dari sehari.
+
+### B. Perbaikan UI & Keterbacaan
+*   **Kolom Jenis Pekerjaan (Auto-Fit)**: Lebar kolom diperlebar menjadi `280px` dan fitur `truncate` dihapus agar teks panjang tidak lagi terpotong. Tabel diperlebar menjadi `1850px` untuk mengakomodasi ini.
+*   **Smart Date Display**: Tanggal di kolom pertama hanya muncul di baris pertama atau saat ada perubahan hari, memberikan kesan visual yang lebih bersih dan terorganisir.
+*   **Pagination 20 Data**: Jumlah baris per halaman dikurangi dari 50 menjadi 20 agar tabel lebih ringkas dan ringan.
+*   **Standardisasi Kapitalisasi**: Pesan status (loading, tidak ada data, dll) kini menggunakan format kalimat biasa (Sentence case) dan tidak lagi menggunakan huruf kapital semua (*all-caps*) untuk estetika yang lebih modern.

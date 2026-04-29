@@ -41,7 +41,7 @@ SINTAK ERP kini menggunakan identitas visual **Modern Premium** (evolusi dari Ne
 
 **Aturan Utama:**
 1. **Geometry**: Gunakan **`rounded-xl`** (12px) atau **`rounded-2xl`** (16px) pada elemen utama seperti Button, Card, Input, dan Modal. Hindari sudut tajam.
-2. **Typography (No All-Caps Policy)**: Dilarang menggunakan `uppercase` secara paksa pada label, tombol, atau judul profil. Gunakan **Sentence Case** agar teks lebih ramah dan mudah dibaca.
+2. **Typography (No All-Caps Policy)**: Dilarang menggunakan `uppercase` secara paksa pada label, tombol, judul profil, maupun pesan status (loading, tidak ada data, dsb). Gunakan **Sentence Case** agar teks lebih ramah, profesional, dan mudah dibaca.
 3. **Shadow**: Gunakan shadow halus dengan intensitas rendah (contoh: `shadow-md shadow-emerald-900/5`).
 4. **Warna**: Aksen utama menggunakan **Emerald 600** (`#059669`) untuk elemen positif/tambah data dan **Rose 600** untuk elemen bahaya/hapus. Gunakan `bg-[var(--bg-deep)]` (abu-abu sangat muda) sebagai warna latar belakang halaman standar.
 5. **Layout**: Halaman manajemen data wajib menggunakan **Full Width** tanpa pembatas kontainer sempit (`max-w-5xl`).
@@ -50,7 +50,8 @@ SINTAK ERP kini menggunakan identitas visual **Modern Premium** (evolusi dari Ne
 8. **Popup & Dropdown (Portal)**: Semua elemen popup (DatePicker, Dropdown kustom) wajib menggunakan **React Portal** agar tidak terpotong oleh kontainer `overflow-hidden` atau `z-index` yang rendah.
 9. **Performance Rendering**: Untuk dropdown dengan data besar (>100 item), batasi jumlah render ke 30-50 item pertama menggunakan `slice` di `useMemo` untuk menjaga responsivitas UI.
 10. **Native Page Scrolling**: Hindari *nested scrollbar* (scroll bersarang). Kontainer utama seperti tabel tidak boleh memiliki `overflow-y-auto` dengan tinggi tetap. Biarkan tabel memanjang secara alami mengikuti isi agar pengguna dapat men-scroll halaman dengan mulus (*native page scroll*).
-11. **Tabel Footer Pagination**: Footer pagination untuk tabel harus selalu menggunakan gaya responsif dua sisi. Sisi Kiri: Teks keterangan jumlah data. Sisi Kanan: Tombol kontrol halaman (`w-8 h-8`) dan *badge load speed*. Teks kiri wajib disembunyikan di layar ponsel (`hidden md:block`) agar tombol kontrol tersisa di tengah layar.
+11. **Tabel Footer Pagination**: Footer pagination untuk tabel harus selalu menggunakan gaya responsif dua sisi. Sisi Kiri: Teks keterangan jumlah data. Sisi Kanan: Tombol kontrol halaman (`w-8 h-8`) dan *badge load speed*. Teks kiri wajib disembunyikan di layar ponsel (`hidden md:block`) agar tombol kontrol tersisa di tengah layar. Standardisasi jumlah data per halaman adalah **20-50 baris**.
+12. **Job-Based Chronological Grouping**: Untuk laporan jurnal, data wajib diurutkan secara **ASC** (terlama ke terbaru). Jika ada pekerjaan yang sama di hari yang berbeda, data tersebut harus dikelompokkan (grouped) di bawah tanggal kemunculan pertama pekerjaan tersebut agar memudahkan pelacakan siklus produksi.
 
 ---
 
