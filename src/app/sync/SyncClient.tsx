@@ -403,7 +403,7 @@ export default function SyncClient({ userPermissions = {} }: { userPermissions?:
                             <div className="flex flex-col gap-1">
                               <span>Update: {state?.lastUpdate || '-'}</span>
                               {state?.period && (
-                                <span className="text-[10px] text-gray-400 font-medium italic">
+                                <span className="text-[10px] text-gray-400 font-medium">
                                   ({formatScrapedPeriodDate(state.period.start)} - {formatScrapedPeriodDate(state.period.end)})
                                 </span>
                               )}
