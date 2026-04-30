@@ -44,6 +44,7 @@
 - [x] Implementasi Job-Based Grouping & Kronologis ASC pada Jurnal Produksi — 2026-04-29
 - [x] Standarisasi UI Tabel (Auto-fit Column, Pagination 20, & Sentence Case Policy) — 2026-04-29
 - [x] Implementasi Tracking Manufaktur Dua Jalur & Backward Tracing Engine — 2026-04-29
+- [x] Refinement Tata Letak & Validasi Otomatis Supplier pada Tracking — 2026-04-30
 
 ---
 
@@ -63,8 +64,8 @@
 ## 📊 Statistik
 
 ```
-Total task    : 32
-Selesai       : 28
+Total task    : 33
+Selesai       : 29
 In progress   : 2
 Backlog       : 2
 Bug diketahui : 0

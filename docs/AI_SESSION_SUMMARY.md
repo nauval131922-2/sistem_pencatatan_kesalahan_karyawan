@@ -1,31 +1,29 @@
-# AI Session Summary - 2026-04-29 (Sesi Sore)
+# AI Session Summary - 2026-04-30 (Sesi Siang)
 
 ## 📅 Detail Sesi
-- **Tanggal**: 2026-04-29
-- **Waktu**: 14:00 - 15:15 WIB
+- **Tanggal**: 2026-04-30
+- **Waktu**: 13:50 - 14:45 WIB
 - **PC**: Lokal (Kantor)
 
 ## 🚀 Fitur & Perbaikan
-1. **Optimasi Tracking Manufaktur Dua Jalur**: Implementasi filter ganda (Pilih BOM & Pilih Nama Barang) dengan lebar 50/50. Menghapus tombol reset manual untuk UI yang lebih minimalis.
-2. **Backward Tracing Engine**: Mengembangkan logika pelacakan mundur di API jika pencarian dimulai dari Rekap Pembelian (Faktur PB). Alur: `Rekap -> PO -> SPH In -> SPPH -> PR -> Order Produksi -> BOM`.
-3. **Deep Linking Bahan Baku (BBB)**: Menambahkan kemampuan pencarian pemakaian material spesifik dengan membedah JSON `raw_data` (field `hp_detil`) di tabel `bahan_baku` menggunakan filter Faktur PB.
-4. **Dynamic Column & Labeling**: 
-   - Menyembunyikan kolom produksi secara otomatis jika sumber pelacakan adalah Rekap Barang.
-   - Implementasi label dinamis pada kolom PO dan BBB Produksi yang berubah teksnya sesuai jalur pelacakan (BOM vs Rekap).
-5. **Aesthetics & Readability**: Menerapkan kebijakan *Sentence Case* (menghapus kapital semua) pada seluruh label keterangan logika di tabel tracking.
-6. **Bug Fix TypeScript**: Memperbaiki error kompilasi "implicit any" pada variabel `conditions` dan `args` di API route tracking.
+1. **Stabilisasi Tata Letak Tracking**: Implementasi `min-w-0` dan `shrink-0` pada kontainer filter untuk mencegah elemen terdorong keluar layar akibat teks panjang.
+2. **Validasi Supplier Otomatis**: Penambahan mekanisme `auto-clear` yang menghapus pilihan barang jika user mengganti filter Supplier ke yang tidak kompatibel.
+3. **Persistensi Path Pelacakan**: Sinkronisasi state `trackingPath` ke `localStorage` untuk menghilangkan *UI flickering* saat refresh halaman.
+4. **Optimasi API rekap-names**: Penambahan field `kd_supplier` pada output API untuk mendukung logika validasi di frontend.
+5. **Bug Fix SQL Syntax**: Memperbaiki error `near ")"` di API utama tracking akibat query `WHERE ()` kosong saat data barang jadi tidak ditemukan.
+6. **Smart Labeling Badge**: Mengubah label "0 Data" menjadi "Terlacak di Order Produksi: X" jika rincian item kosong namun terhubung ke order produksi.
 
 ## ⚙️ Keputusan Teknis Penting
-- **Mutual Exclusion Filters**: Memutuskan untuk mengosongkan state filter lawan saat salah satu filter dipilih untuk mencegah kebingungan data di satu tampilan tabel.
-- **JSON String Matching**: Menggunakan `LIKE %targetFaktur%` pada kolom `raw_data` untuk menghubungkan Rekap PB ke pemakaian bahan baku tanpa merombak skema database yang sudah ada.
-- **User-Centric Dynamic Labeling**: Memberikan informasi relasi database yang berbeda (`via SPH In` vs `via Rekap`) agar user memahami asal-usul data berdasarkan cara mereka mencari.
+- **Validation Guard (useEffect)**: Menggunakan `useEffect` sebagai "satpam" validasi supplier daripada hanya mengandalkan event `onClick`, memastikan integritas data dari berbagai cara input.
+- **Flexbox Constraints**: Menetapkan breakpoint `lg:flex-row` (bukan `xl`) untuk memastikan layout tetap berjajar satu baris di layar laptop standar.
+- **Atomic Persistence**: Menyimpan `tracking_selected_faktur_supplier` secara terpisah untuk mempercepat pengecekan validitas tanpa perlu membedah objek data yang besar.
 
 ## 📌 Status Task & Hal yang Perlu Dilanjutkan
-- ✅ Fitur pelacakan dua jalur selesai dan stabil.
-- 🔄 Lakukan verifikasi data untuk Faktur PB yang sangat lama (historical data) guna memastikan konsistensi JSON `hp_detil`.
-- 📌 Evaluasi performa pencarian `LIKE` pada `raw_data` jika volume data `bahan_baku` meningkat drastis di masa depan.
+- ✅ Modul pelacakan manufaktur kini memiliki UX yang lebih stabil dan aman dari kesalahan input.
+- 📌 Evaluasi responsivitas tabel utama pada layar yang lebih kecil dari 1024px.
+- 📌 Monitor performa build Next.js pasca-perbaikan error tipe data di `filteredData`.
 
 ## 📂 Dokumentasi Baru/Diperbarui
-- New `docs/tutorials/07-optimasi-pencarian-tracking-dua-jalur.md`
+- New `docs/tutorials/08-refinement-dan-validasi-tracking.md`
 - Update `docs/BUILD_FROM_SCRATCH.md`
 - Update `docs/task.md`

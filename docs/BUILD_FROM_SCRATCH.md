@@ -544,6 +544,10 @@ doc.save('laporan.pdf');
    - **Column Filtering**: Menyembunyikan kolom produksi jika sumber pelacakan adalah Rekap Barang untuk menjaga fokus data.
    - **Smart Labeling**: Menggunakan logika `isBomTrack ? "label_a" : "label_b"` untuk menampilkan deskripsi relasi database yang akurat sesuai jalur pencarian.
    - **Mutual Exclusion Filters**: Memastikan hanya satu jalur pelacakan yang aktif di UI dalam satu waktu.
+4. **State Persistence & Validation**:
+   - **LocalStorage Synchronization**: Status filter dan pilihan pelacakan disimpan ke browser untuk mencegah *UI flickering* saat halaman dimuat ulang.
+   - **Automatic Supplier Validation**: Sistem secara cerdas menghapus pilihan barang jika user mengganti filter Supplier ke yang tidak sesuai dengan barang tersebut, menjaga konsistensi data.
+   - **Responsive Truncation**: Penggunaan `min-w-0` dan `truncate` pada kontainer filter untuk memastikan layout tetap stabil dan tidak terdorong keluar layar pada resolusi laptop.
 
 ---
 
