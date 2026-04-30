@@ -1,31 +1,29 @@
-# AI Session Summary - 2026-04-30 (Sesi Siang)
+# AI Session Summary - 2026-04-30 (Sesi Malam)
 
 ## 📅 Detail Sesi
 - **Tanggal**: 2026-04-30
-- **Waktu**: 13:50 - 14:45 WIB
+- **Waktu**: 23:20 - 23:55 WIB
 - **PC**: Lokal (Kantor)
 
 ## 🚀 Fitur & Perbaikan
-1. **Stabilisasi Tata Letak Tracking**: Implementasi `min-w-0` dan `shrink-0` pada kontainer filter untuk mencegah elemen terdorong keluar layar akibat teks panjang.
-2. **Validasi Supplier Otomatis**: Penambahan mekanisme `auto-clear` yang menghapus pilihan barang jika user mengganti filter Supplier ke yang tidak kompatibel.
-3. **Persistensi Path Pelacakan**: Sinkronisasi state `trackingPath` ke `localStorage` untuk menghilangkan *UI flickering* saat refresh halaman.
-4. **Optimasi API rekap-names**: Penambahan field `kd_supplier` pada output API untuk mendukung logika validasi di frontend.
-5. **Implementasi Sistem Notifikasi Toast**: Pembuatan komponen `Toast.tsx` dan integrasi pada halaman Kelola User untuk menggantikan banner notifikasi yang menghalangi UI.
-6. **Fix Perhitungan Badge Hak Akses**: Perbaikan logika perhitungan modul aktif pada halaman Roles menggunakan `Set` untuk mencegah duplikasi hitungan (fix bug 6/34 menjadi 6/17).
-7. **Bug Fix SQL Syntax**: Memperbaiki error `near ")"` di API utama tracking akibat query `WHERE ()` kosong saat data barang jadi tidak ditemukan.
-8. **Smart Labeling Badge**: Mengubah label "0 Data" menjadi "Terlacak di Order Produksi: X" jika rincian item kosong namun terhubung ke order produksi.
+1. **Refaktor Layout Tab Tracking**: Transformasi modul Tracking Manufaktur dari tabel multi-kolom horizontal yang lebar menjadi sistem navigasi berbasis **Tab** (BOM, SO, BBB, dll).
+2. **Dinamisasi Badge Header Tab**: Angka jumlah data pada header tab kini bersifat dinamis, otomatis terupdate mengikuti filter pencarian teks dan filter rentang tanggal.
+3. **Optimasi Footer Pagination**: Pemindahan posisi kontrol pagination ke sisi kanan footer untuk konsistensi UI Premium dan penambahan **Total Qty Badge** (khusus tab BBB/Hasil Produksi pada jalur Filter Barang).
+4. **Logika Filter Tanggal Terpusat**: Ekstraksi logic filtering ke dalam `useCallback` agar konsisten antara data yang di-render di tabel dan data yang dihitung di badge tab.
+5. **Restriksi Filter Jalur Barang**: Memastikan filter tanggal dan Total Qty hanya aktif pada jalur "Cari Barang" (`rekap`) sesuai permintaan user untuk menjaga integritas data BOM.
 
 ## ⚙️ Keputusan Teknis Penting
-- **Validation Guard (useEffect)**: Menggunakan `useEffect` sebagai "satpam" validasi supplier daripada hanya mengandalkan event `onClick`, memastikan integritas data dari berbagai cara input.
-- **Flexbox Constraints**: Menetapkan breakpoint `lg:flex-row` (bukan `xl`) untuk memastikan layout tetap berjajar satu baris di layar laptop standar.
-- **Atomic Persistence**: Menyimpan `tracking_selected_faktur_supplier` secara terpisah untuk mempercepat pengecekan validitas tanpa perlu membedah objek data yang besar.
+- **Auto-Generating Columns**: Implementasi pendeteksian `keys` objek JSON secara dinamis untuk header tabel, sehingga tidak perlu mendefinisikan kolom secara manual untuk setiap tab.
+- **Shared Filter Logic**: Penggunaan fungsi pembantu `filterRows` yang dipanggil di dalam `useMemo` (untuk data tabel) dan `tabs.map` (untuk badge counts) guna memastikan sinkronisasi state.
+- **Conditional Layout Rendering**: Penggunaan `flex-col sm:flex-row` pada footer untuk menjaga responsivitas antara info jumlah data dan tombol navigasi halaman.
 
 ## 📌 Status Task & Hal yang Perlu Dilanjutkan
-- ✅ Modul pelacakan manufaktur kini memiliki UX yang lebih stabil dan aman dari kesalahan input.
-- 📌 Evaluasi responsivitas tabel utama pada layar yang lebih kecil dari 1024px.
-- 📌 Monitor performa build Next.js pasca-perbaikan error tipe data di `filteredData`.
+- ✅ Modul Tracking Manufaktur kini jauh lebih bersih, ringan, dan informatif dengan sistem Tab.
+- ✅ Sinkronisasi filter ke semua indikator UI sudah 100% akurat.
+- 📌 Perlu evaluasi apakah tab tertentu memerlukan formatting khusus (misal: format mata uang) karena saat ini semua kolom di-render sebagai teks/angka standar.
 
 ## 📂 Dokumentasi Baru/Diperbarui
-- New `docs/tutorials/08-refinement-dan-validasi-tracking.md`
+- New `docs/tutorials/10-refactor-layout-tab-tracking-manufaktur.md`
 - Update `docs/BUILD_FROM_SCRATCH.md`
 - Update `docs/task.md`
+- Update `docs/AI_SESSION_SUMMARY.md`

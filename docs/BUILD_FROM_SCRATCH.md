@@ -551,6 +551,11 @@ doc.save('laporan.pdf');
    - **LocalStorage Synchronization**: Status filter dan pilihan pelacakan disimpan ke browser untuk mencegah *UI flickering* saat halaman dimuat ulang.
    - **Automatic Supplier Validation**: Sistem secara cerdas menghapus pilihan barang jika user mengganti filter Supplier ke yang tidak sesuai dengan barang tersebut, menjaga konsistensi data.
    - **Responsive Truncation**: Penggunaan `min-w-0` dan `truncate` pada kontainer filter untuk memastikan layout tetap stabil dan tidak terdorong keluar layar pada resolusi laptop.
+5. **Tab-Based UI & Dynamic Column Detection**:
+   - **Tab Navigation**: Mengganti tabel horizontal yang sangat lebar dengan sistem navigasi berbasis Tab untuk memisahkan data tiap tahapan (BOM, SO, BBB, dll).
+   - **Dynamic Badge Counts**: Badge pada header tab menampilkan jumlah data yang tersaring secara real-time berdasarkan filter teks dan tanggal.
+   - **Automatic Header Generation**: Tabel dalam tab tidak lagi menggunakan kolom hardcoded, melainkan mendeteksi secara dinamis kunci (keys) dari objek data JSON yang diterima dari API.
+   - **Contextual Footers**: Menampilkan perhitungan otomatis (seperti Total Qty) pada footer tabel khusus untuk tab yang relevan (BBB dan Hasil Produksi) pada jalur pelacakan tertentu.
 
 ---
 

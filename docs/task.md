@@ -45,6 +45,7 @@
 - [x] Standarisasi UI Tabel (Auto-fit Column, Pagination 20, & Sentence Case Policy) — 2026-04-29
 - [x] Implementasi Tracking Manufaktur Dua Jalur & Backward Tracing Engine — 2026-04-29
 - [x] Refinement Tata Letak & Validasi Otomatis Supplier pada Tracking — 2026-04-30
+- [x] Implementasi Layout Tab & Dinamisasi Kolom pada Tracking Manufaktur — 2026-04-30
 
 ---
 
@@ -64,12 +65,12 @@
 ## 📊 Statistik
 
 ```
-Total task    : 34
-Selesai       : 31
+Total task    : 35
+Selesai       : 33
 In progress   : 1
-Backlog       : 2
+Backlog       : 1
 Bug diketahui : 0
-Progress      : 91%
+Progress      : 94%
 ```
 
 ---
