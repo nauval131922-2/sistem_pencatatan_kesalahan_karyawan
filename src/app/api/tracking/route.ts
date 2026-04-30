@@ -21,12 +21,18 @@ export async function GET(request: NextRequest) {
     });
 
     let bom = bomRes.rows[0] as any || null;
+    
+    // Global flag to determine if we are in "Direct Rekap" mode
+    const isStartingFromRekap = !!(searchParams.get("target_faktur") && !bom);
 
     let purchaseOrders: any[] = [];
     let pembelianBarang: any[] = [];
     let purchaseRequests: any[] = [];
 
     // If not found in BOM, check if it's a Rekap Pembelian record and trace back
+    let tracedPrdFakturs = new Set<string>();
+    let tracedResultFakturs = new Set<string>();
+
     if (!bom) {
       const rekapRes = await db.execute({
         sql: `SELECT * FROM rekap_pembelian_barang WHERE faktur = ? LIMIT 1`,
@@ -37,8 +43,19 @@ export async function GET(request: NextRequest) {
       if (rekap) {
         pembelianBarang = [rekap];
         
+        // Trace Path 1: via Bahan Baku (Direct Usage)
+        // Find if this PB was used in any production
+        const bbUsageRes = await db.execute({
+          sql: `SELECT DISTINCT faktur_prd, fkt_hasil FROM bahan_baku WHERE raw_data LIKE ?`,
+          args: [`%${targetFaktur}%`]
+        });
+        bbUsageRes.rows.forEach((r: any) => {
+          if (r.faktur_prd) tracedPrdFakturs.add(r.faktur_prd);
+          if (r.fkt_hasil) tracedResultFakturs.add(r.fkt_hasil);
+        });
+
         if (rekap.faktur_po) {
-          // Trace: Rekap -> PO
+          // Trace Path 2: Rekap -> PO -> SPH In -> SPPH -> PR -> PRD
           const poRes = await db.execute({
             sql: `SELECT * FROM purchase_orders WHERE faktur = ? LIMIT 1`,
             args: [rekap.faktur_po]
@@ -49,7 +66,6 @@ export async function GET(request: NextRequest) {
             purchaseOrders = [po];
 
             if (po.faktur_sph) {
-              // Trace: PO -> SPH In -> SPPH -> PR -> PRD -> BOM
               const sphInRes = await db.execute({
                 sql: `SELECT * FROM sph_in WHERE faktur = ? LIMIT 1`,
                 args: [po.faktur_sph]
@@ -72,10 +88,10 @@ export async function GET(request: NextRequest) {
                   const pr = prRes.rows[0] as any;
                   if (pr) {
                     purchaseRequests = [pr];
-                    const prdFaktur = pr.faktur_prd;
+                    if (pr.faktur_prd) tracedPrdFakturs.add(pr.faktur_prd);
 
+                    const prdFaktur = pr.faktur_prd;
                     if (prdFaktur) {
-                      // Now we have PRD Faktur, find the BOM
                       const bomFromPrd = await db.execute({
                         sql: `SELECT * FROM bill_of_materials WHERE faktur_prd = ? LIMIT 1`,
                         args: [prdFaktur]
@@ -120,15 +136,21 @@ export async function GET(request: NextRequest) {
     }
 
     // --- LEVEL 3: Production Order & Reports (Dependent on BOM/SO) ---
-    let productionOrder = null;
+    let productionOrders: any[] = [];
     let laporanPenjualanList: any[] = [];
     
-    const fakturPrdSearch = bom?.faktur_prd || salesOrder?.faktur_prd;
+    // Determine all possible PRD Fakturs to search
+    const prdFaktursToSearch = new Set<string>();
+    if (bom?.faktur_prd) prdFaktursToSearch.add(bom.faktur_prd);
+    if (salesOrder?.faktur_prd) prdFaktursToSearch.add(salesOrder.faktur_prd);
+    tracedPrdFakturs.forEach(f => prdFaktursToSearch.add(f));
+
+    const fakturPrdArray = Array.from(prdFaktursToSearch);
     
     const [prdRes, lpRes] = await Promise.all([
-      fakturPrdSearch ? db.execute({
-        sql: `SELECT * FROM orders WHERE faktur = ? LIMIT 1`,
-        args: [fakturPrdSearch]
+      fakturPrdArray.length > 0 ? db.execute({
+        sql: `SELECT * FROM orders WHERE faktur IN (${fakturPrdArray.map(() => '?').join(',')})`,
+        args: fakturPrdArray
       }) : Promise.resolve({ rows: [] }),
       salesOrder?.faktur ? db.execute({
         sql: `SELECT * FROM sales_reports WHERE faktur_so = ? OR kd_barang = ?`,
@@ -136,31 +158,31 @@ export async function GET(request: NextRequest) {
       }) : Promise.resolve({ rows: [] })
     ]);
 
-    productionOrder = prdRes.rows[0] as any || null;
+    productionOrders = prdRes.rows;
     laporanPenjualanList = lpRes.rows;
 
-    // Second try for Production Order if still not found
-    if (!productionOrder && salesOrder?.faktur && bom?.faktur) {
+    // Second try for Production Orders if still empty and we have SO/BOM
+    if (productionOrders.length === 0 && salesOrder?.faktur && bom?.faktur) {
       const fuzzyRes = await db.execute({
-        sql: `SELECT * FROM orders WHERE json_extract(raw_data, '$.faktur_so') = ? AND json_extract(raw_data, '$.faktur_bom') = ? LIMIT 1`,
+        sql: `SELECT * FROM orders WHERE json_extract(raw_data, '$.faktur_so') = ? AND json_extract(raw_data, '$.faktur_bom') = ?`,
         args: [salesOrder.faktur, bom.faktur]
       });
-      productionOrder = fuzzyRes.rows[0] as any || null;
+      productionOrders = fuzzyRes.rows;
     }
 
     // Third try: via BOM Faktur (Fallback if SO link fails or SO is missing)
-    if (!productionOrder && bom?.faktur) {
+    if (productionOrders.length === 0 && bom?.faktur) {
       const bomResOnly = await db.execute({
-        sql: `SELECT * FROM orders WHERE json_extract(raw_data, '$.faktur_bom') = ? LIMIT 1`,
+        sql: `SELECT * FROM orders WHERE json_extract(raw_data, '$.faktur_bom') = ?`,
         args: [bom.faktur]
       });
-      productionOrder = bomResOnly.rows[0] as any || null;
+      productionOrders = bomResOnly.rows;
     }
 
     // --- LEVEL 4: Sub-branches (Dependent on Production Order & Reports) ---
     // 1. Production Branch: PRs, Bahan Baku, Penerimaan Barang Hasil Produksi
     // 2. Sales Branch: Pengiriman, Pelunasan Piutang Penjualan
-    const prdFaktur = productionOrder?.faktur;
+    const prdFaktursForSub = Array.from(prdFaktursToSearch);
     const lpFakturs = laporanPenjualanList.map(lp => lp.faktur).filter(Boolean);
 
     let bahanBaku: any[] = [];
@@ -168,37 +190,93 @@ export async function GET(request: NextRequest) {
     let pengiriman: any[] = [];
     let pelunasanPiutang: any[] = [];
 
+    const dateSort = `ORDER BY substr(tgl,7,4) ASC, substr(tgl,4,2) ASC, substr(tgl,1,2) ASC, faktur ASC`;
+
     const [prRes, bbRes, bjRes, pgRes, ppRes] = await Promise.all([
-      prdFaktur ? db.execute({
-        sql: `SELECT * FROM purchase_requests WHERE faktur_prd = ? OR raw_data LIKE ?`,
-        args: [prdFaktur, `%${prdFaktur}%`]
+      prdFaktursForSub.length > 0 ? db.execute({
+        sql: `SELECT * FROM purchase_requests WHERE (faktur_prd IN (${prdFaktursForSub.map(() => '?').join(',')}) OR ${prdFaktursForSub.map(() => `raw_data LIKE ?`).join(" OR ")}) ${dateSort}`,
+        args: [...prdFaktursForSub, ...prdFaktursForSub.map(f => `%${f}%`)]
       }) : Promise.resolve({ rows: [] }),
-      prdFaktur ? db.execute({
-        sql: `SELECT * FROM bahan_baku WHERE faktur_prd = ? OR raw_data LIKE ?`,
-        args: [prdFaktur, `%${targetFaktur}%`]
+      prdFaktursForSub.length > 0 ? db.execute({
+        sql: `SELECT * FROM bahan_baku WHERE (faktur_prd IN (${prdFaktursForSub.map(() => '?').join(',')}) OR raw_data LIKE ?) ${dateSort}`,
+        args: [...prdFaktursForSub, `%${targetFaktur}%`]
       }) : (targetFaktur.startsWith('PB') || targetFaktur.startsWith('RQ') ? db.execute({
-        sql: `SELECT * FROM bahan_baku WHERE raw_data LIKE ?`,
+        sql: `SELECT * FROM bahan_baku WHERE raw_data LIKE ? ${dateSort}`,
         args: [`%${targetFaktur}%`]
       }) : Promise.resolve({ rows: [] })),
-      prdFaktur ? db.execute({
-        sql: `SELECT * FROM barang_jadi WHERE faktur_prd = ?`,
-        args: [prdFaktur]
-      }) : Promise.resolve({ rows: [] }),
+      (() => {
+        const conditions = [
+          (!isStartingFromRekap && prdFaktursForSub.length > 0) ? `faktur_prd IN (${prdFaktursForSub.map(() => '?').join(',')})` : '',
+          (tracedResultFakturs.size > 0) ? `faktur IN (${Array.from(tracedResultFakturs).map(() => '?').join(',')})` : ''
+        ].filter(Boolean);
+
+        if (conditions.length === 0) return Promise.resolve({ rows: [] });
+
+        return db.execute({
+          sql: `SELECT * FROM barang_jadi WHERE (${conditions.join(' OR ')}) ${dateSort}`,
+          args: [
+            ...(!isStartingFromRekap && prdFaktursForSub.length > 0 ? prdFaktursForSub : []),
+            ...(tracedResultFakturs.size > 0 ? Array.from(tracedResultFakturs) : [])
+          ]
+        });
+      })(),
       lpFakturs.length > 0 ? db.execute({
-        sql: `SELECT * FROM pengiriman WHERE ${lpFakturs.map(() => `faktur LIKE ?`).join(" OR ")}`,
+        sql: `SELECT * FROM pengiriman WHERE (${lpFakturs.map(() => `faktur LIKE ?`).join(" OR ")}) ${dateSort}`,
         args: lpFakturs.map(f => `%${f}%`)
       }) : Promise.resolve({ rows: [] }),
       lpFakturs.length > 0 ? db.execute({
-        sql: `SELECT * FROM pelunasan_piutang WHERE fkt IN (${lpFakturs.map(() => '?').join(',')})`,
+        sql: `SELECT * FROM pelunasan_piutang WHERE fkt IN (${lpFakturs.map(() => '?').join(',')}) ORDER BY substr(tgl,7,4) ASC, substr(tgl,4,2) ASC, substr(tgl,1,2) ASC, fkt ASC`,
         args: lpFakturs
       }) : Promise.resolve({ rows: [] })
     ]);
 
-    purchaseRequests = [...purchaseRequests, ...prRes.rows];
-    bahanBaku = bbRes.rows;
-    barangJadi = bjRes.rows;
-    pengiriman = pgRes.rows;
-    pelunasanPiutang = ppRes.rows;
+    const dedupe = (arr: any[], key: string = 'id') => {
+      const seen = new Set();
+      return arr.filter(item => {
+        const val = item[key];
+        if (!val || seen.has(val)) return false;
+        seen.add(val);
+        return true;
+      });
+    };
+
+    const sortData = (arr: any[], dateKey: string = 'tgl', fakturKey: string = 'faktur') => {
+      return [...arr].sort((a, b) => {
+        const parseDate = (dStr: string) => {
+          if (!dStr || typeof dStr !== 'string') return 0;
+          const parts = dStr.split('-');
+          if (parts.length !== 3) return 0;
+          const [d, m, y] = parts.map(Number);
+          return y * 10000 + m * 100 + d;
+        };
+        
+        const timeA = parseDate(a[dateKey]);
+        const timeB = parseDate(b[dateKey]);
+        
+        if (timeA !== timeB) return timeA - timeB;
+        
+        const fA = String(a[fakturKey] || '');
+        const fB = String(b[fakturKey] || '');
+        return fA.localeCompare(fB);
+      });
+    };
+
+    purchaseRequests = dedupe([...purchaseRequests, ...prRes.rows]);
+    
+    // Filter bahanBaku based on mode
+    if (isStartingFromRekap) {
+      // Strictly only show BBB that actually used this specific PB faktur
+      bahanBaku = dedupe(bbRes.rows.filter((r: any) => 
+        (r.hp_detil && String(r.hp_detil).includes(targetFaktur)) || 
+        (r.raw_data && String(r.raw_data).includes(targetFaktur))
+      ));
+    } else {
+      bahanBaku = dedupe(bbRes.rows);
+    }
+    
+    barangJadi = dedupe(bjRes.rows);
+    pengiriman = dedupe(pgRes.rows);
+    pelunasanPiutang = dedupe(ppRes.rows);
 
     // --- LEVEL 5: SPPH (Dependent on PRs) ---
     let spphOutList: any[] = [];
@@ -231,7 +309,7 @@ export async function GET(request: NextRequest) {
       }
 
       const spphRes = await db.execute({
-        sql: `SELECT * FROM spph_out WHERE ${conditions.join(' OR ')}`,
+        sql: `SELECT * FROM spph_out WHERE (${conditions.join(' OR ')}) ${dateSort}`,
         args: args
       });
       spphOutList = spphRes.rows;
@@ -242,7 +320,7 @@ export async function GET(request: NextRequest) {
     const spphFakturs = spphOutList.map((spph: any) => spph.faktur).filter(Boolean);
     if (spphFakturs.length > 0) {
       const sphInRes = await db.execute({
-        sql: `SELECT * FROM sph_in WHERE faktur_spph IN (${spphFakturs.map(() => '?').join(',')})`,
+        sql: `SELECT * FROM sph_in WHERE faktur_spph IN (${spphFakturs.map(() => '?').join(',')}) ${dateSort}`,
         args: spphFakturs
       });
       sphInList = sphInRes.rows;
@@ -250,12 +328,15 @@ export async function GET(request: NextRequest) {
 
     // --- LEVEL 7: Purchase Orders (Dependent on SPH In) ---
     const sphFakturs = sphInList.map((sph: any) => sph.faktur).filter(Boolean);
-    if (sphFakturs.length > 0) {
+    
+    // Only append other POs from the flow if we are NOT starting from a specific Rekap
+    // This ensures the PO column strictly follows: rekap.faktur_po = po.faktur
+    if (sphFakturs.length > 0 && !isStartingFromRekap) {
       const poRes = await db.execute({
-        sql: `SELECT * FROM purchase_orders WHERE faktur_sph IN (${sphFakturs.map(() => '?').join(',')})`,
+        sql: `SELECT * FROM purchase_orders WHERE faktur_sph IN (${sphFakturs.map(() => '?').join(',')}) ${dateSort}`,
         args: sphFakturs
       });
-      purchaseOrders = [...purchaseOrders, ...poRes.rows];
+      purchaseOrders = dedupe([...purchaseOrders, ...poRes.rows]);
     }
 
     // --- LEVEL 8: Penerimaan & Rekap Pembelian (Dependent on POs) ---
@@ -265,21 +346,21 @@ export async function GET(request: NextRequest) {
       const poPlaceholders = poFakturs.map(() => '?').join(',');
       const [pbRes1, pbRes2] = await Promise.all([
         db.execute({
-          sql: `SELECT * FROM penerimaan_pembelian WHERE faktur_po IN (${poPlaceholders})`,
+          sql: `SELECT * FROM penerimaan_pembelian WHERE faktur_po IN (${poPlaceholders}) ${dateSort}`,
           args: poFakturs
         }),
         db.execute({
-          sql: `SELECT * FROM rekap_pembelian_barang WHERE faktur_po IN (${poPlaceholders})`,
+          sql: `SELECT * FROM rekap_pembelian_barang WHERE faktur_po IN (${poPlaceholders}) ${dateSort}`,
           args: poFakturs
         })
       ]);
-      penerimaanPembelian = pbRes1.rows;
+      penerimaanPembelian = dedupe(pbRes1.rows);
       
-      // Append only unique records to pembelianBarang
-      const newPbRows = pbRes2.rows.filter((newRow: any) => 
-        !pembelianBarang.some(existing => existing.faktur === newRow.faktur)
-      );
-      pembelianBarang = [...pembelianBarang, ...newPbRows];
+      // Only append other PB records from the same PO if we are NOT starting from a specific Rekap
+      // This keeps the starting column focused on the user's selection while still tracking the rest
+      if (!isStartingFromRekap) {
+        pembelianBarang = dedupe([...pembelianBarang, ...pbRes2.rows]);
+      }
     }
 
     // --- LEVEL 9: Pelunasan Hutang (Dependent on Pembelian Barang) ---
@@ -287,7 +368,7 @@ export async function GET(request: NextRequest) {
     const pbFakturs = pembelianBarang.map((pb: any) => pb.faktur).filter(Boolean);
     if (pbFakturs.length > 0) {
       const phRes = await db.execute({
-        sql: `SELECT * FROM pelunasan_hutang WHERE faktur_pb IN (${pbFakturs.map(() => '?').join(',')})`,
+        sql: `SELECT * FROM pelunasan_hutang WHERE faktur_pb IN (${pbFakturs.map(() => '?').join(',')}) ${dateSort}`,
         args: pbFakturs
       });
       pelunasanHutang = phRes.rows;
@@ -306,20 +387,20 @@ export async function GET(request: NextRequest) {
       data: {
         bom: parseRawData(bom),
         sphOut: parseRawData(sphOut),
-        spphOut: spphOutList.map(spph => parseRawData(spph)),
-        sphIn: sphInList.map(sph => parseRawData(sph)),
-        purchaseOrders: purchaseOrders.map(po => parseRawData(po)),
+        spphOut: sortData(spphOutList).map(spph => parseRawData(spph)),
+        sphIn: sortData(sphInList).map(sph => parseRawData(sph)),
+        purchaseOrders: sortData(purchaseOrders).map(po => parseRawData(po)),
         salesOrder: parseRawData(salesOrder),
-        productionOrder: productionOrder ? parseRawData(productionOrder) : null,
-        purchaseRequests: purchaseRequests.map(pr => parseRawData(pr)),
-        penerimaanPembelian: penerimaanPembelian.map(pb => parseRawData(pb)),
-        pembelianBarang: pembelianBarang.map(pb => parseRawData(pb)),
-        pelunasanHutang: pelunasanHutang.map(ph => parseRawData(ph)),
-        bahanBaku: bahanBaku.map(bb => parseRawData(bb)),
-        barangJadi: barangJadi.map(bj => parseRawData(bj)),
-        laporanPenjualan: laporanPenjualanList.map(lp => parseRawData(lp)),
-        pengiriman: pengiriman.map(pg => parseRawData(pg)),
-        pelunasanPiutang: pelunasanPiutang.map(pp => parseRawData(pp))
+        productionOrders: sortData(productionOrders).map(prd => parseRawData(prd)),
+        purchaseRequests: sortData(purchaseRequests).map(pr => parseRawData(pr)),
+        penerimaanPembelian: sortData(penerimaanPembelian).map(pb => parseRawData(pb)),
+        pembelianBarang: sortData(pembelianBarang).map(pb => parseRawData(pb)),
+        pelunasanHutang: sortData(pelunasanHutang).map(ph => parseRawData(ph)),
+        bahanBaku: sortData(bahanBaku).map(bb => parseRawData(bb)),
+        barangJadi: sortData(barangJadi).map(bj => parseRawData(bj)),
+        laporanPenjualan: sortData(laporanPenjualanList).map(lp => parseRawData(lp)),
+        pengiriman: sortData(pengiriman).map(pg => parseRawData(pg)),
+        pelunasanPiutang: sortData(pelunasanPiutang, 'tgl', 'fkt').map(pp => parseRawData(pp))
       }
     });
 
