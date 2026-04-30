@@ -14,6 +14,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { DataTable } from '@/components/ui/DataTable';
 import TableFooter from '@/components/TableFooter';
 import SearchAndReload from '@/components/SearchAndReload';
+import Toast from '@/components/Toast';
 
 interface User {
   id: number;
@@ -243,21 +244,31 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
         />
       </div>
 
-      {message && (
-        <div className={`p-4 rounded-xl flex items-center gap-4 text-sm animate-in slide-in-from-top-2 border shadow-sm ${message.type === 'success' ? 'bg-green-50 text-green-600 border-green-100 shadow-green-900/5' : 'bg-red-50 text-red-600 border-red-100 shadow-red-900/5'}`}>
-          {message.type === 'success' ? <BadgeCheck size={20} /> : <AlertCircle size={20} />}
-          <span className="font-bold">{message.text}</span>
-          <button onClick={() => setMessage(null)} className="ml-auto opacity-50 hover:opacity-100 transition-opacity"><X size={18} /></button>
-        </div>
-      )}
-
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <DataTable columns={columns} data={filteredUsers} isLoading={loading} selectedIds={selectedIds} onRowClick={(id: any, e: any) => { setSelectedIds((prev) => { const next = new Set(prev); if (e.shiftKey && lastSelectedId !== null) { const currentIndex = filteredUsers.findIndex((u) => u.id === id); const lastIndex = filteredUsers.findIndex((u) => u.id === lastSelectedId); if (currentIndex !== -1 && lastIndex !== -1) { const start = Math.min(currentIndex, lastIndex); const end = Math.max(currentIndex, lastIndex); for (let i = start; i <= end; i++) next.add(filteredUsers[i].id); } } else if (e.ctrlKey || e.metaKey) { if (next.has(id)) next.delete(id); else next.add(id); } else { if (next.has(id) && next.size === 1) { if (e.detail === 1) next.clear(); } else { next.clear(); next.add(id); } } setLastSelectedId(id); return next; }); }} onRowDoubleClick={(id) => { const user = users.find(u => u.id === id); if (user) handleEdit(user); }} columnWidths={columnWidths} onColumnWidthChange={handleResize} rowHeight="h-16" />
       </div>
       <TableFooter totalCount={users.length} currentCount={filteredUsers.length} label="pengguna" selectedCount={selectedIds.size} onClearSelection={() => setSelectedIds(new Set())} loadTime={loadTime} />
 
-      {showModal && <UserFormModal user={editingUser} customRoles={customRoles} onClose={(refresh) => { setShowModal(false); if (refresh) loadUsers(); }} />}
+      {showModal && (
+        <UserFormModal 
+          user={editingUser} 
+          customRoles={customRoles} 
+          onClose={(refresh) => { 
+            setShowModal(false); 
+            if (refresh) {
+              loadUsers();
+              setMessage({ type: 'success', text: `Data user berhasil ${editingUser ? 'diperbarui' : 'ditambahkan'}.` });
+            }
+          }} 
+        />
+      )}
       <ConfirmDialog isOpen={dialog.isOpen} type={dialog.type} title={dialog.title} message={dialog.message} onConfirm={dialog.onConfirm || (() => setDialog(prev => ({ ...prev, isOpen: false })))} onCancel={() => setDialog(prev => ({ ...prev, isOpen: false }))} />
+      
+      <Toast 
+        message={message?.text || null} 
+        type={message?.type} 
+        onClose={() => setMessage(null)} 
+      />
     </div>
   );
 }
