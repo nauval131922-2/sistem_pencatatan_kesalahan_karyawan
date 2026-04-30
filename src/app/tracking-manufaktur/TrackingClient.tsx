@@ -1,15 +1,13 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { 
    Package, Calculator, Search, ChevronDown, RefreshCw, AlertCircle, 
    Clock, ArrowRight, Loader2, ChevronLeft, ChevronRight, X, Truck, ShoppingCart
 } from 'lucide-react';
 import DatePicker from '@/components/DatePicker';
-import { ColumnDef } from '@tanstack/react-table';
-import { DataTable, ScrollContext } from '@/components/ui/DataTable';
-import { useContext } from 'react';
 import SearchAndReload from '@/components/SearchAndReload';
+
 
 // Unified date formatter for MDT Host source data (YYYY-MM-DD -> DD-MM-YYYY)
 const formatMdtDate = (str: string) => {
@@ -23,6 +21,37 @@ const formatMdtDate = (str: string) => {
       return `${d}-${m}-${y}${time ? ' ' + time : ''}`;
    }
    return clean;
+};
+
+// Helper to parse DD-MM-YYYY or DD/MM/YYYY to Date object
+const parseIndoDate = (tglStr: string) => {
+   if (!tglStr || typeof tglStr !== 'string') return null;
+   // Clean up string and handle different separators
+   const cleanStr = tglStr.trim().replace(/\//g, '-');
+   const parts = cleanStr.split('-');
+   if (parts.length !== 3) return null;
+   
+   let day, month, year;
+   
+   // Detect format: YYYY-MM-DD or DD-MM-YYYY
+   if (parts[0].length === 4) {
+      // YYYY-MM-DD
+      year = parseInt(parts[0]);
+      month = parseInt(parts[1]) - 1;
+      day = parseInt(parts[2]);
+   } else {
+      // DD-MM-YYYY
+      day = parseInt(parts[0]);
+      month = parseInt(parts[1]) - 1;
+      year = parseInt(parts[2]);
+   }
+   
+   if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+   
+   const d = new Date(year, month, day);
+   if (isNaN(d.getTime())) return null;
+   d.setHours(0, 0, 0, 0);
+   return d;
 };
 
 const parseLooseNumber = (value: unknown) => {
@@ -145,7 +174,6 @@ const RenderAllFields = React.memo(RenderAllFieldsRaw);
 const DataCard = React.memo(({ item, highlightText }: { item: any, highlightText: string }) => {
    const [isVisible, setIsVisible] = useState(false);
    const cardRef = useRef<HTMLDivElement>(null);
-   const scrollContainer = useContext(ScrollContext);
 
    useEffect(() => {
       if (!cardRef.current) return;
@@ -165,7 +193,7 @@ const DataCard = React.memo(({ item, highlightText }: { item: any, highlightText
 
       observer.observe(cardRef.current);
       return () => observer.disconnect();
-   }, [scrollContainer]);
+   }, []);
 
    return (
       <div 
@@ -395,206 +423,115 @@ export default function TrackingClient() {
       );
    }, []);
 
-   // Table Columns Definition
-    const columns = useMemo<ColumnDef<any>[]>(() => {
-       const allCols = [
-        {
-           id: 'bom', header: 'Bill of Material Produksi', accessorKey: 'bom', size: columnWidths.bom,
-           meta: { wrap: true, valign: 'top' },
-           cell: ({ row }: any) => <RenderColumnContent label="Bill of Material Produksi" data={row.original.bom} debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
-         },
-         {
-            id: 'sph', header: 'SPH Keluar', accessorKey: 'sphOut', size: columnWidths.sph,
-            meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => <RenderColumnContent label="SPH Keluar" data={row.original.sphOut} extraLabel="(via BOM.faktur = SPH Keluar.faktur_bom)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
-         },
-         {
-            id: 'so', header: 'Sales Order Barang', accessorKey: 'salesOrder', size: columnWidths.so,
-            meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => <RenderColumnContent label="Sales Order Barang" data={row.original.salesOrder} extraLabel="(via SPH Keluar.faktur = SO.faktur_sph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
-         },
-{
-             id: 'production', header: 'Order Produksi', accessorKey: 'productionOrders', size: columnWidths.production,
-             meta: { wrap: true, valign: 'top' },
-              cell: ({ row }: any) => {
-                 const isBomTrack = !!trackingData?.bom;
-                 const label = isBomTrack 
-                    ? "(via SO.faktur = PRD.faktur_so atau BOM.faktur = PRD.faktur_bom)" 
-                    : "(via Rekap.faktur di pemakaian bahan baku)";
-                 return <RenderColumnContent 
-                    label="Order Produksi" 
-                    items={row.original.productionOrders} 
-                    extraLabel={label} 
-                    debouncedFilterText={debouncedFilterText} 
-                    matchesFilter={matchesFilter} 
-                    startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate}
-                 />;
-              }
-          },
-         {
-          id: 'pr', header: 'Purchase Request (PR)', accessorKey: 'purchaseRequests', size: columnWidths.pr,
-          meta: { wrap: true, valign: 'top' },
-          cell: ({ row }: any) => <RenderColumnContent label="Purchase Request (PR)" items={row.original.purchaseRequests} extraLabel="(via PRD.faktur = PR.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
-         },
-         {
-             id: 'spph', header: 'SPPH Keluar', accessorKey: 'spphOut', size: columnWidths.spph,
-            meta: { wrap: true, valign: 'top' },
-             cell: ({ row }: any) => <RenderColumnContent label="SPPH Keluar" items={row.original.spphOut} extraLabel="(via PR.faktur = SPPH.faktur_pr)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
-         },
-         {
-            id: 'sph_in', header: 'SPH Masuk', accessorKey: 'sphIn', size: columnWidths.sph_in,
-            meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => <RenderColumnContent label="SPH Masuk" items={row.original.sphIn} extraLabel="(via SPPH.faktur = SPH In.faktur_spph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
-         },
-         {
-            id: 'purchase_orders', header: 'Purchase Order (PO)', accessorKey: 'purchaseOrders', size: columnWidths.purchase_orders,
-            meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => {
-               const isBomTrack = !!trackingData?.bom;
-               const label = isBomTrack 
-                  ? "(via SPH In.faktur = PO.faktur_sph)" 
-                  : "(via Rekap.faktur_po = PO.faktur)";
-               return <RenderColumnContent 
-                  label="Purchase Order (PO)" 
-                  items={row.original.purchaseOrders} 
-                  extraLabel={label} 
-                  debouncedFilterText={debouncedFilterText} 
-                  matchesFilter={matchesFilter} 
-                  startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate}
-               />;
+   // Tab definitions — each tab maps to a slice of trackingData
+   const tabs = useMemo(() => {
+      if (!trackingData) return [];
+      const isBomPath = trackingPath === 'bom';
+      const allTabs = [
+         { id: 'bom',                  label: 'Bill of Material',         badge: isBomPath ? '(titik awal)' : '',         getData: () => trackingData.bom ? [trackingData.bom] : [] },
+         { id: 'sph',                  label: 'SPH Keluar',               badge: '',                                     getData: () => trackingData.sphOut ? [trackingData.sphOut] : [] },
+         { id: 'so',                   label: 'Sales Order',              badge: '',                                     getData: () => trackingData.salesOrder ? [trackingData.salesOrder] : [] },
+         { id: 'production',           label: 'Order Produksi',           badge: '',                                     getData: () => trackingData.productionOrders || [] },
+         { id: 'pr',                   label: 'Purchase Request',         badge: '',                                     getData: () => trackingData.purchaseRequests || [] },
+         { id: 'spph',                 label: 'SPPH Keluar',              badge: '',                                     getData: () => trackingData.spphOut || [] },
+         { id: 'sph_in',              label: 'SPH Masuk',                badge: '',                                     getData: () => trackingData.sphIn || [] },
+         { id: 'purchase_orders',     label: 'Purchase Order (PO)',      badge: '',                                     getData: () => trackingData.purchaseOrders || [] },
+         { id: 'penerimaan',          label: 'Penerimaan Barang',        badge: '',                                     getData: () => trackingData.penerimaanPembelian || [] },
+         { id: 'rekap_pembelian',     label: 'Rekap Pembelian',          badge: !isBomPath ? '(titik awal)' : '',       getData: () => trackingData.pembelianBarang || [] },
+         { id: 'pelunasan_hutang',    label: 'Pelunasan Hutang',         badge: '',                                     getData: () => trackingData.pelunasanHutang || [] },
+         { id: 'bahan_baku',          label: 'BBB Produksi',             badge: '',                                     getData: () => trackingData.bahanBaku || [] },
+         { id: 'barang_jadi',         label: 'Barang Hasil Produksi',    badge: '',                                     getData: () => trackingData.barangJadi || [] },
+         { id: 'laporan_penjualan',   label: 'Laporan Penjualan',        badge: '',                                     getData: () => trackingData.laporanPenjualan || [] },
+         { id: 'pengiriman',          label: 'Pengiriman',               badge: '',                                     getData: () => trackingData.pengiriman || [] },
+         { id: 'pelunasan_piutang',   label: 'Pelunasan Piutang',        badge: '',                                     getData: () => trackingData.pelunasanPiutang || [] },
+      ];
+      if (!isBomPath) {
+         const hideIds = ['bom','sph','so','production','pr','spph','sph_in','penerimaan','pelunasan_hutang','laporan_penjualan','pengiriman','pelunasan_piutang'];
+         return allTabs.filter(t => !hideIds.includes(t.id));
+      }
+      return allTabs;
+   }, [trackingData, trackingPath]);
+
+   // Currently active tab
+   const [activeTab, setActiveTab] = useState<string>('');
+
+   // Auto-select first tab when data loads
+   useEffect(() => {
+      if (tabs.length > 0 && !tabs.find(t => t.id === activeTab)) {
+         setActiveTab(tabs[0].id);
+      }
+   }, [tabs]);
+
+   // Helper to apply current filters (date and text) to a list of rows
+   const filterRows = useCallback((rawRows: any[]) => {
+      let rows = [...rawRows];
+      
+      // Apply date filter ONLY for "Jalur Barang" (rekap)
+      if (trackingPath === 'rekap' && (startDate || endDate)) {
+         rows = rows.filter((r: any) => {
+            const tglStr = r.tgl || r.tanggal || r.date || r.Tgl || r.Tanggal || r.Date;
+            if (!tglStr) return true; // Keep items without date field
+            const itemDate = parseIndoDate(tglStr);
+            if (!itemDate) return true;
+            
+            if (startDate) {
+               const start = new Date(startDate);
+               start.setHours(0, 0, 0, 0);
+               if (itemDate < start) return false;
             }
-         },
-        {
-           id: 'penerimaan_pembelian', header: 'Penerimaan Barang', accessorKey: 'penerimaanPembelian', size: columnWidths.penerimaan_pembelian,
-           meta: { wrap: true, valign: 'top' },
-           cell: ({ row }: any) => <RenderColumnContent label="Penerimaan Barang" items={row.original.penerimaanPembelian} extraLabel="(via PO.faktur = PB.faktur_po)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
-         },
-         {
-            id: 'pembelian_barang', header: 'Rekap Pembelian Barang', accessorKey: 'pembelianBarang', size: columnWidths.pembelian_barang,
-            meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => {
-               const isBomTrack = !!trackingData?.bom;
-               const label = isBomTrack 
-                  ? "(via PB.faktur = Beli.faktur_pb)" 
-                  : "(titik awal pelacakan)";
-               return <RenderColumnContent 
-                  label="Rekap Pembelian Barang" 
-                  items={row.original.pembelianBarang} 
-                  extraLabel={label} 
-                  debouncedFilterText={debouncedFilterText} 
-                  matchesFilter={matchesFilter} 
-                  startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate}
-               />;
+            if (endDate) {
+               const end = new Date(endDate);
+               end.setHours(23, 59, 59, 999);
+               if (itemDate > end) return false;
             }
-         },
-         {
-            id: 'pelunasan_hutang', header: 'Pelunasan Hutang', accessorKey: 'pelunasanHutang', size: columnWidths.pelunasan_hutang,
-            meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => <RenderColumnContent label="Pelunasan Hutang" items={row.original.pelunasanHutang} extraLabel="(via Beli.faktur = Hutang.faktur_pb)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
-         },
-         {
-            id: 'bahan_baku', header: 'BBB Produksi', accessorKey: 'bahanBaku', size: columnWidths.bahan_baku,
-            meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => {
-               const isBomTrack = !!trackingData?.bom;
-               const subLabels: string[] = [];
+            return true;
+         });
+      }
 
-               return <RenderColumnContent 
-                  label="BBB Produksi" 
-                  items={(row.original.bahanBaku || []).map((it: any) => {
-                     const newIt: any = {};
-                     for (const key in it) {
-                        if (key === 'qty') newIt['qty_bbb_produksi'] = it[key];
-                        else newIt[key] = it[key];
-                     }
-                     return newIt;
-                  })} 
-                  extraLabel={isBomTrack ? "via PRD.faktur = BBB.faktur_prd" : "via Rekap.faktur di hp_detil"}
-                  subLabels={subLabels}
-                  debouncedFilterText={debouncedFilterText} 
-                  matchesFilter={matchesFilter} 
-                  startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate}
-               />;
-            }
-         },
-         {
-            id: 'barang_jadi', header: 'Barang Hasil Produksi', accessorKey: 'barangJadi', size: columnWidths.barang_jadi,
-            meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => {
-               // Filter items by date before summing
-               const filteredItems = (row.original.barangJadi || []).filter((it: any) => {
-                  const tglStr = it.tgl || it.tanggal || it.date || it.Tgl || it.Tanggal || it.Date;
-                  const itemDate = parseIndoDate(tglStr);
-                  if (!itemDate) return true;
-                  if (startDate) {
-                     const start = new Date(startDate);
-                     start.setHours(0,0,0,0);
-                     if (itemDate < start) return false;
-                  }
-                  if (endDate) {
-                     const end = new Date(endDate);
-                     end.setHours(23,59,59,999);
-                     if (itemDate > end) return false;
-                  }
-                  return true;
-               });
+      // Apply text filter
+      if (debouncedFilterText) {
+         const lower = debouncedFilterText.toLowerCase();
+         rows = rows.filter((r: any) =>
+            Object.values(r || {}).some(v => String(v).toLowerCase().includes(lower))
+         );
+      }
+      return rows;
+   }, [trackingPath, startDate, endDate, debouncedFilterText]);
 
-               const totalQty = filteredItems.reduce((sum: number, it: any) => sum + (parseFloat(it.qty) || 0), 0);
-               const satuan = filteredItems[0]?.satuan || '';
-               const subLabels = [];
-               if (filteredItems.length > 0) {
-                  subLabels.push(`Total Qty Hasil Produksi: ${totalQty.toLocaleString('id-ID')} ${satuan}`);
-               }
+   // Get raw items for the active tab, applying text search filter
+   const activeTabData = useMemo(() => {
+      const tab = tabs.find(t => t.id === activeTab);
+      if (!tab) return { rows: [], columns: [] as string[], totalQty: 0 };
+      
+      const rows = filterRows(tab.getData());
+      
+      // Calculate totalQty for specific tabs (ONLY for Jalur Barang / rekap)
+      let totalQty = 0;
+      if (trackingPath === 'rekap' && (activeTab === 'bahan_baku' || activeTab === 'barang_jadi')) {
+         totalQty = rows.reduce((sum: number, r: any) => {
+            const qtyStr = String(r.qty || 0).replace(/,/g, '');
+            return sum + (parseFloat(qtyStr) || 0);
+         }, 0);
+      }
 
-               const isBomTrack = !!trackingData?.bom;
-               const label = isBomTrack 
-                  ? "(via PRD.faktur = Jadi.faktur_prd)" 
-                  : "(via BBB.fkt_hasil = Jadi.faktur)";
-                  
-               return <RenderColumnContent 
-                  label="Barang Hasil Produksi" 
-                  items={filteredItems.map((it: any) => {
-                     const newIt: any = {};
-                     for (const key in it) {
-                        if (key === 'qty') newIt['qty_hasil_produksi'] = it[key];
-                        else newIt[key] = it[key];
-                     }
-                     return newIt;
-                  })} 
-                  extraLabel={label} 
-                  subLabels={subLabels}
-                  debouncedFilterText={debouncedFilterText} 
-                  matchesFilter={matchesFilter} 
-                  startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate}
-               />;
-            }
-         },
-         {
-            id: 'laporan_penjualan', header: 'Laporan Penjualan', accessorKey: 'laporanPenjualan', size: columnWidths.laporan_penjualan,
-            meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => <RenderColumnContent label="Laporan Penjualan" items={row.original.laporanPenjualan} extraLabel="(via SO.faktur = Jual.faktur_so)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
-         },
-         {
-            id: 'pengiriman', header: 'Pengiriman', accessorKey: 'pengiriman', size: columnWidths.pengiriman,
-            meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => <RenderColumnContent label="Pengiriman" items={row.original.pengiriman} extraLabel="(via Jual.faktur = Kirim.faktur)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
-         },
-         {
-            id: 'pelunasan_piutang', header: 'Pelunasan Piutang', accessorKey: 'pelunasanPiutang', size: columnWidths.pelunasan_piutang,
-            meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => <RenderColumnContent label="Pelunasan Piutang" items={row.original.pelunasanPiutang} extraLabel="(via Jual.faktur = Piutang.fkt)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
-         }
-       ];
+      // Derive column keys from union of all row keys, excluding noise
+      const excludeKeys = new Set(['raw_data','mydata','cmd','detil','redid']);
+      const colSet = new Set<string>();
+      rows.forEach((r: any) => Object.keys(r || {}).forEach(k => { if (!excludeKeys.has(k)) colSet.add(k); }));
+      
+      return { rows, columns: Array.from(colSet), totalQty };
+   }, [tabs, activeTab, trackingPath, filterRows]);
 
-       // If not BOM tracking (meaning we started from Rekap Pembelian), hide specific columns
-       if (trackingData && !trackingData.bom) {
-          const hideIds = ['bom', 'sph', 'so', 'production', 'pr', 'spph', 'sph_in', 'penerimaan_pembelian', 'pelunasan_hutang', 'laporan_penjualan', 'pengiriman', 'pelunasan_piutang'];
-          
-          return allCols.filter(col => !hideIds.includes(col.id as string));
-       }
+   // Pagination
+   const PAGE_SIZE = 25;
+   const [currentPage, setCurrentPage] = useState(1);
 
-       return allCols;
-    }, [columnWidths, debouncedFilterText, matchesFilter, trackingData, startDate, endDate]);
+   // Reset to page 1 when tab or filter changes
+   useEffect(() => { setCurrentPage(1); }, [activeTab, debouncedFilterText]);
+
+   const totalPages = Math.max(1, Math.ceil(activeTabData.rows.length / PAGE_SIZE));
+   const paginatedRows = activeTabData.rows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
 
    // Initial load for persistence and new day reset
    useEffect(() => {
@@ -757,36 +694,7 @@ export default function TrackingClient() {
       return () => document.removeEventListener("mousedown", handleClickOutside);
    }, []);
 
-   // Helper to parse DD-MM-YYYY or DD/MM/YYYY to Date object
-   const parseIndoDate = (tglStr: string) => {
-      if (!tglStr || typeof tglStr !== 'string') return null;
-      // Clean up string and handle different separators
-      const cleanStr = tglStr.trim().replace(/\//g, '-');
-      const parts = cleanStr.split('-');
-      if (parts.length !== 3) return null;
-      
-      let day, month, year;
-      
-      // Detect format: YYYY-MM-DD or DD-MM-YYYY
-      if (parts[0].length === 4) {
-         // YYYY-MM-DD
-         year = parseInt(parts[0]);
-         month = parseInt(parts[1]) - 1;
-         day = parseInt(parts[2]);
-      } else {
-         // DD-MM-YYYY
-         day = parseInt(parts[0]);
-         month = parseInt(parts[1]) - 1;
-         year = parseInt(parts[2]);
-      }
-      
-      if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
-      
-      const d = new Date(year, month, day);
-      if (isNaN(d.getTime())) return null;
-      d.setHours(0, 0, 0, 0);
-      return d;
-   };
+
 
    // Memoized filtered data based on text and dates
    const filteredData = useMemo(() => {
@@ -1237,6 +1145,7 @@ export default function TrackingClient() {
 
          {/* RESULTS SECTION */}
          <div className="flex-1 flex flex-col gap-3 overflow-hidden min-h-0 relative">
+            {/* Header */}
             <div className="flex flex-col gap-4 shrink-0 px-1">
                <div className="flex items-center justify-between gap-4 min-h-[32px]">
                   <h3 className="text-[14px] font-bold text-gray-800 flex items-center gap-3 leading-none">
@@ -1247,56 +1156,231 @@ export default function TrackingClient() {
                   </h3>
                   {isAutoRefreshing && (
                      <div className="flex items-center gap-3 text-[10px] font-bold text-green-600 animate-pulse bg-green-50 px-4 py-2 rounded-full border border-green-100 shadow-sm leading-none">
-                       <Loader2 size={12} className="animate-spin" />
+                        <Loader2 size={12} className="animate-spin" />
                         <span>Memproses Data...</span>
                      </div>
                   )}
                </div>
-               <SearchAndReload 
-                  searchQuery={filterText} 
-                  setSearchQuery={setFilterText} 
-                  onReload={() => { if (selectedFaktur) fetchTrackingData(selectedFaktur); }} 
-                  loading={loadingData} 
-                  placeholder="Cari dalam hasil pelacakan (faktur, barang, pelanggan, dll)..." 
+               <SearchAndReload
+                  searchQuery={filterText}
+                  setSearchQuery={setFilterText}
+                  onReload={() => { if (selectedFaktur) fetchTrackingData(selectedFaktur); }}
+                  loading={loadingData}
+                  placeholder="Cari dalam hasil pelacakan (faktur, barang, pelanggan, dll)..."
                />
             </div>
-            
-            <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
-               {useMemo(() => (
-                  <DataTable
-                     columns={columns} 
-                     data={filteredData}
-                     isLoading={loadingData} 
-                     columnWidths={columnWidths} 
-                     onColumnWidthChange={setColumnWidths}
-                     rowHeight="h-auto" 
-                     className="flex-1" 
-                     onRowClick={() => { }}
-                     hideSorting={true} 
-                     disableHover={true} 
-                     rowCursor="cursor-grab"
-                  />
-               ), [columns, filteredData, loadingData, columnWidths])}
-               
-               {/* FOOTER INFO BANNER */}
-               <div className="flex items-center justify-between shrink-0 px-2 min-h-[30px]">
-                  <span className="text-[11px] font-bold text-gray-400 tracking-wide flex items-center gap-2">
-                     {loadingData ? (
-                        <>
-                           <Loader2 size={14} className="animate-spin text-green-600" />
-                           Sedang menelusuri alur produksi...
-                        </>
-                     ) : trackingData ? 'Status: 1 siklus produksi berhasil dilacak' : 'Info: Silakan pilih nomor BOM untuk memulai pelacakan'}
-                  </span>
-                  {loadTime !== null && trackingData && (
-                     <div className="flex items-center gap-6">
-                        <div className={`text-[9px] px-2 py-1 rounded-full font-bold flex items-center gap-1.5 border tracking-wide shadow-sm ${loadTime < 300 ? 'bg-green-50 text-green-600 border-green-100' : loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
-                           <span className="animate-pulse">⚡</span>
-                           <span className="leading-none">{(loadTime / 1000).toFixed(2)}s</span>
-                        </div>
+
+            {/* Tab bar + table area */}
+            <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-white border border-gray-100 shadow-sm rounded-2xl">
+               {loadingData ? (
+                  <div className="flex-1 flex items-center justify-center">
+                     <div className="flex flex-col items-center gap-4">
+                        <div className="w-12 h-12 border-4 border-gray-100 rounded-full border-t-green-600 animate-spin" />
+                        <span className="text-[12px] font-bold text-gray-500 animate-pulse">Menelusuri alur produksi...</span>
                      </div>
-                  )}
-               </div>
+                  </div>
+               ) : !trackingData ? (
+                  <div className="flex-1 flex items-center justify-center">
+                     <div className="flex flex-col items-center gap-3 text-center">
+                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center">
+                           <Clock className="text-gray-200" size={32} />
+                        </div>
+                        <p className="text-[13px] font-bold text-gray-400">Pilih BOM atau Barang untuk memulai pelacakan</p>
+                     </div>
+                  </div>
+               ) : (
+                  <>
+                     {/* Scrollable Tab Bar */}
+                     <div className="flex overflow-x-auto custom-scrollbar shrink-0 border-b border-gray-100 px-2 pt-2 gap-1">
+                        {tabs.map(tab => {
+                           const count = filterRows(tab.getData()).length;
+                           const isActive = activeTab === tab.id;
+                           return (
+                              <button
+                                 key={tab.id}
+                                 onClick={() => setActiveTab(tab.id)}
+                                 className={`flex items-center gap-2 px-4 py-2.5 rounded-t-lg whitespace-nowrap text-[12px] font-bold transition-all shrink-0 border-b-2 ${
+                                    isActive
+                                       ? 'bg-green-50 text-green-700 border-green-500'
+                                       : 'text-gray-400 border-transparent hover:text-gray-600 hover:bg-gray-50'
+                                 }`}
+                              >
+                                 <span>{tab.label}</span>
+                                 {tab.badge && (
+                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-green-100 text-green-700 font-bold tracking-wide">{tab.badge}</span>
+                                 )}
+                                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                                    count > 0 ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-400'
+                                 }`}>{count}</span>
+                              </button>
+                           );
+                        })}
+                     </div>
+
+                     {/* Tab Content — Horizontal Table */}
+                     <div className="flex-1 min-h-0 overflow-auto custom-scrollbar">
+                        {activeTabData.rows.length === 0 ? (
+                           <div className="flex flex-col items-center justify-center py-24 text-center">
+                              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                                 <AlertCircle className="text-gray-200" size={28} />
+                              </div>
+                              <p className="text-[13px] font-bold text-gray-400">Tidak ada data pada tahap ini</p>
+                              {debouncedFilterText && (
+                                 <p className="text-[11px] text-gray-300 mt-1">untuk pencarian &quot;{debouncedFilterText}&quot;</p>
+                              )}
+                           </div>
+                        ) : (
+                           <table className="w-full text-left border-separate border-spacing-0 text-[12px]">
+                              <thead className="sticky top-0 z-10">
+                                 <tr>
+                                    <th className="px-4 py-3 bg-gray-50 border-b border-r border-gray-100 text-[10px] font-bold text-gray-400 tracking-widest whitespace-nowrap w-10">#</th>
+                                    {activeTabData.columns.map(col => (
+                                       <th
+                                          key={col}
+                                          className="px-4 py-3 bg-gray-50 border-b border-r border-gray-100 text-[10px] font-bold text-gray-500 tracking-wide whitespace-nowrap last:border-r-0"
+                                       >
+                                          {toTitleCase(col)}
+                                       </th>
+                                    ))}
+                                 </tr>
+                              </thead>
+                              <tbody>
+                                 {paginatedRows.map((row: any, rowIdx: number) => {
+                                    const globalIdx = (currentPage - 1) * PAGE_SIZE + rowIdx;
+                                    return (
+                                    <tr
+                                       key={rowIdx}
+                                       className={`border-b border-gray-50 transition-colors hover:bg-green-50/40 ${
+                                          rowIdx % 2 === 1 ? 'bg-gray-50/30' : 'bg-white'
+                                       }`}
+                                    >
+                                       <td className="px-4 py-2.5 border-r border-gray-50 text-[11px] text-gray-300 font-bold tabular-nums">{globalIdx + 1}</td>
+                                       {activeTabData.columns.map(col => {
+                                          const val = row[col];
+                                          let display = val === null || val === undefined ? '-' : typeof val === 'string' ? val.replace(/<[^>]*>?/gm, '').trim() || '-' : String(val);
+                                          // Format numbers
+                                          const num = parseFloat(display.replace(/,/g, ''));
+                                          if (!isNaN(num) && display.includes('.') && display.length > 5) {
+                                             display = num.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                          }
+                                          // Highlight search text
+                                          const lowerSearch = debouncedFilterText.toLowerCase();
+                                          const isMatch = debouncedFilterText && display.toLowerCase().includes(lowerSearch);
+                                          return (
+                                             <td
+                                                key={col}
+                                                className="px-4 py-2.5 border-r border-gray-50 last:border-r-0 font-medium text-gray-700 whitespace-nowrap max-w-[280px] overflow-hidden text-ellipsis"
+                                             >
+                                                {isMatch ? (
+                                                   <HighlightedText text={display} highlight={debouncedFilterText} />
+                                                ) : display}
+                                             </td>
+                                          );
+                                       })}
+                                    </tr>
+                                    );
+                                 })}
+                              </tbody>
+                           </table>
+                        )}
+                     </div>
+                     {/* Footer */}
+                     <div className="flex flex-col sm:flex-row sm:items-center justify-between shrink-0 px-4 py-2.5 border-t border-gray-100 bg-gray-50/30 gap-3">
+                        {/* Left: Info Section */}
+                        <div className="flex flex-wrap items-center gap-4">
+                           {/* Count Info */}
+                           <span className="text-[11px] font-bold text-gray-400">
+                              {activeTabData.rows.length > 0
+                                 ? `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, activeTabData.rows.length)} dari ${activeTabData.rows.length} data`
+                                 : '0 data'}
+                              {debouncedFilterText ? ` untuk "${debouncedFilterText}"` : ''}
+                           </span>
+
+                           {/* Load Time */}
+                           {loadTime !== null && (
+                              <div className={`text-[9px] px-2 py-1 rounded-full font-bold flex items-center gap-1.5 border tracking-wide ${
+                                 loadTime < 300 ? 'bg-green-50 text-green-600 border-green-100' : loadTime < 1000 ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-red-50 text-red-600 border-red-100'
+                              }`}>
+                                 <span>⚡</span>
+                                 <span>{(loadTime / 1000).toFixed(2)}s</span>
+                              </div>
+                           )}
+
+                           {/* Total Qty (Only for specific tabs and Jalur Barang) */}
+                           {trackingPath === 'rekap' && (activeTab === 'bahan_baku' || activeTab === 'barang_jadi') && activeTabData.rows.length > 0 && (
+                              <div className="text-[11px] font-bold text-gray-600 bg-white px-3 py-1 rounded-lg border border-gray-200 shadow-sm flex items-center gap-2">
+                                 <span>Total Qty:</span>
+                                 <span className="text-green-700 text-[12px]">{activeTabData.totalQty.toLocaleString('id-ID')}</span>
+                              </div>
+                           )}
+                        </div>
+
+                        {/* Right: Pagination Controls */}
+                        {totalPages > 1 && (
+                           <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                 onClick={() => setCurrentPage(1)}
+                                 disabled={currentPage === 1}
+                                 className="w-7 h-7 flex items-center justify-center rounded-lg text-[11px] font-bold text-gray-400 hover:bg-green-50 hover:text-green-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                 title="Halaman pertama"
+                              >
+                                 «
+                              </button>
+                              <button
+                                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                 disabled={currentPage === 1}
+                                 className="w-7 h-7 flex items-center justify-center rounded-lg text-[11px] font-bold text-gray-400 hover:bg-green-50 hover:text-green-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                              >
+                                 <ChevronLeft size={14} />
+                              </button>
+
+                              {/* Page number pills */}
+                              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                 .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                                 .reduce<(number | 'ellipsis')[]>((acc, p, idx, arr) => {
+                                    if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('ellipsis');
+                                    acc.push(p);
+                                    return acc;
+                                 }, [])
+                                 .map((p, i) =>
+                                    p === 'ellipsis' ? (
+                                       <span key={`e-${i}`} className="w-7 text-center text-[11px] text-gray-300 font-bold">…</span>
+                                    ) : (
+                                       <button
+                                          key={p}
+                                          onClick={() => setCurrentPage(p as number)}
+                                          className={`w-7 h-7 flex items-center justify-center rounded-lg text-[11px] font-bold transition-all ${
+                                             currentPage === p
+                                                ? 'bg-green-600 text-white shadow-sm'
+                                                : 'text-gray-500 hover:bg-green-50 hover:text-green-700'
+                                          }`}
+                                       >
+                                          {p}
+                                       </button>
+                                    )
+                                 )
+                              }
+
+                              <button
+                                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                 disabled={currentPage === totalPages}
+                                 className="w-7 h-7 flex items-center justify-center rounded-lg text-[11px] font-bold text-gray-400 hover:bg-green-50 hover:text-green-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                              >
+                                 <ChevronRight size={14} />
+                              </button>
+                              <button
+                                 onClick={() => setCurrentPage(totalPages)}
+                                 disabled={currentPage === totalPages}
+                                 className="w-7 h-7 flex items-center justify-center rounded-lg text-[11px] font-bold text-gray-400 hover:bg-green-50 hover:text-green-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                 title="Halaman terakhir"
+                              >
+                                 »
+                              </button>
+                           </div>
+                        )}
+                     </div>
+                  </>
+               )}
             </div>
          </div>
       </div>
