@@ -511,7 +511,7 @@ export default function JurnalClient({ importInfo }: JurnalClientProps) {
                <ImportInfo info={importInfo} />
             </div>
             {loading && (data?.length || 0) > 0 && (
-                <div className="text-[10px] font-bold text-green-600 flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full border border-green-100 shadow-sm animate-pulse uppercase tracking-widest leading-none">
+                <div className="text-[10px] font-bold text-green-600 flex items-center gap-2 bg-green-50 px-4 py-2 rounded-full border border-green-100 shadow-sm animate-pulse tracking-tight leading-none">
                   <Loader2 size={12} className="animate-spin" />
                   <span>Memproses Data...</span>
                 </div>

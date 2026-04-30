@@ -78,9 +78,8 @@ export function DataTable<TData extends { id: number | string }>({
     // Only drag if it's the left mouse button
     if (e.button !== 0) return;
 
-    // IMPORTANT: If user is clicking on text to select it, do NOT start dragging
-    const target = e.target as HTMLElement;
-    if (target.closest('.select-text')) return;
+    // IMPORTANT: We allow dragging even on text to make navigation easier in large tables
+    // Users can still select text by moving slowly or double-clicking
 
     setIsPointerDown(true);
     startX.current = e.pageX - parentRef.current.offsetLeft;
@@ -214,7 +213,7 @@ export function DataTable<TData extends { id: number | string }>({
                             onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); header.getResizeHandler()(e); }}
                             className={`absolute -right-[4px] top-0 bottom-0 w-[8px] z-50 cursor-col-resize group/resizer transition-opacity ${header.column.getIsResizing() ? 'opacity-100' : 'opacity-0 hover:opacity-100'}`}
                           >
-                            <div className={`mx-auto h-full w-[4px] ${header.column.getIsResizing() ? 'bg-black' : 'bg-black/50 group-hover/resizer:bg-black'}`} />
+                            <div className={`mx-auto h-full w-[4px] transition-colors ${header.column.getIsResizing() ? 'bg-green-500' : 'bg-transparent group-hover/resizer:bg-green-200'}`} />
                           </div>
                         )}
                       </th>);
@@ -278,7 +277,7 @@ export function DataTable<TData extends { id: number | string }>({
                    <div className="w-12 h-12 border-4 border-gray-100 rounded-full border-t-green-600 animate-spin" />
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                   <span className="text-[12px] font-bold text-gray-700 uppercase tracking-widest animate-pulse">Memproses Data</span>
+                   <span className="text-[12px] font-bold text-gray-700 tracking-tight animate-pulse">Memproses Data...</span>
                 </div>
              </div>
           </div>
