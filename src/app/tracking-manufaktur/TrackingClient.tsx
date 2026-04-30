@@ -1,7 +1,11 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, Loader2, Calculator, ArrowRight, AlertCircle, Clock, ChevronDown, RefreshCw } from 'lucide-react';
+import { 
+   Package, Calculator, Search, ChevronDown, RefreshCw, AlertCircle, 
+   Clock, ArrowRight, Loader2, ChevronLeft, ChevronRight, X, Truck, ShoppingCart
+} from 'lucide-react';
+import DatePicker from '@/components/DatePicker';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable, ScrollContext } from '@/components/ui/DataTable';
 import { useContext } from 'react';
@@ -93,23 +97,18 @@ const HighlightedText = React.memo(({ text, highlight }: { text: string; highlig
 HighlightedText.displayName = 'HighlightedText';
 
 // Memoized individual field to reduce render work
-const DataField = React.memo(({ k, v, isRaw, highlight }: { k: string, v: any, isRaw: boolean, highlight: string }) => {
-   let displayVal = String(v);
+const DataField = React.memo(({ v, isRaw, highlight }: { v: any, isRaw: boolean, highlight: string }) => {
+   // Strip HTML tags if value is a string
+   let displayVal = typeof v === 'string' ? v.replace(/<[^>]*>?/gm, '').trim() : String(v);
+
    if (!isRaw) {
-      const numVal = parseFloat(String(v).replace(/,/g, ''));
-      if (!isNaN(numVal)) {
+      const numVal = parseFloat(displayVal.replace(/,/g, ''));
+      if (!isNaN(numVal) && displayVal.includes('.') && displayVal.length > 5) {
          displayVal = numVal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       }
    }
 
-   return (
-      <div className="flex items-start justify-between gap-4 text-[12px] leading-tight group/field">
-         <span className="text-gray-400 font-medium shrink-0 text-[11px]">{k}</span>
-         <span className="text-gray-700 font-bold text-right break-words group-hover/field:text-green-600 transition-colors">
-            <HighlightedText text={displayVal} highlight={highlight} />
-         </span>
-      </div>
-   );
+   return <HighlightedText text={displayVal} highlight={highlight} />;
 });
 DataField.displayName = 'DataField';
 
@@ -124,9 +123,16 @@ const RenderAllFieldsRaw = ({ data, excludeKeys = [], highlightText = '' }: { da
    const rawFields = ['id', 'kode_cabang', 'kd_cabang', 'tgl', 'status', 'created_at', 'edited_at', 'kd_barang', 'recid', 'top_hari', 'kd_gudang', 'create_at', 'updated_at', 'kd_pelanggan', 'datetime_mulai', 'datetime_selesai', 'tgl_dibutuhkan', 'tgl_close', 'status_close', 'jthtmp', 'faktur_supplier', 'tgl_lunas', 'kd_porsekot', 'kd_bank', 'kd_supir', 'kd_armada', 'kd_eks', 'waktu_kirim', 'waktu_selesai', 'tgl_expired', 'gol_barang', 'no_ref_pelanggan'];
 
    return (
-      <div className="grid grid-cols-1 gap-2.5 overflow-hidden">
+      <div className="mt-2 pt-2 border-t border-gray-100 flex flex-col gap-1.5 overflow-hidden">
          {entries.map(([key, val]) => (
-            <DataField key={key} k={key} v={val} isRaw={rawFields.includes(key.toLowerCase())} highlight={highlightText} />
+            <div key={key} className="flex gap-4 items-start text-[11px] group/field">
+               <div className="w-[120px] shrink-0 font-medium text-gray-400">
+                  {toTitleCase(key)}
+               </div>
+               <div className="flex-1 text-gray-800 font-bold break-words group-hover/field:text-green-600 transition-colors">
+                  <DataField v={val} isRaw={rawFields.includes(key.toLowerCase())} highlight={highlightText} />
+               </div>
+            </div>
          ))}
       </div>
    );
@@ -167,7 +173,16 @@ const DataCard = React.memo(({ item, highlightText }: { item: any, highlightText
          className={cardClass}
       >
          {isVisible ? (
-            <RenderAllFields data={item} excludeKeys={['raw_data']} highlightText={highlightText} />
+            <RenderAllFields 
+               data={item} 
+               excludeKeys={[
+                  'raw_data', 'id', 'kd_gudang', 'kd_cabang', 'status', 'status_close', 
+                  'mydata', 'create_at', 'created_at', 'updated_at', 'edited_at', 
+                  'username', 'username_edited', 'deleted_at', 'username_deleted', 
+                  'pr_edited_at', 'sph_edited_at', 'cmd', 'detil', 'redid', 'recid'
+               ]} 
+               highlightText={highlightText} 
+            />
          ) : (
             <div className="flex flex-col gap-2.5 animate-pulse">
                <div className="h-3 w-3/4 bg-gray-50 rounded-lg" />
@@ -181,38 +196,93 @@ const DataCard = React.memo(({ item, highlightText }: { item: any, highlightText
 DataCard.displayName = 'DataCard';
 
 // Helper component for uniform column rendering
-const RenderColumnContent = React.memo(({ label, data, items, debouncedFilterText, matchesFilter, extraLabel }: any) => {
-   const filterLabel = debouncedFilterText ? `(HASIL CARI: "${debouncedFilterText}")` : extraLabel;
+const RenderColumnContent = React.memo(({ label, data, items, debouncedFilterText, matchesFilter, extraLabel, subLabels = [], startDate, endDate, parseIndoDate }: any) => {
+   const containerRef = useRef<HTMLDivElement>(null);
 
-   if (items) {
-      const filtered = useMemo(() => 
-         debouncedFilterText ? items.filter((it: any) => matchesFilter(it, debouncedFilterText)) : items
-      , [items, debouncedFilterText]);
+   // Unified date filtering for cards
+   const filterByDate = (item: any) => {
+      if (!item) return false;
+      if (!startDate && !endDate) return true;
+      
+      // Check multiple common date keys (case-insensitive)
+      const tglStr = item.tgl || item.tanggal || item.date || item.Tgl || item.Tanggal || item.Date;
+      if (!tglStr) return false; // If filter is active and no date found, hide it
 
-      if (!filtered || filtered.length === 0) return (
-         <div className="flex flex-col gap-3 pt-2 pb-4 w-full max-w-full overflow-hidden px-1">
-            <div className="text-[10px] font-bold text-gray-300 mb-1">0 Data {label} {filterLabel && <span className="text-gray-200">{filterLabel}</span>}</div>
-         </div>
-      );
-      return (
-         <div className="flex flex-col gap-2 pt-0 pb-5 w-full max-w-full overflow-hidden px-1">
-            <div className="text-[10px] font-bold text-gray-400 mb-0 px-1">{filtered.length} Data {label} {filterLabel && <span className="text-gray-300 font-medium ml-1">{filterLabel}</span>}</div>
-            {filtered.map((item: any, idx: number) => (
-               <DataCard key={item.id || idx} item={item} highlightText={debouncedFilterText} />
-            ))}
-         </div>
-      );
-   }
-   
-   if (!data || (debouncedFilterText && !matchesFilter(data, debouncedFilterText))) return (
-      <div className="flex flex-col gap-1.5 pt-0 pb-4 w-full max-w-full overflow-hidden px-1">
-         <div className="text-[10px] font-bold text-gray-300 mb-0">0 Data {label} {filterLabel && <span className="text-gray-200">{filterLabel}</span>}</div>
-      </div>
-   );
+      const itemDate = parseIndoDate(tglStr);
+      if (!itemDate) return true; // Keep if can't parse (prevent accidental hiding of valid but weird data)
+
+      if (startDate) {
+         const start = new Date(startDate);
+         start.setHours(0, 0, 0, 0);
+         if (itemDate < start) return false;
+      }
+      if (endDate) {
+         const end = new Date(endDate);
+         end.setHours(23, 59, 59, 999);
+         if (itemDate > end) return false;
+      }
+      return true;
+   };
+
+   // Process items array
+   const finalItems = useMemo(() => {
+      let filtered = items || [];
+      if (startDate || endDate) {
+         filtered = filtered.filter(filterByDate);
+      }
+      if (debouncedFilterText) {
+         filtered = filtered.filter((it: any) => matchesFilter(it, debouncedFilterText));
+      }
+      return filtered;
+   }, [items, startDate, endDate, debouncedFilterText, matchesFilter, parseIndoDate]);
+
+   // Process single data
+   const finalData = useMemo(() => {
+      if (!data) return null;
+      if (!filterByDate(data)) return null;
+      if (debouncedFilterText && !matchesFilter(data, debouncedFilterText)) return null;
+      return data;
+   }, [data, startDate, endDate, debouncedFilterText, matchesFilter, parseIndoDate]);
+
+   const totalCount = finalItems.length || (finalData ? 1 : 0);
+   const filterLabel = debouncedFilterText ? `(HASIL CARI: "${debouncedFilterText}")` : '';
+
    return (
-      <div className="flex flex-col gap-2 pt-0 pb-5 w-full max-w-full overflow-hidden px-1">
-         <div className="text-[10px] font-bold text-gray-400 mb-0 px-1">1 Data {label} {filterLabel && <span className="text-gray-300 font-medium ml-1">{filterLabel}</span>}</div>
-         <DataCard item={data} highlightText={debouncedFilterText} />
+      <div className="flex flex-col h-full min-h-0">
+         { (totalCount === 0 || extraLabel || subLabels.length > 0) && (
+            <div className="mt-2.5 mb-2 px-3 py-2.5 bg-green-50 border border-green-200 rounded-lg shadow-sm">
+               <p className="text-[11px] text-green-900 leading-tight">
+                  <span className="font-bold underline decoration-green-300 underline-offset-4">{totalCount} Data {label}</span>
+               </p>
+               {extraLabel && <p className="text-[10px] text-green-700 mt-1.5 font-medium italic">{extraLabel}</p>}
+               {subLabels.length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-green-100 flex flex-col gap-1">
+                     {subLabels.map((sl: string, i: number) => {
+                        const isSubItem = /^\d+\./.test(sl.trim());
+                        return (
+                           <div key={i} className={`flex items-start gap-1.5 text-[10px] text-gray-800 leading-tight ${isSubItem ? 'ml-4' : ''}`}>
+                              {!isSubItem && <span className="text-green-600 font-bold shrink-0">•</span>}
+                              <span className="font-medium">{sl}</span>
+                           </div>
+                        );
+                     })}
+                  </div>
+               )}
+            </div>
+         )}
+         
+         <div className="flex flex-col gap-2 pt-0 pb-5 w-full max-w-full overflow-hidden px-1">
+            {totalCount === 0 ? (
+               <div className="pt-2 pb-4 w-full"></div>
+            ) : (
+               <>
+                  {finalItems.map((item: any, idx: number) => (
+                     <DataCard key={`${item.id || item.faktur || idx}-${idx}`} item={item} highlightText={debouncedFilterText} />
+                  ))}
+                  {finalData && <DataCard item={finalData} highlightText={debouncedFilterText} />}
+               </>
+            )}
+         </div>
       </div>
    );
 });
@@ -234,7 +304,7 @@ export default function TrackingClient() {
          sphIn: any[];
          purchaseOrders: any[];
          salesOrder?: any;
-         productionOrder?: any;
+         productionOrders?: any[];
          purchaseRequests: any[];
          pengiriman: any[];
          pelunasanPiutang: any[];
@@ -249,6 +319,7 @@ export default function TrackingClient() {
    const [suggestionPage, setSuggestionPage] = useState(1);
    const [hasMoreSuggestions, setHasMoreSuggestions] = useState(true);
    const [loadTime, setLoadTime] = useState<number | null>(null);
+   const [trackingPath, setTrackingPath] = useState<'bom' | 'rekap' | null>(null);
 
    // State for Rekap Pembelian filter
    const [qRekap, setQRekap] = useState('');
@@ -258,6 +329,17 @@ export default function TrackingClient() {
    const [hasMoreRekapSuggestions, setHasMoreRekapSuggestions] = useState(true);
    const [openRekap, setOpenRekap] = useState(false);
    const rekapSuggestionRef = useRef<HTMLDivElement>(null);
+   const [startDate, setStartDate] = useState<Date | null>(null);
+   const [endDate, setEndDate] = useState<Date | null>(null);
+
+   const [selectedFakturSupplier, setSelectedFakturSupplier] = useState<string | null>(null);
+   // State for Supplier filter
+   const [qSupplier, setQSupplier] = useState('');
+   const [suppliers, setSuppliers] = useState<any[]>([]);
+   const [loadingSuppliers, setLoadingSuppliers] = useState(false);
+   const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null);
+   const [openSupplier, setOpenSupplier] = useState(false);
+   const supplierSuggestionRef = useRef<HTMLDivElement>(null);
 
    const [filterText, setFilterText] = useState('');
    const [debouncedFilterText, setDebouncedFilterText] = useState(''); // We use this for the actual table filtering
@@ -314,43 +396,55 @@ export default function TrackingClient() {
    }, []);
 
    // Table Columns Definition
-    // Table Columns Definition
     const columns = useMemo<ColumnDef<any>[]>(() => {
        const allCols = [
         {
            id: 'bom', header: 'Bill of Material Produksi', accessorKey: 'bom', size: columnWidths.bom,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }: any) => <RenderColumnContent label="Bill of Material Produksi" data={row.original.bom} debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }: any) => <RenderColumnContent label="Bill of Material Produksi" data={row.original.bom} debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
          },
          {
             id: 'sph', header: 'SPH Keluar', accessorKey: 'sphOut', size: columnWidths.sph,
             meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => <RenderColumnContent label="SPH Keluar" data={row.original.sphOut} extraLabel="(via BOM.faktur = SPH Keluar.faktur_bom)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+            cell: ({ row }: any) => <RenderColumnContent label="SPH Keluar" data={row.original.sphOut} extraLabel="(via BOM.faktur = SPH Keluar.faktur_bom)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
          },
          {
             id: 'so', header: 'Sales Order Barang', accessorKey: 'salesOrder', size: columnWidths.so,
             meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => <RenderColumnContent label="Sales Order Barang" data={row.original.salesOrder} extraLabel="(via SPH Keluar.faktur = SO.faktur_sph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+            cell: ({ row }: any) => <RenderColumnContent label="Sales Order Barang" data={row.original.salesOrder} extraLabel="(via SPH Keluar.faktur = SO.faktur_sph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
          },
-         {
-            id: 'production', header: 'Order Produksi', accessorKey: 'productionOrder', size: columnWidths.production,
-            meta: { wrap: true, valign: 'top' },
-             cell: ({ row }: any) => <RenderColumnContent label="Order Produksi" data={row.original.productionOrder} extraLabel="(via SO.faktur = PRD.faktur_so atau BOM.faktur = PRD.faktur_bom)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
-         },
+{
+             id: 'production', header: 'Order Produksi', accessorKey: 'productionOrders', size: columnWidths.production,
+             meta: { wrap: true, valign: 'top' },
+              cell: ({ row }: any) => {
+                 const isBomTrack = !!trackingData?.bom;
+                 const label = isBomTrack 
+                    ? "(via SO.faktur = PRD.faktur_so atau BOM.faktur = PRD.faktur_bom)" 
+                    : "(via Rekap.faktur di pemakaian bahan baku)";
+                 return <RenderColumnContent 
+                    label="Order Produksi" 
+                    items={row.original.productionOrders} 
+                    extraLabel={label} 
+                    debouncedFilterText={debouncedFilterText} 
+                    matchesFilter={matchesFilter} 
+                    startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate}
+                 />;
+              }
+          },
          {
           id: 'pr', header: 'Purchase Request (PR)', accessorKey: 'purchaseRequests', size: columnWidths.pr,
           meta: { wrap: true, valign: 'top' },
-          cell: ({ row }: any) => <RenderColumnContent label="Purchase Request (PR)" items={row.original.purchaseRequests} extraLabel="(via PRD.faktur = PR.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+          cell: ({ row }: any) => <RenderColumnContent label="Purchase Request (PR)" items={row.original.purchaseRequests} extraLabel="(via PRD.faktur = PR.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
          },
          {
              id: 'spph', header: 'SPPH Keluar', accessorKey: 'spphOut', size: columnWidths.spph,
             meta: { wrap: true, valign: 'top' },
-             cell: ({ row }: any) => <RenderColumnContent label="SPPH Keluar" items={row.original.spphOut} extraLabel="(via PR.faktur = SPPH.faktur_pr)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+             cell: ({ row }: any) => <RenderColumnContent label="SPPH Keluar" items={row.original.spphOut} extraLabel="(via PR.faktur = SPPH.faktur_pr)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
          },
          {
             id: 'sph_in', header: 'SPH Masuk', accessorKey: 'sphIn', size: columnWidths.sph_in,
             meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => <RenderColumnContent label="SPH Masuk" items={row.original.sphIn} extraLabel="(via SPPH.faktur = SPH In.faktur_spph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+            cell: ({ row }: any) => <RenderColumnContent label="SPH Masuk" items={row.original.sphIn} extraLabel="(via SPPH.faktur = SPH In.faktur_spph)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
          },
          {
             id: 'purchase_orders', header: 'Purchase Order (PO)', accessorKey: 'purchaseOrders', size: columnWidths.purchase_orders,
@@ -366,13 +460,14 @@ export default function TrackingClient() {
                   extraLabel={label} 
                   debouncedFilterText={debouncedFilterText} 
                   matchesFilter={matchesFilter} 
+                  startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate}
                />;
             }
          },
         {
            id: 'penerimaan_pembelian', header: 'Penerimaan Barang', accessorKey: 'penerimaanPembelian', size: columnWidths.penerimaan_pembelian,
            meta: { wrap: true, valign: 'top' },
-           cell: ({ row }: any) => <RenderColumnContent label="Penerimaan Barang" items={row.original.penerimaanPembelian} extraLabel="(via PO.faktur = PB.faktur_po)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+           cell: ({ row }: any) => <RenderColumnContent label="Penerimaan Barang" items={row.original.penerimaanPembelian} extraLabel="(via PO.faktur = PB.faktur_po)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
          },
          {
             id: 'pembelian_barang', header: 'Rekap Pembelian Barang', accessorKey: 'pembelianBarang', size: columnWidths.pembelian_barang,
@@ -388,61 +483,165 @@ export default function TrackingClient() {
                   extraLabel={label} 
                   debouncedFilterText={debouncedFilterText} 
                   matchesFilter={matchesFilter} 
+                  startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate}
                />;
             }
          },
          {
             id: 'pelunasan_hutang', header: 'Pelunasan Hutang', accessorKey: 'pelunasanHutang', size: columnWidths.pelunasan_hutang,
             meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => <RenderColumnContent label="Pelunasan Hutang" items={row.original.pelunasanHutang} extraLabel="(via Beli.faktur = Hutang.faktur_pb)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+            cell: ({ row }: any) => <RenderColumnContent label="Pelunasan Hutang" items={row.original.pelunasanHutang} extraLabel="(via Beli.faktur = Hutang.faktur_pb)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
          },
          {
             id: 'bahan_baku', header: 'BBB Produksi', accessorKey: 'bahanBaku', size: columnWidths.bahan_baku,
             meta: { wrap: true, valign: 'top' },
             cell: ({ row }: any) => {
                const isBomTrack = !!trackingData?.bom;
-               const label = isBomTrack 
-                  ? "(via PRD.faktur = BBB.faktur_prd)" 
-                  : "(via Rekap.faktur_pb di hp_detil)";
+               const subLabels: string[] = [];
+
                return <RenderColumnContent 
                   label="BBB Produksi" 
-                  items={row.original.bahanBaku} 
-                  extraLabel={label} 
+                  items={(row.original.bahanBaku || []).map((it: any) => {
+                     const newIt: any = {};
+                     for (const key in it) {
+                        if (key === 'qty') newIt['qty_bbb_produksi'] = it[key];
+                        else newIt[key] = it[key];
+                     }
+                     return newIt;
+                  })} 
+                  extraLabel={isBomTrack ? "via PRD.faktur = BBB.faktur_prd" : "via Rekap.faktur di hp_detil"}
+                  subLabels={subLabels}
                   debouncedFilterText={debouncedFilterText} 
                   matchesFilter={matchesFilter} 
+                  startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate}
                />;
             }
          },
          {
             id: 'barang_jadi', header: 'Barang Hasil Produksi', accessorKey: 'barangJadi', size: columnWidths.barang_jadi,
             meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => <RenderColumnContent label="Barang Hasil Produksi" items={row.original.barangJadi} extraLabel="(via PRD.faktur = Jadi.faktur_prd)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+            cell: ({ row }: any) => {
+               // Filter items by date before summing
+               const filteredItems = (row.original.barangJadi || []).filter((it: any) => {
+                  const tglStr = it.tgl || it.tanggal || it.date || it.Tgl || it.Tanggal || it.Date;
+                  const itemDate = parseIndoDate(tglStr);
+                  if (!itemDate) return true;
+                  if (startDate) {
+                     const start = new Date(startDate);
+                     start.setHours(0,0,0,0);
+                     if (itemDate < start) return false;
+                  }
+                  if (endDate) {
+                     const end = new Date(endDate);
+                     end.setHours(23,59,59,999);
+                     if (itemDate > end) return false;
+                  }
+                  return true;
+               });
+
+               const totalQty = filteredItems.reduce((sum: number, it: any) => sum + (parseFloat(it.qty) || 0), 0);
+               const satuan = filteredItems[0]?.satuan || '';
+               const subLabels = [];
+               if (filteredItems.length > 0) {
+                  subLabels.push(`Total Qty Hasil Produksi: ${totalQty.toLocaleString('id-ID')} ${satuan}`);
+               }
+
+               const isBomTrack = !!trackingData?.bom;
+               const label = isBomTrack 
+                  ? "(via PRD.faktur = Jadi.faktur_prd)" 
+                  : "(via BBB.fkt_hasil = Jadi.faktur)";
+                  
+               return <RenderColumnContent 
+                  label="Barang Hasil Produksi" 
+                  items={filteredItems.map((it: any) => {
+                     const newIt: any = {};
+                     for (const key in it) {
+                        if (key === 'qty') newIt['qty_hasil_produksi'] = it[key];
+                        else newIt[key] = it[key];
+                     }
+                     return newIt;
+                  })} 
+                  extraLabel={label} 
+                  subLabels={subLabels}
+                  debouncedFilterText={debouncedFilterText} 
+                  matchesFilter={matchesFilter} 
+                  startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate}
+               />;
+            }
          },
          {
             id: 'laporan_penjualan', header: 'Laporan Penjualan', accessorKey: 'laporanPenjualan', size: columnWidths.laporan_penjualan,
             meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => <RenderColumnContent label="Laporan Penjualan" items={row.original.laporanPenjualan} extraLabel="(via SO.faktur = Jual.faktur_so)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+            cell: ({ row }: any) => <RenderColumnContent label="Laporan Penjualan" items={row.original.laporanPenjualan} extraLabel="(via SO.faktur = Jual.faktur_so)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
          },
          {
             id: 'pengiriman', header: 'Pengiriman', accessorKey: 'pengiriman', size: columnWidths.pengiriman,
             meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => <RenderColumnContent label="Pengiriman" items={row.original.pengiriman} extraLabel="(via Jual.faktur = Kirim.faktur)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+            cell: ({ row }: any) => <RenderColumnContent label="Pengiriman" items={row.original.pengiriman} extraLabel="(via Jual.faktur = Kirim.faktur)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
          },
          {
             id: 'pelunasan_piutang', header: 'Pelunasan Piutang', accessorKey: 'pelunasanPiutang', size: columnWidths.pelunasan_piutang,
             meta: { wrap: true, valign: 'top' },
-            cell: ({ row }: any) => <RenderColumnContent label="Pelunasan Piutang" items={row.original.pelunasanPiutang} extraLabel="(via Jual.faktur = Piutang.fkt)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} />
+            cell: ({ row }: any) => <RenderColumnContent label="Pelunasan Piutang" items={row.original.pelunasanPiutang} extraLabel="(via Jual.faktur = Piutang.fkt)" debouncedFilterText={debouncedFilterText} matchesFilter={matchesFilter} startDate={startDate} endDate={endDate} parseIndoDate={parseIndoDate} />
          }
        ];
 
        // If not BOM tracking (meaning we started from Rekap Pembelian), hide specific columns
        if (trackingData && !trackingData.bom) {
           const hideIds = ['bom', 'sph', 'so', 'production', 'pr', 'spph', 'sph_in', 'penerimaan_pembelian', 'pelunasan_hutang', 'laporan_penjualan', 'pengiriman', 'pelunasan_piutang'];
+          
           return allCols.filter(col => !hideIds.includes(col.id as string));
        }
 
        return allCols;
-    }, [columnWidths, debouncedFilterText, matchesFilter, trackingData]);
+    }, [columnWidths, debouncedFilterText, matchesFilter, trackingData, startDate, endDate]);
+
+   // Initial load for persistence and new day reset
+   useEffect(() => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const savedStart = localStorage.getItem('tracking_startDate');
+      if (savedStart) {
+         const d = new Date(savedStart);
+         if (!isNaN(d.getTime())) setStartDate(d);
+      }
+      
+      const savedEnd = localStorage.getItem('tracking_endDate');
+      const lastVisit = localStorage.getItem('tracking_lastVisitDate');
+      const todayStr = today.toDateString();
+      localStorage.setItem('tracking_lastVisitDate', todayStr);
+
+      const isNewDay = lastVisit !== todayStr;
+      if (savedEnd && !isNewDay) {
+         const d = new Date(savedEnd);
+         if (!isNaN(d.getTime())) setEndDate(d);
+      } else {
+         setEndDate(today);
+         localStorage.setItem('tracking_endDate', today.toISOString());
+      }
+
+      const savedSupplier = localStorage.getItem('tracking_selectedSupplier');
+      if (savedSupplier) {
+         setSelectedSupplier(savedSupplier);
+      }
+   }, []);
+
+   // Persist dates on change
+   useEffect(() => {
+      if (startDate) localStorage.setItem('tracking_startDate', startDate.toISOString());
+      else localStorage.removeItem('tracking_startDate');
+   }, [startDate]);
+
+   useEffect(() => {
+      if (endDate) localStorage.setItem('tracking_endDate', endDate.toISOString());
+      else localStorage.removeItem('tracking_endDate');
+   }, [endDate]);
+
+   useEffect(() => {
+      if (selectedSupplier) localStorage.setItem('tracking_selectedSupplier', selectedSupplier);
+      else localStorage.removeItem('tracking_selectedSupplier');
+   }, [selectedSupplier]);
 
    // Search logic for dropdown
    useEffect(() => {
@@ -478,7 +677,22 @@ export default function TrackingClient() {
       const fetchRekapNames = async (query: string, pageNum: number) => {
          if (pageNum === 1) setLoadingRekapSuggestions(true);
          try {
-            const res = await fetch(`/api/tracking/rekap-names?q=${encodeURIComponent(query)}&page=${pageNum}&pageSize=20`);
+            const fmtDate = (d: Date | null) => {
+               if (!d) return '';
+               const y = d.getFullYear();
+               const m = String(d.getMonth() + 1).padStart(2, '0');
+               const day = String(d.getDate()).padStart(2, '0');
+               return `${y}-${m}-${day}`;
+            };
+
+            const params = new URLSearchParams({
+               q: query,
+               page: pageNum.toString(),
+               pageSize: '20',
+               supplier: selectedSupplier || ''
+            });
+
+            const res = await fetch(`/api/tracking/rekap-names?${params.toString()}`);
             const json = await res.json();
             if (json.success && active) {
                if (pageNum === 1) { setRekapSuggestions(json.data); }
@@ -498,7 +712,33 @@ export default function TrackingClient() {
          }
       }
       return () => { active = false; };
-   }, [qRekap, openRekap]);
+   }, [qRekap, openRekap, selectedSupplier]);
+
+   // Search logic for Supplier dropdown
+   useEffect(() => {
+      let active = true;
+      const fetchSuppliers = async (query: string) => {
+         setLoadingSuppliers(true);
+         try {
+            const res = await fetch(`/api/tracking/suppliers?q=${encodeURIComponent(query)}`);
+            const json = await res.json();
+            if (json.success && active) {
+               setSuppliers(json.data);
+            }
+         } catch (e) { } finally {
+            if (active) setLoadingSuppliers(false);
+         }
+      };
+
+      if (openSupplier) {
+         if (qSupplier.trim().length === 0) { fetchSuppliers(''); }
+         else {
+            const handler = setTimeout(() => fetchSuppliers(qSupplier), 300);
+            return () => { active = false; clearTimeout(handler); };
+         }
+      }
+      return () => { active = false; };
+   }, [qSupplier, openSupplier]);
 
    // Click outside listener
    useEffect(() => {
@@ -509,10 +749,108 @@ export default function TrackingClient() {
          if (rekapSuggestionRef.current && !rekapSuggestionRef.current.contains(event.target as Node)) {
             setOpenRekap(false);
          }
+         if (supplierSuggestionRef.current && !supplierSuggestionRef.current.contains(event.target as Node)) {
+            setOpenSupplier(false);
+         }
       }
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
    }, []);
+
+   // Helper to parse DD-MM-YYYY or DD/MM/YYYY to Date object
+   const parseIndoDate = (tglStr: string) => {
+      if (!tglStr || typeof tglStr !== 'string') return null;
+      // Clean up string and handle different separators
+      const cleanStr = tglStr.trim().replace(/\//g, '-');
+      const parts = cleanStr.split('-');
+      if (parts.length !== 3) return null;
+      
+      let day, month, year;
+      
+      // Detect format: YYYY-MM-DD or DD-MM-YYYY
+      if (parts[0].length === 4) {
+         // YYYY-MM-DD
+         year = parseInt(parts[0]);
+         month = parseInt(parts[1]) - 1;
+         day = parseInt(parts[2]);
+      } else {
+         // DD-MM-YYYY
+         day = parseInt(parts[0]);
+         month = parseInt(parts[1]) - 1;
+         year = parseInt(parts[2]);
+      }
+      
+      if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+      
+      const d = new Date(year, month, day);
+      if (isNaN(d.getTime())) return null;
+      d.setHours(0, 0, 0, 0);
+      return d;
+   };
+
+   // Memoized filtered data based on text and dates
+   const filteredData = useMemo(() => {
+      if (!trackingData) return [];
+            // Handle single flow object (standard API response)
+      let items: any[] = Array.isArray(trackingData) ? [...trackingData] : [trackingData];
+      
+      if (items.length === 0) return [];
+
+      // Date Range Filtering - ONLY apply for Rekap (Barang) path
+      // If trackingData is the flow object, check trackingData.bom
+      // If it's the wrapped object, check trackingData.bom or type
+       const isRekapPath = trackingPath === 'rekap';
+
+      if (isRekapPath && (startDate || endDate)) {
+         items = items.filter(row => {
+            // Collect ALL possible dates from this sequence components
+            const dateStrings: string[] = [
+               row.rekap?.tgl,
+               row.bom?.tgl,
+               row.salesOrder?.tgl,
+               ...(row.pembelianBarang || []).map((i: any) => i.tgl),
+               ...(row.bahanBaku || []).map((i: any) => i.tgl),
+               ...(row.barangJadi || []).map((i: any) => i.tgl),
+               ...(row.productionOrders || []).map((i: any) => i.tgl),
+               ...(row.penerimaanPembelian || []).map((i: any) => i.tgl),
+               ...(row.purchaseOrders || []).map((i: any) => i.tgl),
+               ...(row.purchaseRequests || []).map((i: any) => i.tgl),
+               ...(row.spphOut || []).map((i: any) => i.tgl),
+               ...(row.sphIn || []).map((i: any) => i.tgl),
+               ...(row.laporanPenjualan || []).map((i: any) => i.tgl),
+               ...(row.pengiriman || []).map((i: any) => i.tgl),
+               ...(row.pelunasanPiutang || []).map((i: any) => i.tgl),
+               ...(row.pelunasanHutang || []).map((i: any) => i.tgl),
+            ].filter(Boolean);
+
+            if (dateStrings.length === 0) return true;
+
+            // Check if ANY date in this sequence matches the range
+            return dateStrings.some(dStr => {
+               const itemDate = parseIndoDate(dStr);
+               if (!itemDate) return false;
+
+               let matchesStart = true;
+               if (startDate) {
+                  const start = new Date(startDate);
+                  start.setHours(0, 0, 0, 0);
+                  matchesStart = itemDate >= start;
+               }
+
+               let matchesEnd = true;
+               if (endDate) {
+                  const end = new Date(endDate);
+                  end.setHours(23, 59, 59, 999);
+                  matchesEnd = itemDate <= end;
+               }
+
+               return matchesStart && matchesEnd;
+            });
+         });
+      }
+
+      return items;
+   }, [trackingData, startDate, endDate]);
 
    const fetchTrackingData = async (faktur: string) => {
       setLoadingData(true);
@@ -523,7 +861,7 @@ export default function TrackingClient() {
          const res = await fetch(`/api/tracking?target_faktur=${encodeURIComponent(faktur)}`);
          const json = await res.json();
          if (json.success) {
-            setTrackingData({ ...json.data, id: json.data.productionOrder?.faktur || json.data.bom?.faktur || 'N/A' });
+            setTrackingData({ ...json.data, id: json.data.productionOrders?.[0]?.faktur || json.data.bom?.faktur || 'N/A' });
             setLoadTime(Date.now() - start);
          } else {
             setError(json.error || 'Gagal memuat data tracking');
@@ -533,23 +871,30 @@ export default function TrackingClient() {
    };
 
    const handleSelect = async (selected: any) => {
-      setOpen(false);
-      setQ('');
       setSelectedFaktur(selected.faktur);
-      setSelectedNama(selected.nama_prd || '');
+      setSelectedNama(selected.nama_prd);
+      setTrackingData(null);
+      setOpen(false);
+      setSelectedSupplier(null);
+      setTrackingPath('bom');
       // Persist to localStorage so it survives refresh
       localStorage.setItem('tracking_selected_faktur', selected.faktur);
       localStorage.setItem('tracking_selected_nama', selected.nama_prd || '');
+      localStorage.setItem('tracking_selected_path', 'bom');
       await fetchTrackingData(selected.faktur);
    };
 
-   // Hydrate selected BOM from localStorage on mount
+   // Hydrate selection from localStorage on mount
    useEffect(() => {
       const savedFaktur = localStorage.getItem('tracking_selected_faktur');
       const savedNama = localStorage.getItem('tracking_selected_nama');
+      const savedSupplier = localStorage.getItem('tracking_selected_faktur_supplier');
+      const savedPath = localStorage.getItem('tracking_selected_path') as 'bom' | 'rekap' | null;
       if (savedFaktur) {
          setSelectedFaktur(savedFaktur);
          setSelectedNama(savedNama || '');
+         setSelectedFakturSupplier(savedSupplier || null);
+         setTrackingPath(savedPath);
          fetchTrackingData(savedFaktur);
       }
    // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -568,6 +913,22 @@ export default function TrackingClient() {
       window.addEventListener('storage', handleStorageChange);
       return () => window.removeEventListener('storage', handleStorageChange);
    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Validation: Clear selected item if it doesn't match the selected supplier
+    useEffect(() => {
+       if (selectedSupplier && trackingPath === 'rekap') {
+          if (!selectedFakturSupplier || selectedFakturSupplier !== selectedSupplier) {
+             setSelectedFaktur(null);
+             setSelectedNama('');
+             setSelectedFakturSupplier(null);
+             setTrackingPath(null);
+             setTrackingData(null);
+             localStorage.removeItem('tracking_selected_faktur');
+             localStorage.removeItem('tracking_selected_nama');
+             localStorage.removeItem('tracking_selected_faktur_supplier');
+             localStorage.removeItem('tracking_selected_path');
+          }
+       }
+    }, [selectedSupplier, selectedFakturSupplier, trackingPath]);
    }, [selectedFaktur]);
 
    const handleListScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -580,11 +941,17 @@ export default function TrackingClient() {
    return (
       <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in duration-700 overflow-hidden">
          {/* SELECTORS SECTION */}
-         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 shrink-0 relative z-50">
-            {/* BOM Selector Card */}
-            <div className="bg-white border border-gray-100 py-4 px-6 shadow-sm shadow-green-900/5 rounded-2xl flex flex-col relative transition-all duration-300">
-               <div className="flex flex-col relative z-10">
-                  <div className="flex items-center justify-between mb-2 pl-1">
+         <div className="flex flex-col xl:flex-row gap-6 shrink-0 relative z-50 min-w-0">
+            {/* BOM Selector Card - Dynamic flex based on open state */}
+            <div 
+               style={{ 
+                  flex: open ? 5 : (openRekap || openSupplier ? 2 : 3),
+                  transition: 'flex 0.8s cubic-bezier(0.16, 1, 0.3, 1)'
+               }}
+               className="bg-white border border-gray-100 py-4 px-6 shadow-sm shadow-green-900/5 rounded-2xl flex flex-col relative min-w-0"
+            >
+               <div className="flex flex-col relative z-10 w-full">
+                  <div className="flex items-center justify-between mb-2 pl-1 whitespace-nowrap">
                      <span className="text-[13px] font-semibold text-gray-500">Pilih BOM (Bill of Material)</span>
                   </div>
                   <div className="relative" ref={suggestionRef}>
@@ -592,19 +959,19 @@ export default function TrackingClient() {
                         className={`w-full bg-white border border-gray-100 rounded-xl px-4 h-12 text-sm flex items-center justify-between transition-all text-gray-700 cursor-pointer shadow-sm hover:shadow-sm hover:shadow-green-900/5 hover:border-green-200 ${open ? 'ring-4 ring-green-500/5 border-green-200' : ''}`}
                         onClick={() => { setOpen(!open); setQ(''); }}
                      >
-                        <div className="flex items-center gap-4 truncate">
+                        <div className="flex items-center gap-4 min-w-0 flex-1 overflow-hidden">
                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${loadingData && trackingData?.bom ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'}`}>
                               {loadingData && trackingData?.bom ? (
                                  <RefreshCw size={16} className="animate-spin" />
                               ) : (
-                                 <Calculator size={16} />
+                                 <Package size={16} />
                               )}
                            </div>
-                           <div className="flex items-center truncate leading-tight">
-                              <span className="text-gray-800 truncate font-bold text-[13px]">
-                                 {trackingData?.bom 
-                                    ? `[${trackingData?.bom?.faktur}] ${trackingData?.bom?.nama_prd}` 
-                                    : 'Pilih nomor BOM atau nama produk...'}
+                           <div className="flex items-center min-w-0 flex-1 overflow-hidden leading-tight">
+                              <span className={`truncate text-[13px] ${selectedFaktur && trackingPath === 'bom' ? 'text-gray-800 font-bold' : 'text-gray-400 font-normal'}`}>
+                                 {selectedFaktur && trackingPath === 'bom' 
+                                    ? `[${selectedFaktur}] ${selectedNama}` 
+                                    : 'Cari BOM atau Produk'}
                               </span>
                            </div>
                         </div>
@@ -612,7 +979,7 @@ export default function TrackingClient() {
                      </div>
 
                      {open && (
-                        <div className="absolute top-[calc(100%+12px)] left-0 right-0 bg-white border border-gray-100 rounded-xl shadow-md z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="absolute top-[calc(100%+12px)] left-0 min-w-full w-max bg-white border border-gray-100 rounded-xl shadow-md z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                            <div className="p-4 border-b border-gray-50 bg-gray-50/50">
                               <div className="relative">
                                  <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -634,12 +1001,11 @@ export default function TrackingClient() {
                                     onClick={() => handleSelect(s)} 
                                     className={`w-full px-5 py-4 text-left rounded-lg transition-all flex items-center justify-between group/item mb-1 last:mb-0 ${selectedFaktur === s.faktur && trackingData?.bom ? 'bg-green-600 text-white shadow-sm shadow-green-200' : 'text-gray-700 hover:bg-green-50 hover:text-green-600'}`}
                                  >
-                                    <div className="flex flex-col min-w-0">
-                                       <span className="text-[12px] font-bold truncate">{s.faktur}</span>
-                                       <span className={`text-[11px] font-bold truncate ${selectedFaktur === s.faktur && trackingData?.bom ? 'text-white/70' : 'text-gray-400'}`}>{s.nama_prd}</span>
-                                    </div>
-                                    <ArrowRight size={18} className={`shrink-0 opacity-0 group-hover/item:opacity-100 transition-all translate-x-2 ${selectedFaktur === s.faktur && trackingData?.bom ? 'text-white' : 'text-green-600'}`} />
-                                 </button>
+                                       <div className="flex flex-col min-w-0">
+                                          <span className="text-[12px] font-bold">{s.faktur}</span>
+                                          <span className={`text-[11px] font-bold ${selectedFaktur === s.faktur && trackingData?.bom ? 'text-white/70' : 'text-gray-400'}`}>{s.nama_prd}</span>
+                                       </div>
+                                    </button>
                               )) : (
                                  <div className="p-12 text-center flex flex-col items-center gap-3">
                                     <p className="text-[12px] font-bold text-gray-300">Data Tidak Ditemukan</p>
@@ -651,85 +1017,215 @@ export default function TrackingClient() {
                   </div>
                </div>
             </div>
-
-            {/* Nama Barang Selector Card */}
-            <div className="bg-white border border-gray-100 py-4 px-6 shadow-sm shadow-green-900/5 rounded-2xl flex flex-col relative transition-all duration-300">
-               <div className="flex flex-col relative z-10">
-                  <div className="flex items-center justify-between mb-2 pl-1">
-                     <span className="text-[13px] font-semibold text-gray-500">Pilih Nama Barang (Rekap Pembelian)</span>
-                  </div>
-                  <div className="relative" ref={rekapSuggestionRef}>
-                     <div
-                        className={`w-full bg-white border border-gray-100 rounded-xl px-4 h-12 text-sm flex items-center justify-between transition-all text-gray-700 cursor-pointer shadow-sm hover:shadow-sm hover:shadow-green-900/5 hover:border-green-200 ${openRekap ? 'ring-4 ring-green-500/5 border-green-200' : ''}`}
-                        onClick={() => { setOpenRekap(!openRekap); setQRekap(''); }}
-                     >
-                        <div className="flex items-center gap-4 truncate">
-                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${loadingData && !trackingData?.bom ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'}`}>
-                              {loadingData && !trackingData?.bom ? (
-                                 <RefreshCw size={16} className="animate-spin" />
-                              ) : (
-                                 <Search size={16} />
-                              )}
-                           </div>
-                           <div className="flex items-center truncate leading-tight">
-                              <span className="text-gray-800 truncate font-bold text-[13px]">
-                                 {selectedFaktur && !trackingData?.bom 
-                                    ? `[${selectedFaktur}] ${selectedNama}` 
-                                    : 'Cari Faktur PB atau Barang'}
-                              </span>
-                           </div>
+            {/* Nama Barang Selector Card - Dynamic flex based on open state */}
+            <div 
+               style={{ 
+                  flex: openRekap || openSupplier ? 10 : (open ? 7 : 9),
+                  transition: 'flex 0.8s cubic-bezier(0.16, 1, 0.3, 1)'
+               }}
+               className="bg-white border border-gray-100 py-4 px-8 shadow-sm shadow-green-900/5 rounded-2xl flex flex-col relative min-w-0"
+            >
+               <div className="flex flex-col lg:flex-row gap-6 relative z-10 min-w-0">
+                  {/* Left: Searchable Selects (Supplier & Barang) */}
+                  <div className="flex-[1.5] flex flex-col lg:flex-row gap-4 min-w-0">
+                     
+                     {/* Supplier Selector */}
+                     <div className="flex-1 flex flex-col min-w-0">
+                        <div className="flex items-center justify-between mb-2 pl-1">
+                           <span className="text-[13px] font-semibold text-gray-500">Pilih Supplier (Opsional)</span>
+                           {selectedSupplier && (
+                              <button 
+                                 onClick={() => setSelectedSupplier(null)}
+                                 className="text-[10px] font-bold text-red-500 hover:text-red-600 flex items-center gap-1"
+                              >
+                                 <X size={12} /> Hapus
+                              </button>
+                           )}
                         </div>
-                        <ChevronDown size={20} className={`text-gray-300 transition-transform duration-300 ${openRekap ? 'rotate-180' : ''}`} />
+                        <div className="relative" ref={supplierSuggestionRef}>
+                           <div
+                              className={`w-full bg-white border border-gray-100 rounded-xl px-4 h-12 text-sm flex items-center justify-between transition-all text-gray-700 cursor-pointer shadow-sm hover:shadow-sm hover:shadow-green-900/5 hover:border-green-200 ${openSupplier ? 'ring-4 ring-green-500/5 border-green-200' : ''}`}
+                              onClick={() => { setOpenSupplier(!openSupplier); setQSupplier(''); }}
+                           >
+                              <div className="flex items-center gap-4 min-w-0 flex-1 overflow-hidden">
+                                 <div className="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center shrink-0">
+                                    <Truck size={16} />
+                                 </div>
+                                 <div className="flex items-center min-w-0 flex-1 overflow-hidden leading-tight">
+                                    <span className={`truncate text-[13px] ${selectedSupplier ? 'text-gray-800 font-bold' : 'text-gray-400 font-normal'}`}>
+                                       {selectedSupplier || 'Cari Supplier...'}
+                                    </span>
+                                 </div>
+                              </div>
+                              <ChevronDown size={20} className={`text-gray-300 transition-transform duration-300 ${openSupplier ? 'rotate-180' : ''}`} />
+                           </div>
+
+                           {openSupplier && (
+                              <div className="absolute top-[calc(100%+12px)] left-0 min-w-full w-max bg-white border border-gray-100 rounded-xl shadow-md z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                 <div className="p-4 border-b border-gray-50 bg-gray-50/50">
+                                    <div className="relative">
+                                       <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                                       <input 
+                                          autoFocus 
+                                          type="text" 
+                                          placeholder="Ketik nama supplier..." 
+                                          className="w-full pl-12 pr-4 h-12 text-[13px] border border-gray-100 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-500/5 focus:border-green-200 bg-white font-bold placeholder:text-gray-300" 
+                                          value={qSupplier} 
+                                          onChange={(e) => setQSupplier(e.target.value)} 
+                                       />
+                                       {loadingSuppliers && <div className="absolute right-4 top-1/2 -translate-y-1/2"><Loader2 size={18} className="animate-spin text-green-600" /></div>}
+                                    </div>
+                                 </div>
+                                 <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-2">
+                                    {suppliers.length > 0 ? suppliers.map((s: any, idx: number) => (
+                                       <button 
+                                          key={`${s.supplier}-${idx}`} 
+                                          onClick={() => {
+                                             setOpenSupplier(false);
+                                             setSelectedSupplier(s.supplier);
+                                             
+                                             // VALIDATION: If we have a selected item (Rekap path) and its supplier doesn't match the new supplier, clear it
+                                             if (trackingPath === 'rekap' && selectedFakturSupplier && selectedFakturSupplier !== s.supplier) {
+                                                setSelectedFaktur(null);
+                                                setSelectedNama('');
+                                                setSelectedFakturSupplier(null);
+                                                setTrackingPath(null);
+                                                setTrackingData(null);
+                                                localStorage.removeItem('tracking_selected_faktur');
+                                                localStorage.removeItem('tracking_selected_nama');
+                                                localStorage.removeItem('tracking_selected_faktur_supplier');
+                                                localStorage.removeItem('tracking_selected_path');
+                                             }
+                                          }} 
+                                          className={`w-full px-5 py-4 text-left rounded-lg transition-all flex items-center justify-between group/item mb-1 last:mb-0 ${selectedSupplier === s.supplier ? 'bg-green-600 text-white shadow-sm shadow-green-200' : 'text-gray-700 hover:bg-green-50 hover:text-green-600'}`}
+                                       >
+                                          <div className="flex flex-col min-w-0">
+                                             <span className="text-[12px] font-bold">{s.supplier}</span>
+                                          </div>
+                                       </button>
+                                    )) : (
+                                       <div className="p-8 text-center flex flex-col items-center gap-3">
+                                          <p className="text-[12px] font-bold text-gray-300">Data Tidak Ditemukan</p>
+                                       </div>
+                                    )}
+                                 </div>
+                              </div>
+                           )}
+                        </div>
                      </div>
 
-                     {openRekap && (
-                        <div className="absolute top-[calc(100%+12px)] left-0 right-0 bg-white border border-gray-100 rounded-xl shadow-md z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                           <div className="p-4 border-b border-gray-50 bg-gray-50/50">
-                              <div className="relative">
-                                 <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                                 <input 
-                                    autoFocus 
-                                    type="text" 
-                                    placeholder="Cari faktur atau kode barang..." 
-                                    className="w-full pl-12 pr-4 h-12 text-[13px] border border-gray-100 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-500/5 focus:border-green-200 bg-white font-bold placeholder:text-gray-300" 
-                                    value={qRekap} 
-                                    onChange={(e) => setQRekap(e.target.value)} 
-                                 />
-                                 {loadingRekapSuggestions && <div className="absolute right-4 top-1/2 -translate-y-1/2"><Loader2 size={18} className="animate-spin text-blue-600" /></div>}
-                              </div>
-                           </div>
-                           <div className="max-h-[350px] overflow-y-auto custom-scrollbar p-2">
-                              {rekapSuggestions.length > 0 ? rekapSuggestions.map((s: any, idx: number) => (
-                                 <button 
-                                    key={`${s.faktur}-${s.kd_barang}-${idx}`} 
-                                    onClick={() => {
-                                       setOpenRekap(false);
-                                       setQRekap('');
-                                       setSelectedFaktur(s.faktur);
-                                       setSelectedNama(s.kd_barang || '');
-                                       localStorage.setItem('tracking_selected_faktur', s.faktur);
-                                       localStorage.setItem('tracking_selected_nama', s.kd_barang || '');
-                                       fetchTrackingData(s.faktur);
-                                    }} 
-                                    className={`w-full px-5 py-4 text-left rounded-lg transition-all flex items-center justify-between group/item mb-1 last:mb-0 ${selectedFaktur === s.faktur && !trackingData?.bom ? 'bg-blue-600 text-white shadow-sm shadow-blue-200' : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'}`}
-                                 >
-                                    <div className="flex flex-col min-w-0">
-                                       <span className="text-[12px] font-bold truncate">{s.faktur}</span>
-                                       <span className={`text-[11px] font-bold truncate ${selectedFaktur === s.faktur && !trackingData?.bom ? 'text-white/70' : 'text-gray-400'}`}>{s.kd_barang}</span>
-                                    </div>
-                                    <ArrowRight size={18} className={`shrink-0 opacity-0 group-hover/item:opacity-100 transition-all translate-x-2 ${selectedFaktur === s.faktur && !trackingData?.bom ? 'text-white' : 'text-blue-600'}`} />
-                                 </button>
-                              )) : (
-                                 <div className="p-12 text-center flex flex-col items-center gap-3">
-                                    <p className="text-[12px] font-bold text-gray-300">Data Tidak Ditemukan</p>
+                     {/* Item Selector */}
+                     <div className="flex-[1.5] flex flex-col min-w-0">
+                        <div className="flex items-center justify-between mb-2 pl-1">
+                           <span className="text-[13px] font-semibold text-gray-500">Pilih Nama Barang (Rekap Pembelian)</span>
+                        </div>
+                        <div className="relative" ref={rekapSuggestionRef}>
+                           <div
+                              className={`w-full bg-white border border-gray-100 rounded-xl px-4 h-12 text-sm flex items-center justify-between transition-all text-gray-700 cursor-pointer shadow-sm hover:shadow-sm hover:shadow-green-900/5 hover:border-green-200 ${openRekap ? 'ring-4 ring-green-500/5 border-green-200' : ''}`}
+                              onClick={() => { setOpenRekap(!openRekap); setQRekap(''); }}
+                           >
+                              <div className="flex items-center gap-4 min-w-0 flex-1 overflow-hidden">
+                                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${loadingData && trackingPath === 'rekap' ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'}`}>
+                                    {loadingData && trackingPath === 'rekap' ? (
+                                       <RefreshCw size={16} className="animate-spin" />
+                                    ) : (
+                                       <ShoppingCart size={16} />
+                                    )}
                                  </div>
-                              )}
+                                 <div className="flex items-center min-w-0 flex-1 overflow-hidden leading-tight">
+                                    <span className={`truncate text-[13px] ${selectedFaktur && trackingPath === 'rekap' ? 'text-gray-800 font-bold' : 'text-gray-400 font-normal'}`}>
+                                       {selectedFaktur && trackingPath === 'rekap' 
+                                          ? `[${selectedFaktur}] ${selectedNama}` 
+                                          : 'Cari Faktur PB atau Barang'}
+                                    </span>
+                                 </div>
+                              </div>
+                              <ChevronDown size={20} className={`text-gray-300 transition-transform duration-300 ${openRekap ? 'rotate-180' : ''}`} />
+                           </div>
+
+                           {openRekap && (
+                              <div className="absolute top-[calc(100%+12px)] left-0 min-w-full w-max bg-white border border-gray-100 rounded-xl shadow-md z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                 <div className="p-4 border-b border-gray-50 bg-gray-50/50">
+                                    <div className="relative">
+                                       <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                                       <input 
+                                          autoFocus 
+                                          type="text" 
+                                          placeholder={selectedSupplier ? `Cari barang dari ${selectedSupplier}...` : "Cari faktur atau nama barang..."}
+                                          className="w-full pl-12 pr-4 h-12 text-[13px] border border-gray-100 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-500/5 focus:border-green-200 bg-white font-bold placeholder:text-gray-300" 
+                                          value={qRekap} 
+                                          onChange={(e) => setQRekap(e.target.value)} 
+                                       />
+                                       {loadingRekapSuggestions && <div className="absolute right-4 top-1/2 -translate-y-1/2"><Loader2 size={18} className="animate-spin text-green-600" /></div>}
+                                    </div>
+                                 </div>
+                                 <div className="max-h-[350px] overflow-y-auto custom-scrollbar p-2">
+                                    {rekapSuggestions.length > 0 ? rekapSuggestions.map((s: any, idx: number) => (
+                                       <button 
+                                          key={`${s.faktur}-${s.kd_barang}-${idx}`} 
+                                          onClick={() => {
+                                             setOpenRekap(false);
+                                             setQRekap('');
+                                             setSelectedFaktur(s.faktur);
+                                             setSelectedNama(s.nm_barang || s.kd_barang || '');
+                                             setSelectedFakturSupplier(s.kd_supplier || null);
+                                             setTrackingPath('rekap');
+                                             localStorage.setItem('tracking_selected_faktur', s.faktur);
+                                             localStorage.setItem('tracking_selected_nama', s.nm_barang || s.kd_barang || '');
+                                             localStorage.setItem('tracking_selected_faktur_supplier', s.kd_supplier || '');
+                                             localStorage.setItem('tracking_selected_path', 'rekap');
+                                             fetchTrackingData(s.faktur);
+                                          }} 
+                                          className={`w-full px-5 py-4 text-left rounded-lg transition-all flex items-center justify-between group/item mb-1 last:mb-0 ${selectedFaktur === s.faktur && trackingPath === 'rekap' ? 'bg-green-600 text-white shadow-sm shadow-green-200' : 'text-gray-700 hover:bg-green-50 hover:text-green-600'}`}
+                                       >
+                                          <div className="flex flex-col min-w-0">
+                                             <div className="flex items-center gap-2">
+                                                <span className="text-[12px] font-bold">{s.faktur}</span>
+                                                <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded font-bold">{s.tgl}</span>
+                                             </div>
+                                             <span className={`text-[11px] font-bold ${selectedFaktur === s.faktur && trackingPath === 'rekap' ? 'text-white/70' : 'text-gray-400'}`}>{s.nm_barang || s.kd_barang}</span>
+                                          </div>
+                                       </button>
+                                    )) : (
+                                       <div className="p-12 text-center flex flex-col items-center gap-3">
+                                          <p className="text-[12px] font-bold text-gray-300">Data Tidak Ditemukan</p>
+                                       </div>
+                                    )}
+                                 </div>
+                              </div>
+                           )}
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* Part 2: Date Range */}
+                  <div className="lg:w-auto lg:min-w-[300px] flex flex-col shrink-0 border-t lg:border-t-0 lg:border-l border-gray-100 pt-4 lg:pt-0 lg:pl-8">
+                     <div className="flex flex-col mb-2.5">
+                        <span className="block text-[13px] font-semibold text-gray-500 mb-2 ml-1 tracking-tight select-none">Rentang Tanggal</span>
+                        <div className="flex items-center gap-3">
+                           <div className="flex-1 relative group">
+                              <DatePicker 
+                                 name="startDate" 
+                                 value={startDate} 
+                                 onChange={(d) => setStartDate(d)} 
+                              />
+                           </div>
+                           <div className="w-4 h-0.5 bg-gray-100 rounded-full shrink-0"></div>
+                           <div className="flex-1 relative group">
+                              <DatePicker 
+                                 name="endDate" 
+                                 value={endDate} 
+                                 onChange={(d) => setEndDate(d)} 
+                                 popupAlign="right"
+                              />
                            </div>
                         </div>
-                     )}
+                     </div>
                   </div>
+
                </div>
             </div>
+
          </div>
 
          {error && (
@@ -752,7 +1248,7 @@ export default function TrackingClient() {
                   {isAutoRefreshing && (
                      <div className="flex items-center gap-3 text-[10px] font-bold text-green-600 animate-pulse bg-green-50 px-4 py-2 rounded-full border border-green-100 shadow-sm leading-none">
                        <Loader2 size={12} className="animate-spin" />
-                       <span>Sinkronisasi Otomatis...</span>
+                        <span>Memproses Data...</span>
                      </div>
                   )}
                </div>
@@ -768,12 +1264,19 @@ export default function TrackingClient() {
             <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
                {useMemo(() => (
                   <DataTable
-                     columns={columns} data={trackingData ? [trackingData] : []}
-                     isLoading={loadingData} columnWidths={columnWidths} onColumnWidthChange={setColumnWidths}
-                     rowHeight="h-auto" className="flex-1" onRowClick={() => { }}
-                     hideSorting={true} disableHover={true} rowCursor="cursor-grab"
+                     columns={columns} 
+                     data={filteredData}
+                     isLoading={loadingData} 
+                     columnWidths={columnWidths} 
+                     onColumnWidthChange={setColumnWidths}
+                     rowHeight="h-auto" 
+                     className="flex-1" 
+                     onRowClick={() => { }}
+                     hideSorting={true} 
+                     disableHover={true} 
+                     rowCursor="cursor-grab"
                   />
-               ), [columns, trackingData, loadingData, columnWidths])}
+               ), [columns, filteredData, loadingData, columnWidths])}
                
                {/* FOOTER INFO BANNER */}
                <div className="flex items-center justify-between shrink-0 px-2 min-h-[30px]">
