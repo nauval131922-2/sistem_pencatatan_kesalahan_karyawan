@@ -108,6 +108,8 @@ export function DataTable<TData extends { id: number | string }>({
       const movedY = Math.abs(y - startY.current);
       if (movedX < dragThreshold && movedY < dragThreshold) return;
       setIsDragging(true);
+      // Clear any accidental text selection that might have started
+      window.getSelection()?.removeAllRanges();
     }
 
     e.preventDefault();
@@ -156,11 +158,11 @@ export function DataTable<TData extends { id: number | string }>({
 
   return (
     <ScrollContext.Provider value={parentRef}>
-      <div className={`bg-white border border-gray-100 shadow-sm rounded-[12px] overflow-hidden flex flex-col min-h-0 relative ${height} ${className} ${isResizingColumn ? 'is-resizing' : ''}`}>
-        <style dangerouslySetInnerHTML={{ __html: `.is-resizing * { user-select: none !important; transition: none !important; cursor: col-resize !important; } .is-resizing th > div { cursor: col-resize !important; }` }} />
+      <div className={`bg-white border border-gray-100 shadow-sm rounded-[12px] overflow-hidden flex flex-col min-h-0 relative ${height} ${className} ${isResizingColumn ? 'is-resizing' : ''} ${isDragging ? 'is-dragging' : ''}`}>
+        <style dangerouslySetInnerHTML={{ __html: `.is-resizing * { user-select: none !important; transition: none !important; cursor: col-resize !important; } .is-dragging * { user-select: none !important; cursor: grabbing !important; }` }} />
         <div 
           ref={parentRef}
-          className={`overflow-auto custom-scrollbar flex-1 min-h-0 relative bg-white ${isDragging ? 'cursor-grabbing' : ''}`} 
+          className={`overflow-auto custom-scrollbar flex-1 min-h-0 relative bg-white ${isDragging ? 'cursor-grabbing select-none' : ''}`} 
           onScroll={onScroll}
           onMouseDown={onMouseDown}
           onMouseLeave={onMouseLeave}
