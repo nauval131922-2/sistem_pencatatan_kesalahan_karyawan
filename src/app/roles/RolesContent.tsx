@@ -611,7 +611,7 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
                       items.flatMap(item => item.type === 'leaf' ? [item.key] : collectKeys(item.children));
 
                     const syncKeys = isDD ? modules.map(m => m.key) : [];
-                    const allKeys = isDD ? [...syncKeys, ...collectKeys(treeData)] : collectKeys(treeData);
+                    const allKeys = Array.from(new Set(isDD ? [...syncKeys, ...collectKeys(treeData)] : collectKeys(treeData)));
                     const allEnabled = allKeys.filter(k => permissions[selectedRole]?.[k]).length;
                     const isParentCollapsed = currentRoleCollapsed[group] ?? (allEnabled === 0);
 
