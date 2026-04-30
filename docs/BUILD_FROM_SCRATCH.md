@@ -51,7 +51,8 @@ SINTAK ERP kini menggunakan identitas visual **Modern Premium** (evolusi dari Ne
 9. **Performance Rendering**: Untuk dropdown dengan data besar (>100 item), batasi jumlah render ke 30-50 item pertama menggunakan `slice` di `useMemo` untuk menjaga responsivitas UI.
 10. **Native Page Scrolling**: Hindari *nested scrollbar* (scroll bersarang). Kontainer utama seperti tabel tidak boleh memiliki `overflow-y-auto` dengan tinggi tetap. Biarkan tabel memanjang secara alami mengikuti isi agar pengguna dapat men-scroll halaman dengan mulus (*native page scroll*).
 11. **Tabel Footer Pagination**: Footer pagination untuk tabel harus selalu menggunakan gaya responsif dua sisi. Sisi Kiri: Teks keterangan jumlah data. Sisi Kanan: Tombol kontrol halaman (`w-8 h-8`) dan *badge load speed*. Teks kiri wajib disembunyikan di layar ponsel (`hidden md:block`) agar tombol kontrol tersisa di tengah layar. Standardisasi jumlah data per halaman adalah **20-50 baris**.
-12. **Job-Based Chronological Grouping**: Untuk laporan jurnal, data wajib diurutkan secara **ASC** (terlama ke terbaru). Jika ada pekerjaan yang sama di hari yang berbeda, data tersebut harus dikelompokkan (grouped) di bawah tanggal kemunculan pertama pekerjaan tersebut agar memudahkan pelacakan siklus produksi.
+12. **Non-Intrusive Notifications (Toast)**: Hindari penggunaan modal "Berhasil" yang mengharuskan user mengklik tombol OK. Gunakan komponen `Toast` yang muncul di pojok kanan atas secara otomatis dan menghilang dalam hitungan detik untuk menjaga alur kerja user tetap mulus.
+13. **Job-Based Chronological Grouping**: Untuk laporan jurnal, data wajib diurutkan secara **ASC** (terlama ke terbaru). Jika ada pekerjaan yang sama di hari yang berbeda, data tersebut harus dikelompokkan (grouped) di bawah tanggal kemunculan pertama pekerjaan tersebut agar memudahkan pelacakan siklus produksi.
 
 ---
 
@@ -175,7 +176,9 @@ sintak_pt_buya_barokah/
     │   ├── PageHeader.tsx
     │   ├── DataTable.tsx
     │   ├── SearchAndReload.tsx
-    │   └── TableFooter.tsx
+    │   ├── TableFooter.tsx
+    │   ├── Toast.tsx
+    │   └── Portal.tsx
     └── lib/
         ├── db.ts
         ├── schema.ts

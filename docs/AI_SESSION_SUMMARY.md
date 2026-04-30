@@ -10,8 +10,10 @@
 2. **Validasi Supplier Otomatis**: Penambahan mekanisme `auto-clear` yang menghapus pilihan barang jika user mengganti filter Supplier ke yang tidak kompatibel.
 3. **Persistensi Path Pelacakan**: Sinkronisasi state `trackingPath` ke `localStorage` untuk menghilangkan *UI flickering* saat refresh halaman.
 4. **Optimasi API rekap-names**: Penambahan field `kd_supplier` pada output API untuk mendukung logika validasi di frontend.
-5. **Bug Fix SQL Syntax**: Memperbaiki error `near ")"` di API utama tracking akibat query `WHERE ()` kosong saat data barang jadi tidak ditemukan.
-6. **Smart Labeling Badge**: Mengubah label "0 Data" menjadi "Terlacak di Order Produksi: X" jika rincian item kosong namun terhubung ke order produksi.
+5. **Implementasi Sistem Notifikasi Toast**: Pembuatan komponen `Toast.tsx` dan integrasi pada halaman Kelola User untuk menggantikan banner notifikasi yang menghalangi UI.
+6. **Fix Perhitungan Badge Hak Akses**: Perbaikan logika perhitungan modul aktif pada halaman Roles menggunakan `Set` untuk mencegah duplikasi hitungan (fix bug 6/34 menjadi 6/17).
+7. **Bug Fix SQL Syntax**: Memperbaiki error `near ")"` di API utama tracking akibat query `WHERE ()` kosong saat data barang jadi tidak ditemukan.
+8. **Smart Labeling Badge**: Mengubah label "0 Data" menjadi "Terlacak di Order Produksi: X" jika rincian item kosong namun terhubung ke order produksi.
 
 ## ⚙️ Keputusan Teknis Penting
 - **Validation Guard (useEffect)**: Menggunakan `useEffect` sebagai "satpam" validasi supplier daripada hanya mengandalkan event `onClick`, memastikan integritas data dari berbagai cara input.

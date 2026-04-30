@@ -64,12 +64,12 @@
 ## 📊 Statistik
 
 ```
-Total task    : 33
-Selesai       : 29
-In progress   : 2
+Total task    : 34
+Selesai       : 31
+In progress   : 1
 Backlog       : 2
 Bug diketahui : 0
-Progress      : 88%
+Progress      : 91%
 ```
 
 ---
