@@ -22,18 +22,20 @@ export async function GET(request: NextRequest) {
 
     let bom = bomRes.rows[0] as any || null;
     
-    // Global flag to determine if we are in "Direct Rekap" mode
-    const isStartingFromRekap = !!(searchParams.get("target_faktur") && !bom);
+    // Global flags to determine mode
+    let isStartingFromRekap = false;
+    let isStartingFromPO = false;
 
     let purchaseOrders: any[] = [];
     let pembelianBarang: any[] = [];
     let purchaseRequests: any[] = [];
 
-    // If not found in BOM, check if it's a Rekap Pembelian record and trace back
+    // If not found in BOM, check if it's a Rekap Pembelian record or a PO record and trace back
     let tracedPrdFakturs = new Set<string>();
     let tracedResultFakturs = new Set<string>();
 
     if (!bom) {
+      // 1. Try Rekap Pembelian
       const rekapRes = await db.execute({
         sql: `SELECT * FROM rekap_pembelian_barang WHERE faktur = ? LIMIT 1`,
         args: [targetFaktur]
@@ -41,10 +43,10 @@ export async function GET(request: NextRequest) {
       const rekap = rekapRes.rows[0] as any;
 
       if (rekap) {
+        isStartingFromRekap = true;
         pembelianBarang = [rekap];
         
         // Trace Path 1: via Bahan Baku (Direct Usage)
-        // Find if this PB was used in any production
         const bbUsageRes = await db.execute({
           sql: `SELECT DISTINCT faktur_prd, fkt_hasil FROM bahan_baku WHERE raw_data LIKE ?`,
           args: [`%${targetFaktur}%`]
@@ -55,7 +57,6 @@ export async function GET(request: NextRequest) {
         });
 
         if (rekap.faktur_po) {
-          // Trace Path 2: Rekap -> PO -> SPH In -> SPPH -> PR -> PRD
           const poRes = await db.execute({
             sql: `SELECT * FROM purchase_orders WHERE faktur = ? LIMIT 1`,
             args: [rekap.faktur_po]
@@ -64,41 +65,83 @@ export async function GET(request: NextRequest) {
 
           if (po) {
             purchaseOrders = [po];
+            await traceFromPO(po);
+          }
+        }
+      } else {
+        // 2. Try Purchase Order
+        const poRes = await db.execute({
+          sql: `SELECT * FROM purchase_orders WHERE faktur = ? LIMIT 1`,
+          args: [targetFaktur]
+        });
+        const po = poRes.rows[0] as any;
 
-            if (po.faktur_sph) {
-              const sphInRes = await db.execute({
-                sql: `SELECT * FROM sph_in WHERE faktur = ? LIMIT 1`,
-                args: [po.faktur_sph]
-              });
-              const sphIn = sphInRes.rows[0] as any;
+        if (po) {
+          isStartingFromPO = true;
+          purchaseOrders = [po];
+          await traceFromPO(po);
 
-              if (sphIn?.faktur_spph) {
-                const spphRes = await db.execute({
-                  sql: `SELECT * FROM spph_out WHERE faktur = ? LIMIT 1`,
-                  args: [sphIn.faktur_spph]
+          // Find PBs for this PO early to trace forward to usage
+          const pbRes = await db.execute({
+            sql: `SELECT * FROM rekap_pembelian_barang WHERE faktur_po = ?`,
+            args: [po.faktur]
+          });
+          const foundPBs = pbRes.rows as any[];
+          if (foundPBs.length > 0) {
+            pembelianBarang = foundPBs;
+            // Trace usage from these PBs
+            for (const pb of foundPBs) {
+               const usageRes = await db.execute({
+                  sql: `SELECT DISTINCT faktur_prd, fkt_hasil FROM bahan_baku WHERE raw_data LIKE ?`,
+                  args: [`%${pb.faktur}%`]
+               });
+               usageRes.rows.forEach((r: any) => {
+                  if (r.faktur_prd) tracedPrdFakturs.add(r.faktur_prd);
+                  if (r.fkt_hasil) tracedResultFakturs.add(r.fkt_hasil);
+               });
+            }
+          }
+        }
+      }
+    }
+
+    // Helper function to trace flow from a PO record
+    async function traceFromPO(po: any) {
+      if (!po) return;
+
+      if (po.faktur_sph) {
+        const sphInRes = await db.execute({
+          sql: `SELECT * FROM sph_in WHERE faktur = ? LIMIT 1`,
+          args: [po.faktur_sph]
+        });
+        const sphIn = sphInRes.rows[0] as any;
+
+        if (sphIn?.faktur_spph) {
+          const spphRes = await db.execute({
+            sql: `SELECT * FROM spph_out WHERE faktur = ? LIMIT 1`,
+            args: [sphIn.faktur_spph]
+          });
+          const spph = spphRes.rows[0] as any;
+          const prFaktur = spph?.faktur_pr;
+
+          if (prFaktur) {
+            const prRes = await db.execute({
+              sql: `SELECT * FROM purchase_requests WHERE faktur = ? LIMIT 1`,
+              args: [prFaktur]
+            });
+            const pr = prRes.rows[0] as any;
+            if (pr) {
+              purchaseRequests = [pr];
+              if (pr.faktur_prd) tracedPrdFakturs.add(pr.faktur_prd);
+
+              const prdFaktur = pr.faktur_prd;
+              if (prdFaktur) {
+                const bomFromPrd = await db.execute({
+                  sql: `SELECT * FROM bill_of_materials WHERE faktur_prd = ? LIMIT 1`,
+                  args: [prdFaktur]
                 });
-                const spph = spphRes.rows[0] as any;
-                const prFaktur = spph?.faktur_pr;
-
-                if (prFaktur) {
-                  const prRes = await db.execute({
-                    sql: `SELECT * FROM purchase_requests WHERE faktur = ? LIMIT 1`,
-                    args: [prFaktur]
-                  });
-                  const pr = prRes.rows[0] as any;
-                  if (pr) {
-                    purchaseRequests = [pr];
-                    if (pr.faktur_prd) tracedPrdFakturs.add(pr.faktur_prd);
-
-                    const prdFaktur = pr.faktur_prd;
-                    if (prdFaktur) {
-                      const bomFromPrd = await db.execute({
-                        sql: `SELECT * FROM bill_of_materials WHERE faktur_prd = ? LIMIT 1`,
-                        args: [prdFaktur]
-                      });
-                      bom = bomFromPrd.rows[0] as any || null;
-                    }
-                  }
+                if (bomFromPrd.rows[0]) {
+                  bom = bomFromPrd.rows[0] as any;
                 }
               }
             }
@@ -197,9 +240,9 @@ export async function GET(request: NextRequest) {
         sql: `SELECT * FROM purchase_requests WHERE (faktur_prd IN (${prdFaktursForSub.map(() => '?').join(',')}) OR ${prdFaktursForSub.map(() => `raw_data LIKE ?`).join(" OR ")}) ${dateSort}`,
         args: [...prdFaktursForSub, ...prdFaktursForSub.map(f => `%${f}%`)]
       }) : Promise.resolve({ rows: [] }),
-      prdFaktursForSub.length > 0 ? db.execute({
-        sql: `SELECT * FROM bahan_baku WHERE (faktur_prd IN (${prdFaktursForSub.map(() => '?').join(',')}) OR raw_data LIKE ?) ${dateSort}`,
-        args: [...prdFaktursForSub, `%${targetFaktur}%`]
+      (prdFaktursForSub.length > 0 || isStartingFromPO) ? db.execute({
+        sql: `SELECT * FROM bahan_baku WHERE (faktur_prd IN (${prdFaktursForSub.map(() => '?').join(',')}) OR raw_data LIKE ? OR raw_data LIKE ?) ${dateSort}`,
+        args: [...prdFaktursForSub, `%${targetFaktur}%`, ...purchaseOrders.map(p => `%${p.faktur}%`)]
       }) : (targetFaktur.startsWith('PB') || targetFaktur.startsWith('RQ') ? db.execute({
         sql: `SELECT * FROM bahan_baku WHERE raw_data LIKE ? ${dateSort}`,
         args: [`%${targetFaktur}%`]
@@ -207,17 +250,21 @@ export async function GET(request: NextRequest) {
       (() => {
         const conditions = [
           (!isStartingFromRekap && prdFaktursForSub.length > 0) ? `faktur_prd IN (${prdFaktursForSub.map(() => '?').join(',')})` : '',
-          (tracedResultFakturs.size > 0) ? `faktur IN (${Array.from(tracedResultFakturs).map(() => '?').join(',')})` : ''
+          (tracedResultFakturs.size > 0) ? `faktur IN (${Array.from(tracedResultFakturs).map(() => '?').join(',')})` : '',
+          (isStartingFromPO) ? `raw_data LIKE ?` : ''
         ].filter(Boolean);
 
         if (conditions.length === 0) return Promise.resolve({ rows: [] });
 
+        const args = [
+          ...(!isStartingFromRekap && prdFaktursForSub.length > 0 ? prdFaktursForSub : []),
+          ...(tracedResultFakturs.size > 0 ? Array.from(tracedResultFakturs) : []),
+          ...(isStartingFromPO ? [`%${targetFaktur}%`] : [])
+        ];
+
         return db.execute({
           sql: `SELECT * FROM barang_jadi WHERE (${conditions.join(' OR ')}) ${dateSort}`,
-          args: [
-            ...(!isStartingFromRekap && prdFaktursForSub.length > 0 ? prdFaktursForSub : []),
-            ...(tracedResultFakturs.size > 0 ? Array.from(tracedResultFakturs) : [])
-          ]
+          args: args
         });
       })(),
       lpFakturs.length > 0 ? db.execute({
@@ -264,12 +311,17 @@ export async function GET(request: NextRequest) {
     purchaseRequests = dedupe([...purchaseRequests, ...prRes.rows]);
     
     // Filter bahanBaku based on mode
-    if (isStartingFromRekap) {
-      // Strictly only show BBB that actually used this specific PB faktur
-      bahanBaku = dedupe(bbRes.rows.filter((r: any) => 
-        (r.hp_detil && String(r.hp_detil).includes(targetFaktur)) || 
-        (r.raw_data && String(r.raw_data).includes(targetFaktur))
-      ));
+    if (isStartingFromRekap || isStartingFromPO) {
+      // Collect all related PB fakturs if starting from PO
+      const relatedPBFakturs = isStartingFromPO ? pembelianBarang.map(pb => pb.faktur) : [targetFaktur];
+      
+      // Strictly only show BBB that actually used these specific PB fakturs or the PO itself
+      bahanBaku = dedupe(bbRes.rows.filter((r: any) => {
+        const content = (String(r.hp_detil || "") + String(r.raw_data || "")).toLowerCase();
+        const matchesPB = relatedPBFakturs.some(f => content.includes(String(f).toLowerCase()));
+        const matchesPO = isStartingFromPO && content.includes(targetFaktur.toLowerCase());
+        return matchesPB || matchesPO;
+      }));
     } else {
       bahanBaku = dedupe(bbRes.rows);
     }
@@ -329,9 +381,9 @@ export async function GET(request: NextRequest) {
     // --- LEVEL 7: Purchase Orders (Dependent on SPH In) ---
     const sphFakturs = sphInList.map((sph: any) => sph.faktur).filter(Boolean);
     
-    // Only append other POs from the flow if we are NOT starting from a specific Rekap
-    // This ensures the PO column strictly follows: rekap.faktur_po = po.faktur
-    if (sphFakturs.length > 0 && !isStartingFromRekap) {
+    // Only append other POs from the flow if we are NOT starting from a specific Rekap or PO
+    // This ensures the PO column strictly follows: user selection or specific flow
+    if (sphFakturs.length > 0 && !isStartingFromRekap && !isStartingFromPO) {
       const poRes = await db.execute({
         sql: `SELECT * FROM purchase_orders WHERE faktur_sph IN (${sphFakturs.map(() => '?').join(',')}) ${dateSort}`,
         args: sphFakturs
@@ -401,6 +453,11 @@ export async function GET(request: NextRequest) {
         laporanPenjualan: sortData(laporanPenjualanList).map(lp => parseRawData(lp)),
         pengiriman: sortData(pengiriman).map(pg => parseRawData(pg)),
         pelunasanPiutang: sortData(pelunasanPiutang, 'tgl', 'fkt').map(pp => parseRawData(pp))
+      },
+      meta: {
+        isStartingFromRekap,
+        isStartingFromPO,
+        isBomPath: !!bom && !isStartingFromRekap && !isStartingFromPO
       }
     });
 

@@ -11,24 +11,37 @@ export async function GET(request: NextRequest) {
     const pageSize = parseInt(searchParams.get("pageSize") || "20");
     const offset = (page - 1) * pageSize;
     const supplier = searchParams.get("supplier") || "";
+    const po = searchParams.get("po") || "";
 
-    let sql = `
-        SELECT faktur, kd_barang, tgl, kd_supplier
-        FROM rekap_pembelian_barang
-        WHERE (faktur LIKE ? OR kd_barang LIKE ?)
-    `;
-    let args: any[] = [`%${q}%`, `%${q}%`];
+    let whereClause = "WHERE 1=1";
+    let args: any[] = [];
+
+    if (q) {
+      whereClause += " AND (faktur LIKE ? OR kd_barang LIKE ? OR faktur_po LIKE ?)";
+      args.push(`%${q}%`, `%${q}%`, `%${q}%`);
+    }
 
     if (supplier) {
-      sql += ` AND kd_supplier = ? `;
+      whereClause += ` AND kd_supplier = ? `;
       args.push(supplier);
     }
 
+    if (po) {
+      whereClause += ` AND faktur_po LIKE ? `;
+      args.push(`%${po}%`);
+    }
+
+    let sql = `
+        SELECT faktur, kd_barang, tgl, kd_supplier, faktur_po
+        FROM rekap_pembelian_barang
+        ${whereClause}
+    `;
+
     sql += `
         ORDER BY 
-          substr(tgl, 7, 4) DESC, 
-          substr(tgl, 4, 2) DESC, 
-          substr(tgl, 1, 2) DESC,
+          substr(TRIM(tgl), 7, 4) DESC, 
+          substr(TRIM(tgl), 4, 2) DESC, 
+          substr(TRIM(tgl), 1, 2) DESC,
           faktur DESC
         LIMIT ? OFFSET ?
     `;
