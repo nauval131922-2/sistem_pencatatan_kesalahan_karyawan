@@ -543,19 +543,20 @@ doc.save('laporan.pdf');
 **Poin Kunci Implementasi:**
 1. **Backward Tracing (API)**: Jika pencarian dimulai dari Faktur PB (Rekap), sistem merunut balik hierarki dokumen: `Rekap -> PO -> SPH In -> SPPH -> PR -> Order Produksi -> BOM`.
 2. **Deep Search JSON (`raw_data`)**: Untuk menghubungkan pembelian ke pemakaian bahan baku, sistem melakukan *string search* di dalam kolom JSON `raw_data` (field `hp_detil`) untuk menemukan nomor Faktur PB yang spesifik.
-3. **Dynamic UI Rendering**:
+3. **Dynamic UI Rendering & Stability**:
    - **Column Filtering**: Menyembunyikan kolom produksi jika sumber pelacakan adalah Rekap Barang untuk menjaga fokus data.
    - **Smart Labeling**: Menggunakan logika `isBomTrack ? "label_a" : "label_b"` untuk menampilkan deskripsi relasi database yang akurat sesuai jalur pencarian.
    - **Mutual Exclusion Filters**: Memastikan hanya satu jalur pelacakan yang aktif di UI dalam satu waktu.
+   - **Adaptive UI**: Penggunaan `right-0` pada dropdown yang berada di sisi kanan layar dan `whitespace-nowrap` pada label filter untuk mencegah layout pecah pada resolusi laptop atau layar sempit.
+   - **Ellipsis Tooltips**: Implementasi tooltip (atribut `title`) pada elemen teks panjang agar informasi tidak hilang saat dipotong.
 4. **State Persistence & Validation**:
    - **LocalStorage Synchronization**: Status filter dan pilihan pelacakan disimpan ke browser untuk mencegah *UI flickering* saat halaman dimuat ulang.
    - **Automatic Supplier Validation**: Sistem secara cerdas menghapus pilihan barang jika user mengganti filter Supplier ke yang tidak sesuai dengan barang tersebut, menjaga konsistensi data.
-   - **Responsive Truncation**: Penggunaan `min-w-0` dan `truncate` pada kontainer filter untuk memastikan layout tetap stabil dan tidak terdorong keluar layar pada resolusi laptop.
 5. **Tab-Based UI & Dynamic Column Detection**:
-   - **Tab Navigation**: Mengganti tabel horizontal yang sangat lebar dengan sistem navigasi berbasis Tab untuk memisahkan data tiap tahapan (BOM, SO, BBB, dll).
-   - **Dynamic Badge Counts**: Badge pada header tab menampilkan jumlah data yang tersaring secara real-time berdasarkan filter teks dan tanggal.
-   - **Automatic Header Generation**: Tabel dalam tab tidak lagi menggunakan kolom hardcoded, melainkan mendeteksi secara dinamis kunci (keys) dari objek data JSON yang diterima dari API.
-   - **Contextual Footers**: Menampilkan perhitungan otomatis (seperti Total Qty) pada footer tabel khusus untuk tab yang relevan (BBB dan Hasil Produksi) pada jalur pelacakan tertentu.
+   - **Tab Navigation**: Mengganti tabel horizontal yang sangat lebar dengan sistem navigasi berbasis Tab untuk memisahkan data tiap tahapan.
+   - **Dynamic Badge Counts**: Badge pada header tab menampilkan jumlah data yang tersaring secara real-time.
+   - **Syntax Resilience**: Struktur kode menggunakan penanganan error yang ketat pada fungsi `async` dan `useEffect` untuk mencegah kebocoran state atau kegagalan parsing saat proses kompilasi/build.
+6. **Automatic Refresh**: Implementasi `StorageEvent` listener untuk mendeteksi sinkronisasi data dari tab lain dan memperbarui tampilan secara otomatis.
 
 ---
 

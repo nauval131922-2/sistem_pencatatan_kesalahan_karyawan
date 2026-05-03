@@ -46,6 +46,8 @@
 - [x] Implementasi Tracking Manufaktur Dua Jalur & Backward Tracing Engine — 2026-04-29
 - [x] Refinement Tata Letak & Validasi Otomatis Supplier pada Tracking — 2026-04-30
 - [x] Implementasi Layout Tab & Dinamisasi Kolom pada Tracking Manufaktur — 2026-04-30
+- [x] Resolusi Build Error & Stabilisasi Komponen Tracking Manufaktur — 2026-05-03
+- [x] Implementasi Modul Konversi Data Jurnal Harian Produksi — 2026-05-03
 
 ---
 
@@ -65,10 +67,10 @@
 ## 📊 Statistik
 
 ```
-Total task    : 35
-Selesai       : 33
-In progress   : 1
-Backlog       : 1
+Total task    : 36
+Selesai       : 34
+In progress   : 2
+Backlog       : 2
 Bug diketahui : 0
 Progress      : 94%
 ```

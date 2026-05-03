@@ -1,29 +1,35 @@
-# AI Session Summary - 2026-04-30 (Sesi Malam)
+# AI Session Summary - 2026-05-03 (Sesi Pagi)
 
 ## 📅 Detail Sesi
-- **Tanggal**: 2026-04-30
-- **Waktu**: 23:20 - 23:55 WIB
+- **Tanggal**: 2026-05-03
+- **Waktu**: 06:40 - 07:45 WIB
 - **PC**: Lokal (Kantor)
 
 ## 🚀 Fitur & Perbaikan
-1. **Refaktor Layout Tab Tracking**: Transformasi modul Tracking Manufaktur dari tabel multi-kolom horizontal yang lebar menjadi sistem navigasi berbasis **Tab** (BOM, SO, BBB, dll).
-2. **Dinamisasi Badge Header Tab**: Angka jumlah data pada header tab kini bersifat dinamis, otomatis terupdate mengikuti filter pencarian teks dan filter rentang tanggal.
-3. **Optimasi Footer Pagination**: Pemindahan posisi kontrol pagination ke sisi kanan footer untuk konsistensi UI Premium dan penambahan **Total Qty Badge** (khusus tab BBB/Hasil Produksi pada jalur Filter Barang).
-4. **Logika Filter Tanggal Terpusat**: Ekstraksi logic filtering ke dalam `useCallback` agar konsisten antara data yang di-render di tabel dan data yang dihitung di badge tab.
-5. **Restriksi Filter Jalur Barang**: Memastikan filter tanggal dan Total Qty hanya aktif pada jalur "Cari Barang" (`rekap`) sesuai permintaan user untuk menjaga integritas data BOM.
+1. **Stabilisasi Modul Tracking Manufaktur**: Resolusi besar-besaran terhadap *build errors* (TypeScript & Syntax) pada file `TrackingClient.tsx` yang disebabkan oleh residu refaktor sebelumnya.
+2. **Penyempurnaan UI Responsive**: 
+    - Dropdown "Pilih Faktur/Barang" kini menggunakan `right-0` (align kanan) agar tidak terpotong pada layar laptop.
+    - Label filter dipersingkat dan menggunakan `whitespace-nowrap` untuk stabilitas layout.
+3. **Optimasi Filter & Metadata**: 
+    - Penambahan `selectedFakturPO` untuk validasi relasi data yang lebih akurat.
+    - Sinkronisasi `localStorage` untuk pilihan Supplier, PO, dan Faktur agar tetap bertahan saat halaman di-*refresh*.
+4. **Perbaikan Jurnal Harian Produksi**:
+    - Penambahan modul **Konversi Data Jurnal Harian Produksi** di bawah menu Settings untuk Super Admin.
+    - Perbaikan hak akses dan sidebar untuk menyertakan menu konversi data baru.
+5. **Auto-Refresh Logic**: Implementasi listener `StorageEvent` untuk sinkronisasi data antar tab browser secara real-time.
 
 ## ⚙️ Keputusan Teknis Penting
-- **Auto-Generating Columns**: Implementasi pendeteksian `keys` objek JSON secara dinamis untuk header tabel, sehingga tidak perlu mendefinisikan kolom secara manual untuk setiap tab.
-- **Shared Filter Logic**: Penggunaan fungsi pembantu `filterRows` yang dipanggil di dalam `useMemo` (untuk data tabel) dan `tabs.map` (untuk badge counts) guna memastikan sinkronisasi state.
-- **Conditional Layout Rendering**: Penggunaan `flex-col sm:flex-row` pada footer untuk menjaga responsivitas antara info jumlah data dan tombol navigasi halaman.
+- **Syntax Resilience Strategy**: Menggunakan skrip audit khusus untuk memastikan keseimbangan kurung kurawal pada file komponen besar (>1600 baris) guna mencegah kegagalan kompilasi.
+- **Priority-Based State Hydration**: Logika pemuatan data saat *mount* diprioritaskan berdasarkan `savedFaktur` kemudian `savedPO`, memastikan alur pelacakan kembali ke posisi terakhir user.
+- **No-All-Caps Enforcement**: Konsistensi penggunaan *Sentence Case* pada seluruh header, button, dan label sesuai standar desain baru.
 
 ## 📌 Status Task & Hal yang Perlu Dilanjutkan
-- ✅ Modul Tracking Manufaktur kini jauh lebih bersih, ringan, dan informatif dengan sistem Tab.
-- ✅ Sinkronisasi filter ke semua indikator UI sudah 100% akurat.
-- 📌 Perlu evaluasi apakah tab tertentu memerlukan formatting khusus (misal: format mata uang) karena saat ini semua kolom di-render sebagai teks/angka standar.
+- ✅ Build errors pada Tracking Manufaktur telah 100% teratasi (Verified by `tsc`).
+- ✅ Menu Konversi Data JHP telah terintegrasi dalam sistem RBAC.
+- 📌 Perlu pengujian performa pada tab BBB Produksi jika data yang ditarik mencapai ribuan baris, mengingat saat ini menggunakan filter client-side di dalam `useMemo`.
 
 ## 📂 Dokumentasi Baru/Diperbarui
-- New `docs/tutorials/10-refactor-layout-tab-tracking-manufaktur.md`
+- New `docs/tutorials/11-perbaikan-build-error-dan-stabilitas-tracking-manufaktur.md`
 - Update `docs/BUILD_FROM_SCRATCH.md`
 - Update `docs/task.md`
 - Update `docs/AI_SESSION_SUMMARY.md`
