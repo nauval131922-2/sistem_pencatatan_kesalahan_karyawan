@@ -641,6 +641,32 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
             />
           </div>
         )}
+
+        {/* SETTINGS — Super Admin only */}
+        {user?.role === 'Super Admin' && (
+          <div className="space-y-1 mb-1" data-group="Settings">
+            <FlyoutMenu
+              id="settings-menu"
+              label="Settings"
+              icon={<Database size={18} />}
+              items={[
+                {
+                  label: 'Konversi Data',
+                  icon: <RefreshCw size={16} />,
+                  items: [
+                    {
+                      label: 'Produksi',
+                      icon: <Package size={14} />,
+                      items: [
+                        { label: 'Jurnal Harian Produksi', href: '/settings/konversi-data/jurnal-harian-produksi', icon: <ClipboardList size={12} /> }
+                      ]
+                    }
+                  ]
+                }
+              ]}
+            />
+          </div>
+        )}
       </nav>
 
 

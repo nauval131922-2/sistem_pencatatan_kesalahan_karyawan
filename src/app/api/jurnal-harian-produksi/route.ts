@@ -64,7 +64,47 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { filename, data: rawData, chunkIndex = 0, totalChunks = 1 } = await request.json();
+    const body = await request.json();
+    const session = await getSession();
+
+    // Deteksi jika ini adalah request single insert dari form CRUD
+    if (body.action === 'insert_single') {
+      if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const {
+        posisi, absensi, tgl, shift, nama_karyawan, no_order, nama_order,
+        jenis_pekerjaan, keterangan, target, realisasi,
+        no_order_2, nama_order_2, jenis_pekerjaan_2,
+        bahan_kertas, jml_plate, warna, inscheet, rijek, jam, kendala, bagian
+      } = body.data;
+
+      await db.execute({
+        sql: `INSERT INTO jurnal_harian_produksi (
+                posisi, absensi, tgl, shift, nama_karyawan, no_order, nama_order,
+                jenis_pekerjaan, keterangan, target, realisasi,
+                no_order_2, nama_order_2, jenis_pekerjaan_2,
+                bahan_kertas, jml_plate, warna, inscheet, rijek, jam, kendala, bagian
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [
+          posisi || '', Number(absensi) || 0, tgl || null, shift || '', nama_karyawan || '',
+          no_order || '', nama_order || '', jenis_pekerjaan || '', keterangan || '',
+          Number(target) || 0, Number(realisasi) || 0,
+          no_order_2 || '', nama_order_2 || '', jenis_pekerjaan_2 || '',
+          bahan_kertas || '', Number(jml_plate) || 0, warna || '', Number(inscheet) || 0,
+          Number(rijek) || 0, jam || '', kendala || '', bagian || ''
+        ]
+      });
+
+      await db.execute({
+        sql: `INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+              VALUES (?, ?, ?, ?, ?, ?)`,
+        args: ['INSERT', 'jurnal_harian_produksi', 0, `Tambah Jurnal Harian Produksi Baru`, JSON.stringify(body.data), session.username || 'System']
+      });
+
+      return NextResponse.json({ success: true });
+    }
+
+    // Default flow untuk bulk upload Excel
+    const { filename, data: rawData, chunkIndex = 0, totalChunks = 1 } = body;
 
     if (!rawData || !Array.isArray(rawData) || rawData.length === 0) {
        return NextResponse.json({ error: "Data Excel kosong atau format tidak sesuai." }, { status: 400 });
@@ -230,5 +270,84 @@ export async function POST(request: NextRequest) {
       { error: "Gagal memproses file Excel", details: error.message },
       { status: 500 }
     );
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session?.userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id, ...fields } = await request.json();
+    if (!id) return NextResponse.json({ error: 'ID tidak ditemukan' }, { status: 400 });
+
+    const {
+      posisi, absensi, tgl, shift, nama_karyawan, no_order, nama_order,
+      jenis_pekerjaan, keterangan, target, realisasi,
+      no_order_2, nama_order_2, jenis_pekerjaan_2,
+      bahan_kertas, jml_plate, warna, inscheet, rijek, jam, kendala, bagian
+    } = fields;
+
+    await db.execute({
+      sql: `UPDATE jurnal_harian_produksi SET
+              posisi = ?, absensi = ?, tgl = ?, shift = ?, nama_karyawan = ?,
+              no_order = ?, nama_order = ?, jenis_pekerjaan = ?, keterangan = ?,
+              target = ?, realisasi = ?,
+              no_order_2 = ?, nama_order_2 = ?, jenis_pekerjaan_2 = ?,
+              bahan_kertas = ?, jml_plate = ?, warna = ?, inscheet = ?,
+              rijek = ?, jam = ?, kendala = ?, bagian = ?
+            WHERE id = ?`,
+      args: [
+        posisi || '', Number(absensi) || 0, tgl || null, shift || '', nama_karyawan || '',
+        no_order || '', nama_order || '', jenis_pekerjaan || '', keterangan || '',
+        Number(target) || 0, Number(realisasi) || 0,
+        no_order_2 || '', nama_order_2 || '', jenis_pekerjaan_2 || '',
+        bahan_kertas || '', Number(jml_plate) || 0, warna || '', Number(inscheet) || 0,
+        Number(rijek) || 0, jam || '', kendala || '', bagian || '',
+        id
+      ]
+    });
+
+    await db.execute({
+      sql: `INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: ['UPDATE', 'jurnal_harian_produksi', id, `Update Jurnal Harian Produksi ID #${id}`, JSON.stringify({ id }), session.username || 'System']
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session?.userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { ids } = await request.json();
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ error: 'IDs tidak valid' }, { status: 400 });
+    }
+
+    const placeholders = ids.map(() => '?').join(', ');
+    await db.execute({
+      sql: `DELETE FROM jurnal_harian_produksi WHERE id IN (${placeholders})`,
+      args: ids
+    });
+
+    await db.execute({
+      sql: `INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: ['DELETE', 'jurnal_harian_produksi', 0, `Hapus ${ids.length} baris Jurnal Harian Produksi`, JSON.stringify({ ids }), session.username || 'System']
+    });
+
+    return NextResponse.json({ success: true, deletedCount: ids.length });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

@@ -38,6 +38,7 @@ const GROUP_COLORS: Record<string, { text: string; bg: string; dot: string }> = 
   'Sistem - Produksi':   { text: 'text-emerald-700', bg: 'bg-emerald-50',     dot: 'bg-emerald-500' },
   'Sistem - Penjualan':  { text: 'text-indigo-700', bg: 'bg-indigo-50',     dot: 'bg-indigo-500' },
   'Sistem - User':       { text: 'text-slate-700', bg: 'bg-slate-50',     dot: 'bg-slate-500' },
+  'Sistem - Settings':   { text: 'text-violet-700', bg: 'bg-violet-50',   dot: 'bg-violet-500' },
 };
 
 export default function RolesContent({ allPermissions, customRoles }: RolesContentProps) {
@@ -604,7 +605,14 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
                       { type: 'node', label: 'User', colorKey: 'Sistem - User', children: [
                         { type: 'leaf', key: 'hak_akses', label: 'Hak Akses' },
                         { type: 'leaf', key: 'kelola_user', label: 'Kelola User' }
-                      ]}
+                      ]},
+                      { type: 'node', label: 'Settings', colorKey: 'Sistem - Settings', children: [
+                        { type: 'node', label: 'Konversi Data', children: [
+                          { type: 'node', label: 'Produksi', children: [
+                            { type: 'leaf', key: 'settings_konversi_data', label: 'Jurnal Harian Produksi' }
+                          ]}
+                        ]}
+                      ]},
                     ];
 
                     const collectKeys = (items: any[]): string[] =>

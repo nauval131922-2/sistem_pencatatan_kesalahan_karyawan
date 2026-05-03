@@ -45,6 +45,9 @@ export const MODULE_REGISTRY = [
   { key: 'hak_akses',              label: 'Hak Akses',                        group: 'Sistem - User' },
   { key: 'kelola_user',            label: 'Kelola User',                      group: 'Sistem - User' },
 
+  // Sistem - Settings
+  { key: 'settings_konversi_data', label: 'Konversi Data - Jurnal Harian Produksi', group: 'Sistem - Settings' },
+
   // Penjualan
   { key: 'penjualan_sph_out',      label: 'SPH Keluar (Penjualan)',           group: 'Data Digit - Penjualan' },
   { key: 'penjualan_so',           label: 'Sales Order Barang',               group: 'Data Digit - Penjualan' },
