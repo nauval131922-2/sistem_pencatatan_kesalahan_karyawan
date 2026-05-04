@@ -311,6 +311,29 @@ export async function initSchema(db: any) {
       target_per_jam REAL,
       keterangan TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    // Tabel Akuntansi
+    `CREATE TABLE IF NOT EXISTS jurnal_umum (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      faktur TEXT NOT NULL,
+      tgl TEXT,
+      rekening TEXT,
+      keterangan TEXT,
+      debit REAL,
+      kredit REAL,
+      username TEXT,
+      create_at TEXT,
+      parent_faktur TEXT,
+      is_child INTEGER DEFAULT 0,
+      child_order INTEGER DEFAULT 0,
+      raw_data TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(faktur, child_order, is_child)
+    );`,
+    `CREATE TABLE IF NOT EXISTS system_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`
   ], "write");
 
@@ -557,6 +580,13 @@ doc.save('laporan.pdf');
    - **Dynamic Badge Counts**: Badge pada header tab menampilkan jumlah data yang tersaring secara real-time.
    - **Syntax Resilience**: Struktur kode menggunakan penanganan error yang ketat pada fungsi `async` dan `useEffect` untuk mencegah kebocoran state atau kegagalan parsing saat proses kompilasi/build.
 6. **Automatic Refresh**: Implementasi `StorageEvent` listener untuk mendeteksi sinkronisasi data dari tab lain dan memperbarui tampilan secara otomatis.
+7. **Laba Rugi Running Total Logic**: 
+   - **Kriteria Rekening**: Rekening dengan awalan digit **4-9** (Pendapatan & Biaya) dianggap sebagai komponen Laba Rugi.
+   - **Formula Saldo**: `LabaRugi = SaldoAwal + Σ(Kredit - Debit)`. 
+   - **Nota**: Pada akuntansi Digit, nilai positif di sisi Kredit untuk rekening Pendapatan/Biaya menambah Laba.
+8. **Infinite Scroll Stability**:
+   - Wajib menggunakan `isLoadingMore` (useRef) untuk mengunci proses fetch saat scrolling cepat.
+   - Pengurutan data di API harus deterministik: `ORDER BY create_at ASC, faktur ASC, id ASC`.
 
 ---
 

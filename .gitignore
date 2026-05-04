@@ -44,6 +44,7 @@ next-env.d.ts
 
 # database
 *.sqlite
+*.db
 *.sqlite-wal
 *.sqlite-shm
 *.sqlite.corrupt

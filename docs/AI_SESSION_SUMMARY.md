@@ -1,35 +1,36 @@
-# AI Session Summary - 2026-05-03 (Sesi Pagi)
+# AI Session Summary - 2026-05-04 (Sesi Siang)
 
 ## 📅 Detail Sesi
-- **Tanggal**: 2026-05-03
-- **Waktu**: 06:40 - 07:45 WIB
+- **Tanggal**: 2026-05-04
+- **Waktu**: 14:00 - 15:30 WIB
 - **PC**: Lokal (Kantor)
 
 ## 🚀 Fitur & Perbaikan
-1. **Stabilisasi Modul Tracking Manufaktur**: Resolusi besar-besaran terhadap *build errors* (TypeScript & Syntax) pada file `TrackingClient.tsx` yang disebabkan oleh residu refaktor sebelumnya.
-2. **Penyempurnaan UI Responsive**: 
-    - Dropdown "Pilih Faktur/Barang" kini menggunakan `right-0` (align kanan) agar tidak terpotong pada layar laptop.
-    - Label filter dipersingkat dan menggunakan `whitespace-nowrap` untuk stabilitas layout.
-3. **Optimasi Filter & Metadata**: 
-    - Penambahan `selectedFakturPO` untuk validasi relasi data yang lebih akurat.
-    - Sinkronisasi `localStorage` untuk pilihan Supplier, PO, dan Faktur agar tetap bertahan saat halaman di-*refresh*.
-4. **Perbaikan Jurnal Harian Produksi**:
-    - Penambahan modul **Konversi Data Jurnal Harian Produksi** di bawah menu Settings untuk Super Admin.
-    - Perbaikan hak akses dan sidebar untuk menyertakan menu konversi data baru.
-5. **Auto-Refresh Logic**: Implementasi listener `StorageEvent` untuk sinkronisasi data antar tab browser secara real-time.
+1. **Stabilisasi Modul Jurnal Umum**: 
+    - **Akurasi Saldo Awal**: Perbaikan query SQL Saldo Awal agar mematuhi filter rentang tanggal (`tgl`) dan pencarian (`search`), bukan sekadar akumulasi historis tanpa batas.
+    - **Normalisasi Tanggal**: Migrasi besar-besaran data tanggal di database ke format standar `YYYY-MM-DD` untuk reliabilitas filter `BETWEEN`.
+    - **Inherit Timestamp**: Memperbarui Scraper agar baris `child` mewarisi `create_at` dari `parent`, memastikan data item transaksi terhitung dalam Saldo Awal kronologis.
+2. **Resiliensi UI & Infinite Scroll**:
+    - **Fix Race Condition**: Implementasi `isLoadingMore` (useRef) pada `handleScroll` untuk mencegah skip halaman saat scrolling cepat yang sebelumnya menyebabkan data terlihat "hilang".
+    - **Deterministic Ordering**: Memperketat `ORDER BY create_at ASC, faktur ASC, id ASC` pada API untuk memastikan data tidak melompat antar halaman pagination.
+3. **Penyempurnaan Visual & UX**:
+    - Format tanggal di UI diubah menjadi `DD MMM YYYY` (contoh: 01 Apr 2026) untuk keterbacaan tinggi.
+    - Penambahan notasi `(L)` untuk Laba (hijau) dan `(R)` untuk Rugi (merah) pada kolom saldo berlanjut.
+    - Optimasi font size dan alignment pada tabel untuk kesan yang lebih premium.
+4. **Fix Build Error Turbopack**: Mengatasi masalah parsing Next.js 16 (Turbopack) dengan membuang penggunaan *template literals* pada fungsi-fungsi helper di sisi server yang sempat menyebabkan crash.
 
 ## ⚙️ Keputusan Teknis Penting
-- **Syntax Resilience Strategy**: Menggunakan skrip audit khusus untuk memastikan keseimbangan kurung kurawal pada file komponen besar (>1600 baris) guna mencegah kegagalan kompilasi.
-- **Priority-Based State Hydration**: Logika pemuatan data saat *mount* diprioritaskan berdasarkan `savedFaktur` kemudian `savedPO`, memastikan alur pelacakan kembali ke posisi terakhir user.
-- **No-All-Caps Enforcement**: Konsistensi penggunaan *Sentence Case* pada seluruh header, button, dan label sesuai standar desain baru.
+- **Synchronization Locking**: Menggunakan `isLoadingMore` sebagai sinkronisasi blocker untuk operasi asinkron yang dipicu oleh event DOM (scroll), karena state React tidak cukup cepat untuk mencegah *double-trigger*.
+- **Data Integrity Migration**: Melakukan migrasi data `create_at` secara manual pada database produksi lokal untuk memperbaiki kerusakan data yang disebabkan oleh versi scraper lama.
+- **SQL-First Formatting**: Memindahkan logika normalisasi tanggal ke hulu (Scraper) agar database tetap bersih dan query filter bisa menggunakan fungsi bawaan SQL yang efisien.
 
 ## 📌 Status Task & Hal yang Perlu Dilanjutkan
-- ✅ Build errors pada Tracking Manufaktur telah 100% teratasi (Verified by `tsc`).
-- ✅ Menu Konversi Data JHP telah terintegrasi dalam sistem RBAC.
-- 📌 Perlu pengujian performa pada tab BBB Produksi jika data yang ditarik mencapai ribuan baris, mengingat saat ini menggunakan filter client-side di dalam `useMemo`.
+- ✅ Bug "Missing Rows" pada Jurnal Umum telah 100% teratasi.
+- ✅ Akurasi Saldo Awal (Opening Balance) telah diverifikasi secara manual via SQL debug.
+- 📌 Next: Implementasi fitur **Export to Excel** untuk Jurnal Umum dengan format yang rapi dan mematuhi filter yang sedang aktif.
 
 ## 📂 Dokumentasi Baru/Diperbarui
-- New `docs/tutorials/11-perbaikan-build-error-dan-stabilitas-tracking-manufaktur.md`
+- New `docs/tutorials/12-optimasi-dan-akurasi-jurnal-umum.md`
 - Update `docs/BUILD_FROM_SCRATCH.md`
 - Update `docs/task.md`
 - Update `docs/AI_SESSION_SUMMARY.md`

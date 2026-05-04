@@ -48,6 +48,7 @@
 - [x] Implementasi Layout Tab & Dinamisasi Kolom pada Tracking Manufaktur — 2026-04-30
 - [x] Resolusi Build Error & Stabilisasi Komponen Tracking Manufaktur — 2026-05-03
 - [x] Implementasi Modul Konversi Data Jurnal Harian Produksi — 2026-05-03
+- [x] Stabilisasi & Akurasi Modul Jurnal Umum (Normalisasi Tanggal, Fix Scroll Race Condition, & Saldo Awal Akurat) — 2026-05-04
 
 ---
 
@@ -67,12 +68,12 @@
 ## 📊 Statistik
 
 ```
-Total task    : 36
-Selesai       : 34
+Total task    : 39
+Selesai       : 35
 In progress   : 2
 Backlog       : 2
 Bug diketahui : 0
-Progress      : 94%
+Progress      : 90%
 ```
 
 ---
