@@ -1,13 +1,31 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Loader2, AlertCircle, ClipboardList, RotateCcw, Filter, Plus, Trash2, Edit2, Save, X, CheckCircle2 } from 'lucide-react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { Loader2, AlertCircle, ClipboardList, RotateCcw, Filter, Plus, Trash2, Edit2, Save, X, CheckCircle2, ChevronDown, Search } from 'lucide-react';
 import SearchableDropdown from '@/components/SearchableDropdown';
 import SearchAndReload from '@/components/SearchAndReload';
 import { useRouter } from 'next/navigation';
 import { DataTable } from '@/components/ui/DataTable';
 import TableFooter from '@/components/TableFooter';
 import DatePicker from '@/components/DatePicker';
+
+// Mapping Bagian -> Category master_pekerjaan
+const BAGIAN_CATEGORY_MAP: Record<string, string> = {
+  'SETTING':          'PRA CETAK',
+  'QUALITY CONTROL':  'QUALITY CONTROL',
+  'CETAK':            'CETAK',
+  'FINISHING':        'PASCA CETAK',
+  'GUDANG':           'GUDANG',
+  'TEKNISI':          'TEHNISI',
+};
+
+const BAGIAN_LIST = ['SETTING', 'QUALITY CONTROL', 'CETAK', 'FINISHING', 'GUDANG', 'TEKNISI'];
+
+const SHIFT_JAM: Record<string, string> = {
+  '1': '07:00 - 15:00',
+  '2': '15:00 - 23:00',
+  '3': '23:00 - 07:00',
+};
 
 const PAGE_SIZE = 50;
 
@@ -23,7 +41,13 @@ function formatIndoDateStr(tglStr: string) {
   return tglStr;
 }
 
-export default function JurnalClient() {
+export default function JurnalClient({
+  canInputTarget = true,
+  canInputRealisasi = true,
+}: {
+  canInputTarget?: boolean;
+  canInputRealisasi?: boolean;
+}) {
   const router = useRouter();
   
   // State
@@ -55,11 +79,26 @@ export default function JurnalClient() {
 
   // CRUD State
   const [activeTab, setActiveTab] = useState<'list' | 'form'>('list');
+  const [formSubTab, setFormSubTab] = useState<'target' | 'realisasi'>('target');
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | string | null>(null);
   const [formData, setFormData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
   const [actionMessage, setActionMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+
+  // Dropdown data for form
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [sopdList, setSopdList] = useState<any[]>([]);
+  const [jenisPekerjaanList, setJenisPekerjaanList] = useState<string[]>([]);
+  const [jenisPekerjaan2List, setJenisPekerjaan2List] = useState<string[]>([]);
+  const [isLoadingForm, setIsLoadingForm] = useState(false);
+
+  // Realisasi: pilih target row dulu
+  const [selectedTargetRow, setSelectedTargetRow] = useState<any | null>(null);
+  const [targetSearchQuery, setTargetSearchQuery] = useState('');
+  const [targetRowOptions, setTargetRowOptions] = useState<any[]>([]);
+  const [isTargetDropdownOpen, setIsTargetDropdownOpen] = useState(false);
+  const targetDropdownRef = useRef<HTMLDivElement>(null);
 
   // Table State
   const [selectedIds, setSelectedIds] = useState<Set<number | string>>(new Set());
@@ -231,6 +270,81 @@ export default function JurnalClient() {
     fetchOptions();
   }, [refreshKey]);
 
+  // Fetch employees & sopd for form dropdowns (only when form is open)
+  useEffect(() => {
+    if (activeTab !== 'form') return;
+    let active = true;
+    async function loadFormData() {
+      setIsLoadingForm(true);
+      try {
+        const [empRes, sopdRes] = await Promise.all([
+          fetch('/api/employees?limit=500'),
+          fetch('/api/sopd?all=true&limit=30')
+        ]);
+        if (!active) return;
+        if (empRes.ok) {
+          const j = await empRes.json();
+          setEmployees(j.data || []);
+        }
+        if (sopdRes.ok) {
+          const j = await sopdRes.json();
+          setSopdList(j.data || []);
+        }
+      } catch {} finally {
+        if (active) setIsLoadingForm(false);
+      }
+    }
+    loadFormData();
+    return () => { active = false; };
+  }, [activeTab, refreshKey]);
+
+  // Fetch jenis pekerjaan ketika bagian form berubah (section Target)
+  useEffect(() => {
+    if (!formData.bagian) { setJenisPekerjaanList([]); return; }
+    const category = BAGIAN_CATEGORY_MAP[formData.bagian] || '';
+    if (!category) { setJenisPekerjaanList([]); return; }
+    fetch(`/api/master-pekerjaan?category=${encodeURIComponent(category)}&limit=200`)
+      .then(r => r.json())
+      .then(j => setJenisPekerjaanList((j.data || []).map((x: any) => x.name)))
+      .catch(() => setJenisPekerjaanList([]));
+  }, [formData.bagian]);
+
+  // Fetch jenis pekerjaan untuk section Realisasi (ikut bagian dari target)
+  useEffect(() => {
+    const bagian = selectedTargetRow?.bagian || formData.bagian;
+    if (!bagian) { setJenisPekerjaan2List([]); return; }
+    const category = BAGIAN_CATEGORY_MAP[bagian] || '';
+    if (!category) { setJenisPekerjaan2List([]); return; }
+    fetch(`/api/master-pekerjaan?category=${encodeURIComponent(category)}&limit=200`)
+      .then(r => r.json())
+      .then(j => setJenisPekerjaan2List((j.data || []).map((x: any) => x.name)))
+      .catch(() => setJenisPekerjaan2List([]));
+  }, [selectedTargetRow, formData.bagian]);
+
+  // Filter target rows for Realisasi dropdown
+  useEffect(() => {
+    if (!data) return;
+    const q = targetSearchQuery.toLowerCase();
+    const filtered = data.filter(row =>
+      (row.nama_karyawan || '').toLowerCase().includes(q) ||
+      (row.no_order || '').toLowerCase().includes(q) ||
+      (row.nama_order || '').toLowerCase().includes(q) ||
+      (row.tgl || '').includes(q)
+    ).slice(0, 30);
+    setTargetRowOptions(filtered);
+  }, [targetSearchQuery, data]);
+
+  // Close target dropdown on outside click
+  useEffect(() => {
+    function handle(e: MouseEvent) {
+      if (targetDropdownRef.current && !targetDropdownRef.current.contains(e.target as Node)) {
+        setIsTargetDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, []);
+
   // When bagian changes, update nama options
   useEffect(() => {
     if (!bagianFilter) {
@@ -257,29 +371,38 @@ export default function JurnalClient() {
 
   const startAdd = useCallback(() => {
     setActiveTab('form');
+    // Jika tidak bisa input target tapi bisa realisasi, langsung ke tab realisasi
+    setFormSubTab(!canInputTarget && canInputRealisasi ? 'realisasi' : 'target');
     setIsAdding(true);
     setEditingId(null);
+    setSelectedTargetRow(null);
+    setTargetSearchQuery('');
     setFormData({ tgl: new Date().toISOString().split('T')[0] });
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  }, [canInputTarget, canInputRealisasi]);
 
   const startEdit = useCallback((row: any) => {
     setActiveTab('form');
+    // Admin Realisasi: langsung ke tab Realisasi. Admin Penjadwalan: ke tab Target.
+    setFormSubTab(canInputRealisasi ? 'realisasi' : 'target');
     setIsAdding(false);
     setEditingId(row.id);
+    setSelectedTargetRow(null);
     const formattedData = { ...row };
     if (formattedData.tgl && formattedData.tgl.includes('T')) {
       formattedData.tgl = formattedData.tgl.split('T')[0];
     }
     setFormData(formattedData);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  }, [canInputRealisasi]);
 
   const cancelForm = useCallback(() => {
     setActiveTab('list');
     setIsAdding(false);
     setEditingId(null);
     setFormData({});
+    setSelectedTargetRow(null);
+    setTargetSearchQuery('');
   }, []);
 
   const saveForm = async () => {
@@ -739,90 +862,398 @@ export default function JurnalClient() {
       </div> {/* CLOSES activeTab === 'list' */}
 
       {/* TAB CONTENT: FORM */}
-      <div className={`flex-1 flex flex-col gap-6 overflow-y-auto pr-2 pb-10 ${activeTab === 'form' ? 'flex' : 'hidden'}`}>
+      <div className={`flex-1 flex flex-col gap-4 overflow-y-auto pr-2 pb-10 ${activeTab === 'form' ? 'flex' : 'hidden'}`}>
         {(isAdding || editingId !== null) && (
           <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm animate-in slide-in-from-top-4 fade-in duration-300">
-            {/* Bagian Penjadwalan */}
-            <div className="mb-8">
-              <div className="flex items-center gap-3 mb-4 pb-2 border-b border-emerald-100">
-                <div className="w-2.5 h-5 rounded-sm bg-gradient-to-b from-emerald-400 to-yellow-300 shadow-sm"></div>
-                <h4 className="text-[12px] font-bold text-gray-700 uppercase tracking-widest">Bagian Penjadwalan</h4>
-                <span className="text-[11px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md ml-2">Kolom Hijau & Kuning</span>
+
+            {/* Sub-tab: Target / Realisasi - hanya tampil jika punya akses keduanya */}
+            {canInputTarget && canInputRealisasi && (
+              <div className="flex gap-1 mb-6 bg-gray-50 p-1 rounded-xl w-fit border border-gray-100">
+                <button
+                  onClick={() => setFormSubTab('target')}
+                  className={`px-5 py-2 text-[12px] font-bold rounded-lg transition-all ${formSubTab === 'target' ? 'bg-white text-emerald-700 shadow-sm border border-emerald-100' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  🗓 Target / Penjadwalan
+                </button>
+                <button
+                  onClick={() => setFormSubTab('realisasi')}
+                  className={`px-5 py-2 text-[12px] font-bold rounded-lg transition-all ${formSubTab === 'realisasi' ? 'bg-white text-sky-700 shadow-sm border border-sky-100' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  📋 Realisasi / Hasil Produksi
+                </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-gray-600">Tanggal</label>
-                  <input type="date" className="w-full bg-emerald-50/30 border border-emerald-100 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all" value={formData.tgl || ''} onChange={e => setFormData({...formData, tgl: e.target.value})} />
+            )}
+
+            {/* ---- SUB-TAB: TARGET ---- */}
+            {formSubTab === 'target' && (
+              <div className="animate-in fade-in duration-200">
+                <div className="flex items-center gap-2.5 mb-6">
+                  <span className="text-[13px] font-bold text-gray-700">Data Penjadwalan</span>
+                  <div className="flex-1 h-px bg-gray-100"></div>
+                  <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">Hijau &amp; Kuning</span>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-gray-600">Shift</label>
-                  <input type="text" placeholder="Shift 1/2" className="w-full bg-yellow-50/30 border border-yellow-100 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-500 outline-none transition-all" value={formData.shift || ''} onChange={e => setFormData({...formData, shift: e.target.value})} />
+                {/* Grup 1: Tanggal */}
+                <div className="mb-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[12px] font-bold text-gray-600">Tanggal <span className="text-rose-400">*</span></label>
+                      <DatePicker
+                        name="tgl"
+                        value={formData.tgl ? new Date(formData.tgl + 'T12:00:00') : null}
+                        onChange={d => setFormData({...formData, tgl: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`})}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-gray-600">Karyawan</label>
-                  <select className="w-full bg-emerald-50/30 border border-emerald-100 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none" value={formData.nama_karyawan || ''} onChange={e => setFormData({...formData, nama_karyawan: e.target.value})}>
-                    <option value="">-- Pilih Karyawan --</option>
-                    {Array.from(new Set(allNamaOptions.map(k => k.nama))).map(n => <option key={n} value={n}>{n}</option>)}
-                  </select>
+
+                {/* Grup 2: Shift, Bagian, Nama Karyawan, Posisi, Abs */}
+                <div className="mb-5">
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <span className="text-[13px] font-bold text-gray-700">Karyawan</span>
+                    <div className="flex-1 h-px bg-gray-100"></div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[12px] font-bold text-gray-600">Shift <span className="text-rose-400">*</span></label>
+                      <SearchableDropdown
+                        id="form-shift"
+                        value={formData.shift || ''}
+                        items={['1 (07:00-15:00)', '2 (15:00-23:00)', '3 (23:00-07:00)']}
+                        placeholder="-- Pilih Shift --"
+                        allLabel="-- Pilih Shift --"
+                        triggerWidth="w-full"
+                        onChange={val => {
+                          const shiftNum = val.split(' ')[0];
+                          setFormData({...formData, shift: shiftNum});
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[12px] font-bold text-gray-600">Bagian <span className="text-rose-400">*</span></label>
+                      <SearchableDropdown
+                        id="form-bagian"
+                        value={formData.bagian || ''}
+                        items={BAGIAN_LIST}
+                        placeholder="-- Pilih Bagian --"
+                        allLabel="-- Pilih Bagian --"
+                        triggerWidth="w-full"
+                        onChange={val => setFormData({...formData, bagian: val, jenis_pekerjaan: ''})}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[12px] font-bold text-gray-600">Nama Karyawan <span className="text-rose-400">*</span></label>
+                      <SearchableDropdown
+                        id="form-karyawan"
+                        value={formData.nama_karyawan || ''}
+                        items={employees.map(e => e.name)}
+                        placeholder="-- Pilih Karyawan --"
+                        allLabel="-- Pilih Karyawan --"
+                        triggerWidth="w-full"
+                        onChange={val => {
+                          const emp = employees.find(x => x.name === val);
+                          setFormData({...formData, nama_karyawan: val, posisi: emp?.position || '', absensi: emp?.employee_no || ''});
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[12px] font-bold text-gray-600">Posisi <span className="text-[11px] font-normal text-gray-400">(otomatis)</span></label>
+                      <input type="text" disabled className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-[13px] font-medium text-gray-500 outline-none cursor-not-allowed h-11" value={formData.posisi || ''} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[12px] font-bold text-gray-600">Abs. <span className="text-[11px] font-normal text-gray-400">(otomatis)</span></label>
+                      <input type="text" disabled className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-[13px] font-medium text-gray-500 outline-none cursor-not-allowed h-11" value={formData.absensi || ''} />
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-gray-600">Bagian</label>
-                  <select className="w-full bg-emerald-50/30 border border-emerald-100 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none" value={formData.bagian || ''} onChange={e => setFormData({...formData, bagian: e.target.value})}>
-                    <option value="">-- Pilih Bagian --</option>
-                    {bagianOptions.map(b => <option key={b} value={b}>{b}</option>)}
-                  </select>
+
+                {/* Grup 3: No. Order, Nama Order, Jenis Pekerjaan */}
+                <div className="mb-5">
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <span className="text-[13px] font-bold text-gray-700">Order &amp; Pekerjaan</span>
+                    <div className="flex-1 h-px bg-gray-100"></div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[12px] font-bold text-gray-600">No. Order (PPIC)</label>
+                      <SearchableDropdown
+                        id="form-no-order"
+                        value={formData.no_order ? `${formData.no_order}${sopdList.find(s => s.no_sopd === formData.no_order)?.nama_order ? ' — ' + sopdList.find(s => s.no_sopd === formData.no_order)?.nama_order : ''}` : ''}
+                        items={sopdList.map(s => s.nama_order ? `${s.no_sopd} — ${s.nama_order}` : s.no_sopd)}
+                        placeholder="-- Pilih No. Order --"
+                        allLabel="-- Pilih No. Order --"
+                        triggerWidth="w-full"
+                        onChange={val => {
+                          const noSopd = val.split(' — ')[0];
+                          const sopd = sopdList.find(x => x.no_sopd === noSopd);
+                          setFormData({...formData, no_order: noSopd, nama_order: sopd?.nama_order || ''});
+                        }}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-[12px] font-bold text-gray-600">Jenis Pekerjaan</label>
+                      <SearchableDropdown
+                        id="form-jenis-pekerjaan"
+                        value={formData.jenis_pekerjaan || ''}
+                        items={jenisPekerjaanList}
+                        placeholder={formData.bagian ? '-- Pilih Jenis Pekerjaan --' : '-- Pilih Bagian dulu --'}
+                        allLabel={formData.bagian ? '-- Pilih Jenis Pekerjaan --' : '-- Pilih Bagian dulu --'}
+                        triggerWidth="w-full"
+                        onChange={val => setFormData({...formData, jenis_pekerjaan: val})}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[12px] font-bold text-gray-600">Target</label>
+                      <input 
+                        type="text" 
+                        placeholder="0" 
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none h-11" 
+                        value={formData.target || ''} 
+                        onChange={e => {
+                          let val = e.target.value;
+                          const clean = val.replace(/\./g, '');
+                          if (/^\d+$/.test(clean)) {
+                            const formatted = clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                            setFormData({...formData, target: formatted});
+                          } else {
+                            setFormData({...formData, target: val});
+                          }
+                        }} 
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-gray-600">Posisi</label>
-                  <input type="text" placeholder="Operator / Helper" className="w-full bg-emerald-50/30 border border-emerald-100 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none" value={formData.posisi || ''} onChange={e => setFormData({...formData, posisi: e.target.value})} />
+
+                {/* Grup: Keterangan */}
+                <div>
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <span className="text-[13px] font-bold text-gray-700">Lainnya</span>
+                    <div className="flex-1 h-px bg-gray-100"></div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[12px] font-bold text-gray-600">Keterangan</label>
+                      <textarea 
+                        placeholder="Keterangan tambahan..." 
+                        rows={3}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none min-h-[80px] resize-none" 
+                        value={formData.keterangan || ''} 
+                        onChange={e => setFormData({...formData, keterangan: e.target.value})} 
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-gray-600">No Order 1</label>
-                  <input type="text" placeholder="No Order" className="w-full bg-yellow-50/30 border border-yellow-100 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-500 outline-none" value={formData.no_order || ''} onChange={e => setFormData({...formData, no_order: e.target.value})} />
+              </div>
+            )}
+
+            {/* ---- SUB-TAB: REALISASI ---- */}
+            {formSubTab === 'realisasi' && (
+              <div className="animate-in fade-in duration-200">
+                <div className="flex items-center gap-2.5 mb-6">
+                  <span className="text-[13px] font-bold text-gray-700">Data Realisasi</span>
+                  <div className="flex-1 h-px bg-gray-100"></div>
+                  <span className="text-[11px] font-semibold text-sky-600 bg-sky-50 px-2.5 py-1 rounded-full">Hasil Produksi</span>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-gray-600">Nama Order 1</label>
-                  <input type="text" placeholder="Nama Order" className="w-full bg-yellow-50/30 border border-yellow-100 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-500 outline-none" value={formData.nama_order || ''} onChange={e => setFormData({...formData, nama_order: e.target.value})} />
+
+                {/* Pilih data Target */}
+                <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+                  <p className="text-[12px] font-bold text-gray-600 mb-3">1. Pilih Data Target yang akan diisi Realisasinya:</p>
+                  <div className="relative" ref={targetDropdownRef}>
+                    <div
+                      className="w-full flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2.5 cursor-pointer hover:border-sky-400 transition-colors"
+                      onClick={() => setIsTargetDropdownOpen(v => !v)}
+                    >
+                      <Search size={14} className="text-gray-400 shrink-0" />
+                      <input
+                        className="flex-1 text-[13px] font-medium outline-none bg-transparent placeholder:text-gray-400"
+                        placeholder="Cari karyawan / no order / tanggal..."
+                        value={selectedTargetRow ? `${selectedTargetRow.tgl} | ${selectedTargetRow.nama_karyawan} | ${selectedTargetRow.no_order || '-'}` : targetSearchQuery}
+                        onChange={e => { setTargetSearchQuery(e.target.value); setSelectedTargetRow(null); setIsTargetDropdownOpen(true); }}
+                        onClick={e => { e.stopPropagation(); setIsTargetDropdownOpen(true); }}
+                      />
+                      <ChevronDown size={14} className={`text-gray-400 transition-transform ${isTargetDropdownOpen ? 'rotate-180' : ''}`} />
+                    </div>
+                    {isTargetDropdownOpen && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-64 overflow-y-auto">
+                        {targetRowOptions.length === 0 ? (
+                          <div className="px-4 py-6 text-center text-[12px] text-gray-400 font-medium">
+                            {targetSearchQuery ? 'Tidak ada data yang cocok' : 'Ketik untuk mencari data target...'}
+                          </div>
+                        ) : targetRowOptions.map(row => (
+                          <div
+                            key={row.id}
+                            onClick={() => {
+                              setSelectedTargetRow(row);
+                              setIsTargetDropdownOpen(false);
+                              setTargetSearchQuery('');
+                              // Pre-fill realisasi fields dari data target
+                              setFormData((prev: any) => ({
+                                ...prev,
+                                no_order_2: row.no_order || '',
+                                nama_order_2: row.nama_order || '',
+                                jenis_pekerjaan_2: row.jenis_pekerjaan || '',
+                                jam: SHIFT_JAM[String(row.shift)] || '',
+                              }));
+                            }}
+                            className="px-4 py-3 hover:bg-sky-50 cursor-pointer border-b border-gray-50 last:border-0"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-[11px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded">{row.tgl}</span>
+                              <span className="text-[12px] font-bold text-gray-800">{row.nama_karyawan}</span>
+                              <span className="text-[11px] text-gray-500">{row.no_order || '-'}</span>
+                              <span className="text-[11px] text-gray-400 truncate">{row.nama_order || ''}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {selectedTargetRow && (
+                    <div className="mt-3 flex items-center gap-3 flex-wrap">
+                      <span className="text-[11px] text-gray-500 font-medium">Target terpilih:</span>
+                      {[
+                        { label: 'Tanggal', val: selectedTargetRow.tgl },
+                        { label: 'Shift', val: selectedTargetRow.shift },
+                        { label: 'Karyawan', val: selectedTargetRow.nama_karyawan },
+                        { label: 'No Order', val: selectedTargetRow.no_order },
+                        { label: 'Bagian', val: selectedTargetRow.bagian },
+                      ].map(item => item.val ? (
+                        <span key={item.label} className="text-[11px] font-bold bg-sky-50 text-sky-700 px-2 py-0.5 rounded-md border border-sky-100">{item.label}: {item.val}</span>
+                      ) : null)}
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-gray-600">Jenis Pekerjaan 1</label>
-                  <input type="text" placeholder="Jenis Pekerjaan" className="w-full bg-yellow-50/30 border border-yellow-100 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-500 outline-none" value={formData.jenis_pekerjaan || ''} onChange={e => setFormData({...formData, jenis_pekerjaan: e.target.value})} />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+
+                  {/* No. Order 2 → SearchableDropdown */}
+                  <div className="space-y-1.5">
+                    <label className="text-[12px] font-bold text-gray-600">No. Order</label>
+                    <SearchableDropdown
+                      id="form-no-order-2"
+                      value={formData.no_order_2 ? `${formData.no_order_2}${sopdList.find(s => s.no_sopd === formData.no_order_2)?.nama_order ? ' — ' + sopdList.find(s => s.no_sopd === formData.no_order_2)?.nama_order : ''}` : ''}
+                      items={sopdList.map(s => s.nama_order ? `${s.no_sopd} — ${s.nama_order}` : s.no_sopd)}
+                      placeholder="-- Pilih No. Order --"
+                      allLabel="-- Pilih No. Order --"
+                      triggerWidth="w-full"
+                      onChange={val => {
+                        const noSopd = val.split(' — ')[0];
+                        const sopd = sopdList.find(x => x.no_sopd === noSopd);
+                        setFormData({...formData, no_order_2: noSopd, nama_order_2: sopd?.nama_order || ''});
+                      }}
+                    />
+                  </div>
+
+
+                  {/* Jenis Pekerjaan 2 → SearchableDropdown */}
+                  <div className="space-y-1.5">
+                    <label className="text-[12px] font-bold text-gray-600">Jenis Pekerjaan</label>
+                    <SearchableDropdown
+                      id="form-jenis-pekerjaan-2"
+                      value={formData.jenis_pekerjaan_2 || ''}
+                      items={jenisPekerjaan2List}
+                      placeholder="-- Pilih Jenis Pekerjaan --"
+                      allLabel="-- Pilih Jenis Pekerjaan --"
+                      triggerWidth="w-full"
+                      onChange={val => setFormData({...formData, jenis_pekerjaan_2: val})}
+                    />
+                  </div>
+
+                  {/* Bahan Kertas → kolom biru */}
+                  <div className="space-y-1.5">
+                    <label className="text-[12px] font-bold text-gray-600">Bahan Kertas</label>
+                    <input type="text" placeholder="Jenis bahan kertas..." className="w-full bg-sky-50/40 border border-sky-200 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none" value={formData.bahan_kertas || ''} onChange={e => setFormData({...formData, bahan_kertas: e.target.value})} />
+                  </div>
+
+                  {/* Jml. Plate */}
+                  <div className="space-y-1.5">
+                    <label className="text-[12px] font-bold text-gray-600">Jml. Plate</label>
+                    <input type="number" min="0" placeholder="0" className="w-full bg-sky-50/40 border border-sky-200 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none" value={formData.jml_plate || ''} onChange={e => setFormData({...formData, jml_plate: e.target.value})} />
+                  </div>
+
+                  {/* Warna */}
+                  <div className="space-y-1.5">
+                    <label className="text-[12px] font-bold text-gray-600">Warna</label>
+                    <input type="text" placeholder="Warna cetak..." className="w-full bg-sky-50/40 border border-sky-200 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none" value={formData.warna || ''} onChange={e => setFormData({...formData, warna: e.target.value})} />
+                  </div>
+
+                  {/* Inscheet */}
+                  <div className="space-y-1.5">
+                    <label className="text-[12px] font-bold text-gray-600">Inscheet</label>
+                    <input type="number" min="0" placeholder="0" className="w-full bg-sky-50/40 border border-sky-200 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none" value={formData.inscheet || ''} onChange={e => setFormData({...formData, inscheet: e.target.value})} />
+                  </div>
+
+                  {/* Rijek */}
+                  <div className="space-y-1.5">
+                    <label className="text-[12px] font-bold text-gray-600">Rijek</label>
+                    <input type="number" min="0" placeholder="0" className="w-full bg-sky-50/40 border border-sky-200 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none" value={formData.rijek || ''} onChange={e => setFormData({...formData, rijek: e.target.value})} />
+                  </div>
+
+                  {/* Jam → time picker, value awal dari shift */}
+                  <div className="space-y-1.5">
+                    <label className="text-[12px] font-bold text-gray-600">Jam Kerja</label>
+                    <input type="text" placeholder="07:00 - 15:00" className="w-full bg-sky-50/40 border border-sky-200 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none" value={formData.jam || ''} onChange={e => setFormData({...formData, jam: e.target.value})} />
+                  </div>
+
+                  {/* Kendala */}
+                  <div className="space-y-1.5 md:col-span-2">
+                    <label className="text-[12px] font-bold text-gray-600">Kendala</label>
+                    <textarea 
+                      placeholder="Kendala yang ditemukan..." 
+                      rows={3}
+                      className="w-full bg-sky-50/40 border border-sky-200 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none min-h-[80px] resize-none" 
+                      value={formData.kendala || ''} 
+                      onChange={e => setFormData({...formData, kendala: e.target.value})} 
+                    />
+                  </div>
+
+                  {/* Realisasi */}
+                  <div className="space-y-1.5">
+                    <label className="text-[12px] font-bold text-gray-600">Realisasi <span className="text-rose-400">*</span></label>
+                    <input 
+                      type="text" 
+                      placeholder="0" 
+                      className="w-full bg-sky-50/40 border border-sky-200 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none" 
+                      value={formData.realisasi || ''} 
+                      onChange={e => {
+                        let val = e.target.value;
+                        const clean = val.replace(/\./g, '');
+                        if (/^\d+$/.test(clean)) {
+                          const formatted = clean.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                          setFormData({...formData, realisasi: formatted});
+                        } else {
+                          setFormData({...formData, realisasi: val});
+                        }
+                      }} 
+                    />
+                  </div>
+
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-gray-600">Keterangan</label>
-                  <input type="text" placeholder="Keterangan" className="w-full bg-yellow-50/30 border border-yellow-100 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-500 outline-none" value={formData.keterangan || ''} onChange={e => setFormData({...formData, keterangan: e.target.value})} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-gray-600">Target</label>
-                  <input type="number" placeholder="0" className="w-full bg-yellow-50/30 border border-yellow-100 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-500 outline-none" value={formData.target || ''} onChange={e => setFormData({...formData, target: e.target.value})} />
-                </div>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex justify-between items-center gap-3 pt-5 mt-5 border-t border-gray-100">
+              <div className="flex gap-2">
+                {formSubTab === 'target' && canInputRealisasi && (
+                  <button onClick={() => setFormSubTab('realisasi')} className="px-4 py-2 text-[12px] font-bold text-sky-600 bg-sky-50 hover:bg-sky-100 rounded-lg border border-sky-200 transition-all">
+                    Lanjut ke Realisasi →
+                  </button>
+                )}
+                {formSubTab === 'realisasi' && canInputTarget && (
+                  <button onClick={() => setFormSubTab('target')} className="px-4 py-2 text-[12px] font-bold text-gray-500 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-all">
+                    ← Kembali ke Target
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <button onClick={cancelForm} className="px-5 py-2.5 text-[13px] font-bold text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all">Batal</button>
+                <button onClick={saveForm} disabled={isSaving} className="px-5 py-2.5 text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-xl shadow-sm transition-all flex items-center gap-2">
+                  {isSaving ? <><Loader2 size={16} className="animate-spin" /> Menyimpan...</> : <><Save size={16} /> Simpan Data</>}
+                </button>
               </div>
             </div>
 
-            {/* Bagian Hasil Produksi */}
-            <div className="mb-6">
-              <div className="flex items-center gap-3 mb-4 pb-2 border-b border-sky-100">
-                <div className="w-2.5 h-5 rounded-sm bg-sky-400 shadow-sm"></div>
-                <h4 className="text-[12px] font-bold text-gray-700 uppercase tracking-widest">Bagian Hasil Produksi</h4>
-                <span className="text-[11px] font-medium text-sky-600 bg-sky-50 px-2 py-0.5 rounded-md ml-2">Kolom Biru</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-gray-600">Realisasi</label>
-                  <input type="number" placeholder="0" className="w-full bg-sky-50/30 border border-sky-100 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none" value={formData.realisasi || ''} onChange={e => setFormData({...formData, realisasi: e.target.value})} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold text-gray-600">Rijek</label>
-                  <input type="number" placeholder="0" className="w-full bg-sky-50/30 border border-sky-100 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 outline-none" value={formData.rijek || ''} onChange={e => setFormData({...formData, rijek: e.target.value})} />
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-              <button onClick={cancelForm} className="px-5 py-2.5 text-[13px] font-bold text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all">Batal</button>
-              <button onClick={saveForm} disabled={isSaving} className="px-5 py-2.5 text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-xl shadow-sm transition-all flex items-center gap-2">
-                {isSaving ? <><Loader2 size={16} className="animate-spin" /> Menyimpan...</> : <><Save size={16} /> Simpan Data</>}
-              </button>
-            </div>
           </div>
         )}
       </div> {/* CLOSES activeTab === 'form' */}
@@ -830,6 +1261,4 @@ export default function JurnalClient() {
     </div>
   );
 }
-
-
 

@@ -202,7 +202,7 @@ export default function SearchableDropdown({
             ) : (
               filtered.map((item, idx) => (
                 <button
-                  key={item === '' ? '__all__' : item}
+                  key={item === '' ? '__all__' : `${item}-${idx}`}
                   type="button"
                   role="option"
                   aria-selected={value === item}

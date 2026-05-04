@@ -32,6 +32,7 @@ interface DataTableProps<TData> {
   hideSorting?: boolean;
   disableHover?: boolean;
   rowCursor?: string;
+  getRowClassName?: (row: TData) => string;
 }
 
 export function DataTable<TData extends { id: number | string }>({
@@ -51,6 +52,7 @@ export function DataTable<TData extends { id: number | string }>({
   hideSorting = false,
   disableHover = false,
   rowCursor = 'cursor-pointer',
+  getRowClassName,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnSizing, setColumnSizing] = React.useState<ColumnSizingState>(
@@ -178,8 +180,10 @@ export function DataTable<TData extends { id: number | string }>({
                 <col style={{ width: 6 }} />
                 {headers.map((header) => (<col key={header.id} style={{ width: columnSizing[header.id] || (header.column.columnDef as any).size || 150 }} />))}
             </colgroup>
-            <thead className="sticky top-0 z-20 shadow-sm">
-              {table.getHeaderGroups().map((headerGroup) => (
+            <thead className="sticky top-0 z-[40] shadow-sm">
+              {table.getHeaderGroups().map((headerGroup) => {
+                let stickyLeft = 6; // starts after the 6px left indicator column
+                return (
                 <tr key={headerGroup.id}>
                   <th 
                     className="sticky left-0 w-[6px] p-0 z-30 border-b border-gray-100" 
@@ -188,13 +192,22 @@ export function DataTable<TData extends { id: number | string }>({
                   {headerGroup.headers.map((header) => {
                     const sortingState = sorting.find((s) => s.id === header.id);
                     const meta = header.column.columnDef.meta as any;
+                    const colWidth = columnSizing[header.id] || (header.column.columnDef as any).size || 150;
+                    const isSticky = meta?.sticky;
+                    const leftOffset = stickyLeft;
+                    if (isSticky) stickyLeft += colWidth;
                     return (<th 
                       key={header.id} 
-                      className="p-0 border-b border-r border-gray-100 relative group transition-colors overflow-hidden last:border-r-0"
-                      style={{ backgroundColor: meta?.headerBg || '#f8fafc' }}
+                      className={`p-0 border-b border-r border-gray-100 relative group transition-colors overflow-hidden last:border-r-0 ${
+                        isSticky ? 'sticky z-[42]' : ''
+                      }`}
+                      style={{ 
+                        backgroundColor: meta?.headerBg || '#f8fafc',
+                        ...(isSticky ? { left: leftOffset } : {})
+                      }}
                     >
                         <div 
-                          className={`px-4 py-3 flex items-center gap-2 transition-colors select-none ${!hideSorting ? 'cursor-pointer hover:bg-black/5' : ''} ${(header.column.columnDef.meta as any)?.align === 'right' ? 'justify-end flex-row-reverse' : (header.column.columnDef.meta as any)?.align === 'center' ? 'justify-center' : 'justify-start'}`}
+                          className={`px-4 py-3 flex items-center gap-2 transition-colors select-none ${!hideSorting ? 'cursor-pointer hover:bg-black/5' : ''} ${meta?.align === 'right' ? 'justify-end flex-row-reverse' : meta?.align === 'center' ? 'justify-center' : 'justify-start'}`}
                           onClick={!hideSorting ? header.column.getToggleSortingHandler() : undefined}
                         >
                             <span className="text-[12px] font-bold text-gray-700 whitespace-nowrap overflow-hidden truncate">
@@ -203,7 +216,7 @@ export function DataTable<TData extends { id: number | string }>({
                             {!hideSorting && (
                                 <div className="flex-shrink-0">
                                 {sortingState ? (
-                                    sortingState.desc ? <ArrowDown size={14} className="text-green-600" /> : <ArrowUp size={14} className="text-green-600" />
+                                    sortingState.desc ? <ArrowDown size={14} className="text-blue-500" /> : <ArrowUp size={14} className="text-blue-500" />
                                 ) : (
                                     <ArrowUpDown size={14} className="text-gray-300 group-hover:text-gray-400 transition-colors" />
                                 )}
@@ -215,13 +228,14 @@ export function DataTable<TData extends { id: number | string }>({
                             onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); header.getResizeHandler()(e); }}
                             className={`absolute -right-[4px] top-0 bottom-0 w-[8px] z-50 cursor-col-resize group/resizer transition-opacity ${header.column.getIsResizing() ? 'opacity-100' : 'opacity-0 hover:opacity-100'}`}
                           >
-                            <div className={`mx-auto h-full w-[4px] transition-colors ${header.column.getIsResizing() ? 'bg-green-500' : 'bg-transparent group-hover/resizer:bg-green-200'}`} />
+                            <div className={`mx-auto h-full w-[4px] transition-colors ${header.column.getIsResizing() ? 'bg-blue-400' : 'bg-transparent group-hover/resizer:bg-blue-200'}`} />
                           </div>
                         )}
                       </th>);
                   })}
                 </tr>
-              ))}
+                );
+              })}
             </thead>
             <tbody>
               {rows.length === 0 && !isLoading ? (
@@ -258,6 +272,7 @@ export function DataTable<TData extends { id: number | string }>({
                         rowHeight={rowHeight}
                         disableHover={disableHover}
                         rowCursor={rowCursor}
+                        extraClassName={getRowClassName ? getRowClassName(row.original) : ''}
                       />
                     );
                   })}
@@ -289,7 +304,18 @@ export function DataTable<TData extends { id: number | string }>({
   );
 }
 
-const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick, onRowDoubleClick, rowHeight, disableHover, rowCursor }: any) => {
+const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick, onRowDoubleClick, rowHeight, disableHover, rowCursor, extraClassName }: any) => {
+  // Compute sticky left offsets once per row render
+  let stickyLeft = 6;
+  const stickyOffsets: Record<string, number> = {};
+  for (const cell of row.getVisibleCells()) {
+    const meta = cell.column.columnDef.meta as any;
+    if (meta?.sticky) {
+      stickyOffsets[cell.id] = stickyLeft;
+      stickyLeft += cell.column.getSize();
+    }
+  }
+
   return (
     <tr
       onMouseDown={(e) => {
@@ -300,22 +326,42 @@ const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick, onRowDoubleCl
       onClick={(e) => onRowClick && onRowClick(row.original.id, e)}
       onDoubleClick={(e) => onRowDoubleClick && onRowDoubleClick(row.original.id, e)}
       className={`${rowHeight} ${rowCursor} group border-b border-gray-50 transition-colors ${
-        isSelected ? 'bg-green-50 is-selected' : isOdd ? 'bg-gray-50/30' : 'bg-white'
-      } ${!disableHover && !isSelected ? 'hover:bg-green-50/50' : ''} text-[13px]`}
+        isSelected ? 'bg-blue-50 is-selected' : extraClassName ? extraClassName : isOdd ? 'bg-gray-50/30' : 'bg-white'
+      } ${!disableHover && !isSelected ? 'hover:bg-blue-50/30' : ''} text-[13px]`}
     >
-      <td className={`sticky left-0 w-[6px] p-0 z-30 border-none transition-colors ${isSelected ? 'bg-green-500 shadow-[2px_0_5px_rgba(0,0,0,0.05)]' : 'bg-transparent'}`} />
+      <td className={`sticky left-0 w-[6px] p-0 z-30 border-none transition-colors ${isSelected ? 'bg-blue-500 shadow-[2px_0_5px_rgba(0,0,0,0.05)]' : 'bg-transparent'}`} />
       {row.getVisibleCells().map((cell: any) => {
         const meta = cell.column.columnDef.meta as any;
+        const isSticky = meta?.sticky;
         const alignClass = meta?.align === 'right' ? 'justify-end text-right font-mono' : meta?.align === 'center' ? 'justify-center text-center' : 'justify-start text-left';
         const wrapClass = meta?.wrap ? 'whitespace-normal' : meta?.overflowVisible ? 'whitespace-nowrap !overflow-visible' : 'truncate';
         const vAlignClass = meta?.valign === 'top' ? 'items-start py-3' : 'items-center';
+        // stickyBg must be SOLID (no transparency) so it covers scrolled cells beneath
+        const stickyBg = isSelected
+          ? '#dbeafe'  // blue-100 solid
+          : extraClassName?.includes('rose')
+            ? '#fff1f2'
+            : extraClassName?.includes('emerald')
+              ? '#f0fdf4'
+              : extraClassName?.includes('amber')
+                ? '#fffbeb'
+                : isOdd ? '#f9fafb' : '#ffffff';  // solid white/gray-50 for odd rows
         return (
           <td 
             key={cell.id} 
-            className="p-0 border-r border-gray-50/50 last:border-r-0"
-            style={meta?.valign === 'top' ? { verticalAlign: 'top' } : {}}
+            className={`p-0 border-r border-gray-50/50 last:border-r-0 ${
+              isSticky ? 'sticky z-[28]' : ''
+            }`}
+            style={{
+              ...(meta?.valign === 'top' ? { verticalAlign: 'top' } : {}),
+              ...(isSticky ? {
+                left: stickyOffsets[cell.id],
+                backgroundColor: stickyBg,
+                boxShadow: 'inset -1px 0 0 #e5e7eb'  // subtle right border for last sticky col
+              } : {})
+            }}
           >
-            <div className={`px-4 ${meta?.valign === 'top' ? '' : rowHeight} flex ${vAlignClass} text-[12px] leading-snug font-medium ${wrapClass} ${alignClass} ${isSelected ? 'text-green-900 font-bold' : 'text-gray-600'} select-text`}>
+            <div className={`px-4 ${meta?.valign === 'top' ? '' : rowHeight} flex ${vAlignClass} text-[12px] leading-snug font-medium ${wrapClass} ${alignClass} ${isSelected ? 'text-blue-900 font-bold' : 'text-gray-600'} select-text`}>
               {flexRender(cell.column.columnDef.cell, cell.getContext())}
             </div>
           </td>

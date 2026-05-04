@@ -39,6 +39,8 @@ export const MODULE_REGISTRY = [
   { key: 'produksi_jhp_master_pekerjaan', label: 'Master Pekerjaan',          group: 'Sistem - Produksi' },
   { key: 'produksi_jhp_target',    label: 'Target Harian',                    group: 'Sistem - Produksi' },
   { key: 'produksi_jhp',           label: 'Jurnal Harian Produksi',           group: 'Sistem - Produksi' },
+  { key: 'produksi_jhp_penjadwalan', label: 'JHP - Input Target (Penjadwalan)', group: 'Sistem - Produksi' },
+  { key: 'produksi_jhp_realisasi', label: 'JHP - Input Realisasi',             group: 'Sistem - Produksi' },
   { key: 'produksi_hasil',         label: 'Hasil Produksi',                   group: 'Sistem - Produksi' },
 
   // Sistem - User
@@ -47,6 +49,9 @@ export const MODULE_REGISTRY = [
 
   // Sistem - Settings
   { key: 'settings_konversi_data', label: 'Konversi Data - Jurnal Harian Produksi', group: 'Sistem - Settings' },
+
+  // Akuntansi & Keuangan (Data Digit)
+  { key: 'akt_jurnal_umum',        label: 'Jurnal Umum',                      group: 'Data Digit - Akuntansi & Keuangan' },
 
   // Penjualan
   { key: 'penjualan_sph_out',      label: 'SPH Keluar (Penjualan)',           group: 'Data Digit - Penjualan' },

@@ -43,6 +43,21 @@ export async function GET(request: NextRequest) {
 
     const qPattern = search ? `%${search}%` : null;
 
+    // Mode khusus untuk dropdown (tanpa filter tanggal, ambil semua)
+    const allMode = searchParams.get('all') === 'true';
+    if (allMode) {
+      const whereClause = search ? `WHERE no_sopd LIKE ? OR nama_order LIKE ?` : '';
+      const args: any[] = search ? [`%${search}%`, `%${search}%`, limit] : [limit];
+      const sql = `
+        SELECT no_sopd, nama_order FROM (
+          SELECT no_sopd, nama_order FROM sopd
+          UNION
+          SELECT faktur as no_sopd, nama_prd as nama_order FROM orders
+        ) ${whereClause} ORDER BY no_sopd DESC LIMIT ?`;
+      const result = await db.execute({ sql, args });
+      return NextResponse.json({ success: true, data: result.rows, total: result.rows.length });
+    }
+
     let sqlData: string;
     let sqlTotal: string;
     let argsData: any[] = [];

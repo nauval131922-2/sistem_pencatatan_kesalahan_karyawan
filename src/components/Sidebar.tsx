@@ -31,7 +31,8 @@ import {
   TrendingUp,
   RefreshCw,
   Database,
-  Target
+  Target,
+  BookOpen
 } from 'lucide-react';
 import Image from 'next/image';
 import type { PermissionMap } from '@/lib/permissions-constants';
@@ -377,7 +378,8 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
           canAccess('pembelian_po') || canAccess('pembelian_penerimaan') || canAccess('pembelian_rekap') || canAccess('pembelian_hutang') ||
           canAccess('produksi_bom') || canAccess('produksi_orders') || canAccess('produksi_bahan_baku') || canAccess('produksi_barang_jadi') ||
           canAccess('penjualan_sph_out') || canAccess('penjualan_so') || canAccess('penjualan_laporan') ||
-          canAccess('penjualan_piutang') || canAccess('penjualan_pengiriman')) && (
+          canAccess('penjualan_piutang') || canAccess('penjualan_pengiriman') ||
+          canAccess('akt_jurnal_umum')) && (
           <>
             <SectionLabel label="DATA DIGIT" />
             <div className="space-y-1">
@@ -513,6 +515,26 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
                       items: [{ label: 'Pengiriman', href: '/pengiriman', icon: <Truck size={12} /> }]
                     }]
                   }] : []),
+                ]}
+              />
+            </div>
+          )}
+
+          {/* AKUNTANSI & KEUANGAN SECTION */}
+          {canAccess('akt_jurnal_umum') && (
+            <div data-group="Akuntansi & Keuangan">
+              <FlyoutMenu
+                id="akuntansi_digit"
+                label="Akuntansi & Keuangan"
+                icon={<BookOpen size={18} />}
+                items={[
+                  {
+                    label: 'Laporan',
+                    icon: <BarChart3 size={16} />,
+                    items: [
+                      ...(canAccess('akt_jurnal_umum') ? [{ label: 'Jurnal Umum', href: '/akuntansi/laporan/jurnal-umum', icon: <FileText size={14} /> }] : []),
+                    ]
+                  }
                 ]}
               />
             </div>

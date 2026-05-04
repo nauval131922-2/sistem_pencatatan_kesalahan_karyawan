@@ -594,8 +594,12 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
                             { type: 'leaf', key: 'produksi_jhp_sopd', label: 'SOPd' },
                             { type: 'leaf', key: 'produksi_jhp_master_pekerjaan', label: 'Master Pekerjaan' },
                           ]},
-                          { type: 'leaf', key: 'produksi_jhp', label: 'Jurnal Harian Produksi' },
-                          { type: 'leaf', key: 'produksi_jhp_target', label: 'Target Harian' }
+                          { type: 'node', label: 'Jurnal Harian Produksi', children: [
+                            { type: 'leaf', key: 'produksi_jhp', label: 'Jurnal Harian Produksi' },
+                            { type: 'leaf', key: 'produksi_jhp_penjadwalan', label: 'Target (Penjadwalan)' },
+                            { type: 'leaf', key: 'produksi_jhp_realisasi', label: 'Realisasi' },
+                          ]},
+                          { type: 'leaf', key: 'produksi_jhp_target', label: 'Target Harian' },
                         ]},
                         { type: 'leaf', key: 'produksi_hasil', label: 'Hasil Produksi' }
                       ]},

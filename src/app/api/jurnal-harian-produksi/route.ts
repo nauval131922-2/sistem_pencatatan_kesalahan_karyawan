@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         args: [
           posisi || '', Number(absensi) || 0, tgl || null, shift || '', nama_karyawan || '',
           no_order || '', nama_order || '', jenis_pekerjaan || '', keterangan || '',
-          Number(target) || 0, Number(realisasi) || 0,
+          target || '', realisasi || '',
           no_order_2 || '', nama_order_2 || '', jenis_pekerjaan_2 || '',
           bahan_kertas || '', Number(jml_plate) || 0, warna || '', Number(inscheet) || 0,
           Number(rijek) || 0, jam || '', kendala || '', bagian || ''
@@ -302,7 +302,7 @@ export async function PUT(request: NextRequest) {
       args: [
         posisi || '', Number(absensi) || 0, tgl || null, shift || '', nama_karyawan || '',
         no_order || '', nama_order || '', jenis_pekerjaan || '', keterangan || '',
-        Number(target) || 0, Number(realisasi) || 0,
+        target || '', realisasi || '',
         no_order_2 || '', nama_order_2 || '', jenis_pekerjaan_2 || '',
         bahan_kertas || '', Number(jml_plate) || 0, warna || '', Number(inscheet) || 0,
         Number(rijek) || 0, jam || '', kendala || '', bagian || '',

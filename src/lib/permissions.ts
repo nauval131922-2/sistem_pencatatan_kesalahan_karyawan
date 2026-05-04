@@ -36,6 +36,7 @@ const MODULE_TO_ROUTE: Array<{ key: string; route: string }> = [
   { key: 'catat_kesalahan',       route: '/records' },
   { key: 'statistik',             route: '/stats' },
   { key: 'tracking_manufaktur',   route: '/tracking-manufaktur' },
+  { key: 'produksi_jhp',          route: '/jurnal-harian-produksi' },
 ];
 
 // ─── Get the first route accessible for a given role ──────────────────────────
