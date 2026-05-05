@@ -379,7 +379,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
           canAccess('produksi_bom') || canAccess('produksi_orders') || canAccess('produksi_bahan_baku') || canAccess('produksi_barang_jadi') ||
           canAccess('penjualan_sph_out') || canAccess('penjualan_so') || canAccess('penjualan_laporan') ||
           canAccess('penjualan_piutang') || canAccess('penjualan_pengiriman') ||
-          canAccess('akt_jurnal_umum')) && (
+          canAccess('akt_jurnal_umum') || canAccess('akt_mrek')) && (
           <>
             <SectionLabel label="DATA DIGIT" />
             <div className="space-y-1">
@@ -521,20 +521,27 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
           )}
 
           {/* AKUNTANSI & KEUANGAN SECTION */}
-          {canAccess('akt_jurnal_umum') && (
+          {(canAccess('akt_jurnal_umum') || canAccess('akt_mrek')) && (
             <div data-group="Akuntansi & Keuangan">
               <FlyoutMenu
                 id="akuntansi_digit"
                 label="Akuntansi & Keuangan"
                 icon={<BookOpen size={18} />}
                 items={[
-                  {
+                  ...(canAccess('akt_mrek') ? [{
+                    label: 'Data',
+                    icon: <Database size={16} />,
+                    items: [
+                      { label: 'Rek Akuntansi', href: '/akuntansi/data/rek-akuntansi', icon: <Database size={14} /> }
+                    ]
+                  }] : []),
+                  ...(canAccess('akt_jurnal_umum') ? [{
                     label: 'Laporan',
                     icon: <BarChart3 size={16} />,
                     items: [
-                      ...(canAccess('akt_jurnal_umum') ? [{ label: 'Jurnal Umum', href: '/akuntansi/laporan/jurnal-umum', icon: <FileText size={14} /> }] : []),
+                      { label: 'Jurnal Umum', href: '/akuntansi/laporan/jurnal-umum', icon: <FileText size={14} /> }
                     ]
-                  }
+                  }] : [])
                 ]}
               />
             </div>

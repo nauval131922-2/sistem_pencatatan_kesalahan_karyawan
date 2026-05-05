@@ -51,6 +51,7 @@ export const MODULE_REGISTRY = [
   { key: 'settings_konversi_data', label: 'Konversi Data - Jurnal Harian Produksi', group: 'Sistem - Settings' },
 
   // Akuntansi & Keuangan (Data Digit)
+  { key: 'akt_mrek',               label: 'Rek Akuntansi',                    group: 'Data Digit - Akuntansi & Keuangan' },
   { key: 'akt_jurnal_umum',        label: 'Jurnal Umum',                      group: 'Data Digit - Akuntansi & Keuangan' },
 
   // Penjualan

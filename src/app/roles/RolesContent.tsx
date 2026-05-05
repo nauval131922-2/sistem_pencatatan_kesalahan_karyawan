@@ -568,8 +568,16 @@ export default function RolesContent({ allPermissions, customRoles }: RolesConte
                           { type: 'node', label: 'Laporan', children: [
                             { type: 'leaf', key: 'penjualan_pengiriman', label: 'Pengiriman' }
                           ]}
-                        ]},
+                        ]}
                       ]},
+                      { type: 'node', label: 'Akuntansi & Keuangan', colorKey: 'Data Digit - Akuntansi & Keuangan', children: [
+                        { type: 'node', label: 'Data', children: [
+                          { type: 'leaf', key: 'akt_mrek', label: 'Rek Akuntansi' }
+                        ]},
+                        { type: 'node', label: 'Laporan', children: [
+                          { type: 'leaf', key: 'akt_jurnal_umum', label: 'Jurnal Umum' }
+                        ]}
+                      ]}
                     ] : [
                       { type: 'node', label: 'Umum', colorKey: 'Sistem - Umum', children: [
                         { type: 'node', label: 'Data', children: [
