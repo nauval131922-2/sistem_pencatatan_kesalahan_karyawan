@@ -1,36 +1,39 @@
-# AI Session Summary - 2026-05-04 (Sesi Siang)
+# AI Session Summary - 2026-05-05 (Sesi Siang)
 
 ## 📅 Detail Sesi
-- **Tanggal**: 2026-05-04
+- **Tanggal**: 2026-05-05
 - **Waktu**: 14:00 - 15:30 WIB
 - **PC**: Lokal (Kantor)
 
 ## 🚀 Fitur & Perbaikan
-1. **Stabilisasi Modul Jurnal Umum**: 
-    - **Akurasi Saldo Awal**: Perbaikan query SQL Saldo Awal agar mematuhi filter rentang tanggal (`tgl`) dan pencarian (`search`), bukan sekadar akumulasi historis tanpa batas.
-    - **Normalisasi Tanggal**: Migrasi besar-besaran data tanggal di database ke format standar `YYYY-MM-DD` untuk reliabilitas filter `BETWEEN`.
-    - **Inherit Timestamp**: Memperbarui Scraper agar baris `child` mewarisi `create_at` dari `parent`, memastikan data item transaksi terhitung dalam Saldo Awal kronologis.
-2. **Resiliensi UI & Infinite Scroll**:
-    - **Fix Race Condition**: Implementasi `isLoadingMore` (useRef) pada `handleScroll` untuk mencegah skip halaman saat scrolling cepat yang sebelumnya menyebabkan data terlihat "hilang".
-    - **Deterministic Ordering**: Memperketat `ORDER BY create_at ASC, faktur ASC, id ASC` pada API untuk memastikan data tidak melompat antar halaman pagination.
-3. **Penyempurnaan Visual & UX**:
-    - Format tanggal di UI diubah menjadi `DD MMM YYYY` (contoh: 01 Apr 2026) untuk keterbacaan tinggi.
-    - Penambahan notasi `(L)` untuk Laba (hijau) dan `(R)` untuk Rugi (merah) pada kolom saldo berlanjut.
-    - Optimasi font size dan alignment pada tabel untuk kesan yang lebih premium.
-4. **Fix Build Error Turbopack**: Mengatasi masalah parsing Next.js 16 (Turbopack) dengan membuang penggunaan *template literals* pada fungsi-fungsi helper di sisi server yang sempat menyebabkan crash.
+1. **Implementasi Scraper Rek Akuntansi**:
+    - Modul baru untuk menarik data referensi rekening akuntansi dari sistem Digit.
+    - Layout tabel premium dengan dukungan search dan reload data.
+2. **Standarisasi Komponen `DateRangeCard`**:
+    - Refaktor tombol "Tarik Data" menjadi komponen reusable dengan desain gradient premium dan ikon `DownloadCloud`.
+    - Penerapan konsisten di seluruh halaman scraper (Jurnal Umum & Rek Akuntansi).
+3. **Analisis Kas Jurnal Umum**:
+    - **Highlight Rekening Kas**: Baris yang mengandung rekening bertipe "Kas" kini otomatis berwarna *violet* lembut.
+    - **Kolom Arus Kas**: Penambahan kolom kumulatif baru yang khusus menghitung mutasi pada akun Kas (`Debit - Kredit`).
+    - **Saldo Awal Kas**: API kini menghitung saldo awal kas secara dinamis berdasarkan filter `create_at`.
+4. **Fix Bug Paginasi Infinite Scroll**:
+    - Mengganti logika pemutusan scroll dari `data.length < totalCount` ke `page < totalPages`.
+    - Bug ini sebelumnya menyebabkan data berhenti dimuat prematur karena jumlah baris di layar (termasuk baris anak) melebihi jumlah transaksi induk di database.
+    - Sinkronisasi `setPage(1)` pada seluruh filter (Tanggal Scrape & Tanggal Dibuat) untuk mencegah data melompati halaman.
 
 ## ⚙️ Keputusan Teknis Penting
-- **Synchronization Locking**: Menggunakan `isLoadingMore` sebagai sinkronisasi blocker untuk operasi asinkron yang dipicu oleh event DOM (scroll), karena state React tidak cukup cepat untuk mencegah *double-trigger*.
-- **Data Integrity Migration**: Melakukan migrasi data `create_at` secara manual pada database produksi lokal untuk memperbaiki kerusakan data yang disebabkan oleh versi scraper lama.
-- **SQL-First Formatting**: Memindahkan logika normalisasi tanggal ke hulu (Scraper) agar database tetap bersih dan query filter bisa menggunakan fungsi bawaan SQL yang efisien.
+- **Page-Based Pagination**: Menggunakan total halaman sebagai acuan scroll alih-alih jumlah baris di UI untuk menghindari ambiguitas data yang ter-flatten (Induk-Anak).
+- **Reusable Action Components**: Memusatkan gaya visual tombol scraping di satu tempat (`DateRangeCard`) untuk memudahkan pemeliharaan UI ke depan.
+- **Kas Identification Strategy**: Menggunakan pencocokan kode rekening (split by space) di sisi API untuk menandai baris jurnal yang memengaruhi Arus Kas secara efisien.
 
 ## 📌 Status Task & Hal yang Perlu Dilanjutkan
-- ✅ Bug "Missing Rows" pada Jurnal Umum telah 100% teratasi.
-- ✅ Akurasi Saldo Awal (Opening Balance) telah diverifikasi secara manual via SQL debug.
-- 📌 Next: Implementasi fitur **Export to Excel** untuk Jurnal Umum dengan format yang rapi dan mematuhi filter yang sedang aktif.
+- ✅ Modul Rek Akuntansi 100% Selesai.
+- ✅ Perbaikan Paginasi Jurnal Umum 100% Selesai.
+- ✅ Analisis Arus Kas Jurnal Umum 100% Selesai.
+- 📌 Next: Menambahkan filter klasifikasi atau arus kas pada tabel Rek Akuntansi untuk memudahkan navigasi akun.
 
 ## 📂 Dokumentasi Baru/Diperbarui
-- New `docs/tutorials/12-optimasi-dan-akurasi-jurnal-umum.md`
+- New `docs/tutorials/13-scraper-rek-akuntansi-dan-analisis-kas.md`
 - Update `docs/BUILD_FROM_SCRATCH.md`
 - Update `docs/task.md`
 - Update `docs/AI_SESSION_SUMMARY.md`

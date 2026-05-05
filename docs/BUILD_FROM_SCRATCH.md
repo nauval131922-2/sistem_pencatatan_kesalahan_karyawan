@@ -323,12 +323,21 @@ export async function initSchema(db: any) {
       kredit REAL,
       username TEXT,
       create_at TEXT,
+      is_kas INTEGER DEFAULT 0,
       parent_faktur TEXT,
       is_child INTEGER DEFAULT 0,
       child_order INTEGER DEFAULT 0,
       raw_data TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(faktur, child_order, is_child)
+    );`,
+    `CREATE TABLE IF NOT EXISTS rek_akuntansi (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      kode TEXT UNIQUE NOT NULL,
+      nama TEXT,
+      klasifikasi TEXT,
+      arus_kas TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`,
     `CREATE TABLE IF NOT EXISTS system_settings (
       key TEXT PRIMARY KEY,
@@ -584,9 +593,15 @@ doc.save('laporan.pdf');
    - **Kriteria Rekening**: Rekening dengan awalan digit **4-9** (Pendapatan & Biaya) dianggap sebagai komponen Laba Rugi.
    - **Formula Saldo**: `LabaRugi = SaldoAwal + Σ(Kredit - Debit)`. 
    - **Nota**: Pada akuntansi Digit, nilai positif di sisi Kredit untuk rekening Pendapatan/Biaya menambah Laba.
-8. **Infinite Scroll Stability**:
+   - **Arus Kas (Kas)**: Untuk akun bertipe 'Kas', saldo dihitung sebagai `SaldoAwal + Σ(Debit - Kredit)`.
+8. **Infinite Scroll & Pagination Stability**:
    - Wajib menggunakan `isLoadingMore` (useRef) untuk mengunci proses fetch saat scrolling cepat.
+   - **Paging Logic**: Jangan gunakan `data.length < totalCount` karena data di layar bisa berisi baris anak (inflated). Gunakan pembanding `page < totalPages` untuk akurasi pemuatan data besar.
    - Pengurutan data di API harus deterministik: `ORDER BY create_at ASC, faktur ASC, id ASC`.
+9. **Standardisasi Scraper Action (Premium Button)**:
+   - Gunakan komponen `DateRangeCard` untuk semua modul penarikan data (Scraper).
+   - Tombol aksi wajib menggunakan desain gradient premium (Emerald/Green) dengan ikon `DownloadCloud`.
+   - Tempatkan tombol aksi secara strategis: di dalam *card header* atau sejajar dengan judul tabel (rata kanan) untuk efisiensi ruang.
 
 ---
 
