@@ -106,6 +106,25 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Determine Kas accounts to attach is_kas flag
+    try {
+      const kasRes = await db.execute("SELECT kode FROM rek_akuntansi WHERE arus_kas = 'Kas'");
+      const kasKodes = new Set(kasRes.rows.map(r => String(r.kode)));
+      
+      const applyKasFlag = (row: any) => {
+        const rekeningCode = String(row.rekening).split(' - ')[0]?.trim(); // Assuming format like "1100-00 - Kas" or just "1100-00"
+        row.is_kas = kasKodes.has(rekeningCode);
+        if (row.children && row.children.length > 0) {
+          row.children.forEach(applyKasFlag);
+        }
+      };
+      
+      parentRows.forEach(applyKasFlag);
+    } catch (e) {
+      // Ignore if rek_akuntansi doesn't exist yet
+      console.error("Failed to fetch rek_akuntansi for is_kas flag", e);
+    }
+
     // Metadata
     const metadataResults = await db.batch([
       { sql: `SELECT value FROM system_settings WHERE key = 'last_scrape_jurnal_umum'`, args: [] },
@@ -119,10 +138,13 @@ export async function GET(req: NextRequest) {
 
     // Saldo Awal: cumulative LR before cat_from date (only when create_at filter is active)
     let saldoAwal = 0;
+    let saldoAwalKas = 0;
     if (catFrom) {
       let saldoSql = `SELECT
                         SUM(CASE WHEN CAST(substr(rekening,1,1) AS INTEGER) BETWEEN 4 AND 9 THEN kredit ELSE 0 END) -
-                        SUM(CASE WHEN CAST(substr(rekening,1,1) AS INTEGER) BETWEEN 4 AND 9 THEN debit  ELSE 0 END) as saldo
+                        SUM(CASE WHEN CAST(substr(rekening,1,1) AS INTEGER) BETWEEN 4 AND 9 THEN debit  ELSE 0 END) as saldo,
+                        SUM(CASE WHEN trim(substr(rekening, 1, CASE WHEN instr(rekening, ' - ') > 0 THEN instr(rekening, ' - ') - 1 ELSE length(rekening) END)) IN (SELECT kode FROM rek_akuntansi WHERE arus_kas = 'Kas') THEN debit ELSE 0 END) -
+                        SUM(CASE WHEN trim(substr(rekening, 1, CASE WHEN instr(rekening, ' - ') > 0 THEN instr(rekening, ' - ') - 1 ELSE length(rekening) END)) IN (SELECT kode FROM rek_akuntansi WHERE arus_kas = 'Kas') THEN kredit ELSE 0 END) as saldo_kas
                       FROM jurnal_umum
                       WHERE is_child = 1
                         AND substr(create_at, 1, 10) < ?`;
@@ -144,6 +166,7 @@ export async function GET(req: NextRequest) {
 
       const saldoRes = await db.execute({ sql: saldoSql, args: saldoParams });
       saldoAwal = Number((saldoRes.rows[0] as any)?.saldo ?? 0) || 0;
+      saldoAwalKas = Number((saldoRes.rows[0] as any)?.saldo_kas ?? 0) || 0;
     }
 
     return NextResponse.json({
@@ -154,6 +177,7 @@ export async function GET(req: NextRequest) {
       totalPages: Math.ceil(total / limit),
       lastUpdated,
       saldoAwal,
+      saldoAwalKas,
       scrapedPeriod: parseScrapedPeriod((metadataResults[1].rows[0] as any)?.value),
     });
 

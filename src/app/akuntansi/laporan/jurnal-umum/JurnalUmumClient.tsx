@@ -51,9 +51,10 @@ function isLabaRugiRekening(rekening: string): boolean {
 // Parent rows: debitLR=0, kreditLR=0  → laba_rugi stays the same as previous row.
 // Child rows rekening 4-9: debitLR = child.kredit, kreditLR = child.debit → updates running total.
 // Child rows lainnya: debitLR=0, kreditLR=0 → laba_rugi stays the same.
-function flattenJurnal(rows: any[], prevLabaRugi = 0): { flat: any[]; lastLabaRugi: number } {
+function flattenJurnal(rows: any[], prevLabaRugi = 0, prevArusKas = 0): { flat: any[]; lastLabaRugi: number; lastArusKas: number } {
   const flat: any[] = [];
   let runningLR = prevLabaRugi;
+  let runningAK = prevArusKas;
 
   for (const row of rows) {
     const children: any[] = row.children || [];
@@ -66,6 +67,7 @@ function flattenJurnal(rows: any[], prevLabaRugi = 0): { flat: any[]; lastLabaRu
       _debitLR:  null,   // shown as — in column
       _kreditLR: null,   // shown as — in column
       _labaRugi: runningLR,  // prev + 0 - 0
+      _arusKas:  runningAK,
     });
 
     // Child rows
@@ -80,6 +82,13 @@ function flattenJurnal(rows: any[], prevLabaRugi = 0): { flat: any[]; lastLabaRu
       }
       // Apply formula: prev + debitLR - kreditLR
       runningLR = runningLR + rowDebitLR - rowKreditLR;
+
+      // Arus Kas formula: Kas account increases with Debit, decreases with Kredit
+      if (child.is_kas) {
+        const debit = parseFloat(String(child.debit || '0').replace(/,/g, '')) || 0;
+        const kredit = parseFloat(String(child.kredit || '0').replace(/,/g, '')) || 0;
+        runningAK = runningAK + debit - kredit;
+      }
 
       // _rowBg: green if this row contributes to Debit LR (kredit > 0), red if Kredit LR (debit > 0)
       let rowBg = '';
@@ -101,12 +110,13 @@ function flattenJurnal(rows: any[], prevLabaRugi = 0): { flat: any[]; lastLabaRu
         _debitLR:      isLR ? rowDebitLR  : null,
         _kreditLR:     isLR ? rowKreditLR : null,
         _labaRugi:     runningLR,
+        _arusKas:      runningAK,
         _rowBg:        rowBg,
       });
     });
   }
 
-  return { flat, lastLabaRugi: runningLR };
+  return { flat, lastLabaRugi: runningLR, lastArusKas: runningAK };
 }
 
 const PAGE_SIZE = 50;
@@ -141,7 +151,7 @@ export default function JurnalUmumClient() {
       return saved ? JSON.parse(saved) : {
         tgl: 130, faktur: 200, rekening: 220, keterangan: 300,
         debit: 155, kredit: 155, username: 110,
-        create_at: 150, _debitLR: 155, _kreditLR: 155, _labaRugi: 160
+        create_at: 150, _debitLR: 155, _kreditLR: 155, _labaRugi: 160, _arusKas: 160
       };
     }
     return {};
@@ -165,9 +175,55 @@ export default function JurnalUmumClient() {
     setScrapedPeriod(hydrated.scrapedPeriod);
     setStartDate(hydrated.startDate);
     setEndDate(hydrated.endDate);
+
+    // Sync Filter Tanggal Dibuat logic with JHP "Rentang Tanggal"
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toDateString();
+    
+    // 1. Hydrate From Date
+    const savedFrom = localStorage.getItem('jurnalUmum_createAtFrom');
+    if (savedFrom) {
+      const d = new Date(savedFrom);
+      if (!isNaN(d.getTime())) setCreateAtFrom(d);
+    }
+
+    // 2. Hydrate To Date with New Day Detection
+    const savedTo = localStorage.getItem('jurnalUmum_createAtTo');
+    const lastVisit = localStorage.getItem('jurnalUmum_lastVisitDate');
+    localStorage.setItem('jurnalUmum_lastVisitDate', todayStr);
+
+    const isNewDay = lastVisit !== todayStr;
+    if (savedTo && !isNewDay) {
+      const d = new Date(savedTo);
+      if (!isNaN(d.getTime())) setCreateAtTo(d);
+      else setCreateAtTo(today);
+    } else {
+      // If it's a new day, we might want to keep it null OR set to today.
+      // JHP sets to today if there was a value or if new day.
+      // But for "Filter Dibuat", keeping it flexible is better.
+      // Let's follow JHP: if it was set, update it to today. 
+      // If it's a new day, we reset to today for convenience.
+      setCreateAtTo(today);
+      localStorage.setItem('jurnalUmum_createAtTo', today.toISOString());
+    }
+
     mountedRef.current = true;
     return () => { mountedRef.current = false; };
   }, []);
+
+  // Persist Filter Tanggal Dibuat changes
+  useEffect(() => {
+    if (!isMounted) return;
+    if (createAtFrom) localStorage.setItem('jurnalUmum_createAtFrom', createAtFrom.toISOString());
+    else localStorage.removeItem('jurnalUmum_createAtFrom');
+  }, [createAtFrom, isMounted]);
+
+  useEffect(() => {
+    if (!isMounted) return;
+    if (createAtTo) localStorage.setItem('jurnalUmum_createAtTo', createAtTo.toISOString());
+    else localStorage.removeItem('jurnalUmum_createAtTo');
+  }, [createAtTo, isMounted]);
 
   useEffect(() => {
     let active = true;
@@ -179,10 +235,8 @@ export default function JurnalUmumClient() {
         const queryParams = new URLSearchParams({
           page: page.toString(), limit: PAGE_SIZE.toString(), q: debouncedQuery,
           from: formatDateToYYYYMMDD(startDate), to: formatDateToYYYYMMDD(endDate),
-          ...(createAtFrom && createAtTo ? {
-            cat_from: formatDateToYYYYMMDD(createAtFrom),
-            cat_to:   formatDateToYYYYMMDD(createAtTo),
-          } : {}),
+          ...(createAtFrom ? { cat_from: formatDateToYYYYMMDD(createAtFrom) } : {}),
+          ...(createAtTo   ? { cat_to:   formatDateToYYYYMMDD(createAtTo) } : {}),
           _t: Date.now().toString()
         });
         const res = await fetch(`/api/jurnal-umum?${queryParams.toString()}`);
@@ -190,6 +244,7 @@ export default function JurnalUmumClient() {
         const json = await res.json();
         if (active) {
           const saldoAwal: number = json.saldoAwal ?? 0;
+          const saldoAwalKas: number = json.saldoAwalKas ?? 0;
           const hasCatFilter = !!(createAtFrom && createAtTo);
 
           setData(prev => {
@@ -199,10 +254,11 @@ export default function JurnalUmumClient() {
             // would lose the children's contributions at page boundaries.
             const lastRow = currentData.length > 0 ? currentData[currentData.length - 1] : null;
             const prevLR = lastRow?._labaRugi ?? saldoAwal;
+            const prevAK = lastRow?._arusKas ?? saldoAwalKas;
 
             const { flat: incoming } = page === 1
-              ? flattenJurnal(json.data || [], hasCatFilter ? saldoAwal : 0)
-              : flattenJurnal(json.data || [], prevLR);
+              ? flattenJurnal(json.data || [], hasCatFilter ? saldoAwal : 0, hasCatFilter ? saldoAwalKas : 0)
+              : flattenJurnal(json.data || [], prevLR, prevAK);
 
             if (page === 1) {
               // Prepend Saldo Awal row when create_at filter is active
@@ -219,6 +275,7 @@ export default function JurnalUmumClient() {
                   username: '', create_at: '',
                   _debitLR: null, _kreditLR: null,
                   _labaRugi: saldoAwal,
+                  _arusKas: saldoAwalKas,
                   _rowBg: '',
                 };
                 return [saldoRow, ...incoming];
@@ -230,6 +287,7 @@ export default function JurnalUmumClient() {
             return [...currentData, ...incoming.filter((d: any) => !existingIds.has(String(d.id)))];
           });
           setTotalCount(json.total || 0);
+          setTotalPages(json.totalPages || 0);
           if (json.scrapedPeriod) setScrapedPeriod(json.scrapedPeriod);
           if (json.lastUpdated) setLastUpdated(formatLastUpdate(new Date(json.lastUpdated)));
           setLoadTime(Math.round(performance.now() - startTimer));
@@ -295,13 +353,15 @@ export default function JurnalUmumClient() {
     } finally { setIsBatching(false); setLoading(false); }
   };
 
+  const [totalPages, setTotalPages] = useState(0);
+
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop <= clientHeight + 300 && !loading && !isLoadingMore.current && (data?.length || 0) < totalCount) {
+    if (scrollHeight - scrollTop <= clientHeight + 300 && !loading && !isLoadingMore.current && page < totalPages) {
       isLoadingMore.current = true;
       setPage(prev => prev + 1);
     }
-  }, [loading, data, totalCount]);
+  }, [loading, page, totalPages]);
 
   const columns = useMemo(() => [
     {
@@ -440,8 +500,8 @@ export default function JurnalUmumClient() {
         const isChild = row.original._isChild;
         const val = String(getValue() || '');
         if (!val || val === 'undefined') return <span className="text-gray-200">—</span>;
-        if (isChild) return <span className="text-gray-400 font-medium">@{val}</span>;
-        return <span className="font-bold text-gray-400">@{val}</span>;
+        if (isChild) return <span className="text-gray-400 font-medium">{val}</span>;
+        return <span className="font-bold text-gray-400">{val}</span>;
       }
     },
     {
@@ -454,6 +514,50 @@ export default function JurnalUmumClient() {
         if (!val) return <span className="text-gray-200">—</span>;
         if (isChild) return <span className="text-gray-400 tabular-nums">{val}</span>;
         return <span className="text-gray-500 tabular-nums">{val}</span>;
+      }
+    },
+    {
+      id: 'ketepatan_waktu',
+      header: 'Ketepatan Waktu',
+      size: 160,
+      meta: { headerBg: '#f5f3ff' }, // Violet 50 to indicate system-calculated column
+      cell: ({ row }: any) => {
+        const tgl = row.original.tgl;
+        const createAt = row.original.create_at;
+        if (!tgl || !createAt) return <span className="text-gray-200">—</span>;
+
+        try {
+          const d1 = new Date(tgl); // YYYY-MM-DD
+          const d2 = new Date(createAt.substring(0, 10)); // YYYY-MM-DD
+          
+          if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return <span className="text-gray-200">—</span>;
+
+          const diffTime = d2.getTime() - d1.getTime();
+          const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+          if (diffDays > 0) {
+            return (
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-50 text-purple-600 border border-purple-100 flex items-center gap-1 w-fit shadow-sm">
+                <span className="w-1 h-1 rounded-full bg-purple-500 animate-pulse" />
+                Telat {diffDays} Hari
+              </span>
+            );
+          }
+          if (diffDays < 0) {
+            return (
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center gap-1 w-fit shadow-sm">
+                Mendahului {Math.abs(diffDays)} Hari
+              </span>
+            );
+          }
+          return (
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-violet-50 text-violet-600 border border-violet-100 flex items-center gap-1 w-fit shadow-sm">
+              Tepat Waktu
+            </span>
+          );
+        } catch (e) {
+          return <span className="text-gray-200">—</span>;
+        }
       }
     },
     {
@@ -530,6 +634,29 @@ export default function JurnalUmumClient() {
         );
       }
     },
+    {
+      accessorKey: '_arusKas',
+      header: 'Arus Kas',
+      size: 160,
+      meta: { align: 'right', headerBg: '#f5f3ff' },
+      cell: ({ getValue, row }: any) => {
+        const val = Number(getValue() ?? 0);
+        const isChild = row.original._isChild;
+        const isPositive = val >= 0;
+        return (
+          <div className={`flex items-center justify-between tabular-nums w-full ${
+            row.getIsSelected()
+              ? 'text-violet-700 font-bold'
+              : isChild
+                ? (isPositive ? 'text-violet-600 font-semibold' : 'text-rose-500 font-semibold')
+                : (isPositive ? 'text-violet-700 font-bold' : 'text-rose-600 font-bold')
+          }`}>
+            <span className="opacity-40 mr-1">Rp</span>
+            <span>{formatRupiah(Math.abs(val))}</span>
+          </div>
+        );
+      }
+    },
   ], []);
 
   if (!isMounted) return null;
@@ -542,8 +669,8 @@ export default function JurnalUmumClient() {
           <DateRangeCard
             startDate={startDate}
             endDate={endDate}
-            onStartDateChange={setStartDate}
-            onEndDateChange={setEndDate}
+            onStartDateChange={(d) => { setStartDate(d); setPage(1); }}
+            onEndDateChange={(d) => { setEndDate(d); setPage(1); }}
             onFetch={handleFetch}
             isFetching={loading || isBatching}
             progress={isBatching ? batchProgress : undefined}
@@ -626,7 +753,11 @@ export default function JurnalUmumClient() {
             columnWidths={columnWidths}
             onColumnWidthChange={setColumnWidths}
             rowHeight="h-11"
-            getRowClassName={(row: any) => row._isSaldoAwal ? 'bg-amber-50 border-b-2 border-amber-200' : (row._rowBg || '')}
+            getRowClassName={(row: any) => {
+              if (row._isSaldoAwal) return 'bg-amber-50 border-b-2 border-amber-200 amber';
+              if (row.is_kas) return 'bg-violet-50 hover:bg-violet-100/60 violet text-violet-900';
+              return row._rowBg || '';
+            }}
           />
           <TableFooter
             totalCount={totalCount}

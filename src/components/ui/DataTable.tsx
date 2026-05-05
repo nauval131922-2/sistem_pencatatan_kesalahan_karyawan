@@ -345,7 +345,9 @@ const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick, onRowDoubleCl
               ? '#f0fdf4'
               : extraClassName?.includes('amber')
                 ? '#fffbeb'
-                : isOdd ? '#f9fafb' : '#ffffff';  // solid white/gray-50 for odd rows
+                : extraClassName?.includes('violet')
+                  ? '#f5f3ff'
+                  : isOdd ? '#f9fafb' : '#ffffff';  // solid white/gray-50 for odd rows
         return (
           <td 
             key={cell.id} 
