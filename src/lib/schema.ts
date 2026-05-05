@@ -593,6 +593,21 @@ export async function initSchema(db: any) {
       kendala TEXT,
       bagian TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS rek_akuntansi (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      kode TEXT UNIQUE NOT NULL,
+      keterangan TEXT NOT NULL,
+      jenis TEXT,
+      arus_kas TEXT,
+      analisa_rasio TEXT,
+      harga_pokok TEXT,
+      username TEXT,
+      recid TEXT,
+      raw_data TEXT,
+      created_at DATETIME,
+      updated_at DATETIME,
+      fetched_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`
   ], "write");
 
