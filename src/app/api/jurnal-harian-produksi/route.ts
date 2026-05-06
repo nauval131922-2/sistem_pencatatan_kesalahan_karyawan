@@ -44,7 +44,21 @@ export async function GET(request: NextRequest) {
 
     const whereClause = whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : '';
 
-    const sqlData = `SELECT * FROM jurnal_harian_produksi ${whereClause} ORDER BY tgl ASC, id ASC LIMIT ? OFFSET ?`;
+    const sqlData = `SELECT * FROM jurnal_harian_produksi ${whereClause} 
+      ORDER BY 
+        tgl ASC, 
+        CASE UPPER(bagian)
+          WHEN 'SETTING' THEN 1
+          WHEN 'QUALITY CONTROL' THEN 2
+          WHEN 'CETAK' THEN 3
+          WHEN 'FINISHING' THEN 4
+          WHEN 'GUDANG' THEN 5
+          WHEN 'TEKNISI' THEN 6
+          ELSE 7
+        END ASC,
+        absensi ASC, 
+        created_at ASC 
+      LIMIT ? OFFSET ?`;
     const sqlTotal = `SELECT COUNT(*) as count FROM jurnal_harian_produksi ${whereClause}`;
 
     const batchResults = await db.batch([
@@ -77,20 +91,33 @@ export async function POST(request: NextRequest) {
         bahan_kertas, jml_plate, warna, inscheet, rijek, jam, kendala, bagian
       } = body.data;
 
+      const cleanNumberOrText = (val: any) => {
+        if (val === undefined || val === null || val === '') return '';
+        const str = String(val).trim();
+        // Cek jika murni angka dengan titik sebagai pemisah ribuan
+        if (/^[0-9]+(\.[0-9]+)*$/.test(str)) {
+          return Number(str.replace(/\./g, ''));
+        }
+        return str;
+      };
+
+      const cleanTarget = cleanNumberOrText(target);
+      const cleanRealisasi = cleanNumberOrText(realisasi);
+
+      try {
+        await db.execute("ALTER TABLE jurnal_harian_produksi ADD COLUMN is_manual_input INTEGER DEFAULT 0");
+      } catch (e) {} // Kolom sudah ada
+      
       await db.execute({
         sql: `INSERT INTO jurnal_harian_produksi (
-                posisi, absensi, tgl, shift, nama_karyawan, no_order, nama_order,
-                jenis_pekerjaan, keterangan, target, realisasi,
-                no_order_2, nama_order_2, jenis_pekerjaan_2,
-                bahan_kertas, jml_plate, warna, inscheet, rijek, jam, kendala, bagian
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          posisi, absensi, tgl, shift, nama_karyawan, no_order, nama_order, jenis_pekerjaan, keterangan, target, realisasi,
+          no_order_2, nama_order_2, jenis_pekerjaan_2, bahan_kertas, jml_plate, warna, inscheet, rijek, jam, kendala, bagian, is_manual_input
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
         args: [
           posisi || '', Number(absensi) || 0, tgl || null, shift || '', nama_karyawan || '',
-          no_order || '', nama_order || '', jenis_pekerjaan || '', keterangan || '',
-          target || '', realisasi || '',
-          no_order_2 || '', nama_order_2 || '', jenis_pekerjaan_2 || '',
-          bahan_kertas || '', Number(jml_plate) || 0, warna || '', Number(inscheet) || 0,
-          Number(rijek) || 0, jam || '', kendala || '', bagian || ''
+          no_order || '', nama_order || '', jenis_pekerjaan || '', keterangan || '', cleanTarget, cleanRealisasi,
+          no_order_2 || '', nama_order_2 || '', jenis_pekerjaan_2 || '', bahan_kertas || '', Number(jml_plate) || 0,
+          warna || '', Number(inscheet) || 0, Number(rijek) || 0, jam || '', kendala || '', bagian || ''
         ]
       });
 
@@ -110,9 +137,12 @@ export async function POST(request: NextRequest) {
        return NextResponse.json({ error: "Data Excel kosong atau format tidak sesuai." }, { status: 400 });
     }
 
-    // Hanya hapus data lama jika ini adalah chunk pertama atau tanpa chunking
+    // Hanya hapus data lama jika ini adalah chunk pertama atau tanpa chunking, dan hanya hapus data hasil unggahan (is_manual_input = 0)
     if (chunkIndex === 0) {
-      await db.execute("DELETE FROM jurnal_harian_produksi");
+      try {
+        await db.execute("ALTER TABLE jurnal_harian_produksi ADD COLUMN is_manual_input INTEGER DEFAULT 0");
+      } catch (e) {} // Kolom sudah ada
+      await db.execute("DELETE FROM jurnal_harian_produksi WHERE is_manual_input = 0 OR is_manual_input IS NULL");
     }
 
     let importedCount = 0;
@@ -283,32 +313,45 @@ export async function PUT(request: NextRequest) {
     const { id, ...fields } = await request.json();
     if (!id) return NextResponse.json({ error: 'ID tidak ditemukan' }, { status: 400 });
 
-    const {
-      posisi, absensi, tgl, shift, nama_karyawan, no_order, nama_order,
-      jenis_pekerjaan, keterangan, target, realisasi,
-      no_order_2, nama_order_2, jenis_pekerjaan_2,
-      bahan_kertas, jml_plate, warna, inscheet, rijek, jam, kendala, bagian
-    } = fields;
+    const cleanNumberOrText = (val: any) => {
+      if (val === undefined || val === null || val === '') return '';
+      const str = String(val).trim();
+      if (/^[0-9]+(\.[0-9]+)*$/.test(str)) {
+        return Number(str.replace(/\./g, ''));
+      }
+      return str;
+    };
 
-    await db.execute({
-      sql: `UPDATE jurnal_harian_produksi SET
-              posisi = ?, absensi = ?, tgl = ?, shift = ?, nama_karyawan = ?,
-              no_order = ?, nama_order = ?, jenis_pekerjaan = ?, keterangan = ?,
-              target = ?, realisasi = ?,
-              no_order_2 = ?, nama_order_2 = ?, jenis_pekerjaan_2 = ?,
-              bahan_kertas = ?, jml_plate = ?, warna = ?, inscheet = ?,
-              rijek = ?, jam = ?, kendala = ?, bagian = ?
-            WHERE id = ?`,
-      args: [
-        posisi || '', Number(absensi) || 0, tgl || null, shift || '', nama_karyawan || '',
-        no_order || '', nama_order || '', jenis_pekerjaan || '', keterangan || '',
-        target || '', realisasi || '',
-        no_order_2 || '', nama_order_2 || '', jenis_pekerjaan_2 || '',
-        bahan_kertas || '', Number(jml_plate) || 0, warna || '', Number(inscheet) || 0,
-        Number(rijek) || 0, jam || '', kendala || '', bagian || '',
-        id
-      ]
-    });
+    const updateParts: string[] = [];
+    const updateArgs: any[] = [];
+
+    const allowedFields = [
+      'posisi', 'absensi', 'tgl', 'shift', 'nama_karyawan', 'no_order', 'nama_order',
+      'jenis_pekerjaan', 'keterangan', 'target', 'realisasi',
+      'no_order_2', 'nama_order_2', 'jenis_pekerjaan_2',
+      'bahan_kertas', 'jml_plate', 'warna', 'inscheet', 'rijek', 'jam', 'kendala', 'bagian'
+    ];
+
+    for (const [key, value] of Object.entries(fields)) {
+      if (allowedFields.includes(key)) {
+        updateParts.push(`${key} = ?`);
+        if (key === 'target' || key === 'realisasi') {
+          updateArgs.push(cleanNumberOrText(value));
+        } else if (['absensi', 'jml_plate', 'inscheet', 'rijek'].includes(key)) {
+          updateArgs.push(Number(value) || 0);
+        } else {
+          updateArgs.push(value || (key === 'tgl' ? null : ''));
+        }
+      }
+    }
+
+    if (updateParts.length > 0) {
+      updateArgs.push(id);
+      await db.execute({
+        sql: `UPDATE jurnal_harian_produksi SET ${updateParts.join(', ')} WHERE id = ?`,
+        args: updateArgs
+      });
+    }
 
     await db.execute({
       sql: `INSERT INTO activity_logs (action_type, table_name, record_id, message, raw_data, recorded_by)

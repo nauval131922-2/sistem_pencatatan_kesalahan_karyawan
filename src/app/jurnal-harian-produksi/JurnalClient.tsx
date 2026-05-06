@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { Loader2, AlertCircle, ClipboardList, RotateCcw, Filter, Plus, Trash2, Edit2, Save, X, CheckCircle2, ChevronDown, Search } from 'lucide-react';
+import { Loader2, AlertCircle, ClipboardList, RotateCcw, Filter, Plus, Trash2, Edit2, Save, X, CheckCircle2, ChevronDown, Search, PlusSquare, Copy, FileText } from 'lucide-react';
 import SearchableDropdown from '@/components/SearchableDropdown';
 import SearchAndReload from '@/components/SearchAndReload';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { DataTable } from '@/components/ui/DataTable';
 import TableFooter from '@/components/TableFooter';
 import DatePicker from '@/components/DatePicker';
@@ -405,12 +406,81 @@ export default function JurnalClient({
     setTargetSearchQuery('');
   }, []);
 
+  const startInputRealisasi = useCallback((row: any) => {
+    setActiveTab('form');
+    setFormSubTab('realisasi');
+    setIsAdding(false);
+    setEditingId(row.id);
+    setSelectedTargetRow(row);
+    setTargetSearchQuery('');
+    
+    const formattedData = { ...row };
+    if (formattedData.tgl && formattedData.tgl.includes('T')) {
+      formattedData.tgl = formattedData.tgl.split('T')[0];
+    }
+
+    setFormData({ 
+      ...formattedData,
+      no_order_2: row.no_order_2 || row.no_order || '',
+      nama_order_2: row.nama_order_2 || row.nama_order || '',
+      jenis_pekerjaan_2: row.jenis_pekerjaan_2 || row.jenis_pekerjaan || '',
+      jam: row.jam || SHIFT_JAM[String(row.shift)] || '',
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const startCopy = useCallback((row: any) => {
+    setActiveTab('form');
+    setFormSubTab('target');
+    setIsAdding(true);
+    setEditingId(null);
+    setSelectedTargetRow(null);
+    
+    const formattedData = { ...row };
+    delete formattedData.id;
+    if (formattedData.tgl && formattedData.tgl.includes('T')) {
+      formattedData.tgl = formattedData.tgl.split('T')[0];
+    }
+    
+    // Clear realisasi fields
+    formattedData.realisasi = '';
+    formattedData.no_order_2 = '';
+    formattedData.nama_order_2 = '';
+    formattedData.jenis_pekerjaan_2 = '';
+    formattedData.bahan_kertas = '';
+    formattedData.jml_plate = '';
+    formattedData.warna = '';
+    formattedData.inscheet = '';
+    formattedData.rijek = '';
+    formattedData.jam = '';
+    formattedData.kendala = '';
+
+    setFormData(formattedData);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   const saveForm = async () => {
+    if (isSaving) return;
     setIsSaving(true);
     try {
       const isEdit = editingId !== null;
       const method = isEdit ? 'PUT' : 'POST';
-      const payload = isEdit ? { id: editingId, ...formData } : { action: 'insert_single', data: formData };
+      
+      let payloadToSubmit: any = { ...formData };
+      
+      if (isEdit) {
+        if (canInputTarget && !canInputRealisasi) {
+          const TARGET_FIELDS = ['tgl', 'shift', 'bagian', 'nama_karyawan', 'posisi', 'absensi', 'no_order', 'nama_order', 'jenis_pekerjaan', 'keterangan', 'target'];
+          payloadToSubmit = {};
+          TARGET_FIELDS.forEach(f => { if (formData[f] !== undefined) payloadToSubmit[f] = formData[f] });
+        } else if (canInputRealisasi && !canInputTarget) {
+          const REALISASI_FIELDS = ['no_order_2', 'nama_order_2', 'jenis_pekerjaan_2', 'bahan_kertas', 'jml_plate', 'warna', 'inscheet', 'rijek', 'jam', 'kendala', 'realisasi'];
+          payloadToSubmit = {};
+          REALISASI_FIELDS.forEach(f => { if (formData[f] !== undefined) payloadToSubmit[f] = formData[f] });
+        }
+      }
+      
+      const payload = isEdit ? { id: editingId, ...payloadToSubmit } : { action: 'insert_single', data: payloadToSubmit };
       
       const res = await fetch('/api/jurnal-harian-produksi', {
         method,
@@ -471,12 +541,18 @@ export default function JurnalClient({
     {
       id: 'actions',
       header: 'Aksi',
-      size: 80,
-      meta: { align: 'center', headerBg: '#f8fafc' },
+      size: 140,
+      meta: { align: 'center', headerBg: '#f8fafc', sticky: true },
       cell: ({ row }: any) => (
         <div className="flex items-center justify-center gap-2">
-           <button onClick={(e) => { e.stopPropagation(); startEdit(row.original); }} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"><Edit2 size={14} /></button>
-           <button onClick={(e) => { e.stopPropagation(); handleDelete(row.original.id); }} className="p-1.5 text-rose-600 hover:bg-rose-50 rounded transition-colors"><Trash2 size={14} /></button>
+           {canInputTarget && (
+             <button type="button" title="Duplikat Jadwal" onClick={(e) => { e.stopPropagation(); startCopy(row.original); }} className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded transition-colors"><Copy size={14} /></button>
+           )}
+           {canInputRealisasi && (!row.original.realisasi || row.original.realisasi == 0) && (
+             <button type="button" title="Input Realisasi" onClick={(e) => { e.stopPropagation(); startInputRealisasi(row.original); }} className="p-1.5 text-sky-600 hover:bg-sky-50 rounded transition-colors"><PlusSquare size={14} /></button>
+           )}
+           <button type="button" title="Edit Jurnal" onClick={(e) => { e.stopPropagation(); startEdit(row.original); }} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"><Edit2 size={14} /></button>
+           <button type="button" title="Hapus Jurnal" onClick={(e) => { e.stopPropagation(); handleDelete(row.original.id); }} className="p-1.5 text-rose-600 hover:bg-rose-50 rounded transition-colors"><Trash2 size={14} /></button>
         </div>
       )
     },
@@ -552,14 +628,28 @@ export default function JurnalClient({
       header: 'Target',
       size: columnWidths.target,
       meta: { align: 'right', headerBg: '#fef9c3' },
-      cell: ({ getValue, row }: any) => <span className={`font-bold tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>{Number(getValue() || 0).toLocaleString('id-ID')}</span>
+      cell: ({ getValue, row }: any) => {
+        const val = getValue();
+        let display = '0';
+        if (val !== null && val !== undefined && val !== '') {
+          display = !isNaN(Number(val)) ? Number(val).toLocaleString('id-ID') : String(val);
+        }
+        return <span className={`font-bold tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-gray-700'}`}>{display}</span>;
+      }
     },
     { 
       accessorKey: 'realisasi', 
       header: 'Realisasi',
       size: columnWidths.realisasi,
       meta: { align: 'right', headerBg: '#bae6fd' },
-      cell: ({ getValue, row }: any) => <span className={`font-semibold tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-black'}`}>{Number(getValue() || 0).toLocaleString('id-ID')}</span>
+      cell: ({ getValue, row }: any) => {
+        const val = getValue();
+        let display = '0';
+        if (val !== null && val !== undefined && val !== '') {
+          display = !isNaN(Number(val)) ? Number(val).toLocaleString('id-ID') : String(val);
+        }
+        return <span className={`font-semibold tabular-nums ${row.getIsSelected() ? 'text-green-700' : 'text-black'}`}>{display}</span>;
+      }
     },
     {
       accessorKey: 'no_order_2',
@@ -723,7 +813,7 @@ export default function JurnalClient({
                <div className="flex items-center gap-3">
                   <div className="w-[150px] relative group"><DatePicker name="startDate" value={startDate} onChange={(d) => { setStartDate(d); setPage(1); }} /></div>
                   <div className="w-4 h-0.5 bg-gray-100 rounded-full"></div>
-                  <div className="w-[150px] relative group"><DatePicker name="endDate" value={endDate} onChange={(d) => { setEndDate(d); setPage(1); }} /></div>
+                  <div className="w-[150px] relative group"><DatePicker name="endDate" value={endDate} onChange={(d) => { setEndDate(d); setPage(1); }} popupAlign="right" /></div>
                </div>
             </div>
 
@@ -787,6 +877,7 @@ export default function JurnalClient({
                   <span>Jurnal Harian Produksi</span>
                </div>
                
+
                {/* Contextual Actions */}
                {selectedIds.size > 0 && (
                  <button onClick={handleBulkDelete} className="flex items-center gap-2 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-[12px] font-bold rounded-lg border border-rose-200 transition-all ml-2 animate-in fade-in zoom-in duration-200">
@@ -864,18 +955,20 @@ export default function JurnalClient({
       {/* TAB CONTENT: FORM */}
       <div className={`flex-1 flex flex-col gap-4 overflow-y-auto pr-2 pb-10 ${activeTab === 'form' ? 'flex' : 'hidden'}`}>
         {(isAdding || editingId !== null) && (
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm animate-in slide-in-from-top-4 fade-in duration-300">
+          <form onSubmit={(e) => { e.preventDefault(); saveForm(); }} className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm animate-in slide-in-from-top-4 fade-in duration-300">
 
             {/* Sub-tab: Target / Realisasi - hanya tampil jika punya akses keduanya */}
             {canInputTarget && canInputRealisasi && (
               <div className="flex gap-1 mb-6 bg-gray-50 p-1 rounded-xl w-fit border border-gray-100">
                 <button
+                  type="button"
                   onClick={() => setFormSubTab('target')}
                   className={`px-5 py-2 text-[12px] font-bold rounded-lg transition-all ${formSubTab === 'target' ? 'bg-white text-emerald-700 shadow-sm border border-emerald-100' : 'text-gray-500 hover:text-gray-700'}`}
                 >
                   🗓 Target / Penjadwalan
                 </button>
                 <button
+                  type="button"
                   onClick={() => setFormSubTab('realisasi')}
                   className={`px-5 py-2 text-[12px] font-bold rounded-lg transition-all ${formSubTab === 'realisasi' ? 'bg-white text-sky-700 shadow-sm border border-sky-100' : 'text-gray-500 hover:text-gray-700'}`}
                 >
@@ -890,7 +983,7 @@ export default function JurnalClient({
                 <div className="flex items-center gap-2.5 mb-6">
                   <span className="text-[13px] font-bold text-gray-700">Data Penjadwalan</span>
                   <div className="flex-1 h-px bg-gray-100"></div>
-                  <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">Hijau &amp; Kuning</span>
+                  <span className="text-[11px] font-semibold text-yellow-700 bg-yellow-100 px-2.5 py-1 rounded-full">Jadwal Produksi</span>
                 </div>
                 {/* Grup 1: Tanggal */}
                 <div className="mb-5">
@@ -1007,7 +1100,7 @@ export default function JurnalClient({
                       <input 
                         type="text" 
                         placeholder="0" 
-                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none h-11" 
+                        className="w-full bg-yellow-50/50 border border-yellow-300 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-yellow-500/30 focus:border-yellow-500 outline-none h-11" 
                         value={formData.target || ''} 
                         onChange={e => {
                           let val = e.target.value;
@@ -1036,7 +1129,7 @@ export default function JurnalClient({
                       <textarea 
                         placeholder="Keterangan tambahan..." 
                         rows={3}
-                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none min-h-[80px] resize-none" 
+                        className="w-full bg-yellow-50/50 border border-yellow-300 rounded-lg px-3 py-2 text-[13px] font-medium focus:ring-2 focus:ring-yellow-500/30 focus:border-yellow-500 outline-none min-h-[80px] resize-none" 
                         value={formData.keterangan || ''} 
                         onChange={e => setFormData({...formData, keterangan: e.target.value})} 
                       />
@@ -1055,74 +1148,30 @@ export default function JurnalClient({
                   <span className="text-[11px] font-semibold text-sky-600 bg-sky-50 px-2.5 py-1 rounded-full">Hasil Produksi</span>
                 </div>
 
-                {/* Pilih data Target */}
-                <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl">
-                  <p className="text-[12px] font-bold text-gray-600 mb-3">1. Pilih Data Target yang akan diisi Realisasinya:</p>
-                  <div className="relative" ref={targetDropdownRef}>
-                    <div
-                      className="w-full flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2.5 cursor-pointer hover:border-sky-400 transition-colors"
-                      onClick={() => setIsTargetDropdownOpen(v => !v)}
-                    >
-                      <Search size={14} className="text-gray-400 shrink-0" />
-                      <input
-                        className="flex-1 text-[13px] font-medium outline-none bg-transparent placeholder:text-gray-400"
-                        placeholder="Cari karyawan / no order / tanggal..."
-                        value={selectedTargetRow ? `${selectedTargetRow.tgl} | ${selectedTargetRow.nama_karyawan} | ${selectedTargetRow.no_order || '-'}` : targetSearchQuery}
-                        onChange={e => { setTargetSearchQuery(e.target.value); setSelectedTargetRow(null); setIsTargetDropdownOpen(true); }}
-                        onClick={e => { e.stopPropagation(); setIsTargetDropdownOpen(true); }}
-                      />
-                      <ChevronDown size={14} className={`text-gray-400 transition-transform ${isTargetDropdownOpen ? 'rotate-180' : ''}`} />
-                    </div>
-                    {isTargetDropdownOpen && (
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-64 overflow-y-auto">
-                        {targetRowOptions.length === 0 ? (
-                          <div className="px-4 py-6 text-center text-[12px] text-gray-400 font-medium">
-                            {targetSearchQuery ? 'Tidak ada data yang cocok' : 'Ketik untuk mencari data target...'}
-                          </div>
-                        ) : targetRowOptions.map(row => (
-                          <div
-                            key={row.id}
-                            onClick={() => {
-                              setSelectedTargetRow(row);
-                              setIsTargetDropdownOpen(false);
-                              setTargetSearchQuery('');
-                              // Pre-fill realisasi fields dari data target
-                              setFormData((prev: any) => ({
-                                ...prev,
-                                no_order_2: row.no_order || '',
-                                nama_order_2: row.nama_order || '',
-                                jenis_pekerjaan_2: row.jenis_pekerjaan || '',
-                                jam: SHIFT_JAM[String(row.shift)] || '',
-                              }));
-                            }}
-                            className="px-4 py-3 hover:bg-sky-50 cursor-pointer border-b border-gray-50 last:border-0"
-                          >
-                            <div className="flex items-center gap-3">
-                              <span className="text-[11px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded">{row.tgl}</span>
-                              <span className="text-[12px] font-bold text-gray-800">{row.nama_karyawan}</span>
-                              <span className="text-[11px] text-gray-500">{row.no_order || '-'}</span>
-                              <span className="text-[11px] text-gray-400 truncate">{row.nama_order || ''}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {selectedTargetRow && (
-                    <div className="mt-3 flex items-center gap-3 flex-wrap">
-                      <span className="text-[11px] text-gray-500 font-medium">Target terpilih:</span>
+                {/* Data Target Terpilih */}
+                {selectedTargetRow ? (
+                  <div className="mb-6 p-4 bg-sky-50/50 border border-sky-200 rounded-xl">
+                    <p className="text-[12px] font-bold text-sky-800 mb-3">Data Target yang sedang diisi Realisasinya:</p>
+                    <div className="flex items-center gap-3 flex-wrap">
                       {[
-                        { label: 'Tanggal', val: selectedTargetRow.tgl },
+                        { label: 'Tanggal', val: formatIndoDateStr(selectedTargetRow.tgl) },
                         { label: 'Shift', val: selectedTargetRow.shift },
                         { label: 'Karyawan', val: selectedTargetRow.nama_karyawan },
-                        { label: 'No Order', val: selectedTargetRow.no_order },
+                        { label: 'Order', val: selectedTargetRow.no_order ? `${selectedTargetRow.no_order} — ${selectedTargetRow.nama_order || '-'}` : '' },
                         { label: 'Bagian', val: selectedTargetRow.bagian },
                       ].map(item => item.val ? (
-                        <span key={item.label} className="text-[11px] font-bold bg-sky-50 text-sky-700 px-2 py-0.5 rounded-md border border-sky-100">{item.label}: {item.val}</span>
+                        <span key={item.label} className="text-[11px] font-bold bg-white text-sky-700 px-2.5 py-1 rounded-md border border-sky-100 shadow-sm">{item.label}: {item.val}</span>
                       ) : null)}
                     </div>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="mb-6 p-4 bg-sky-50 border border-sky-100 rounded-xl flex items-start gap-3">
+                    <AlertCircle size={16} className="text-sky-600 shrink-0 mt-0.5" />
+                    <p className="text-[12px] font-medium text-sky-800 leading-relaxed">
+                      Anda sedang mengisi form Realisasi secara manual tanpa mengacu pada Data Target tertentu. Untuk mengisi Realisasi berdasarkan Target yang sudah ada, silakan kembali ke tab <b>Daftar Jurnal</b> dan klik tombol <b>Input Realisasi (+)</b> pada kolom Aksi di baris yang diinginkan.
+                    </p>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 
@@ -1236,25 +1285,25 @@ export default function JurnalClient({
             <div className="flex justify-between items-center gap-3 pt-5 mt-5 border-t border-gray-100">
               <div className="flex gap-2">
                 {formSubTab === 'target' && canInputRealisasi && (
-                  <button onClick={() => setFormSubTab('realisasi')} className="px-4 py-2 text-[12px] font-bold text-sky-600 bg-sky-50 hover:bg-sky-100 rounded-lg border border-sky-200 transition-all">
+                  <button type="button" onClick={() => setFormSubTab('realisasi')} className="px-4 py-2 text-[12px] font-bold text-sky-600 bg-sky-50 hover:bg-sky-100 rounded-lg border border-sky-200 transition-all">
                     Lanjut ke Realisasi →
                   </button>
                 )}
                 {formSubTab === 'realisasi' && canInputTarget && (
-                  <button onClick={() => setFormSubTab('target')} className="px-4 py-2 text-[12px] font-bold text-gray-500 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-all">
+                  <button type="button" onClick={() => setFormSubTab('target')} className="px-4 py-2 text-[12px] font-bold text-gray-500 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition-all">
                     ← Kembali ke Target
                   </button>
                 )}
               </div>
               <div className="flex gap-3">
-                <button onClick={cancelForm} className="px-5 py-2.5 text-[13px] font-bold text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all">Batal</button>
-                <button onClick={saveForm} disabled={isSaving} className="px-5 py-2.5 text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-xl shadow-sm transition-all flex items-center gap-2">
+                <button type="button" onClick={cancelForm} className="px-5 py-2.5 text-[13px] font-bold text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-xl transition-all">Batal</button>
+                <button type="submit" disabled={isSaving} className="px-5 py-2.5 text-[13px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-xl shadow-sm transition-all flex items-center gap-2">
                   {isSaving ? <><Loader2 size={16} className="animate-spin" /> Menyimpan...</> : <><Save size={16} /> Simpan Data</>}
                 </button>
               </div>
             </div>
 
-          </div>
+          </form>
         )}
       </div> {/* CLOSES activeTab === 'form' */}
 

@@ -91,6 +91,7 @@ Buat file `package.json`:
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.575.0",
+    "modern-screenshot": "^1.1.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -330,6 +331,23 @@ export async function initSchema(db: any) {
       raw_data TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(faktur, child_order, is_child)
+    );`,
+    `CREATE TABLE IF NOT EXISTS jurnal_harian_produksi (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      posisi TEXT,
+      absensi REAL,
+      tgl TEXT,
+      shift TEXT,
+      nama_karyawan TEXT,
+      no_order TEXT,
+      nama_order TEXT,
+      jenis_pekerjaan TEXT,
+      keterangan TEXT,
+      target REAL,
+      realisasi REAL,
+      bagian TEXT,
+      is_manual_input INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`,
     `CREATE TABLE IF NOT EXISTS rek_akuntansi (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -602,6 +620,9 @@ doc.save('laporan.pdf');
    - Gunakan komponen `DateRangeCard` untuk semua modul penarikan data (Scraper).
    - Tombol aksi wajib menggunakan desain gradient premium (Emerald/Green) dengan ikon `DownloadCloud`.
    - Tempatkan tombol aksi secara strategis: di dalam *card header* atau sejajar dengan judul tabel (rata kanan) untuk efisiensi ruang.
+10. **Data Integrity & Protection (Manual vs Sync)**: Untuk modul yang mendukung upload Excel massal (seperti Jurnal Harian Produksi), sistem wajib memiliki mekanisme perlindungan data manual menggunakan flag `is_manual_input`. Saat sinkronisasi ulang, hanya data dengan flag `0` yang boleh dihapus dan digantikan, sehingga input manual user di aplikasi tidak hilang.
+11. **Modern Screenshot (Fixing html2canvas Error)**: Untuk fitur "Simpan Gambar" pada browser modern atau Tailwind v4, gunakan library `modern-screenshot` daripada `html2canvas` untuk menghindari error parsing warna modern seperti `lab()` atau `oklch()`.
+12. **Sorting Logic Deterministic**: Untuk data jurnal/produksi, pengurutan harus dilakukan secara berlapis (Tanggal -> Bagian -> Absensi -> CreatedAt) untuk memastikan tampilan data konsisten dan mudah ditelusuri secara kronologis.
 
 ---
 

@@ -592,6 +592,7 @@ export async function initSchema(db: any) {
       jam TEXT,
       kendala TEXT,
       bagian TEXT,
+      is_manual_input INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`,
     `CREATE TABLE IF NOT EXISTS rek_akuntansi (
@@ -635,6 +636,7 @@ export async function initSchema(db: any) {
     "ALTER TABLE jurnal_harian_produksi ADD COLUMN jam TEXT;",
     "ALTER TABLE jurnal_harian_produksi ADD COLUMN kendala TEXT;",
     "ALTER TABLE jurnal_harian_produksi ADD COLUMN bagian TEXT;",
+    "ALTER TABLE jurnal_harian_produksi ADD COLUMN is_manual_input INTEGER DEFAULT 0;",
     "ALTER TABLE infractions ADD COLUMN jumlah REAL;",
     "ALTER TABLE infractions ADD COLUMN harga REAL;",
     "ALTER TABLE infractions ADD COLUMN total REAL;",

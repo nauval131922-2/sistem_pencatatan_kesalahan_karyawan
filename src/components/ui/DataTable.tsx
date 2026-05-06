@@ -35,7 +35,7 @@ interface DataTableProps<TData> {
   getRowClassName?: (row: TData) => string;
 }
 
-export function DataTable<TData extends { id: number | string }>({
+function DataTableInner<TData extends { id: number | string }>({
   columns,
   data,
   isLoading = false,
@@ -316,6 +316,19 @@ const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick, onRowDoubleCl
     }
   }
 
+  // stickyBg must be SOLID (no transparency) so it covers scrolled cells beneath
+  const stickyBg = isSelected
+    ? '#dbeafe'  // blue-100 solid
+    : extraClassName?.includes('rose')
+      ? '#fff1f2'
+      : extraClassName?.includes('emerald')
+        ? '#f0fdf4'
+        : extraClassName?.includes('amber')
+          ? '#fffbeb'
+          : extraClassName?.includes('violet')
+            ? '#f5f3ff'
+            : isOdd ? '#f9fafb' : '#ffffff';  // solid white/gray-50 for odd rows
+
   return (
     <tr
       onMouseDown={(e) => {
@@ -329,25 +342,17 @@ const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick, onRowDoubleCl
         isSelected ? 'bg-blue-50 is-selected' : extraClassName ? extraClassName : isOdd ? 'bg-gray-50/30' : 'bg-white'
       } ${!disableHover && !isSelected ? 'hover:bg-blue-50/30' : ''} text-[13px]`}
     >
-      <td className={`sticky left-0 w-[6px] p-0 z-30 border-none transition-colors ${isSelected ? 'bg-blue-500 shadow-[2px_0_5px_rgba(0,0,0,0.05)]' : 'bg-transparent'}`} />
+      <td 
+        className={`sticky left-0 w-[6px] p-0 z-30 border-none transition-colors ${isSelected ? 'shadow-[2px_0_5px_rgba(0,0,0,0.05)]' : ''}`}
+        style={{ backgroundColor: isSelected ? '#3b82f6' : stickyBg }} 
+      />
       {row.getVisibleCells().map((cell: any) => {
         const meta = cell.column.columnDef.meta as any;
         const isSticky = meta?.sticky;
         const alignClass = meta?.align === 'right' ? 'justify-end text-right font-mono' : meta?.align === 'center' ? 'justify-center text-center' : 'justify-start text-left';
         const wrapClass = meta?.wrap ? 'whitespace-normal' : meta?.overflowVisible ? 'whitespace-nowrap !overflow-visible' : 'truncate';
         const vAlignClass = meta?.valign === 'top' ? 'items-start py-3' : 'items-center';
-        // stickyBg must be SOLID (no transparency) so it covers scrolled cells beneath
-        const stickyBg = isSelected
-          ? '#dbeafe'  // blue-100 solid
-          : extraClassName?.includes('rose')
-            ? '#fff1f2'
-            : extraClassName?.includes('emerald')
-              ? '#f0fdf4'
-              : extraClassName?.includes('amber')
-                ? '#fffbeb'
-                : extraClassName?.includes('violet')
-                  ? '#f5f3ff'
-                  : isOdd ? '#f9fafb' : '#ffffff';  // solid white/gray-50 for odd rows
+
         return (
           <td 
             key={cell.id} 
@@ -374,6 +379,7 @@ const TableRow = React.memo(({ row, isSelected, isOdd, onRowClick, onRowDoubleCl
 
 TableRow.displayName = 'TableRow';
 
+export const DataTable = React.memo(DataTableInner) as typeof DataTableInner;
 
 
 

@@ -34,7 +34,7 @@ export default function DateRangeCard({
   const hasDates = onStartDateChange && onEndDateChange;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 py-3.5 px-6 shadow-sm shadow-green-900/5 flex flex-col gap-4 shrink-0 relative z-50 flex-1 min-w-0">
+    <div className="bg-white rounded-2xl border border-gray-100 py-3.5 px-6 shadow-sm shadow-green-900/5 flex flex-col gap-4 shrink-0 relative z-50 min-w-0">
       <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
         <div className="flex flex-col">
           <div className="flex items-center gap-2 mb-2 pl-1">
@@ -47,7 +47,7 @@ export default function DateRangeCard({
               </div>
               <div className="w-4 h-0.5 bg-gray-100 rounded-full"></div>
               <div className="w-[150px] relative group">
-                <DatePicker name="endDate" value={endDate || null} onChange={onEndDateChange} />
+                <DatePicker name="endDate" value={endDate || null} onChange={onEndDateChange} popupAlign="right" />
               </div>
             </div>
           )}

@@ -679,7 +679,7 @@ export default function JurnalUmumClient() {
           />
         </div>
         {/* Filter Tanggal Dibuat — same style as DateRangeCard */}
-        <div className="bg-white rounded-2xl border border-gray-100 py-3.5 px-6 shadow-sm shadow-green-900/5 flex flex-col gap-4 shrink-0 relative z-50 flex-1 min-w-0">
+        <div className="bg-white rounded-2xl border border-gray-100 py-3.5 px-6 shadow-sm shadow-green-900/5 flex flex-col gap-4 shrink-0 relative z-50 min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
             <div className="flex flex-col">
               <div className="flex items-center gap-2 mb-2 pl-1">
@@ -707,6 +707,7 @@ export default function JurnalUmumClient() {
                     name="createAtTo"
                     value={createAtTo}
                     onChange={(d) => { setCreateAtTo(d); setPage(1); }}
+                    popupAlign="right"
                   />
                 </div>
               </div>

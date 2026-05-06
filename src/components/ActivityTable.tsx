@@ -2,10 +2,11 @@
 
 import { useState, useMemo, useEffect, useTransition, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, History, Clock, X, Cpu, User as UserIcon, Calendar as CalendarIcon, Database, Info, Loader2 } from 'lucide-react';
+import { Search, History, Clock, X, Cpu, User as UserIcon, Calendar as CalendarIcon, Database, Info, Loader2, RefreshCw } from 'lucide-react';
 import { formatLastUpdate } from '@/lib/date-utils';
 import { getLiveRecord } from '@/lib/actions';
 import TableFooter from '@/components/TableFooter';
+import SearchAndReload from '@/components/SearchAndReload';
 export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
   const [search, setSearch] = useState('');
   const [visibleCount, setVisibleCount] = useState(50);
@@ -162,16 +163,13 @@ export default function ActivityTable({ initialLogs }: { initialLogs: any[] }) {
             {isPending && <Loader2 size={14} className="animate-spin text-gray-400" />}
           </div>
         </div>
-        <div className="relative w-full shrink-0 group">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-700 group-focus-within:text-black transition-colors z-10" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari menu, user, atau keterangan..."
-            className="w-full pl-12 pr-4 h-11 bg-white border border-gray-100 rounded-[12px] focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-[13px] font-medium placeholder:text-gray-400 shadow-sm"
-          />
-        </div>
+        <SearchAndReload
+          searchQuery={search}
+          setSearchQuery={setSearch}
+          onReload={() => startTransition(() => router.refresh())}
+          loading={isPending}
+          placeholder="Cari menu, user, atau keterangan..."
+        />
       </div>
 
       <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">

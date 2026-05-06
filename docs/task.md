@@ -51,6 +51,8 @@
 - [x] Implementasi Scraper Rek Akuntansi & Standarisasi Komponen DateRangeCard — 2026-05-05
 - [x] Optimasi Analisis Kas Jurnal Umum (Highlight Kas & Kolom Arus Kas) — 2026-05-05
 - [x] Resolusi Bug Paginasi Infinite Scroll (Switch to Page-Based Tracking) — 2026-05-05
+- [x] Stabilisasi JHP (Manual Input Protection) & Modul Jadwal Harian — 2026-05-06
+- [x] Migrasi Image Export library ke modern-screenshot (Fix lab() error) — 2026-05-06
 
 ---
 
@@ -70,8 +72,8 @@
 ## 📊 Statistik
 
 ```
-Total task    : 58
-Selesai       : 54
+Total task    : 60
+Selesai       : 56
 In progress   : 2
 Backlog       : 2
 Bug diketahui : 0
@@ -82,7 +84,7 @@ Progress      : 93%
 
 <!--
 CATATAN UNTUK AI:
-Setiap memperbarui file ini:
+Setelah memperbarui file ini:
 1. Pindahkan task selesai ke bagian ✅ Selesai dengan tanggal penyelesaian
 2. Perbarui bagian 📊 Statistik
 3. Tambahkan catatan progres jika task belum 100% selesai
