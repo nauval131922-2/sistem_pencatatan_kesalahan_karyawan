@@ -105,12 +105,8 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
     return () => clearTimeout(timer);
   }, [searchImmediate]);
 
-  useEffect(() => {
-    if (message) {
-      const timer = setTimeout(() => setMessage(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [message]);
+  // Toast duration is handled by the Toast component itself via its duration prop and onClose callback
+
 
   const filteredUsers = useMemo(() => {
     const query = searchDebounced.toLowerCase().trim();
@@ -209,6 +205,8 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
   const handleEdit = (user: User) => { setEditingUser(user); setShowModal(true); };
   const handleCreate = () => { setEditingUser(null); setShowModal(true); };
 
+  const handleCloseToast = useCallback(() => setMessage(null), []);
+
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-3 animate-in fade-in duration-500 overflow-hidden">
       <div className="shrink-0 flex items-center justify-between gap-3 z-50">
@@ -267,7 +265,8 @@ export default function UsersContent({ currentUser, currentUserId, customRoles =
       <Toast 
         message={message?.text || null} 
         type={message?.type} 
-        onClose={() => setMessage(null)} 
+        duration={5000}
+        onClose={handleCloseToast} 
       />
     </div>
   );

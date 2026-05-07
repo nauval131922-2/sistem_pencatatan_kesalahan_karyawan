@@ -21,7 +21,7 @@
     "bcryptjs": "^3.0.3",
     "html2canvas": "^1.4.1",
     "jose": "^6.2.0",
-    "jspdf": "^4.2.0",
+    "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.575.0",
     "modern-screenshot": "^4.7.0",

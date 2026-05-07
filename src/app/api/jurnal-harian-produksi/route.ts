@@ -56,8 +56,9 @@ export async function GET(request: NextRequest) {
           WHEN 'TEKNISI' THEN 6
           ELSE 7
         END ASC,
+        CASE WHEN jenis_pekerjaan LIKE '%Koordinasi%' THEN 0 ELSE 1 END ASC,
         absensi ASC, 
-        created_at ASC 
+        id ASC 
       LIMIT ? OFFSET ?`;
     const sqlTotal = `SELECT COUNT(*) as count FROM jurnal_harian_produksi ${whereClause}`;
 

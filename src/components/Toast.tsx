@@ -17,13 +17,20 @@ export default function Toast({ message, type = 'success', duration = 3000, onCl
   const [isShowing, setIsShowing] = useState(false);
 
   useEffect(() => {
+    let exitTimer: NodeJS.Timeout;
     if (message) {
       setIsShowing(true);
       const timer = setTimeout(() => {
+        setIsShowing(true); // Ensure it's true before setting to false (react batching)
         setIsShowing(false);
-        setTimeout(onClose, 300); // Wait for exit animation
+        exitTimer = setTimeout(onClose, 300);
       }, duration);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        if (exitTimer) clearTimeout(exitTimer);
+      };
+    } else {
+      setIsShowing(false);
     }
   }, [message, duration, onClose]);
 
