@@ -150,7 +150,7 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
     }
   }, [isResizing, isExpanded]);
 
-  // Double-click resizer: auto-fit width agar tidak ada teks yang terpotong
+  // Double-click resizer: auto-fit width agar pas dengan isi teks (bisa membesar atau mengecil)
   const autoFitWidth = useCallback(() => {
     if (!navRef.current) return;
 
@@ -158,21 +158,26 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
     const currentSidebarWidth = sidebar ? sidebar.getBoundingClientRect().width : expandedWidth;
     let maxRequiredWidth = MIN_WIDTH;
 
-    // Ukur semua teks yang memiliki class truncate di dalam nav
     const textElements = navRef.current.querySelectorAll<HTMLElement>('.truncate');
     textElements.forEach(el => {
-      if (el.clientWidth > 0 && el.scrollWidth > 0) {
-        // scrollWidth = lebar teks aktual tanpa pemotongan
-        // clientWidth = ruang yang saat ini tersedia untuk teks
-        const neededWidth = currentSidebarWidth - el.clientWidth + el.scrollWidth;
+      if (el.clientWidth > 0) {
+        // Jarak non-teks (padding nav, margin, icon, chevron, dsb.)
+        const nonTextSpace = currentSidebarWidth - el.clientWidth;
+
+        // Ukur lebar teks asli secara independen tanpa terpengaruh flex-1 container
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const realTextWidth = range.getBoundingClientRect().width;
+
+        const neededWidth = nonTextSpace + realTextWidth;
         if (neededWidth > maxRequiredWidth) {
           maxRequiredWidth = neededWidth;
         }
       }
     });
 
-    // Tambahkan buffer 20px (toleransi scrollbar, font antialiasing, dan margin chevron)
-    const fitWidth = Math.min(Math.max(Math.ceil(maxRequiredWidth + 20), MIN_WIDTH), MAX_WIDTH);
+    // Tambahkan buffer 18px untuk jarak nyaman icon chevron & scrollbar
+    const fitWidth = Math.min(Math.max(Math.ceil(maxRequiredWidth + 18), MIN_WIDTH), MAX_WIDTH);
     setExpandedWidth(fitWidth);
     localStorage.setItem('sidebar_expanded_width', String(fitWidth));
   }, [expandedWidth]);
