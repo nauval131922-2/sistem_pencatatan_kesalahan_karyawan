@@ -154,48 +154,28 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
   const autoFitWidth = useCallback(() => {
     if (!navRef.current) return;
 
-    const measurer = document.createElement('span');
-    measurer.style.position = 'fixed';
-    measurer.style.left = '-9999px';
-    measurer.style.top = '0';
-    measurer.style.visibility = 'hidden';
-    measurer.style.whiteSpace = 'nowrap';
-    document.body.appendChild(measurer);
+    const sidebar = sidebarRef.current;
+    const currentSidebarWidth = sidebar ? sidebar.getBoundingClientRect().width : expandedWidth;
+    let maxRequiredWidth = MIN_WIDTH;
 
-    let maxWidth = MIN_WIDTH;
-    const rows = navRef.current.querySelectorAll<HTMLElement>('a, button:not([tabindex="-1"])');
-    rows.forEach(row => {
-      let indent = 0;
-      let p = row.parentElement;
-      while (p && p !== navRef.current) {
-        if (p.classList.contains('border-l-2')) indent += 24;
-        p = p.parentElement;
+    // Ukur semua teks yang memiliki class truncate di dalam nav
+    const textElements = navRef.current.querySelectorAll<HTMLElement>('.truncate');
+    textElements.forEach(el => {
+      if (el.clientWidth > 0 && el.scrollWidth > 0) {
+        // scrollWidth = lebar teks aktual tanpa pemotongan
+        // clientWidth = ruang yang saat ini tersedia untuk teks
+        const neededWidth = currentSidebarWidth - el.clientWidth + el.scrollWidth;
+        if (neededWidth > maxRequiredWidth) {
+          maxRequiredWidth = neededWidth;
+        }
       }
-
-      let bestText = '';
-      let bestFont = '';
-      row.querySelectorAll<HTMLElement>('span').forEach(span => {
-        const text = (span.textContent ?? '').trim();
-        if (!text || text.length < bestText.length) return;
-        const cs = window.getComputedStyle(span);
-        bestText = text;
-        bestFont = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
-      });
-
-      if (!bestText) return;
-      measurer.style.font = bestFont || '600 12.5px sans-serif';
-      measurer.textContent = bestText;
-      const textW = measurer.getBoundingClientRect().width;
-
-      const total = indent + 80 + Math.ceil(textW);
-      if (total > maxWidth) maxWidth = total;
     });
 
-    document.body.removeChild(measurer);
-    const fitWidth = Math.min(maxWidth + 28, MAX_WIDTH);
+    // Tambahkan buffer 20px (toleransi scrollbar, font antialiasing, dan margin chevron)
+    const fitWidth = Math.min(Math.max(Math.ceil(maxRequiredWidth + 20), MIN_WIDTH), MAX_WIDTH);
     setExpandedWidth(fitWidth);
     localStorage.setItem('sidebar_expanded_width', String(fitWidth));
-  }, []);
+  }, [expandedWidth]);
 
 
   useEffect(() => {
