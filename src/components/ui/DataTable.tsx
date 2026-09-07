@@ -182,8 +182,10 @@ function DataTableInner<TData extends { id: number | string }>({
   React.useEffect(() => {
     const currentFirstId = data[0]?.id;
     const isAppended = data.length > prevDataLengthRef.current && currentFirstId === prevFirstIdRef.current;
+    // ponytail: update in-place (edit keterangan 1 baris) panjang + id pertama sama — jangan reset scroll
+    const isInPlaceUpdate = data.length === prevDataLengthRef.current && currentFirstId === prevFirstIdRef.current;
 
-    if (resetScrollOnDataChange && !isAppended && parentRef.current) {
+    if (resetScrollOnDataChange && !isAppended && !isInPlaceUpdate && parentRef.current) {
       parentRef.current.scrollTop = 0;
     }
 
