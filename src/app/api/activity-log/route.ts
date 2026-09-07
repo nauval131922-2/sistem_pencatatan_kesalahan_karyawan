@@ -114,7 +114,7 @@ async function queryLogs(params: ActivityLogQueryParams, withStats = false) {
       actionStats = cachedAction;
     } else {
       const r = await db.execute({
-        sql: `SELECT al.action_type AS value, COUNT(*) AS count FROM ${table} al ${JOIN} ${fullWhere} GROUP BY al.action_type ORDER BY count DESC LIMIT 12`,
+        sql: `SELECT al.action_type AS value, COUNT(*) AS count FROM ${table} al ${JOIN} ${fullWhere} GROUP BY al.action_type ORDER BY count DESC LIMIT 20`,
         args: fullArgs,
       });
       actionStats = r.rows.map((r) => ({ value: String(r.value ?? ''), count: Number(r.count ?? 0) }));
@@ -126,7 +126,7 @@ async function queryLogs(params: ActivityLogQueryParams, withStats = false) {
       tableStats = cachedTable;
     } else {
       const r = await db.execute({
-        sql: `SELECT al.table_name AS value, COUNT(*) AS count FROM ${table} al ${JOIN} ${fullWhere} GROUP BY al.table_name ORDER BY count DESC LIMIT 10`,
+        sql: `SELECT al.table_name AS value, COUNT(*) AS count FROM ${table} al ${JOIN} ${fullWhere} GROUP BY al.table_name ORDER BY count DESC LIMIT 50`,
         args: fullArgs,
       });
       tableStats = r.rows.map((r) => ({ value: String(r.value ?? ''), count: Number(r.count ?? 0) }));
@@ -138,7 +138,7 @@ async function queryLogs(params: ActivityLogQueryParams, withStats = false) {
       userStats = cachedUser;
     } else {
       const r = await db.execute({
-        sql: `SELECT al.recorded_by AS value, COUNT(*) AS count FROM ${table} al ${JOIN} ${fullWhere} GROUP BY al.recorded_by ORDER BY count DESC LIMIT 10`,
+        sql: `SELECT al.recorded_by AS value, COUNT(*) AS count FROM ${table} al ${JOIN} ${fullWhere} GROUP BY al.recorded_by ORDER BY count DESC LIMIT 50`,
         args: fullArgs,
       });
       userStats = r.rows.map((r) => ({ value: String(r.value ?? ''), label: '', count: Number(r.count ?? 0) }));

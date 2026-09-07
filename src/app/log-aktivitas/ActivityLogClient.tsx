@@ -96,6 +96,8 @@ export default function ActivityLogClient({
   const [actionStats, setActionStats] = useState<{ value: string; count: number }[]>([]);
   const [tableStats, setTableStats] = useState<{ value: string; count: number }[]>([]);
   const [userStats, setUserStats] = useState<{ value: string; label: string; count: number }[]>([]);
+  const [showAllTables, setShowAllTables] = useState(false);
+  const [showAllUsers, setShowAllUsers] = useState(false);
   const [isFetchingLogs, setIsFetchingLogs] = useState(false);
   const [filterOptions, setFilterOptions] = useState<{
     tables: string[];
@@ -767,50 +769,110 @@ export default function ActivityLogClient({
                 </div>
               </div>
             )}
-            {tableStats.length > 0 && (
-              <div className="flex items-start gap-2">
-                <span className="text-[11px] font-bold text-gray-500 shrink-0 pt-1">Tabel</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {tableStats.map((s) => (
-                    <button
-                      key={s.value}
-                      type="button"
-                      onClick={() => setTableName(tableName === s.value ? '' : s.value)}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all hover:shadow-md ${
-                        tableName === s.value
-                          ? 'ring-2 ring-emerald-400 border-emerald-300 bg-emerald-50 text-emerald-700 shadow-sm'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <span className="font-mono text-[11px]">{s.value}</span>
-                      <span className="text-[11px] opacity-75">{s.count.toLocaleString('id-ID')}</span>
-                    </button>
-                  ))}
+            {tableStats.length > 0 && (() => {
+              let visibleTables = showAllTables ? tableStats : tableStats.slice(0, 10);
+              if (!showAllTables && tableName && !visibleTables.some((t) => t.value === tableName)) {
+                const activeTable = tableStats.find((t) => t.value === tableName);
+                if (activeTable) {
+                  visibleTables = [...visibleTables, activeTable];
+                }
+              }
+              const hasMoreTables = tableStats.length > 10;
+              return (
+                <div className="flex items-start gap-2">
+                  <span className="text-[11px] font-bold text-gray-500 shrink-0 pt-1">Tabel</span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {visibleTables.map((s) => (
+                      <button
+                        key={s.value}
+                        type="button"
+                        onClick={() => setTableName(tableName === s.value ? '' : s.value)}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-all hover:shadow-md ${
+                          tableName === s.value
+                            ? 'ring-2 ring-emerald-400 border-emerald-300 bg-emerald-50 text-emerald-700 shadow-sm'
+                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <span className="font-mono text-[11px]">{s.value}</span>
+                        <span className="text-[11px] opacity-75">{s.count.toLocaleString('id-ID')}</span>
+                      </button>
+                    ))}
+                    {hasMoreTables && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllTables((prev) => !prev)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-gray-600 bg-gray-50 hover:bg-gray-100 border border-dashed border-gray-300 hover:border-gray-400 transition-colors"
+                        title={showAllTables ? 'Tampilkan lebih sedikit tabel' : 'Tampilkan seluruh tabel'}
+                      >
+                        {showAllTables ? (
+                          <>
+                            <span>Tampilkan lebih sedikit</span>
+                            <ChevronUp className="w-3 h-3 text-gray-500" />
+                          </>
+                        ) : (
+                          <>
+                            <span>+{tableStats.length - 10} lainnya</span>
+                            <ChevronDown className="w-3 h-3 text-gray-500" />
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-            {userStats.length > 0 && (
-              <div className="flex items-start gap-2">
-                <span className="text-[11px] font-bold text-gray-500 shrink-0 pt-1">User</span>
-                <div className="flex flex-wrap gap-1.5">
-                  {userStats.map((s) => (
-                    <button
-                      key={s.value}
-                      type="button"
-                      onClick={() => setRecordedBy(recordedBy === s.value ? '' : s.value)}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all hover:shadow-md ${
-                        recordedBy === s.value
-                          ? 'ring-2 ring-emerald-400 border-emerald-300 bg-emerald-50 text-emerald-700 shadow-sm'
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <span className="truncate max-w-[200px]">{s.label || s.value}</span>
-                      <span className="text-[11px] opacity-75">{s.count.toLocaleString('id-ID')}</span>
-                    </button>
-                  ))}
+              );
+            })()}
+            {userStats.length > 0 && (() => {
+              let visibleUsers = showAllUsers ? userStats : userStats.slice(0, 10);
+              if (!showAllUsers && recordedBy && !visibleUsers.some((u) => u.value === recordedBy)) {
+                const activeUser = userStats.find((u) => u.value === recordedBy);
+                if (activeUser) {
+                  visibleUsers = [...visibleUsers, activeUser];
+                }
+              }
+              const hasMoreUsers = userStats.length > 10;
+              return (
+                <div className="flex items-start gap-2">
+                  <span className="text-[11px] font-bold text-gray-500 shrink-0 pt-1">User</span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {visibleUsers.map((s) => (
+                      <button
+                        key={s.value}
+                        type="button"
+                        onClick={() => setRecordedBy(recordedBy === s.value ? '' : s.value)}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all hover:shadow-md ${
+                          recordedBy === s.value
+                            ? 'ring-2 ring-emerald-400 border-emerald-300 bg-emerald-50 text-emerald-700 shadow-sm'
+                            : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <span className="truncate max-w-[200px]">{s.label || s.value}</span>
+                        <span className="text-[11px] opacity-75">{s.count.toLocaleString('id-ID')}</span>
+                      </button>
+                    ))}
+                    {hasMoreUsers && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllUsers((prev) => !prev)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-gray-600 bg-gray-50 hover:bg-gray-100 border border-dashed border-gray-300 hover:border-gray-400 transition-colors"
+                        title={showAllUsers ? 'Tampilkan lebih sedikit user' : 'Tampilkan seluruh user'}
+                      >
+                        {showAllUsers ? (
+                          <>
+                            <span>Tampilkan lebih sedikit</span>
+                            <ChevronUp className="w-3 h-3 text-gray-500" />
+                          </>
+                        ) : (
+                          <>
+                            <span>+{userStats.length - 10} lainnya</span>
+                            <ChevronDown className="w-3 h-3 text-gray-500" />
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         )}
 
