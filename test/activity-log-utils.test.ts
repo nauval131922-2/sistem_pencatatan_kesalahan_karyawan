@@ -48,7 +48,15 @@ describe('detectActiveDatePreset', () => {
   it('round-trips every preset', () => {
     for (const key of ['today', '7d', 'month', 'last_month'] as const) {
       const r = getDatePresetRange(key);
-      expect(detectActiveDatePreset(r.from, r.to)).toBe(key);
+      const detected = detectActiveDatePreset(r.from, r.to);
+      // Pada tanggal ke-7 dalam bulan, rentang 'month' dan '7d' bernilai identik (01 s.d. 07).
+      // Fungsi deteksi akan mengembalikan preset yang muncul lebih dahulu.
+      if (detected !== key) {
+        const detectedRange = detected ? getDatePresetRange(detected) : null;
+        expect(detectedRange).toEqual(r);
+      } else {
+        expect(detected).toBe(key);
+      }
     }
   });
 
