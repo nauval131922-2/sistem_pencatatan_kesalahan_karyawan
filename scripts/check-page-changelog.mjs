@@ -142,6 +142,35 @@ function loadChangelogRegistry() {
 
   return { paths, pageKeys, error: null };
 }
+function getNewChangelogKeys() {
+  const diffCmds = [
+    'git diff -U0 -- ' + CHANGELOG_FILE,
+    'git diff --cached -U0 -- ' + CHANGELOG_FILE,
+  ];
+  if (!workingTreeOnly && gitOk(`git rev-parse --verify ${baseRef}`)) {
+    diffCmds.push(`git diff -U0 ${baseRef}...HEAD -- ${CHANGELOG_FILE}`);
+  }
+
+  const addedLines = [];
+  for (const cmd of diffCmds) {
+    const lines = gitLines(cmd);
+    for (const line of lines) {
+      if (line.startsWith('+') && !line.startsWith('+++')) {
+        addedLines.push(line);
+      }
+    }
+  }
+
+  const newKeys = new Set();
+  for (const line of addedLines) {
+    const mPk = line.match(/pageKey:\s*['"]([^'"]+)['"]/);
+    if (mPk) newKeys.add(mPk[1]);
+    const mKey = line.match(/['"]([a-z0-9-]+)-\d{4}-\d{2}-\d{2}/);
+    if (mKey) newKeys.add(mKey[1]);
+  }
+  return newKeys;
+}
+
 
 const fromUnstaged = gitLines('git diff --name-only');
 const fromStaged = gitLines('git diff --cached --name-only');
@@ -181,6 +210,8 @@ if (registry.error) {
   console.error(registry.error);
   process.exit(1);
 }
+const newChangelogKeys = getNewChangelogKeys();
+
 
 // route → { files, sources }
 const routeMap = new Map();
@@ -217,6 +248,14 @@ for (const [route, rec] of [...routeMap.entries()].sort((a, b) =>
     missing.push({
       route,
       reason: `pageKey "${pageKey}" belum di PAGE_CHANGELOGS`,
+      ...rec,
+    });
+    continue;
+  }
+  if (!newChangelogKeys.has(pageKey)) {
+    missing.push({
+      route,
+      reason: `halaman berubah tetapi belum ada entri baru untuk pageKey "${pageKey}" di git diff ${CHANGELOG_FILE}`,
       ...rec,
     });
     continue;
