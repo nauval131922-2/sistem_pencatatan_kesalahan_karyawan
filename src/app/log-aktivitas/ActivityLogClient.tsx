@@ -77,7 +77,6 @@ export default function ActivityLogClient({
   const [search, setSearch] = useState(initialState.search);
   const [debouncedSearch, setDebouncedSearch] = useState(initialState.search);
   const [deepSearch, setDeepSearch] = useState(false); // ponytail: toggle untuk cari di raw_data JSON
-  const [hideSystemCols, setHideSystemCols] = useState(true); // ponytail: hide system columns (id, dates) by default
   const [total, setTotal] = useState(0);
   const [loadTime, setLoadTime] = useState<number | null>(null);
   const [page, setPage] = useState(1);
@@ -982,15 +981,6 @@ export default function ActivityLogClient({
                 <span>Cari di detail data JSON (lebih lambat)</span>
               </label>
             )}
-            <label className="flex items-center gap-2 text-[11px] text-gray-600 font-medium cursor-pointer hover:text-emerald-700 transition-colors">
-              <input
-                type="checkbox"
-                checked={hideSystemCols}
-                onChange={(e) => setHideSystemCols(e.target.checked)}
-                className="w-3.5 h-3.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 focus:ring-offset-0 focus:ring-2 cursor-pointer"
-              />
-              <span>Sederhanakan detail (sembunyikan ID & tanggal sistem)</span>
-            </label>
           </div>
 
           {/* ponytail: Quick filter chips */}
@@ -1134,9 +1124,6 @@ export default function ActivityLogClient({
                                 } else if (log.action_type === 'DELETE') {
                                   diffs = Object.entries(rawParsed).map(([key, value]) => ({ key, before: formatAuditFieldValue(key, value), after: '' }));
                                 }
-                              }
-                              if (hideSystemCols) {
-                                diffs = diffs.filter(d => !['id', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'updated_by', 'deleted_by', 'is_manual_input', 'additional_ids'].includes(d.key));
                               }
                               const diffText = diffs.map(d => `${d.key}: "${d.before}" → "${d.after}"`).join('\n');
                               return (
@@ -1383,9 +1370,6 @@ export default function ActivityLogClient({
                                                diffs = Object.entries(rawParsed).map(([key, value]) => ({ key, before: formatAuditFieldValue(key, value), after: '' }));
                                              }
                                            }
-                                           if (hideSystemCols) {
-                                             diffs = diffs.filter(d => !['id', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'updated_by', 'deleted_by', 'is_manual_input', 'additional_ids'].includes(d.key));
-                                           }
                                            const diffText = diffs.map(d => `${d.key}: "${d.before}" → "${d.after}"`).join('\n');
                                            return diffs.length > 0 && (
                                              <button
@@ -1408,9 +1392,6 @@ export default function ActivityLogClient({
                                          } else if (log.action_type === 'DELETE') {
                                            diffs = Object.entries(rawParsed).map(([key, value]) => ({ key, before: formatAuditFieldValue(key, value), after: '' }));
                                          }
-                                       }
-                                       if (hideSystemCols) {
-                                         diffs = diffs.filter(d => !['id', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'updated_by', 'deleted_by', 'is_manual_input', 'additional_ids'].includes(d.key));
                                        }
                                        return diffs.length > 0 ? (
                                          <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
