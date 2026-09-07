@@ -1550,33 +1550,58 @@ export default function LaporanPekerjaanClient({
   ]);
 
   // Group filtered tasks by unique project order
+  // ponytail: progress dihitung dari SELURUH task order (role-scoped, abaikan filter UI)
+  // agar konsisten dengan modal Detail; filter hanya menentukan order mana yang tampil
   const groupedOrders = useMemo(() => {
-    const map = new Map<string, { project: string; tglOrder: string; tasks: SpreadsheetTask[] }>();
+    const fullMap = new Map<string, { project: string; tglOrder: string; tasks: SpreadsheetTask[] }>();
+    tasks.forEach((t) => {
+      if (!isBagianAllowedByRole(t.bagian, t.source, t.task)) return;
+      if (!isPicAllowedByRole(t.pic, t.source, t.task)) return;
+      const proj = t.project || "Tanpa Project Order";
+      const entry = fullMap.get(proj);
+      if (!entry) {
+        fullMap.set(proj, {
+          project: proj,
+          tglOrder: t.tglOrder || "",
+          tasks: t.task ? [t] : [],
+        });
+      } else {
+        if (!entry.tglOrder && t.tglOrder) {
+          entry.tglOrder = t.tglOrder;
+        }
+        if (t.task) {
+          entry.tasks.push(t);
+        }
+      }
+    });
 
+    const map = new Map<string, { project: string; tglOrder: string }>();
     filteredTasks.forEach((t) => {
       const proj = t.project || "Tanpa Project Order";
       if (!map.has(proj)) {
         map.set(proj, {
           project: proj,
-          tglOrder: t.tglOrder || "",
-          tasks: t.task ? [t] : [],
+          tglOrder: t.tglOrder || fullMap.get(proj)?.tglOrder || "",
         });
       } else {
         const group = map.get(proj)!;
         if (!group.tglOrder && t.tglOrder) {
           group.tglOrder = t.tglOrder;
         }
-        if (t.task) {
-          group.tasks.push(t);
-        }
       }
     });
 
-    return Array.from(map.values()).map((g) => ({
-      ...g,
-      ...summarizeOrderTasks(g.tasks, g.project),
-    }));
-  }, [filteredTasks]);
+    return Array.from(map.values()).map((g) => {
+      const full = fullMap.get(g.project);
+      const allTasks = full?.tasks ?? [];
+      return {
+        project: g.project,
+        tglOrder: g.tglOrder || full?.tglOrder || "",
+        tasks: allTasks,
+        ...summarizeOrderTasks(allTasks, g.project),
+      };
+    });
+  }, [tasks, filteredTasks, isBagianAllowedByRole, isPicAllowedByRole]);
 
   // Global Sorted Unique Orders
   // ponytail: tanpa sort pun default urut tgl order terbaru dulu, lalu nomor project order terbesar (terbaru) dulu
