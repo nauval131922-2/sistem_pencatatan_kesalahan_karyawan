@@ -133,55 +133,84 @@ export default function Sidebar({ user, permissions = {} }: SidebarProps) {
   }, [isCollapsed, isHovered, currentWidth, isMounted]);
 
   // Handle Resizing
+  const startPosRef = useRef<{ x: number; isDragging: boolean }>({ x: 0, isDragging: false });
+
   const startResizing = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
+    startPosRef.current = { x: e.clientX, isDragging: false };
     setIsResizing(true);
   }, []);
 
   const stopResizing = useCallback(() => {
     setIsResizing(false);
+    startPosRef.current.isDragging = false;
     localStorage.setItem('sidebar_expanded_width', String(expandedWidth));
   }, [expandedWidth]);
 
   const resize = useCallback((e: MouseEvent) => {
     if (isResizing && isExpanded) {
-      const newWidth = e.clientX;
-      if (newWidth >= MIN_WIDTH && newWidth <= MAX_WIDTH) setExpandedWidth(newWidth);
+      // Hanya update jika pergeseran mouse > 3px agar tidak mengganggu double-click
+      if (Math.abs(e.clientX - startPosRef.current.x) > 3) {
+        startPosRef.current.isDragging = true;
+      }
+      if (startPosRef.current.isDragging) {
+        const newWidth = e.clientX;
+        if (newWidth >= MIN_WIDTH && newWidth <= MAX_WIDTH) setExpandedWidth(newWidth);
+      }
     }
   }, [isResizing, isExpanded]);
 
   // Double-click resizer: auto-fit width agar pas dengan isi teks (bisa membesar atau mengecil)
-  const autoFitWidth = useCallback(() => {
+  const autoFitWidth = useCallback((e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (!navRef.current) return;
 
-    const sidebar = sidebarRef.current;
-    const currentSidebarWidth = sidebar ? sidebar.getBoundingClientRect().width : expandedWidth;
+    const measurer = document.createElement('span');
+    measurer.style.position = 'fixed';
+    measurer.style.left = '-9999px';
+    measurer.style.top = '0';
+    measurer.style.visibility = 'hidden';
+    measurer.style.whiteSpace = 'nowrap';
+    document.body.appendChild(measurer);
+
     let maxRequiredWidth = MIN_WIDTH;
 
-    const textElements = navRef.current.querySelectorAll<HTMLElement>('.truncate');
-    textElements.forEach(el => {
-      if (el.clientWidth > 0) {
-        // Jarak non-teks (padding nav, margin, icon, chevron, dsb.)
-        const nonTextSpace = currentSidebarWidth - el.clientWidth;
+    // Ukur semua tombol dan link di dalam navigasi
+    const rows = navRef.current.querySelectorAll<HTMLElement>('a, button');
+    rows.forEach(row => {
+      const textSpan = row.querySelector<HTMLElement>('.truncate') ?? row.querySelector<HTMLElement>('span:last-child');
+      const text = (textSpan?.textContent ?? '').trim();
+      if (!text) return;
 
-        // Ukur lebar teks asli secara independen tanpa terpengaruh flex-1 container
-        const range = document.createRange();
-        range.selectNodeContents(el);
-        const realTextWidth = range.getBoundingClientRect().width;
+      const cs = window.getComputedStyle(textSpan ?? row);
+      measurer.style.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+      measurer.textContent = text;
+      const textW = measurer.getBoundingClientRect().width;
 
-        const neededWidth = nonTextSpace + realTextWidth;
-        if (neededWidth > maxRequiredWidth) {
-          maxRequiredWidth = neededWidth;
-        }
+      // Hitung indentasi dari accordion bertingkat
+      let indent = 0;
+      let p = row.parentElement;
+      while (p && p !== navRef.current) {
+        if (p.classList.contains('border-l-2')) indent += 26;
+        p = p.parentElement;
+      }
+
+      // Overhead: padding nav (24px) + padding row (24px) + icon (18px) + chevron/gap (32px) + scrollbar (18px) = 116px
+      const total = indent + 116 + Math.ceil(textW);
+      if (total > maxRequiredWidth) {
+        maxRequiredWidth = total;
       }
     });
 
-    // Tambahkan buffer 18px untuk jarak nyaman icon chevron & scrollbar
-    const fitWidth = Math.min(Math.max(Math.ceil(maxRequiredWidth + 18), MIN_WIDTH), MAX_WIDTH);
+    document.body.removeChild(measurer);
+
+    const fitWidth = Math.min(Math.max(maxRequiredWidth, MIN_WIDTH), MAX_WIDTH);
     setExpandedWidth(fitWidth);
     localStorage.setItem('sidebar_expanded_width', String(fitWidth));
-  }, [expandedWidth]);
-
+  }, []);
 
   useEffect(() => {
     if (isResizing) {
