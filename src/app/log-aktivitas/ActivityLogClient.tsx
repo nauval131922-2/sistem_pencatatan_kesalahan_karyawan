@@ -105,8 +105,8 @@ export default function ActivityLogClient({
   }>({ tables: [], actions: [], users: [] });
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [isMobileChartOpen, setIsMobileChartOpen] = useState(false);
-
   const [expandedId, setExpandedId] = useState<number | string | null>(null);
+  const [expandedViewMode, setExpandedViewMode] = useState<'diff' | 'raw'>('diff');
   const [isPending] = useTransition();
   const [dialog, setDialog] = useState<{
     isOpen: boolean;
@@ -813,7 +813,7 @@ export default function ActivityLogClient({
               return (
                 <div className="flex items-start gap-2">
                   <span className="text-[11px] font-bold text-gray-500 shrink-0 pt-1">Tabel</span>
-                  <div className="flex flex-wrap items-center gap-1.5">
+                  <div className={`flex flex-wrap items-center gap-1.5 ${showAllTables ? 'max-h-36 overflow-y-auto custom-scrollbar pr-1' : ''}`}>
                     {visibleTables.map((s) => (
                       <button
                         key={s.value}
@@ -865,7 +865,7 @@ export default function ActivityLogClient({
               return (
                 <div className="flex items-start gap-2">
                   <span className="text-[11px] font-bold text-gray-500 shrink-0 pt-1">User</span>
-                  <div className="flex flex-wrap items-center gap-1.5">
+                  <div className={`flex flex-wrap items-center gap-1.5 ${showAllUsers ? 'max-h-36 overflow-y-auto custom-scrollbar pr-1' : ''}`}>
                     {visibleUsers.map((s) => (
                       <button
                         key={s.value}
@@ -938,28 +938,9 @@ export default function ActivityLogClient({
             />
           </div>
         </div>
-        <div className="flex items-center justify-between gap-2 min-h-[28px] flex-wrap">
-          <div className="flex items-center gap-3 flex-wrap">
-            {lastUpdated && (
-              <span className="text-[11px] text-gray-400 font-semibold">
-                Update: {lastUpdated.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })} {lastUpdated.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-              </span>
-            )}
-            <span className="text-[11px] text-gray-400 font-semibold">
-              Refresh dalam: <span className={countdown <= 10 ? 'text-amber-500 font-bold' : ''}>{Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}</span>
-            </span>
-          </div>
-          {debouncedSearch && (
-            <span className="text-[11px] bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full font-bold border border-emerald-100">
-              {total.toLocaleString('id-ID')} hasil untuk &quot;{debouncedSearch}&quot;
-            </span>
-          )}
-          {(isPending || isFetchingLogs) && <Loader2 size={14} className="animate-spin text-gray-400" />}
-        </div>
-
         <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <div className="flex-1">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+            <div className="flex-1 min-w-0">
               <SearchAndReload
                 searchQuery={search}
                 setSearchQuery={setSearch}
@@ -967,6 +948,23 @@ export default function ActivityLogClient({
                 loading={isPending || isFetchingLogs}
                 placeholder="Cari menu, user, atau keterangan..."
               />
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0 text-[11px] text-gray-400 font-semibold flex-wrap">
+              {lastUpdated && (
+                <span>
+                  Update: {lastUpdated.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+              )}
+              <span>
+                Refresh: <span className={countdown <= 10 ? 'text-amber-500 font-bold' : ''}>{Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}</span>
+              </span>
+              {debouncedSearch && (
+                <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold border border-emerald-100">
+                  {total.toLocaleString('id-ID')} hasil
+                </span>
+              )}
+              {(isPending || isFetchingLogs) && <Loader2 size={13} className="animate-spin text-gray-400" />}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
@@ -1046,8 +1044,7 @@ export default function ActivityLogClient({
                 Tidak ada log yang sesuai filter.
               </div>
             ) : (
-              <div ref={scrollContainerRef} className="overflow-y-auto overflow-x-auto max-h-[min(52vh,560px)] min-h-[240px] custom-scrollbar">
-                {/* TAMPILAN MOBILE: Card List (sm:hidden) */}
+              <div ref={scrollContainerRef} className="overflow-y-auto overflow-x-auto max-h-[min(52vh,560px)] lg:max-h-[min(70vh,760px)] min-h-[260px] custom-scrollbar">
                 <div className="sm:hidden flex flex-col divide-y divide-gray-100">
                   {logs.map((log) => {
                     const isExpanded = expandedId === log.id;
@@ -1304,130 +1301,163 @@ export default function ActivityLogClient({
                           </tr>
                           {isExpanded && (
                             <tr className="bg-gray-50/80">
-                              <td colSpan={5} className="px-4 py-3">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                  <div className="card p-3 border-gray-200/60 overflow-hidden">
-                                    <div className="flex items-center justify-between mb-2">
-                                      <div className="text-[11px] font-bold text-gray-400">Before</div>
-                                      {beforeJson && (
+                              <td colSpan={5} className="px-4 py-3 bg-gray-50/70 border-b border-gray-100">
+                                <div className="flex flex-col gap-2.5">
+                                  {/* Tab Navigation & Undo Toolbar */}
+                                  <div className="flex items-center justify-between gap-2 border-b border-gray-200/80 pb-2">
+                                    <div className="flex items-center gap-1.5 bg-gray-200/60 p-0.5 rounded-lg text-[11px] font-bold">
+                                      <button
+                                        type="button"
+                                        onClick={() => setExpandedViewMode('diff')}
+                                        className={`px-3 py-1 rounded-md transition-all ${
+                                          expandedViewMode === 'diff'
+                                            ? 'bg-white text-emerald-700 shadow-sm'
+                                            : 'text-gray-600 hover:text-gray-900'
+                                        }`}
+                                      >
+                                        📊 Perbandingan Kolom (Diff)
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setExpandedViewMode('raw')}
+                                        className={`px-3 py-1 rounded-md transition-all ${
+                                          expandedViewMode === 'raw'
+                                            ? 'bg-white text-emerald-700 shadow-sm'
+                                            : 'text-gray-600 hover:text-gray-900'
+                                        }`}
+                                      >
+                                        📄 Data Mentah (JSON)
+                                      </button>
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                      {log.action_type === 'UPDATE' && rawParsed?.before && !String(log.message || '').startsWith('Undo Perubahan') && (
                                         <button
                                           type="button"
-                                          onClick={() => copyToClipboard(beforeJson, 'Before')}
-                                          className="text-gray-400 hover:text-emerald-600 transition-colors"
-                                          title="Copy Before"
+                                          onClick={() => handleUndo(log.id)}
+                                          className="text-gray-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100/80 border border-amber-200 hover:border-amber-300 px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+                                          title="Batalkan perubahan ini (kembalikan ke data awal)"
                                         >
-                                          <Copy size={12} />
+                                          <Undo2 size={12} />
+                                          Undo Perubahan
                                         </button>
                                       )}
                                     </div>
-                                     {beforeJson ? (
-                                       <pre className="text-[11px] leading-relaxed text-gray-700 max-h-[200px] overflow-y-auto custom-scrollbar whitespace-pre-wrap">{debouncedSearch ? highlightText(beforeJson, debouncedSearch) : beforeJson}</pre>
-                                     ) : (
-                                       <p className="text-[11px] text-gray-400 italic">—</p>
-                                     )}
-                                   </div>
-                                   <div className="card p-3 border-gray-200/60 overflow-hidden">
-                                     <div className="flex items-center justify-between mb-2">
-                                       <div className="text-[11px] font-bold text-gray-400">After</div>
-                                       {afterJson && (
-                                         <button
-                                           type="button"
-                                           onClick={() => copyToClipboard(afterJson, 'After')}
-                                           className="text-gray-400 hover:text-emerald-600 transition-colors"
-                                           title="Copy After"
-                                         >
-                                           <Copy size={12} />
-                                         </button>
-                                       )}
-                                     </div>
-                                     {afterJson ? (
-                                       <pre className="text-[11px] leading-relaxed text-gray-700 max-h-[200px] overflow-y-auto custom-scrollbar whitespace-pre-wrap">{debouncedSearch ? highlightText(afterJson, debouncedSearch) : afterJson}</pre>
-                                     ) : (
-                                      <p className="text-[11px] text-gray-400 italic">—</p>
-                                    )}
                                   </div>
-                                   <div className="card p-3 border-gray-200/60 overflow-hidden">
-                                     <div className="flex items-center justify-between mb-2">
-                                       <div className="text-[11px] font-bold text-gray-400">Diff</div>
-                                       <div className="flex items-center gap-1.5">
-                                          {log.action_type === 'UPDATE' && rawParsed?.before && !String(log.message || '').startsWith('Undo Perubahan') && (
+
+                                  {/* Tab 1: Perbandingan Kolom (Diff View) */}
+                                  {expandedViewMode === 'diff' && (() => {
+                                    let diffs = computeExplicitDiff(rawParsed);
+                                    if (diffs.length === 0 && rawParsed && !rawParsed.before && !rawParsed.after) {
+                                      if (log.action_type === 'INSERT') {
+                                        diffs = Object.entries(rawParsed).map(([key, value]) => ({ key, before: '', after: formatAuditFieldValue(key, value) }));
+                                      } else if (log.action_type === 'DELETE') {
+                                        diffs = Object.entries(rawParsed).map(([key, value]) => ({ key, before: formatAuditFieldValue(key, value), after: '' }));
+                                      }
+                                    }
+                                    const diffText = diffs.map(d => `${d.key}: "${d.before}" → "${d.after}"`).join('\n');
+                                    return (
+                                      <div className="card p-3 border-gray-200/80 bg-white shadow-sm flex flex-col gap-2">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                                            Kolom yang Berubah ({diffs.length})
+                                          </span>
+                                          {diffs.length > 0 && (
                                             <button
                                               type="button"
-                                              onClick={() => handleUndo(log.id)}
-                                              className="text-gray-500 hover:text-amber-700 bg-amber-50 hover:bg-amber-100/80 border border-amber-200 hover:border-amber-300 px-2 py-0.5 rounded text-[11px] font-bold flex items-center gap-1 transition-all shadow-sm active:scale-95"
-                                              title="Batalkan perubahan ini (kembalikan ke data awal)"
+                                              onClick={() => copyToClipboard(diffText, 'Diff')}
+                                              className="text-[11px] text-gray-500 hover:text-emerald-600 flex items-center gap-1 px-2 py-0.5 rounded hover:bg-gray-50 transition-colors"
+                                              title="Salin seluruh diff"
                                             >
-                                              <Undo2 size={10} />
-                                              Undo
+                                              <Copy size={12} />
+                                              <span>Salin Diff</span>
                                             </button>
                                           )}
-                                         {(() => {
-                                           let diffs = computeExplicitDiff(rawParsed);
-                                           if (diffs.length === 0 && rawParsed && !rawParsed.before && !rawParsed.after) {
-                                             if (log.action_type === 'INSERT') {
-                                               diffs = Object.entries(rawParsed).map(([key, value]) => ({ key, before: '', after: formatAuditFieldValue(key, value) }));
-                                             } else if (log.action_type === 'DELETE') {
-                                               diffs = Object.entries(rawParsed).map(([key, value]) => ({ key, before: formatAuditFieldValue(key, value), after: '' }));
-                                             }
-                                           }
-                                           const diffText = diffs.map(d => `${d.key}: "${d.before}" → "${d.after}"`).join('\n');
-                                           return diffs.length > 0 && (
-                                             <button
-                                               type="button"
-                                               onClick={() => copyToClipboard(diffText, 'Diff')}
-                                               className="text-gray-400 hover:text-emerald-600 transition-colors"
-                                               title="Copy Diff"
-                                             >
-                                               <Copy size={12} />
-                                             </button>
-                                           );
-                                         })()}
-                                       </div>
-                                     </div>
-                                     {(() => {
-                                       let diffs = computeExplicitDiff(rawParsed);
-                                       if (diffs.length === 0 && rawParsed && !rawParsed.before && !rawParsed.after) {
-                                         if (log.action_type === 'INSERT') {
-                                           diffs = Object.entries(rawParsed).map(([key, value]) => ({ key, before: '', after: formatAuditFieldValue(key, value) }));
-                                         } else if (log.action_type === 'DELETE') {
-                                           diffs = Object.entries(rawParsed).map(([key, value]) => ({ key, before: formatAuditFieldValue(key, value), after: '' }));
-                                         }
-                                       }
-                                       return diffs.length > 0 ? (
-                                         <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
-                                           <table className="w-full table-fixed text-[11px]">
-                                             <colgroup>
-                                               <col style={{ width: '30%' }} />
-                                               <col style={{ width: '35%' }} />
-                                               <col style={{ width: '35%' }} />
-                                             </colgroup>
-                                             <thead>
-                                               <tr className="text-left text-gray-400 font-bold border-b border-gray-50">
-                                                 <th className="pb-1 pr-2">Kolom</th>
-                                                 <th className="pb-1 pr-2">Sebelum</th>
-                                                 <th className="pb-1">Sesudah</th>
-                                               </tr>
-                                             </thead>
-                                             <tbody>
+                                        </div>
+
+                                        {diffs.length > 0 ? (
+                                          <div className="max-h-[340px] overflow-y-auto custom-scrollbar border border-gray-100 rounded-lg">
+                                            <table className="w-full table-fixed text-[11px]">
+                                              <colgroup>
+                                                <col style={{ width: '25%' }} />
+                                                <col style={{ width: '37.5%' }} />
+                                                <col style={{ width: '37.5%' }} />
+                                              </colgroup>
+                                              <thead className="sticky top-0 bg-gray-50 z-10">
+                                                <tr className="text-left text-gray-400 font-bold border-b border-gray-100">
+                                                  <th className="py-1.5 px-3">Kolom</th>
+                                                  <th className="py-1.5 px-3">Sebelum</th>
+                                                  <th className="py-1.5 px-3">Sesudah</th>
+                                                </tr>
+                                              </thead>
+                                              <tbody className="divide-y divide-gray-50">
                                                 {diffs.map((d) => (
-                                                  <tr key={d.key} className="border-b border-gray-50/50">
-                                                    <td className="py-1 pr-2 font-semibold text-gray-700 break-words">{d.key}</td>
-                                                    <td className="py-1 pr-2 text-rose-500 break-words whitespace-pre-wrap">
+                                                  <tr key={d.key} className="hover:bg-gray-50/50">
+                                                    <td className="py-1.5 px-3 font-semibold text-gray-700 break-words font-mono text-[11px]">{d.key}</td>
+                                                    <td className="py-1.5 px-3 text-rose-600 break-words whitespace-pre-wrap bg-rose-50/20 font-medium">
                                                       {d.before ? (debouncedSearch ? highlightText(d.before, debouncedSearch) : d.before) : <span className="italic text-gray-300">—</span>}
                                                     </td>
-                                                    <td className="py-1 text-emerald-700 break-words whitespace-pre-wrap">
+                                                    <td className="py-1.5 px-3 text-emerald-700 break-words whitespace-pre-wrap bg-emerald-50/20 font-semibold">
                                                       {d.after ? (debouncedSearch ? highlightText(d.after, debouncedSearch) : d.after) : <span className="italic text-gray-300">—</span>}
                                                     </td>
                                                   </tr>
                                                 ))}
-                                            </tbody>
-                                          </table>
+                                              </tbody>
+                                            </table>
+                                          </div>
+                                        ) : (
+                                          <p className="text-[11px] text-gray-400 italic py-2 text-center">Tidak ada perbedaan data yang terdeteksi.</p>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
+
+                                  {/* Tab 2: Raw JSON (Before / After) */}
+                                  {expandedViewMode === 'raw' && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                      <div className="card p-3 border-gray-200/80 bg-white shadow-sm overflow-hidden flex flex-col">
+                                        <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-gray-100">
+                                          <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Data Sebelum (Before)</span>
+                                          {beforeJson && (
+                                            <button
+                                              type="button"
+                                              onClick={() => copyToClipboard(beforeJson, 'Before')}
+                                              className="text-gray-400 hover:text-emerald-600 transition-colors p-1 rounded"
+                                              title="Copy JSON Before"
+                                            >
+                                              <Copy size={12} />
+                                            </button>
+                                          )}
                                         </div>
-                                      ) : (
-                                        <p className="text-[11px] text-gray-400 italic">—</p>
-                                      );
-                                    })()}
-                                  </div>
+                                        {beforeJson ? (
+                                          <pre className="text-[11px] font-mono leading-relaxed text-gray-700 max-h-[300px] overflow-y-auto custom-scrollbar whitespace-pre-wrap bg-gray-50/60 p-2.5 rounded-lg">{debouncedSearch ? highlightText(beforeJson, debouncedSearch) : beforeJson}</pre>
+                                        ) : (
+                                          <p className="text-[11px] text-gray-400 italic py-6 text-center">— Tidak ada data sebelum —</p>
+                                        )}
+                                      </div>
+
+                                      <div className="card p-3 border-gray-200/80 bg-white shadow-sm overflow-hidden flex flex-col">
+                                        <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-gray-100">
+                                          <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Data Sesudah (After)</span>
+                                          {afterJson && (
+                                            <button
+                                              type="button"
+                                              onClick={() => copyToClipboard(afterJson, 'After')}
+                                              className="text-gray-400 hover:text-emerald-600 transition-colors p-1 rounded"
+                                              title="Copy JSON After"
+                                            >
+                                              <Copy size={12} />
+                                            </button>
+                                          )}
+                                        </div>
+                                        {afterJson ? (
+                                          <pre className="text-[11px] font-mono leading-relaxed text-gray-700 max-h-[300px] overflow-y-auto custom-scrollbar whitespace-pre-wrap bg-gray-50/60 p-2.5 rounded-lg">{debouncedSearch ? highlightText(afterJson, debouncedSearch) : afterJson}</pre>
+                                        ) : (
+                                          <p className="text-[11px] text-gray-400 italic py-6 text-center">— Tidak ada data sesudah —</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </td>
                             </tr>
