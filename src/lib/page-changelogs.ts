@@ -321,6 +321,17 @@ export const PAGE_CHANGELOGS: Record<string, PageChangelog> = {
   }),
 
   // ─── Jurnal Harian Produksi ───
+  'jurnal-harian-produksi-2026-09-07': entry({
+    pageKey: 'jurnal-harian-produksi',
+    title: 'Jurnal Harian Produksi',
+    version: '2026-09-07-1',
+    date: '07 Sep 2026',
+    sortDate: '2026-09-07',
+    permissionKeys: ['produksi_jhp'],
+    items: [
+      'Perbaikan scroll tabel (DataTable): posisi scroll horizontal dan vertikal kini tetap dipertahankan (tidak reset ke posisi awal) saat melakukan update data in-place pada baris tabel (seperti edit keterangan JHP)',
+    ],
+  }),
   'jurnal-harian-produksi-2026-08-20': entry({
     pageKey: 'jurnal-harian-produksi',
     title: 'Jurnal Harian Produksi',
@@ -497,6 +508,19 @@ export const PAGE_CHANGELOGS: Record<string, PageChangelog> = {
   }),
 
   // ─── Log Aktivitas ───
+  'log-aktivitas-2026-09-07': entry({
+    pageKey: 'log-aktivitas',
+    title: 'Log Aktivitas',
+    sortDate: '2026-09-07',
+    date: '07 Sep 2026',
+    version: '2026-09-07-1',
+    permissionKeys: ['activity_log_view', 'activity_log'],
+    items: [
+      'Tampilan tabel detail expandable: baris riwayat aktivitas kini dapat diperluas untuk melihat rincian perubahan data langsung pada tabel',
+      'Daftar pengguna (user badges) interaktif dengan toggle tampilkan lebih banyak/sedikit untuk filter yang lebih ringkas dan rapi',
+      'Optimasi endpoint API log aktivitas untuk respons pemuatan riwayat data yang lebih cepat',
+    ],
+  }),
   'log-aktivitas-2026-07-18': entry({
     pageKey: 'log-aktivitas',
     title: 'Log Aktivitas',
@@ -1139,6 +1163,17 @@ export const PAGE_CHANGELOGS: Record<string, PageChangelog> = {
   }),
 
   // ─── Laporan Pekerjaan ───
+  'laporan-pekerjaan-2026-09-07': entry({
+    pageKey: 'laporan-pekerjaan',
+    title: 'Laporan Pekerjaan',
+    permissionKeys: ['produksi_laporan_pekerjaan'],
+    sortDate: '2026-09-07',
+    date: '07 Sep 2026',
+    version: '2026-09-07-1',
+    items: [
+      'Sinkronisasi perhitungan persentase progress tabel: kini menggunakan seluruh task order sehingga selalu konsisten dengan rincian modal Detail Pekerjaan',
+    ],
+  }),
   'laporan-pekerjaan-2026-09-06': entry({
     pageKey: 'laporan-pekerjaan',
     title: 'Laporan Pekerjaan',
