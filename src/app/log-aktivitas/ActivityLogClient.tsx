@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useTransition, useRef, useMemo, Fragment } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  Database, Loader2, Calendar, X, Table2, Zap, User, ChevronUp, ChevronDown, Trash2, BarChart3, Copy, Undo2
+  Database, Loader2, Calendar, X, Table2, Zap, User, ChevronUp, ChevronDown, Trash2, BarChart3, Copy, Undo2, Filter
 } from 'lucide-react';
 import ActivityLogExportMenu from './ActivityLogExportMenu';
 import SearchableDropdown from '@/components/SearchableDropdown';
@@ -104,6 +104,8 @@ export default function ActivityLogClient({
     actions: string[];
     users: { value: string; label: string }[];
   }>({ tables: [], actions: [], users: [] });
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [isMobileChartOpen, setIsMobileChartOpen] = useState(false);
 
   const [expandedId, setExpandedId] = useState<number | string | null>(null);
   const [isPending] = useTransition();
@@ -629,37 +631,57 @@ export default function ActivityLogClient({
   };
 
   return (
-    <div ref={pageRef} className="flex flex-col gap-3 w-full animate-in fade-in duration-500">
-      <div className="flex flex-col gap-3 shrink-0 px-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex flex-wrap gap-1.5">
-            {DATE_PRESETS.map((p) => (
-              <button
-                key={p.key}
-                type="button"
-                onClick={() => applyPreset(p.key)}
-                className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all ${
-                  datePreset === p.key
-                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-200'
-                    : 'bg-white text-gray-600 border-gray-100 hover:border-emerald-200 hover:text-emerald-700'
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
+      <div className="flex flex-col gap-2.5 shrink-0 px-1">
+        {/* Baris 1: Preset tanggal, tombol filter toggle mobile, dan DatePicker */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex flex-wrap gap-1">
+              {DATE_PRESETS.map((p) => (
+                <button
+                  key={p.key}
+                  type="button"
+                  onClick={() => applyPreset(p.key)}
+                  className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all ${
+                    datePreset === p.key
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-200'
+                      : 'bg-white text-gray-600 border-gray-100 hover:border-emerald-200 hover:text-emerald-700'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
 
-          {hasActiveFilters && (
+            {/* Tombol Toggle Filter di Mobile */}
             <button
               type="button"
-              onClick={clearFilters}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-rose-100 bg-rose-50 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-all shrink-0"
+              onClick={() => setIsMobileFilterOpen((v) => !v)}
+              className={`sm:hidden flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-bold transition-all ${
+                isMobileFilterOpen || (tableName || actionType || recordedBy)
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-1 ring-emerald-300'
+                  : 'bg-white text-gray-600 border-gray-200'
+              }`}
             >
-              <X size={12} /> Clear filter
+              <Filter size={12} className={tableName || actionType || recordedBy ? 'text-emerald-600' : 'text-gray-400'} />
+              <span>Filter</span>
+              {(Boolean(tableName) || Boolean(actionType) || Boolean(recordedBy)) && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+              )}
+              <ChevronDown size={12} className={`transition-transform duration-200 ${isMobileFilterOpen ? 'rotate-180' : ''}`} />
             </button>
-          )}
 
-          <div className="flex items-center gap-2 ml-auto flex-wrap">
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg border border-rose-100 bg-rose-50 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-all shrink-0"
+              >
+                <X size={12} /> Reset
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 ml-auto flex-wrap">
             <DatePicker
               name="from"
               value={from ? strToDate(from) : null}
@@ -667,7 +689,7 @@ export default function ActivityLogClient({
               popupAlign="right"
               customTrigger={(toggle) => (
                 <button type="button" onClick={toggle}
-                  className="flex items-center gap-1.5 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-[11px] font-semibold text-gray-700">
+                  className="flex items-center gap-1.5 bg-gray-50 border border-gray-100 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold text-gray-700">
                   <Calendar size={11} className="text-gray-400" />
                   <span suppressHydrationWarning>{from ? formatDateStrId(from) : 'Dari'}</span>
                 </button>
@@ -681,7 +703,7 @@ export default function ActivityLogClient({
               popupAlign="right"
               customTrigger={(toggle) => (
                 <button type="button" onClick={toggle}
-                  className="flex items-center gap-1.5 bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-[11px] font-semibold text-gray-700">
+                  className="flex items-center gap-1.5 bg-gray-50 border border-gray-100 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold text-gray-700">
                   <Calendar size={11} className="text-gray-400" />
                   <span suppressHydrationWarning>{to ? formatDateStrId(to) : 'Sampai'}</span>
                 </button>
@@ -690,63 +712,73 @@ export default function ActivityLogClient({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <SearchableDropdown
-            id="activity-log-table"
-            value={tableName}
-            items={filterOptions.tables}
-            onChange={setTableName}
-            placeholder="Semua tabel"
-            allLabel="Semua tabel"
-            searchPlaceholder="Cari tabel..."
-            triggerWidth="w-[170px]"
-            compact
-            icon={<Table2 size={14} className={tableName ? 'text-emerald-600' : 'text-gray-400'} />}
-          />
-          <SearchableDropdown
-            id="activity-log-action"
-            value={actionType}
-            items={filterOptions.actions}
-            onChange={setActionType}
-            placeholder="Semua action"
-            allLabel="Semua action"
-            searchPlaceholder="Cari action..."
-            triggerWidth="w-[150px]"
-            compact
-            icon={<Zap size={14} className={actionType ? 'text-emerald-600' : 'text-gray-400'} />}
-          />
-          <SearchableDropdown
-            id="activity-log-user"
-            value={recordedBy}
-            items={filterOptions.users.map((u) => u.value)}
-            itemLabels={userItemLabels}
-            onChange={setRecordedBy}
-            placeholder="Semua user"
-            allLabel="Semua user"
-            searchPlaceholder="Cari user..."
-            triggerWidth="w-[190px]"
-            compact
-            icon={<User size={14} className={recordedBy ? 'text-emerald-600' : 'text-gray-400'} />}
-          />
+        {/* Area Filter Dropdowns & Stats: Collapsible di mobile, selalu tampil di desktop */}
+        <div className={`${isMobileFilterOpen ? 'flex flex-col' : 'hidden sm:flex sm:flex-col'} gap-2.5 animate-in fade-in slide-in-from-top-1 duration-200`}>
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2">
+            <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-center gap-2 flex-1">
+              <div className="w-full sm:w-[170px]">
+                <SearchableDropdown
+                  id="activity-log-table"
+                  value={tableName}
+                  items={filterOptions.tables}
+                  onChange={setTableName}
+                  placeholder="Semua tabel"
+                  allLabel="Semua tabel"
+                  searchPlaceholder="Cari tabel..."
+                  triggerWidth="w-full"
+                  compact
+                  icon={<Table2 size={14} className={tableName ? 'text-emerald-600' : 'text-gray-400'} />}
+                />
+              </div>
+              <div className="w-full sm:w-[150px]">
+                <SearchableDropdown
+                  id="activity-log-action"
+                  value={actionType}
+                  items={filterOptions.actions}
+                  onChange={setActionType}
+                  placeholder="Semua action"
+                  allLabel="Semua action"
+                  searchPlaceholder="Cari action..."
+                  triggerWidth="w-full"
+                  compact
+                  icon={<Zap size={14} className={actionType ? 'text-emerald-600' : 'text-gray-400'} />}
+                />
+              </div>
+              <div className="w-full sm:w-[190px]">
+                <SearchableDropdown
+                  id="activity-log-user"
+                  value={recordedBy}
+                  items={filterOptions.users.map((u) => u.value)}
+                  itemLabels={userItemLabels}
+                  onChange={setRecordedBy}
+                  placeholder="Semua user"
+                  allLabel="Semua user"
+                  searchPlaceholder="Cari user..."
+                  triggerWidth="w-full"
+                  compact
+                  icon={<User size={14} className={recordedBy ? 'text-emerald-600' : 'text-gray-400'} />}
+                />
+              </div>
+            </div>
 
-          <div className="flex items-center gap-2 ml-auto">
-            <ActivityLogExportMenu onExport={handleExport} />
+            <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+              <ActivityLogExportMenu onExport={handleExport} />
 
-            {canAdminLogs && (
-              <button
-                type="button"
-                onClick={triggerCleanupConfirm}
-                title="Hapus Log Sesuai Filter"
-                className="h-10 px-3 rounded-lg border border-rose-100 bg-rose-50 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-all flex items-center gap-1.5 shrink-0 shadow-sm"
-              >
-                <Trash2 size={12} /> Hapus Log
-              </button>
-            )}
+              {canAdminLogs && (
+                <button
+                  type="button"
+                  onClick={triggerCleanupConfirm}
+                  title="Hapus Log Sesuai Filter"
+                  className="h-10 px-3 rounded-lg border border-rose-100 bg-rose-50 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition-all flex items-center gap-1.5 shrink-0 shadow-sm"
+                >
+                  <Trash2 size={12} /> Hapus Log
+                </button>
+              )}
+            </div>
           </div>
-        </div>
 
-        {(actionStats.length > 0 || tableStats.length > 0 || userStats.length > 0) && (
-          <div className="grid grid-cols-1 gap-2">
+          {(actionStats.length > 0 || tableStats.length > 0 || userStats.length > 0) && (
+            <div className="grid grid-cols-1 gap-2 pt-1 border-t border-gray-100">
             {actionStats.length > 0 && (
               <div className="flex items-start gap-2">
                 <span className="text-[11px] font-bold text-gray-500 shrink-0 pt-1">Action</span>
@@ -873,23 +905,39 @@ export default function ActivityLogClient({
                 </div>
               );
             })()}
+            </div>
+          )}
+        </div>
+
+        {/* Graph Trend Chart — Collapsible di Mobile */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between sm:hidden px-1">
+            <button
+              type="button"
+              onClick={() => setIsMobileChartOpen((v) => !v)}
+              className="flex items-center gap-1.5 text-[11px] font-bold text-gray-600 hover:text-emerald-700 transition-colors py-1"
+            >
+              <BarChart3 size={13} className="text-emerald-600" />
+              <span>{isMobileChartOpen ? 'Sembunyikan Grafik Tren' : 'Lihat Grafik Tren'}</span>
+              <ChevronDown size={12} className={`transition-transform duration-200 ${isMobileChartOpen ? 'rotate-180' : ''}`} />
+            </button>
           </div>
-        )}
 
-        {/* Graph Trend Chart */}
-        <ActivityLogTrendChart
-          days={trendDays}
-          hourly={trendHourly}
-          minutes={minuteData}
-          detailHour={detailHour}
-          loading={isFetchingTrend}
-          activeAction={actionType}
-          onSelectDay={handleTrendDay}
-          onSelectAction={setActionType}
-          onHourClick={setDetailHour}
-          onHourBack={() => { setDetailHour(null); setMinuteData([]); }}
-        />
-
+          <div className={`${isMobileChartOpen ? 'block' : 'hidden sm:block'} animate-in fade-in duration-200`}>
+            <ActivityLogTrendChart
+              days={trendDays}
+              hourly={trendHourly}
+              minutes={minuteData}
+              detailHour={detailHour}
+              loading={isFetchingTrend}
+              activeAction={actionType}
+              onSelectDay={handleTrendDay}
+              onSelectAction={setActionType}
+              onHourClick={setDetailHour}
+              onHourBack={() => { setDetailHour(null); setMinuteData([]); }}
+            />
+          </div>
+        </div>
         <div className="flex items-center justify-between gap-2 min-h-[28px] flex-wrap">
           <div className="flex items-center gap-3 flex-wrap">
             {lastUpdated && (
@@ -1008,7 +1056,175 @@ export default function ActivityLogClient({
               </div>
             ) : (
               <div ref={scrollContainerRef} className="overflow-y-auto overflow-x-auto max-h-[min(52vh,560px)] min-h-[240px] custom-scrollbar">
-                <table className="text-left table-fixed">
+                {/* TAMPILAN MOBILE: Card List (sm:hidden) */}
+                <div className="sm:hidden flex flex-col divide-y divide-gray-100">
+                  {logs.map((log) => {
+                    const isExpanded = expandedId === log.id;
+                    const rawParsed = log.raw_data
+                      ? (() => { try { return JSON.parse(log.raw_data as string); } catch { return null; } })()
+                      : null;
+                    let beforeJson: string | null = null;
+                    let afterJson: string | null = null;
+                    if (rawParsed) {
+                      if (log.action_type === 'INSERT') {
+                        afterJson = stringifyAuditData(rawParsed);
+                      } else if (log.action_type === 'DELETE') {
+                        beforeJson = stringifyAuditData(rawParsed);
+                      } else if (log.action_type === 'UPDATE') {
+                        if (rawParsed.before && rawParsed.after) {
+                          beforeJson = stringifyAuditData(rawParsed.before);
+                          afterJson = stringifyAuditData(rawParsed.after);
+                        } else {
+                          afterJson = stringifyAuditData(rawParsed);
+                        }
+                      } else {
+                        afterJson = stringifyAuditData(rawParsed);
+                      }
+                    }
+                    return (
+                      <div
+                        key={`mobile-${log.id}`}
+                        onClick={() => toggleExpand(log)}
+                        className={`p-3 cursor-pointer transition-colors ${
+                          isExpanded ? 'bg-emerald-50/60' : 'hover:bg-gray-50/80 bg-white'
+                        }`}
+                      >
+                        {/* Baris 1: Action Badge, Table Name, & Waktu */}
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                            <span className={`inline-flex px-2 py-0.5 rounded-lg text-[10px] font-bold border ${getActionColor(log.action_type || '')}`}>
+                              {log.action_type}
+                            </span>
+                            <span className="font-mono text-[11px] font-bold text-gray-700 uppercase truncate">
+                              {log.table_name}{log.record_id ? ` #${log.record_id}` : ''}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-semibold text-gray-400 shrink-0">
+                            {formatLastUpdate(log.created_at)}
+                          </span>
+                        </div>
+
+                        {/* Baris 2: Pesan / Keterangan */}
+                        <p className="text-[11.5px] font-bold text-gray-800 line-clamp-2 leading-snug">
+                          {debouncedSearch ? highlightText(log.message || '', debouncedSearch) : (log.message || '—')}
+                        </p>
+
+                        {/* Baris 3: User & Chevron Toggle */}
+                        <div className="flex items-center justify-between mt-2 pt-1 border-t border-gray-50">
+                          <span className="text-[10.5px] text-gray-500 font-medium truncate">
+                            👤 <span className="font-semibold text-gray-700">{log.recorded_by_name || log.recorded_by || 'Sistem'}</span>
+                            {log.recorded_by_name && <span className="text-gray-400 ml-1">(@{log.recorded_by})</span>}
+                          </span>
+                          <span className="text-gray-400 flex items-center gap-0.5 text-[10px] font-semibold shrink-0">
+                            <span>{isExpanded ? 'Tutup' : 'Detail'}</span>
+                            {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                          </span>
+                        </div>
+
+                        {/* Detail Perubahan (Diff / Before / After) di Mobile */}
+                        {isExpanded && (
+                          <div className="mt-3 pt-2.5 border-t border-gray-200/70 flex flex-col gap-2 animate-in fade-in duration-200" onClick={(e) => e.stopPropagation()}>
+                            {/* Box Diff Perubahan */}
+                            {(() => {
+                              let diffs = computeExplicitDiff(rawParsed);
+                              if (diffs.length === 0 && rawParsed && !rawParsed.before && !rawParsed.after) {
+                                if (log.action_type === 'INSERT') {
+                                  diffs = Object.entries(rawParsed).map(([key, value]) => ({ key, before: '', after: formatAuditFieldValue(key, value) }));
+                                } else if (log.action_type === 'DELETE') {
+                                  diffs = Object.entries(rawParsed).map(([key, value]) => ({ key, before: formatAuditFieldValue(key, value), after: '' }));
+                                }
+                              }
+                              if (hideSystemCols) {
+                                diffs = diffs.filter(d => !['id', 'created_at', 'updated_at', 'deleted_at', 'created_by', 'updated_by', 'deleted_by', 'is_manual_input', 'additional_ids'].includes(d.key));
+                              }
+                              const diffText = diffs.map(d => `${d.key}: "${d.before}" → "${d.after}"`).join('\n');
+                              return (
+                                <div className="card p-2.5 border-gray-200/80 bg-white">
+                                  <div className="flex items-center justify-between mb-1.5 pb-1 border-b border-gray-100">
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Perubahan Field</span>
+                                    <div className="flex items-center gap-1.5">
+                                      {log.action_type === 'UPDATE' && rawParsed?.before && !String(log.message || '').startsWith('Undo Perubahan') && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleUndo(log.id)}
+                                          className="text-gray-500 hover:text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1"
+                                        >
+                                          <Undo2 size={10} /> Undo
+                                        </button>
+                                      )}
+                                      {diffs.length > 0 && (
+                                        <button
+                                          type="button"
+                                          onClick={() => copyToClipboard(diffText, 'Diff')}
+                                          className="text-gray-400 hover:text-emerald-600"
+                                          title="Copy Diff"
+                                        >
+                                          <Copy size={12} />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {diffs.length > 0 ? (
+                                    <div className="flex flex-col divide-y divide-gray-100 max-h-[220px] overflow-y-auto">
+                                      {diffs.map((d) => (
+                                        <div key={d.key} className="py-1.5 text-[10.5px]">
+                                          <span className="font-bold text-gray-700 block mb-0.5">{d.key}</span>
+                                          <div className="flex items-start gap-1.5">
+                                            <span className="text-rose-600 line-through bg-rose-50/70 px-1 py-0.5 rounded text-[10px] break-all">
+                                              {d.before || '—'}
+                                            </span>
+                                            <span className="text-gray-400">→</span>
+                                            <span className="text-emerald-700 font-semibold bg-emerald-50/70 px-1 py-0.5 rounded text-[10px] break-all">
+                                              {d.after || '—'}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-[10px] text-gray-400 italic py-1">Tidak ada detail perbandingan kolom</p>
+                                  )}
+                                </div>
+                              );
+                            })()}
+
+                            {/* Raw Data Accordion di Mobile */}
+                            {(beforeJson || afterJson) && (
+                              <div className="grid grid-cols-1 gap-2">
+                                {beforeJson && (
+                                  <div className="card p-2 border-gray-200/70 bg-gray-50/50">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-[10px] font-bold text-gray-400 uppercase">Data Sebelum</span>
+                                      <button type="button" onClick={() => copyToClipboard(beforeJson!, 'Before')} className="text-gray-400 hover:text-emerald-600">
+                                        <Copy size={11} />
+                                      </button>
+                                    </div>
+                                    <pre className="text-[10px] leading-relaxed text-gray-700 max-h-[120px] overflow-y-auto whitespace-pre-wrap">{beforeJson}</pre>
+                                  </div>
+                                )}
+                                {afterJson && (
+                                  <div className="card p-2 border-gray-200/70 bg-gray-50/50">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-[10px] font-bold text-gray-400 uppercase">Data Sesudah</span>
+                                      <button type="button" onClick={() => copyToClipboard(afterJson!, 'After')} className="text-gray-400 hover:text-emerald-600">
+                                        <Copy size={11} />
+                                      </button>
+                                    </div>
+                                    <pre className="text-[10px] leading-relaxed text-gray-700 max-h-[120px] overflow-y-auto whitespace-pre-wrap">{afterJson}</pre>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* TAMPILAN DESKTOP: Table (hidden sm:table) */}
+                <table className="hidden sm:table text-left table-fixed w-full">
                   <colgroup>
                     <col style={{ width: colWidths[0] }} />
                     <col style={{ width: colWidths[1] }} />
