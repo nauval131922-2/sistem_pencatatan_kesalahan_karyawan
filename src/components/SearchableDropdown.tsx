@@ -67,7 +67,8 @@ export default function SearchableDropdown({
   const [openUpward, setOpenUpward] = useState(false);
   const [bottomCoord, setBottomCoord] = useState(0);
   const [alignRight, setAlignRight] = useState(false);
-
+  const [alignOffset, setAlignOffset] = useState<number>(0);
+  const [portalLeft, setPortalLeft] = useState<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -76,7 +77,7 @@ export default function SearchableDropdown({
   const updateCoords = useCallback(() => {
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      const scale = getZoomScale();
+      const scale = getZoomScale(containerRef.current);
       const panelEstimatedHeight = 280;
       const spaceBelow = window.innerHeight - rect.bottom;
       const shouldFlipUp = spaceBelow < panelEstimatedHeight && rect.top > panelEstimatedHeight;
@@ -84,18 +85,60 @@ export default function SearchableDropdown({
       setOpenUpward(shouldFlipUp);
       setBottomCoord((window.innerHeight - rect.top + 4) / scale);
 
-      // Hitung posisi horizontal
-      let isRight = false;
-      const spaceRight = window.innerWidth - rect.left;
-      const spaceLeft = rect.right;
-      
-      // Jika berada di sisi kanan tengah/melebihi 50% lebar layar, buka ke arah kiri (rata kanan)
-      if (rect.left > window.innerWidth / 2 || spaceRight < 500) {
-        if (spaceLeft >= 320) {
-          isRight = true;
+      // Hitung lebar panel yang terukur atau perkiraan awal
+      const measuredPanelWidth = panelRef.current?.offsetWidth || Math.max(rect.width, 240);
+      const padding = 12;
+
+      if (usePortal) {
+        // Viewport clamping langsung untuk mode portal
+        const minLeft = padding;
+        const maxLeft = Math.max(padding, window.innerWidth - measuredPanelWidth - padding);
+        let targetLeft = rect.left;
+        if (rect.left > window.innerWidth / 2 || window.innerWidth - rect.left < measuredPanelWidth + padding) {
+          targetLeft = rect.right - measuredPanelWidth;
         }
+        const clampedLeft = Math.max(minLeft, Math.min(targetLeft, maxLeft));
+        setPortalLeft(clampedLeft / scale);
+      } else {
+        // Non-portal (relative positioning): hitung container / viewport boundaries
+        let leftEdge = 0;
+        let rightEdge = window.innerWidth;
+
+        let parent = containerRef.current.parentElement;
+        while (parent && parent !== document.body) {
+          const style = getComputedStyle(parent);
+          const overflow = (style.overflow || '') + (style.overflowX || '') + (style.overflowY || '');
+          if (overflow.includes('hidden') || overflow.includes('auto') || overflow.includes('scroll')) {
+            const parentRect = parent.getBoundingClientRect();
+            leftEdge = Math.max(leftEdge, parentRect.left);
+            rightEdge = Math.min(rightEdge, parentRect.right);
+            break;
+          }
+          parent = parent.parentElement;
+        }
+
+        const availableLeft = Math.max(padding, leftEdge + padding);
+        const availableRight = Math.min(window.innerWidth - padding, rightEdge - padding);
+
+        // Default membuka rata kiri dari trigger
+        const idealLeft = rect.left;
+        let shift = 0;
+
+        // Jika sisi kanan panel meluap melewati availableRight, geser ke kiri secukupnya
+        if (idealLeft + measuredPanelWidth > availableRight) {
+          shift = availableRight - (idealLeft + measuredPanelWidth);
+        }
+        // Pastikan tidak meluap ke sisi kiri layar
+        if (idealLeft + shift < availableLeft) {
+          shift = availableLeft - idealLeft;
+        }
+
+        setAlignOffset(shift);
       }
-      setAlignRight(isRight);
+
+      // Tetap set alignRight sebagai penanda arah jika dibutuhkan
+      const spaceRight = window.innerWidth - rect.left;
+      setAlignRight(rect.left > window.innerWidth / 2 || spaceRight < measuredPanelWidth);
 
       setCoords({
         top: (rect.bottom + 4) / scale,
@@ -103,7 +146,7 @@ export default function SearchableDropdown({
         width: rect.width / scale,
       });
     }
-  }, []);
+  }, [usePortal]);
 
   const labelFor = useCallback((item: string) => {
     if (item === '') return allLabel;
@@ -122,8 +165,12 @@ export default function SearchableDropdown({
   useEffect(() => {
     if (!open) return;
     updateCoords();
+    // Re-run di frame berikutnya setelah DOM panel terpasang untuk pengukuran lebar akurat
+    const rafId = requestAnimationFrame(() => {
+      updateCoords();
+    });
+    return () => cancelAnimationFrame(rafId);
   }, [open, updateCoords]);
-
   useEffect(() => {
     if (!open) return;
     updateCoords();
@@ -237,14 +284,14 @@ export default function SearchableDropdown({
       style={usePortal ? {
         position: 'fixed',
         ...(openUpward ? { bottom: `${bottomCoord}px` } : { top: `${coords.top}px` }),
-        ...(alignRight
-          ? { left: `${Math.max(12, coords.left + coords.width)}px`, transform: 'translateX(-100%)' }
-          : { left: `${Math.max(12, coords.left)}px` }),
+        left: `${portalLeft}px`,
         minWidth: `${coords.width}px`,
-        maxWidth: 'calc(100vw - 32px)',
+        maxWidth: 'calc(100vw - 24px)',
         zIndex: 10000
-      } : undefined}
-      className={`${usePortal ? '' : `absolute ${alignRight ? 'right-0' : 'left-0'} top-full mt-2 min-w-full max-w-[calc(100vw-32px)]`} bg-white border border-gray-100 rounded-xl shadow-xl shadow-emerald-900/10 py-3 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[300px] w-max`}
+      } : {
+        transform: alignOffset ? `translateX(${alignOffset}px)` : undefined,
+      }}
+      className={`${usePortal ? '' : `absolute left-0 ${openUpward ? 'bottom-full mb-2' : 'top-full mt-2'} min-w-full max-w-[calc(100vw-24px)]`} bg-white border border-gray-100 rounded-xl shadow-xl shadow-emerald-900/10 py-3 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-[300px] w-max`}
     >
       {/* Search */}
       <div className="px-3 pb-3 shrink-0 border-b border-gray-50 mb-1">
