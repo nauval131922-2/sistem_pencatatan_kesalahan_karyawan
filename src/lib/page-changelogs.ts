@@ -508,6 +508,22 @@ export const PAGE_CHANGELOGS: Record<string, PageChangelog> = {
   }),
 
   // ─── Log Aktivitas ───
+  'log-aktivitas-2026-09-07-2': entry({
+    pageKey: 'log-aktivitas',
+    title: 'Log Aktivitas',
+    sortDate: '2026-09-07',
+    date: '07 Sep 2026',
+    version: '2026-09-07-2',
+    permissionKeys: ['activity_log_view', 'activity_log'],
+    items: [
+      'Viewport Clamping & Auto-Shift SearchableDropdown: panel dropdown filter tabel, aksi, dan user kini otomatis menyesuaikan orientasi (auto-shift ke kiri) dan tidak lagi memicu horizontal scrollbar di layar HP',
+      'Mobile Responsive Redesign: toolbar filter collapsible ringkas dengan indikator aktif, toggle sembunyikan/tampilkan grafik tren harian, dan tombol dropdown adaptif full-width',
+      'Card List View Khusus Mobile: tampilan log di layar sempit beralih otomatis dari tabel menjadi daftar kartu interaktif berurutan lengkap dengan status aksi, user, waktu relatif, dan panel perbandingan field',
+      'Desktop Layout Redesign: viewport tinggi tabel dinaikkan hingga 70vh (760px) untuk memuat lebih banyak baris log, baris pencarian terpadu dengan status live-refresh, dan kontainer badge agregasi scrollable',
+      'Tab Switcher Detail Log: penambahan tab navigasi pada baris expanded di desktop untuk beralih antara tabel perbandingan kolom (Diff) yang lebar penuh dan tampilan raw JSON (Before / After)',
+      'Penyederhanaan Detail Audit: menghapus filter penyembunyian ID dan tanggal sistem sehingga seluruh rekaman audit field perubahan ditampilkan utuh',
+    ],
+  }),
   'log-aktivitas-2026-09-07': entry({
     pageKey: 'log-aktivitas',
     title: 'Log Aktivitas',
