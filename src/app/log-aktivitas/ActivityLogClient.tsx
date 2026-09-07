@@ -631,6 +631,7 @@ export default function ActivityLogClient({
   };
 
   return (
+    <div ref={pageRef} className="flex flex-col gap-3 w-full animate-in fade-in duration-500">
       <div className="flex flex-col gap-2.5 shrink-0 px-1">
         {/* Baris 1: Preset tanggal, tombol filter toggle mobile, dan DatePicker */}
         <div className="flex flex-wrap items-center justify-between gap-2">
