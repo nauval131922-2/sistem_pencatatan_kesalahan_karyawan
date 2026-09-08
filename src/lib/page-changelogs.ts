@@ -91,6 +91,23 @@ export const PAGE_CHANGELOGS: Record<string, PageChangelog> = {
   }),
 
   // ─── Pricelist Multi-Produk ───
+  'pricelist-2026-09-08': entry({
+    pageKey: 'pricelist',
+    title: 'Pricelist & Simulator (Sinkronisasi Buku Manasik & Yasin 2026, View Mode Tabel, & Bulk Delete)',
+    permissionKeys: ['pricelist_kalkulasi'],
+    sortDate: '2026-09-08',
+    date: '08 Sep 2026',
+    version: '2026-09-08-1',
+    items: [
+      'Penyelarasan Presisi Formula Buku Manasik 2026: Sinkronisasi 100% dengan 3 file master Excel (Custom Cover 10x15,5, Kosongan 10x15,5, dan Cocard 6,3x10,3 cm), termasuk koreksi cetak isi mesin Buya/Web Rotary (Rp 14.371 / 14.380) dan presisi desimal pembulatan harga jual DE kelipatan 10 (Rp 15.120)',
+      'Penyesuaian Nomenklatur Varian Manasik: Menghilangkan label kata "Ready / Ready Stok" pada varian Kosongan 10x15,5 cm dan me-rename varian "Mini TikTok 6,3x10,3 cm" menjadi murni "Cocard 6,3x10,3 cm" di seluruh komponen simulator, matriks harga, parameter master, dan modal panduan',
+      'Penyelarasan Master Parameter Buku Surat Yasin 2026: Sinkronisasi data master dengan Source Yasin 96 & 128 (Softcover & Hardcover), memperbarui tarif cetak sisipan teks bolak-balik (Rp 3.300/lbr A3+), pasang cover softcover (Rp 200), kemasan plastik OPP (Rp 90/95), desimal UMR casing-in & greyboard (7.411 & 9.640), serta harga netto blok isi 128 hal terbitan Buya Barokah (Rp 3.000 / 13.434 / 17.470)',
+      'Default Mode Tabel & Auto-Persist View Mode: Tab Daftar Kalkulasi kini default menampilkan Mode Tabel padat dan ringkas, dengan pilihan mode (Card vs Table) tersimpan otomatis di localStorage',
+      'Fitur Hapus Terpilih (Bulk Delete): Penambahan checkbox per baris/kartu dan Select All di header tabel dengan floating bar aksi untuk menghapus banyak kalkulasi sekaligus secara instan dari localStorage dan database server',
+      'Auto-Persist Draft Simulator (Yasin & Manasik): Seluruh input spesifikasi kalkulasi yang sedang diisi otomatis tersimpan ke localStorage via debounced effect (200ms) sehingga tidak akan hilang saat berpindah antar tab',
+      'Pemutakhiran Dokumentasi & Manual Pengguna: Pembaruan panduan interaktif modal master parameter dan simulator Buku Manasik & Yasin mencakup pemetaan sheet, cell, acuan UMR, dan rumus baku Excel Juli 2026',
+    ],
+  }),
   'pricelist-2026-09-06': entry({
     pageKey: 'pricelist',
     title: 'Pricelist & Navigasi Hak Akses Sistem',
