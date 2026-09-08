@@ -196,6 +196,7 @@ export default function ManasikSimulator({
     }
   };
 
+  // Load saved simulations & load draft simulator states from localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem('sintak_saved_manasik_simulations');
@@ -214,17 +215,72 @@ export default function ManasikSimulator({
             setLaminasiCover(item.laminasiCover);
             setOpsiPlastikOpp(item.opsiPlastikOpp);
             setOpsiKardus(item.opsiKardus);
-            if (item.opsiSisipan !== undefined) setOpsiSisipan(item.opsiSisipan);
+            setOpsiSisipan(item.opsiSisipan);
             setMarginPct(item.marginPct);
             setNegoDiskonPct(item.negoDiskonPct);
             setSimulationTitle(item.title);
+            return;
           }
         }
       }
+
+      // Restore draft settingan pengguna dari localStorage saat pindah tab
+      const rawDraft = localStorage.getItem('sintak_manasik_simulator_draft');
+      if (rawDraft) {
+        const d = JSON.parse(rawDraft);
+        if (d.varian !== undefined) setVarian(d.varian);
+        if (d.oplah !== undefined) setOplah(Number(d.oplah) || 500);
+        if (d.jumlahHalaman !== undefined) setJumlahHalaman(d.jumlahHalaman);
+        if (d.tipeJilid !== undefined) setTipeJilid(d.tipeJilid);
+        if (d.metodeCetakCover !== undefined) setMetodeCetakCover(d.metodeCetakCover);
+        if (d.laminasiCover !== undefined) setLaminasiCover(d.laminasiCover);
+        if (d.opsiPlastikOpp !== undefined) setOpsiPlastikOpp(Boolean(d.opsiPlastikOpp));
+        if (d.opsiKardus !== undefined) setOpsiKardus(Boolean(d.opsiKardus));
+        if (d.opsiSisipan !== undefined) setOpsiSisipan(Boolean(d.opsiSisipan));
+        if (d.marginPct !== undefined) setMarginPct(Number(d.marginPct) || 30);
+        if (d.negoDiskonPct !== undefined) setNegoDiskonPct(Number(d.negoDiskonPct) || 0);
+      }
     } catch (e) {
-      console.error('Failed to load saved manasik simulations:', e);
+      console.error('Failed to load saved manasik simulations or draft:', e);
     }
   }, [activeSimulationId]);
+
+  // Simpan draft settingan simulator secara otomatis saat ada perubahan input (auto-persist)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const draft = {
+          varian,
+          oplah,
+          jumlahHalaman,
+          tipeJilid,
+          metodeCetakCover,
+          laminasiCover,
+          opsiPlastikOpp,
+          opsiKardus,
+          opsiSisipan,
+          marginPct,
+          negoDiskonPct,
+        };
+        localStorage.setItem('sintak_manasik_simulator_draft', JSON.stringify(draft));
+      } catch (e) {
+        console.error('Failed to save manasik simulator draft:', e);
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [
+    varian,
+    oplah,
+    jumlahHalaman,
+    tipeJilid,
+    metodeCetakCover,
+    laminasiCover,
+    opsiPlastikOpp,
+    opsiKardus,
+    opsiSisipan,
+    marginPct,
+    negoDiskonPct,
+  ]);
 
   const inputConfig: ManasikSimulatorInput = useMemo(
     () => ({

@@ -127,6 +127,7 @@ export default function YasinSimulator({
     else setInternalActiveTitle(title);
   };
 
+  // Load saved simulations & load draft simulator states from localStorage (jika tidak sedang load item tersimpan)
   useEffect(() => {
     try {
       const raw = localStorage.getItem('sintak_saved_yasin_simulations');
@@ -150,14 +151,71 @@ export default function YasinSimulator({
             setMarginPct(item.marginPct);
             setNegoDiskonPct(item.negoDiskonPct);
             setSimulationTitle(item.title);
+            return;
           }
         }
       }
+
+      // Restore draft settingan pengguna dari localStorage saat pindah tab
+      const rawDraft = localStorage.getItem('sintak_yasin_simulator_draft');
+      if (rawDraft) {
+        const d = JSON.parse(rawDraft);
+        if (d.oplah !== undefined) setOplah(Number(d.oplah) || 100);
+        if (d.tipeCover !== undefined) setTipeCover(d.tipeCover);
+        if (d.ukuran !== undefined) setUkuran(d.ukuran);
+        if (d.jumlahHalamanIsi !== undefined) setJumlahHalamanIsi(d.jumlahHalamanIsi);
+        if (d.lembarSisipanFoto !== undefined) setLembarSisipanFoto(Number(d.lembarSisipanFoto) || 0);
+        if (d.lembarSisipanKeluarga !== undefined) setLembarSisipanKeluarga(Number(d.lembarSisipanKeluarga) || 0);
+        if (d.laminasiCover !== undefined) setLaminasiCover(d.laminasiCover);
+        if (d.opsiPitaRumbai !== undefined) setOpsiPitaRumbai(Boolean(d.opsiPitaRumbai));
+        if (d.opsiSikuEmas !== undefined) setOpsiSikuEmas(Boolean(d.opsiSikuEmas));
+        if (d.opsiPlastikOpp !== undefined) setOpsiPlastikOpp(Boolean(d.opsiPlastikOpp));
+        if (d.marginPct !== undefined) setMarginPct(Number(d.marginPct) || 30);
+        if (d.negoDiskonPct !== undefined) setNegoDiskonPct(Number(d.negoDiskonPct) || 0);
+      }
     } catch (e) {
-      console.error('Failed to load saved yasin simulations:', e);
+      console.error('Failed to load saved yasin simulations or draft:', e);
     }
   }, [activeSimulationId]);
 
+  // Simpan draft settingan simulator secara otomatis saat ada perubahan input (auto-persist)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const draft = {
+          oplah,
+          tipeCover,
+          ukuran,
+          jumlahHalamanIsi,
+          lembarSisipanFoto,
+          lembarSisipanKeluarga,
+          laminasiCover,
+          opsiPitaRumbai,
+          opsiSikuEmas,
+          opsiPlastikOpp,
+          marginPct,
+          negoDiskonPct,
+        };
+        localStorage.setItem('sintak_yasin_simulator_draft', JSON.stringify(draft));
+      } catch (e) {
+        console.error('Failed to save yasin simulator draft:', e);
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [
+    oplah,
+    tipeCover,
+    ukuran,
+    jumlahHalamanIsi,
+    lembarSisipanFoto,
+    lembarSisipanKeluarga,
+    laminasiCover,
+    opsiPitaRumbai,
+    opsiSikuEmas,
+    opsiPlastikOpp,
+    marginPct,
+    negoDiskonPct,
+  ]);
   const inputConfig: YasinSimulatorInput = useMemo(
     () => ({
       oplah,
