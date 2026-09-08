@@ -521,13 +521,15 @@ export function calculateManasikSimulator(
     let biayaCover = 0;
     if (metodeCover === 'Print Digital (A3+)') {
       const a3MuatCover = 4;
-      kebutuhanA3Cover = Math.ceil(validOplah / a3MuatCover) + params.insheetCover;
-      biayaCover = kebutuhanA3Cover * params.tarifPrintCoverA3 + params.tarifDesainCover;
+      // Di Excel cell R9: =(H9/P9) + (K9/O9) tanpa Math.ceil (misal 50/4 + 5 = 17.5 lbr A3+)
+      const lbrA3Cover = (validOplah / a3MuatCover) + params.insheetCover;
+      kebutuhanA3Cover = Math.ceil(lbrA3Cover);
+      biayaCover = lbrA3Cover * params.tarifPrintCoverA3 + params.tarifDesainCover;
       breakdown.push({
         nama: 'Cover Print Digital (A3+ Inter)',
         nominal: Math.round(biayaCover),
         pct: 0,
-        keterangan: `AC 230 gsm, ${kebutuhanA3Cover} Lbr A3+ @ Rp ${params.tarifPrintCoverA3.toLocaleString('id-ID')} + Desain`,
+        keterangan: `AC 230 gsm, ${lbrA3Cover} Lbr A3+ @ Rp ${params.tarifPrintCoverA3.toLocaleString('id-ID')} + Desain`,
       });
     } else {
       const planoMuatCover = 16;
@@ -568,15 +570,16 @@ export function calculateManasikSimulator(
     // C. Sisipan 4 Halaman (Nama PT / Biro Travel)
     let biayaSisipan = 0;
     if (opsiSisipan) {
-      const kebutuhanSisipanA3 = Math.ceil((4 / 8) * validOplah) + params.insheetSisipan;
-      const biayaPrintSisipan = kebutuhanSisipanA3 * params.tarifPrintSisipanA3;
+      // Excel cell AL9: =(((4 / 8) * H9) + 10)
+      const lbrSisipanA3 = ((4 / 8) * validOplah) + params.insheetSisipan;
+      const biayaPrintSisipan = lbrSisipanA3 * params.tarifPrintSisipanA3;
       const biayaLipatSisipan = validOplah * params.tarifBiayaSisipLipat;
       biayaSisipan = biayaPrintSisipan + biayaLipatSisipan;
       breakdown.push({
         nama: 'Sisipan 4 Halaman Custom PT / Travel',
         nominal: Math.round(biayaSisipan),
         pct: 0,
-        keterangan: `Print sisipan ${kebutuhanSisipanA3} lbr + jasa sisip & lipat nama PT`,
+        keterangan: `Print sisipan ${lbrSisipanA3} lbr + jasa sisip & lipat nama PT`,
       });
     }
 
@@ -707,10 +710,12 @@ export function calculateManasikSimulator(
     b.pct = totalHpp > 0 ? (b.nominal / totalHpp) * 100 : 0;
   });
 
-  // Perhitungan Harga Jual murni sesuai formula Excel Sheet BUKU:
-  // Formula DE: =ROUNDUP(((HPP + Laba)), -1) -> Kelipatan 10 terdekat
-  const marginNominal = (hppPerPcs * marginPct) / 100;
-  const hargaJualPerPcs = Math.ceil((hppPerPcs + marginNominal) / 10) * 10;
+  // Perhitungan Harga Jual murni sesuai formula Excel Sheet BUKU (Cell DE9 s/d DE20):
+  // Formula Excel DE: =ROUNDUP(DD9, -1) di mana DD9 = (Total_HPP / Oplah) * (1 + margin%)
+  // Menggunakan HPP float presisi desimal sebelum pembulatan ke kelipatan 10 terdekat
+  const rawHppPerPcs = totalHpp / validOplah;
+  const rawHargaJual = rawHppPerPcs * (1 + marginPct / 100);
+  const hargaJualPerPcs = Math.ceil(rawHargaJual / 10) * 10;
   
   const diskon = (hargaJualPerPcs * Math.max(0, Math.min(100, negoDiskonPct))) / 100;
   const hargaNegoPerPcs = Math.ceil((hargaJualPerPcs - diskon) / 10) * 10;
