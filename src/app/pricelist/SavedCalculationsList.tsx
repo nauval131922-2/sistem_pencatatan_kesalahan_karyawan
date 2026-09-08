@@ -28,6 +28,10 @@ import {
   Calculator,
   Sparkles,
   Database,
+  LayoutGrid,
+  Table,
+  CheckSquare,
+  Square,
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 import SquareDropdown from '@/components/SquareDropdown';
@@ -141,7 +145,8 @@ export default function SavedCalculationsList({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
-
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   // Raw state lists
   const [kalenderList, setKalenderList] = useState<SavedSimulationItem[]>([]);
   const [manasikList, setManasikList] = useState<SavedManasikSimulationItem[]>([]);
@@ -1274,6 +1279,224 @@ export default function SavedCalculationsList({
       toast.error('Gagal menghapus kalkulasi.');
     }
   };
+  // Hapus massal (Bulk Delete)
+  const handleBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Hapus ${selectedIds.length} kalkulasi yang dipilih secara permanen?`)) return;
+
+    try {
+      const idSet = new Set(selectedIds);
+
+      // Filter state & local storage
+      const newKalender = kalenderList.filter((k) => !idSet.has(k.id));
+      if (newKalender.length !== kalenderList.length) {
+        setKalenderList(newKalender);
+        localStorage.setItem('sintak_saved_simulations', JSON.stringify(newKalender));
+      }
+
+      const newManasik = manasikList.filter((m) => !idSet.has(m.id));
+      if (newManasik.length !== manasikList.length) {
+        setManasikList(newManasik);
+        localStorage.setItem('sintak_saved_manasik_simulations', JSON.stringify(newManasik));
+      }
+
+      const newYasin = yasinList.filter((y) => !idSet.has(y.id));
+      if (newYasin.length !== yasinList.length) {
+        setYasinList(newYasin);
+        localStorage.setItem('sintak_saved_yasin_simulations', JSON.stringify(newYasin));
+      }
+
+      const newNota = notaList.filter((n) => !idSet.has(n.id));
+      if (newNota.length !== notaList.length) {
+        setNotaList(newNota);
+        localStorage.setItem('sintak_saved_nota_simulations', JSON.stringify(newNota));
+      }
+
+      const newBrosur = brosurList.filter((b) => !idSet.has(b.id));
+      if (newBrosur.length !== brosurList.length) {
+        setBrosurList(newBrosur);
+        localStorage.setItem('sintak_saved_brosur_simulations', JSON.stringify(newBrosur));
+      }
+
+      const newLabelKhq = labelKhqList.filter((l) => !idSet.has(l.id));
+      if (newLabelKhq.length !== labelKhqList.length) {
+        setLabelKhqList(newLabelKhq);
+        localStorage.setItem('sintak_saved_label_khq_simulations', JSON.stringify(newLabelKhq));
+      }
+
+      const newBukuTulis = bukuTulisList.filter((bt) => !idSet.has(bt.id));
+      if (newBukuTulis.length !== bukuTulisList.length) {
+        setBukuTulisList(newBukuTulis);
+        localStorage.setItem('sintak_saved_buku_tulis_simulations', JSON.stringify(newBukuTulis));
+      }
+
+      const newStopmap = stopmapList.filter((sm) => !idSet.has(sm.id));
+      if (newStopmap.length !== stopmapList.length) {
+        setStopmapList(newStopmap);
+        localStorage.setItem('sintak_saved_stopmap_simulations', JSON.stringify(newStopmap));
+      }
+
+      const newSyahadah = syahadahList.filter((sy) => !idSet.has(sy.id));
+      if (newSyahadah.length !== syahadahList.length) {
+        setSyahadahList(newSyahadah);
+        localStorage.setItem('sintak_saved_syahadah_simulations', JSON.stringify(newSyahadah));
+      }
+
+      const newRaportKaleb = raportKalebList.filter((rk) => !idSet.has(rk.id));
+      if (newRaportKaleb.length !== raportKalebList.length) {
+        setRaportKalebList(newRaportKaleb);
+        localStorage.setItem('sintak_saved_raport_kaleb_simulations', JSON.stringify(newRaportKaleb));
+      }
+
+      const newKopSurat = kopSuratList.filter((ks) => !idSet.has(ks.id));
+      if (newKopSurat.length !== kopSuratList.length) {
+        setKopSuratList(newKopSurat);
+        localStorage.setItem('sintak_saved_kop_surat_simulations', JSON.stringify(newKopSurat));
+      }
+
+      const newAmplop = amplopList.filter((a) => !idSet.has(a.id));
+      if (newAmplop.length !== amplopList.length) {
+        setAmplopList(newAmplop);
+        localStorage.setItem('sintak_saved_amplop_simulations', JSON.stringify(newAmplop));
+      }
+
+      const newSertifikat = sertifikatList.filter((s) => !idSet.has(s.id));
+      if (newSertifikat.length !== sertifikatList.length) {
+        setSertifikatList(newSertifikat);
+        localStorage.setItem('sintak_saved_sertifikat_simulations', JSON.stringify(newSertifikat));
+      }
+
+      const newUndangan = undanganList.filter((u) => !idSet.has(u.id));
+      if (newUndangan.length !== undanganList.length) {
+        setUndanganList(newUndangan);
+        localStorage.setItem('sintak_saved_undangan_simulations', JSON.stringify(newUndangan));
+      }
+
+      const newBukuTabunganNs = bukuTabunganNsList.filter((b) => !idSet.has(b.id));
+      if (newBukuTabunganNs.length !== bukuTabunganNsList.length) {
+        setBukuTabunganNsList(newBukuTabunganNs);
+        localStorage.setItem('sintak_saved_buku_tabungan_ns_simulations', JSON.stringify(newBukuTabunganNs));
+      }
+
+      const newBukuTabunganSec = bukuTabunganSecurityList.filter((b) => !idSet.has(b.id));
+      if (newBukuTabunganSec.length !== bukuTabunganSecurityList.length) {
+        setBukuTabunganSecurityList(newBukuTabunganSec);
+        localStorage.setItem('sintak_saved_buku_tabungan_security_simulations', JSON.stringify(newBukuTabunganSec));
+      }
+
+      const newKartuKoperasi = kartuKoperasiPromiseList.filter((k) => !idSet.has(k.id));
+      if (newKartuKoperasi.length !== kartuKoperasiPromiseList.length) {
+        setKartuKoperasiPromiseList(newKartuKoperasi);
+        localStorage.setItem('sintak_saved_kartu_koperasi_promise_simulations', JSON.stringify(newKartuKoperasi));
+      }
+
+      const newLebelObat = lebelKartuObatList.filter((l) => !idSet.has(l.id));
+      if (newLebelObat.length !== lebelKartuObatList.length) {
+        setLebelKartuObatList(newLebelObat);
+        localStorage.setItem('sintak_saved_lebel_kartu_obat_simulations', JSON.stringify(newLebelObat));
+      }
+
+      const newBukuSoftCover = bukuSoftCoverList.filter((b) => !idSet.has(b.id));
+      if (newBukuSoftCover.length !== bukuSoftCoverList.length) {
+        setBukuSoftCoverList(newBukuSoftCover);
+        localStorage.setItem('sintak_saved_buku_soft_cover_simulations', JSON.stringify(newBukuSoftCover));
+      }
+
+      const newBsc145 = bukuSoftCover145x2025List.filter((b) => !idSet.has(b.id));
+      if (newBsc145.length !== bukuSoftCover145x2025List.length) {
+        setBukuSoftCover145x2025List(newBsc145);
+        localStorage.setItem('sintak_saved_buku_soft_cover_145x2025_simulations', JSON.stringify(newBsc145));
+      }
+
+      const newBhc105 = bukuHardCover105x148List.filter((b) => !idSet.has(b.id));
+      if (newBhc105.length !== bukuHardCover105x148List.length) {
+        setBukuHardCover105x148List(newBhc105);
+        localStorage.setItem('sintak_saved_buku_hard_cover_105x148_simulations', JSON.stringify(newBhc105));
+      }
+
+      const newPoster = posterList.filter((p) => !idSet.has(p.id));
+      if (newPoster.length !== posterList.length) {
+        setPosterList(newPoster);
+        localStorage.setItem('sintak_saved_poster_simulations', JSON.stringify(newPoster));
+      }
+
+      const newMajalah = majalahList.filter((m) => !idSet.has(m.id));
+      if (newMajalah.length !== majalahList.length) {
+        setMajalahList(newMajalah);
+        localStorage.setItem('sintak_saved_majalah_145x2025_simulations', JSON.stringify(newMajalah));
+      }
+
+      const newStiker = stikerList.filter((s) => !idSet.has(s.id));
+      if (newStiker.length !== stikerList.length) {
+        setStikerList(newStiker);
+        localStorage.setItem('sintak_saved_stiker_simulations', JSON.stringify(newStiker));
+      }
+
+      const newBsc105 = bukuSoftCover105x148List.filter((b) => !idSet.has(b.id));
+      if (newBsc105.length !== bukuSoftCover105x148List.length) {
+        setBukuSoftCover105x148List(newBsc105);
+        localStorage.setItem('sintak_saved_buku_soft_cover_105x148_simulations', JSON.stringify(newBsc105));
+      }
+
+      const newBhc145 = bukuHardCover145x2025List.filter((b) => !idSet.has(b.id));
+      if (newBhc145.length !== bukuHardCover145x2025List.length) {
+        setBukuHardCover145x2025List(newBhc145);
+        localStorage.setItem('sintak_saved_buku_hard_cover_145x2025_simulations', JSON.stringify(newBhc145));
+      }
+
+      const newBhc21 = bukuHardCover21x297List.filter((b) => !idSet.has(b.id));
+      if (newBhc21.length !== bukuHardCover21x297List.length) {
+        setBukuHardCover21x297List(newBhc21);
+        localStorage.setItem('sintak_saved_buku_hard_cover_21x297_simulations', JSON.stringify(newBhc21));
+      }
+
+      const newKalenderKop = kalenderKopList.filter((k) => !idSet.has(k.id));
+      if (newKalenderKop.length !== kalenderKopList.length) {
+        setKalenderKopList(newKalenderKop);
+        localStorage.setItem('sintak_saved_kalender_kop_simulations', JSON.stringify(newKalenderKop));
+      }
+
+      const newPackaging = packagingList.filter((p) => !idSet.has(p.id));
+      if (newPackaging.length !== packagingList.length) {
+        setPackagingList(newPackaging);
+        localStorage.setItem('sintak_saved_packaging_simulations', JSON.stringify(newPackaging));
+      }
+
+      const newPaperbag = paperbagList.filter((p) => !idSet.has(p.id));
+      if (newPaperbag.length !== paperbagList.length) {
+        setPaperbagList(newPaperbag);
+        localStorage.setItem('sintak_saved_paperbag_simulations', JSON.stringify(newPaperbag));
+      }
+
+      // Sync delete with server database for all selected IDs
+      selectedIds.forEach((id) => {
+        fetch(`/api/pricelist/saved-calculations?id=${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+        }).catch((err) => console.error('Failed to delete from server DB:', err));
+      });
+
+      toast.success(`${selectedIds.length} kalkulasi berhasil dihapus.`);
+      setSelectedIds([]);
+    } catch (err) {
+      console.error(err);
+      toast.error('Gagal menghapus beberapa kalkulasi.');
+    }
+  };
+
+  const handleToggleSelect = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === filteredList.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredList.map((item) => item.id));
+    }
+  };
 
   // Simpan edit judul
   const handleSaveEditTitle = (item: UnifiedCalculationItem) => {
@@ -1663,8 +1886,64 @@ export default function SavedCalculationsList({
             />
           </div>
         </div>
+
+        {/* View Mode Toggle (Card vs Table) */}
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 shrink-0">
+          <button
+            type="button"
+            onClick={() => setViewMode('card')}
+            className={`p-1.5 rounded-md transition cursor-pointer ${
+              viewMode === 'card'
+                ? 'bg-white text-emerald-800 shadow-2xs font-bold'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+            title="Tampilan Kartu (Grid)"
+          >
+            <LayoutGrid size={15} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('table')}
+            className={`p-1.5 rounded-md transition cursor-pointer ${
+              viewMode === 'table'
+                ? 'bg-white text-emerald-800 shadow-2xs font-bold'
+                : 'text-slate-500 hover:text-slate-800'
+            }`}
+            title="Tampilan Tabel"
+          >
+            <Table size={15} />
+          </button>
+        </div>
       </div>
 
+      {/* Bulk Action Bar (muncul jika ada item yang dipilih) */}
+      {selectedIds.length > 0 && (
+        <div className="bg-rose-50 border border-rose-200 rounded-xl px-4 py-2.5 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="flex items-center gap-2 text-xs text-rose-900 font-semibold">
+            <CheckSquare size={16} className="text-rose-600 shrink-0" />
+            <span>
+              <strong>{selectedIds.length}</strong> dari {filteredList.length} kalkulasi dipilih
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedIds([])}
+              className="px-2.5 py-1 text-xs text-slate-600 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg transition cursor-pointer"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkDelete}
+              className="flex items-center gap-1.5 px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
+            >
+              <Trash2 size={13} />
+              <span>Hapus Terpilih ({selectedIds.length})</span>
+            </button>
+          </div>
+        </div>
+      )}
       {/* List Container */}
       {filteredList.length === 0 ? (
         <div className="p-12 text-center bg-white rounded-xl border border-slate-200 shadow-xs space-y-2">
@@ -1688,11 +1967,135 @@ export default function SavedCalculationsList({
             </button>
           )}
         </div>
+      ) : viewMode === 'table' ? (
+        /* Mode Tabel */
+        <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="overflow-x-auto max-h-[70vh]">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="sticky top-0 z-10 bg-slate-100/90 backdrop-blur-xs border-b border-slate-200 text-slate-700 font-bold">
+                <tr>
+                  <th className="py-2.5 px-3 w-10 text-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.length === filteredList.length && filteredList.length > 0}
+                      onChange={handleSelectAll}
+                      className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                    />
+                  </th>
+                  <th className="py-2.5 px-3">Judul Kalkulasi</th>
+                  <th className="py-2.5 px-3">Kategori</th>
+                  <th className="py-2.5 px-3">Spesifikasi</th>
+                  <th className="py-2.5 px-3 text-right">Oplah</th>
+                  <th className="py-2.5 px-3 text-right">HPP Modal</th>
+                  <th className="py-2.5 px-3 text-right">Harga Jual</th>
+                  <th className="py-2.5 px-3 text-right">Total Omset</th>
+                  <th className="py-2.5 px-3 text-center w-28">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                {filteredList.map((item) => {
+                  const isSelected = selectedIds.includes(item.id);
+                  const isActive = activeSimulationId === item.id;
+                  const dateFormatted = new Date(item.savedAt).toLocaleString('id-ID', {
+                    day: 'numeric',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  });
+
+                  return (
+                    <tr
+                      key={item.id}
+                      className={`hover:bg-slate-50 transition-colors ${
+                        isSelected ? 'bg-emerald-50/50' : isActive ? 'bg-amber-50/40' : ''
+                      }`}
+                    >
+                      <td className="py-2 px-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => handleToggleSelect(item.id, e as any)}
+                          className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                        />
+                      </td>
+                      <td className="py-2 px-3">
+                        <div className="font-bold text-slate-900 line-clamp-1 max-w-[220px]">
+                          {item.title}
+                        </div>
+                        <span className="text-[10px] text-slate-400 font-mono block">
+                          {dateFormatted}
+                        </span>
+                      </td>
+                      <td className="py-2 px-3">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-800 border border-slate-200 shrink-0 inline-block">
+                          {item.category}
+                        </span>
+                      </td>
+                      <td className="py-2 px-3 text-slate-600 text-[11px] max-w-[260px]">
+                        <span className="line-clamp-2">{item.specSummary}</span>
+                      </td>
+                      <td className="py-2 px-3 text-right font-mono font-bold text-slate-800">
+                        {item.oplah.toLocaleString('id-ID')}
+                      </td>
+                      <td className="py-2 px-3 text-right font-mono text-slate-600">
+                        Rp {item.hppUnit.toLocaleString('id-ID')}
+                      </td>
+                      <td className="py-2 px-3 text-right font-mono font-bold text-emerald-800">
+                        Rp {item.hargaJualUnit.toLocaleString('id-ID')}
+                      </td>
+                      <td className="py-2 px-3 text-right font-mono font-bold text-slate-900">
+                        Rp {item.totalOmset.toLocaleString('id-ID')}
+                      </td>
+                      <td className="py-2 px-3 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setViewingDetailItem(item)}
+                            className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-md transition cursor-pointer"
+                            title="Detail Rincian"
+                          >
+                            <Eye size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleCopyQuote(item, e)}
+                            className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-md transition cursor-pointer"
+                            title="Salin WA"
+                          >
+                            {copiedId === item.id ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onLoadSimulation(item)}
+                            className="p-1.5 text-slate-500 hover:text-blue-700 hover:bg-blue-50 rounded-md transition cursor-pointer"
+                            title="Edit Kalkulasi"
+                          >
+                            <Edit2 size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteItem(item, e)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition cursor-pointer"
+                            title="Hapus"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : (
+        /* Mode Kartu (Grid) */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredList.map((item) => {
             const isEditing = editingId === item.id;
             const isActive = activeSimulationId === item.id;
+            const isSelected = selectedIds.includes(item.id);
             const dateFormatted = new Date(item.savedAt).toLocaleString('id-ID', {
               day: 'numeric',
               month: 'short',
@@ -1705,7 +2108,9 @@ export default function SavedCalculationsList({
               <div
                 key={item.id}
                 className={`bg-white rounded-xl border transition-all flex flex-col justify-between shadow-xs hover:shadow-sm ${
-                  isActive
+                  isSelected
+                    ? 'border-emerald-500 bg-emerald-50/20 ring-1 ring-emerald-500'
+                    : isActive
                     ? 'border-amber-400 bg-amber-50/20 ring-1 ring-amber-400'
                     : 'border-slate-200 hover:border-slate-300'
                 }`}
@@ -1713,82 +2118,90 @@ export default function SavedCalculationsList({
                 {/* Card Header */}
                 <div className="p-4 border-b border-slate-100 flex flex-col gap-2">
                   <div className="flex items-center justify-between gap-2">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        item.category === 'Kalender'
-                          ? 'bg-amber-100 text-amber-900 border border-amber-200'
-                          : item.category === 'Buku Manasik'
-                          ? 'bg-emerald-100 text-emerald-900 border border-emerald-200'
-                          : item.category === 'Buku Yasin'
-                          ? 'bg-indigo-100 text-indigo-900 border border-indigo-200'
-                          : item.category === 'Nota 1 Warna'
-                          ? 'bg-purple-100 text-purple-900 border border-purple-200'
-                          : item.category === 'Brosur 2026'
-                          ? 'bg-rose-100 text-rose-900 border border-rose-200'
-                          : item.category === 'Label KHQ'
-                          ? 'bg-teal-100 text-teal-900 border border-teal-200'
-                          : item.category === 'Buku Tulis'
-                          ? 'bg-cyan-100 text-cyan-900 border border-cyan-200'
-                          : item.category === 'Stopmap'
-                          ? 'bg-orange-100 text-orange-900 border border-orange-200'
-                          : item.category === 'Syahadah'
-                          ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                          : item.category === 'Raport Kaleb'
-                          ? 'bg-yellow-100 text-yellow-900 border border-yellow-300'
-                          : item.category === 'Kop Surat'
-                          ? 'bg-sky-100 text-sky-900 border border-sky-300'
-                          : item.category === 'Amplop'
-                          ? 'bg-pink-100 text-pink-900 border border-pink-300'
-                          : item.category === 'Sertifikat'
-                          ? 'bg-lime-100 text-lime-900 border border-lime-300'
-                          : item.category === 'Undangan'
-                          ? 'bg-fuchsia-100 text-fuchsia-900 border border-fuchsia-300'
-                          : item.category === 'Buku Tabungan NS'
-                          ? 'bg-teal-100 text-teal-900 border border-teal-200'
-                          : item.category === 'Buku Tabungan Security'
-                          ? 'bg-red-100 text-red-900 border border-red-200'
-                          : item.category === 'Kartu Koperasi Promise'
-                          ? 'bg-indigo-100 text-indigo-900 border border-indigo-200'
-                          : item.category === 'Lebel Kartu Obat'
-                          ? 'bg-cyan-100 text-cyan-900 border border-cyan-200'
-                          : item.category === 'Buku Soft Cover'
-                          ? 'bg-emerald-100 text-emerald-900 border border-emerald-200'
-                          : item.category === 'Buku Soft Cover 14,5×20,25'
-                          ? 'bg-teal-100 text-teal-900 border border-teal-200'
-                          : item.category === 'Buku Hard Cover 10,5×14,8'
-                          ? 'bg-rose-100 text-rose-900 border border-rose-200'
-                          : item.category === 'Poster'
-                          ? 'bg-orange-100 text-orange-900 border border-orange-200'
-                          : item.category === 'Majalah 14,5×20,25'
-                          ? 'bg-purple-100 text-purple-900 border border-purple-200'
-                          : item.category === 'Stiker'
-                          ? 'bg-lime-100 text-lime-900 border border-lime-200'
-                          : item.category === 'Buku Soft Cover 10,5×14,8'
-                          ? 'bg-cyan-100 text-cyan-900 border border-cyan-200'
-                          : item.category === 'Buku Hard Cover 14,5×20,25'
-                          ? 'bg-amber-100 text-amber-900 border border-amber-200'
-                          : item.category === 'Buku Hard Cover 21×29,7'
-                          ? 'bg-red-100 text-red-900 border border-red-200'
-                          : item.category === 'Kalender Kop'
-                          ? 'bg-emerald-100 text-emerald-900 border border-emerald-200'
-                          : item.category === 'Packaging'
-                          ? 'bg-amber-100 text-amber-900 border border-amber-200'
-                          : item.category === 'Paperbag'
-                          ? 'bg-pink-100 text-pink-900 border border-pink-200'
-                          : 'bg-slate-100 text-slate-700 border border-slate-200'
-                      }`}
-                    >
-                      {item.category}
-                    </span>
-
-                    <span className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
-                      <Clock size={11} /> {dateFormatted}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => handleToggleSelect(item.id, e as any)}
+                        className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                      />
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          item.category === 'Kalender'
+                            ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                            : item.category === 'Buku Manasik'
+                            ? 'bg-emerald-100 text-emerald-900 border border-emerald-200'
+                            : item.category === 'Buku Yasin'
+                            ? 'bg-indigo-100 text-indigo-900 border border-indigo-200'
+                            : item.category === 'Nota 1 Warna'
+                            ? 'bg-purple-100 text-purple-900 border border-purple-200'
+                            : item.category === 'Brosur 2026'
+                            ? 'bg-rose-100 text-rose-900 border border-rose-200'
+                            : item.category === 'Label KHQ'
+                            ? 'bg-teal-100 text-teal-900 border border-teal-200'
+                            : item.category === 'Buku Tulis'
+                            ? 'bg-cyan-100 text-cyan-900 border border-cyan-200'
+                            : item.category === 'Stopmap'
+                            ? 'bg-orange-100 text-orange-900 border border-orange-200'
+                            : item.category === 'Syahadah'
+                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                            : item.category === 'Raport Kaleb'
+                            ? 'bg-yellow-100 text-yellow-900 border border-yellow-300'
+                            : item.category === 'Kop Surat'
+                            ? 'bg-sky-100 text-sky-900 border border-sky-300'
+                            : item.category === 'Amplop'
+                            ? 'bg-pink-100 text-pink-900 border border-pink-300'
+                            : item.category === 'Sertifikat'
+                            ? 'bg-lime-100 text-lime-900 border border-lime-300'
+                            : item.category === 'Undangan'
+                            ? 'bg-violet-100 text-violet-900 border border-violet-300'
+                            : item.category === 'Buku Tabungan NS'
+                            ? 'bg-emerald-100 text-emerald-900 border border-emerald-200'
+                            : item.category === 'Buku Tabungan Security'
+                            ? 'bg-indigo-100 text-indigo-900 border border-indigo-200'
+                            : item.category === 'Kartu Koperasi Promise'
+                            ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                            : item.category === 'Lebel Kartu Obat'
+                            ? 'bg-rose-100 text-rose-900 border border-rose-200'
+                            : item.category === 'Buku Soft Cover'
+                            ? 'bg-emerald-100 text-emerald-900 border border-emerald-200'
+                            : item.category === 'Buku Soft Cover 14,5×20,25'
+                            ? 'bg-teal-100 text-teal-900 border border-teal-200'
+                            : item.category === 'Buku Hard Cover 10,5×14,8'
+                            ? 'bg-purple-100 text-purple-900 border border-purple-200'
+                            : item.category === 'Poster'
+                            ? 'bg-fuchsia-100 text-fuchsia-900 border border-fuchsia-200'
+                            : item.category === 'Majalah 14,5×20,25'
+                            ? 'bg-sky-100 text-sky-900 border border-sky-200'
+                            : item.category === 'Kalender'
+                            ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                            : item.category === 'Stiker'
+                            ? 'bg-pink-100 text-pink-900 border border-pink-200'
+                            : item.category === 'Buku Soft Cover 10,5×14,8'
+                            ? 'bg-emerald-100 text-emerald-900 border border-emerald-200'
+                            : item.category === 'Buku Hard Cover 14,5×20,25'
+                            ? 'bg-purple-100 text-purple-900 border border-purple-200'
+                            : item.category === 'Buku Hard Cover 21×29,7'
+                            ? 'bg-indigo-100 text-indigo-900 border border-indigo-200'
+                            : item.category === 'Kalender Kop'
+                            ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                            : item.category === 'Packaging'
+                            ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                            : 'bg-emerald-100 text-emerald-900 border border-emerald-200'
+                        }`}
+                      >
+                        {item.category}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+                      <Clock size={11} />
+                      {dateFormatted}
                     </span>
                   </div>
 
-                  {/* Title / Edit Title */}
+                  {/* Editable Title */}
                   {isEditing ? (
-                    <div className="flex items-center gap-1.5 mt-1">
+                    <div className="flex items-center gap-1">
                       <input
                         type="text"
                         value={editTitleInput}
@@ -1797,55 +2210,61 @@ export default function SavedCalculationsList({
                           if (e.key === 'Enter') handleSaveEditTitle(item);
                           if (e.key === 'Escape') setEditingId(null);
                         }}
+                        className="flex-1 px-2 py-1 text-xs border border-emerald-500 rounded bg-white font-bold text-slate-900 focus:outline-none"
                         autoFocus
-                        className="w-full px-2 py-1 text-xs font-bold border border-emerald-500 rounded bg-white focus:outline-none"
                       />
                       <button
                         type="button"
                         onClick={() => handleSaveEditTitle(item)}
-                        className="px-2 py-1 text-[11px] font-bold bg-emerald-700 text-white rounded cursor-pointer"
+                        className="p-1 bg-emerald-600 text-white rounded hover:bg-emerald-700 cursor-pointer"
+                        title="Simpan"
                       >
-                        Simpan
+                        <Check size={12} />
                       </button>
                       <button
                         type="button"
                         onClick={() => setEditingId(null)}
-                        className="px-2 py-1 text-[11px] font-bold bg-slate-200 text-slate-700 rounded cursor-pointer"
+                        className="p-1 bg-slate-200 text-slate-600 rounded hover:bg-slate-300 cursor-pointer"
+                        title="Batal"
                       >
-                        Batal
+                        <X size={12} />
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-start justify-between gap-2 group">
-                      <h3 className="text-xs font-bold text-slate-800 group-hover:text-emerald-900 line-clamp-2">
+                    <div className="flex items-center justify-between group">
+                      <h4 className="font-bold text-slate-900 text-sm line-clamp-1 flex-1">
                         {item.title}
-                      </h3>
+                      </h4>
                       <button
                         type="button"
                         onClick={() => {
                           setEditingId(item.id);
                           setEditTitleInput(item.title);
                         }}
-                        className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-slate-700 transition cursor-pointer shrink-0"
-                        title="Edit Nama Kalkulasi"
+                        className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-emerald-700 transition cursor-pointer"
+                        title="Ubah Nama Kalkulasi"
                       >
-                        <Edit2 size={12} />
+                        <Edit2 size={11} />
                       </button>
                     </div>
                   )}
 
-                  <p className="text-[11px] font-medium text-slate-600 line-clamp-1">{item.specSummary}</p>
+                  {/* Spec Summary */}
+                  <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                    {item.specSummary}
+                  </p>
                 </div>
 
-                {/* Card Body: Specs Pill & Financial Summary */}
-                <div className="p-4 flex flex-col gap-3 flex-1 justify-between bg-slate-50/40">
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-500">Kuantitas / Oplah:</span>
-                      <span className="font-bold text-slate-800 font-mono">
-                        {item.oplah.toLocaleString('id-ID')} unit
-                      </span>
-                    </div>
+                {/* Card Body - Price Breakdown */}
+                <div className="p-4 bg-slate-50/50 flex flex-col gap-2.5 flex-1 justify-center">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-500">Kuantitas Order:</span>
+                    <span className="font-bold font-mono text-slate-800">
+                      {item.oplah.toLocaleString('id-ID')} unit
+                    </span>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-200/60 flex flex-col gap-1.5">
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-slate-500">HPP Unit (Modal):</span>
                       <span className="font-mono text-slate-600">
