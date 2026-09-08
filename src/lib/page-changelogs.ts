@@ -91,6 +91,21 @@ export const PAGE_CHANGELOGS: Record<string, PageChangelog> = {
   }),
 
   // ─── Pricelist Multi-Produk ───
+  'pricelist-2026-09-09': entry({
+    pageKey: 'pricelist',
+    title: 'Pricelist & Simulator (Sinkronisasi Formula Nota & Brosur 2026, Auto-Persist, & Type Rigor)',
+    permissionKeys: ['pricelist_kalkulasi'],
+    sortDate: '2026-09-09',
+    date: '09 Sep 2026',
+    version: '2026-09-09-1',
+    items: [
+      'Sinkronisasi Formula Kalkulasi Nota (1 Warna & 2 Warna): Penyesuaian perhitungan biaya plat cetak Ryobi per warna (Rp 25.000), ongkos cetak over-putaran Ryobi (Rp 25.000 / 1.000 putaran), serta auto-migrasi nilai parameter upHvsPct ke 7% di localStorage agar hasil kalkulasi harga per rim dan total biaya 100% presisi dengan file master Excel PENDUKUNG',
+      'Sinkronisasi Formula Brosur 2026 (Digital A3+ & Mesin Cetak Oliver): Penyesuaian kalkulasi Brosur Oliver (muat plano, potongan, insheet plat 100–150 lbr, ongkos sisir, tarif kardus oplah besar, dan pembulatan kelipatan 10) serta presisi tarif plat Oliver 2 muka (4 plat CMYK work-and-turn @ Rp 43.000, total Rp 172.000) sehingga HPP Rp 376 dan harga jual Rp 490 persis master Excel Source baris 9',
+      'Penyempurnaan Opsi & Auto-Migrasi Brosur: Pengaturan default opsi sisir menjadi aktif (true), persistensi pilihan finishing, dan penambahan auto-migrasi nilai tarifArtPaperKg ke Rp 16.900 di localStorage browser pengguna',
+      'Auto-Persist Draft Simulator Brosur: Penambahan persistensi otomatis draft input spesifikasi brosur ke localStorage browser melalui ThousandInput standar, mencegah data hilang saat berpindah antar tab simulator',
+      'Pengetatan Tipe Data & Kompatibilitas Kalkulator: Penyelarasan tipe data metode cover Oliver pada Manasik Matrix View, penanganan nilai boolean opsi sisipan Manasik, pembersihan cabang duplikat kategori Kalender pada Daftar Kalkulasi, serta penyertaan properti kebutuhanA3Cover pada kalkulator Surat Yasin',
+    ],
+  }),
   'pricelist-2026-09-08': entry({
     pageKey: 'pricelist',
     title: 'Pricelist & Simulator (Sinkronisasi Buku Manasik & Yasin 2026, View Mode Tabel, & Bulk Delete)',
