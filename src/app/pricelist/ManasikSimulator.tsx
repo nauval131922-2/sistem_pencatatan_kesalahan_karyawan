@@ -334,6 +334,7 @@ export default function ManasikSimulator({
       console.error('Failed to update simulation:', e);
       toast.error('Gagal memperbarui riwayat simulasi.');
     }
+  };
 
   const handleLoadSimulation = (item: SavedManasikSimulationItem) => {
     if (item.varian) setVarian(item.varian);
