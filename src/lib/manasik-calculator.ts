@@ -455,12 +455,11 @@ export function calculateManasikSimulator(
 
     if (metodeCetakCover === 'Offset (Oliver)') {
       metodeCover = 'Offset (Oliver)';
-    } else if (metodeCetakCover === 'Print Digital (A3+)') {
-      metodeCover = 'Print Digital (A3+)';
     } else {
-      metodeCover = validOplah >= 300 ? 'Offset (Oliver)' : 'Print Digital (A3+)';
+      // Master Excel Custom Cover 2026 (Master!D16 = "Print Inter"):
+      // Semua oplah 20 s/d 5.000 menggunakan POD Print Inter A3+ @ Rp 2.700
+      metodeCover = 'Print Digital (A3+)';
     }
-
     // A. Biaya Cover
     let biayaCover = 0;
     if (metodeCover === 'Print Digital (A3+)') {
