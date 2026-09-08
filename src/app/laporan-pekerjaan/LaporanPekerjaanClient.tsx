@@ -3688,6 +3688,7 @@ function TaskDetailModal({
                                   <Trash2 size={13} />
                                 </button>
                               )}
+                            </div>
                           </td>
                         )}
                       </tr>
