@@ -22,14 +22,7 @@ interface ManasikMatrixViewProps {
 }
 
 const OPLAH_TIERS = [
-  50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000, 1500, 2000, 2500, 3000
-];
-
-const HALAMAN_LIST: Array<{ hal: 96 | 128 | 192 | 208; title: string }> = [
-  { hal: 96, title: 'Buku Manasik 96 Hal' },
-  { hal: 128, title: 'Buku Manasik 128 Hal' },
-  { hal: 192, title: 'Buku Manasik 192 Hal (Standar)' },
-  { hal: 208, title: 'Buku Manasik 208 Hal (Jumbo)' },
+  20, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 950, 1000, 1500, 2000, 3000, 5000
 ];
 
 export default function ManasikMatrixView({
@@ -38,42 +31,80 @@ export default function ManasikMatrixView({
   setViewMode: propSetViewMode,
 }: ManasikMatrixViewProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedVarianFilter, setSelectedVarianFilter] = useState<
+    'ALL' | 'Custom Cover 10 x 15,5' | 'Kosongan 10 x 15,5' | 'Mini TikTok 6,3 x 10,3'
+  >('ALL');
   const [selectedJilidFilter, setSelectedJilidFilter] = useState<'ALL' | 'Softcover' | 'Cocard' | 'Spiral'>('ALL');
   const [localViewMode, setLocalViewMode] = useState<'matrix' | 'table'>('matrix');
 
   const viewMode = propViewMode ?? localViewMode;
   const setViewMode = propSetViewMode ?? setLocalViewMode;
-  // Generate Matrix data dinamis sesuai formula master parameter
+
+  // Matrix data per varian
   const matrixData = useMemo(() => {
-    return HALAMAN_LIST.map(({ hal, title }) => {
+    const varianList: Array<{
+      id: 'Custom Cover 10 x 15,5' | 'Kosongan 10 x 15,5' | 'Mini TikTok 6,3 x 10,3';
+      title: string;
+      hal: any;
+      desc: string;
+    }> = [
+      {
+        id: 'Custom Cover 10 x 15,5',
+        title: 'Buku Manasik Custom Cover (216 Hal)',
+        hal: 216,
+        desc: 'Uk. 10 x 15,5 cm · 212 Hal Isi + 4 Hal Sisipan PT · Tali Cocard + Plastik OPP',
+      },
+      {
+        id: 'Kosongan 10 x 15,5',
+        title: 'Buku Manasik Kosongan Ready (212 Hal)',
+        hal: 212,
+        desc: 'Uk. 10 x 15,5 cm · HVS 70 gsm Offset 1 Warna · Susun + Lem Panas',
+      },
+      {
+        id: 'Mini TikTok 6,3 x 10,3',
+        title: 'Buku Manasik Mini TikTok (48 Hal)',
+        hal: 48,
+        desc: 'Uk. 6,3 x 10,3 cm · AC 310 gsm FC Bolak-balik + Ring Binder 3cm + Ziplock',
+      },
+    ];
+
+    const filteredVarians = selectedVarianFilter === 'ALL'
+      ? varianList
+      : varianList.filter((v) => v.id === selectedVarianFilter);
+
+    return filteredVarians.map((v) => {
       let rows = OPLAH_TIERS.map((oplah) => {
         // Model 1: Softcover Bending
         const softBending = calculateManasikSimulator(
           {
+            varian: v.id,
             oplah,
-            jumlahHalaman: hal,
+            jumlahHalaman: v.hal,
             tipeJilid: 'Softcover (Bending/Lem Panas)',
             metodeCetakCover: 'Otomatis',
-            laminasiCover: 'Glossy',
-            opsiPlastikOpp: true,
+            laminasiCover: v.id === 'Kosongan 10 x 15,5' ? 'Tanpa Laminasi' : 'Doff',
+            opsiPlastikOpp: v.id === 'Custom Cover 10 x 15,5',
             opsiKardus: true,
+            opsiSisipan: v.id === 'Custom Cover 10 x 15,5',
             marginPct: 30,
             negoDiskonPct: 0,
           },
           customParams
         );
 
-        // Model 2: Tali Cocard
+        // Model 2: Tali Cocard (Atau Ring Binder untuk TikTok)
         const taliCocard = calculateManasikSimulator(
           {
+            varian: v.id,
             oplah,
-            jumlahHalaman: hal,
-            tipeJilid: 'Tali Cocard',
+            jumlahHalaman: v.hal,
+            tipeJilid: v.id === 'Mini TikTok 6,3 x 10,3' ? 'Ring Binder (TikTok)' : 'Tali Cocard',
             metodeCetakCover: 'Otomatis',
-            laminasiCover: 'Glossy',
-            opsiPlastikOpp: true,
+            laminasiCover: v.id === 'Mini TikTok 6,3 x 10,3' ? 'Glossy' : v.id === 'Kosongan 10 x 15,5' ? 'Tanpa Laminasi' : 'Doff',
+            opsiPlastikOpp: v.id === 'Custom Cover 10 x 15,5',
             opsiKardus: true,
-            marginPct: 30,
+            opsiSisipan: v.id === 'Custom Cover 10 x 15,5',
+            marginPct: v.id === 'Mini TikTok 6,3 x 10,3' ? 32 : 30,
             negoDiskonPct: 0,
           },
           customParams
@@ -82,13 +113,15 @@ export default function ManasikMatrixView({
         // Model 3: Spiral Kawat
         const spiral = calculateManasikSimulator(
           {
+            varian: v.id,
             oplah,
-            jumlahHalaman: hal,
+            jumlahHalaman: v.hal,
             tipeJilid: 'Spiral Kawat',
             metodeCetakCover: 'Otomatis',
-            laminasiCover: 'Glossy',
-            opsiPlastikOpp: true,
+            laminasiCover: v.id === 'Kosongan 10 x 15,5' ? 'Tanpa Laminasi' : 'Doff',
+            opsiPlastikOpp: v.id === 'Custom Cover 10 x 15,5',
             opsiKardus: true,
+            opsiSisipan: v.id === 'Custom Cover 10 x 15,5',
             marginPct: 30,
             negoDiskonPct: 0,
           },
@@ -97,7 +130,7 @@ export default function ManasikMatrixView({
 
         return {
           oplah,
-          metode: oplah >= 300 ? 'Cetak Oliver' : 'Print Digital',
+          metode: softBending.metodeCoverTerpilih,
           softBendingHpp: softBending.summary.hppPerPcs,
           softBendingJual: softBending.summary.hargaJualPerPcs,
           taliCocardHpp: taliCocard.summary.hppPerPcs,
@@ -107,25 +140,28 @@ export default function ManasikMatrixView({
         };
       });
 
-      // Filter berdasarkan Oplah jika search term diisi angka
       if (searchTerm.trim() !== '') {
         const query = searchTerm.toLowerCase();
-        rows = rows.filter((r) => r.oplah.toString().includes(query) || r.metode.toLowerCase().includes(query));
+        rows = rows.filter(
+          (r) =>
+            r.oplah.toString().includes(query) ||
+            r.metode.toLowerCase().includes(query) ||
+            v.title.toLowerCase().includes(query)
+        );
       }
 
       return {
-        hal,
-        title,
+        id: v.id,
+        title: v.title,
+        desc: v.desc,
         rows,
       };
     });
-  }, [customParams, searchTerm]);
-
+  }, [customParams, searchTerm, selectedVarianFilter]);
   // Flat table rows for table view
   const flatTableRows = useMemo(() => {
     const list: Array<{
-      hal: number;
-      title: string;
+      varian: string;
       oplah: number;
       tipeJilid: string;
       metode: string;
@@ -135,27 +171,49 @@ export default function ManasikMatrixView({
       profitTot: number;
     }> = [];
 
-    HALAMAN_LIST.forEach(({ hal, title }) => {
+    const varianList: Array<{
+      id: 'Custom Cover 10 x 15,5' | 'Kosongan 10 x 15,5' | 'Mini TikTok 6,3 x 10,3';
+      title: string;
+      hal: any;
+    }> = [
+      { id: 'Custom Cover 10 x 15,5', title: 'Custom Cover 10 x 15,5 (216 Hal)', hal: 216 },
+      { id: 'Kosongan 10 x 15,5', title: 'Kosongan Ready 10 x 15,5 (212 Hal)', hal: 212 },
+      { id: 'Mini TikTok 6,3 x 10,3', title: 'Mini TikTok 6,3 x 10,3 (48 Hal)', hal: 48 },
+    ];
+
+    const filteredVarians = selectedVarianFilter === 'ALL'
+      ? varianList
+      : varianList.filter((v) => v.id === selectedVarianFilter);
+
+    filteredVarians.forEach(({ id, title, hal }) => {
       OPLAH_TIERS.forEach((oplah) => {
-        const jilidOptions: Array<{ type: 'Softcover (Bending/Lem Panas)' | 'Tali Cocard' | 'Spiral Kawat'; label: string; filterKey: 'Softcover' | 'Cocard' | 'Spiral' }> = [
-          { type: 'Softcover (Bending/Lem Panas)', label: 'Softcover Bending', filterKey: 'Softcover' },
-          { type: 'Tali Cocard', label: 'Tali Cocard', filterKey: 'Cocard' },
-          { type: 'Spiral Kawat', label: 'Spiral Kawat', filterKey: 'Spiral' },
-        ];
+        const jilidOptions: Array<{
+          type: 'Softcover (Bending/Lem Panas)' | 'Tali Cocard' | 'Spiral Kawat' | 'Ring Binder (TikTok)';
+          label: string;
+          filterKey: 'Softcover' | 'Cocard' | 'Spiral';
+        }> = id === 'Mini TikTok 6,3 x 10,3'
+          ? [{ type: 'Ring Binder (TikTok)', label: 'Ring Binder 3cm', filterKey: 'Cocard' }]
+          : [
+              { type: 'Tali Cocard', label: 'Tali Cocard', filterKey: 'Cocard' },
+              { type: 'Softcover (Bending/Lem Panas)', label: 'Softcover Bending', filterKey: 'Softcover' },
+              { type: 'Spiral Kawat', label: 'Spiral Kawat', filterKey: 'Spiral' },
+            ];
 
         jilidOptions.forEach(({ type, label, filterKey }) => {
           if (selectedJilidFilter !== 'ALL' && selectedJilidFilter !== filterKey) return;
 
           const res = calculateManasikSimulator(
             {
+              varian: id,
               oplah,
               jumlahHalaman: hal,
               tipeJilid: type,
               metodeCetakCover: 'Otomatis',
-              laminasiCover: 'Glossy',
-              opsiPlastikOpp: true,
+              laminasiCover: id === 'Mini TikTok 6,3 x 10,3' ? 'Glossy' : id === 'Kosongan 10 x 15,5' ? 'Tanpa Laminasi' : 'Doff',
+              opsiPlastikOpp: id === 'Custom Cover 10 x 15,5',
               opsiKardus: true,
-              marginPct: 30,
+              opsiSisipan: id === 'Custom Cover 10 x 15,5',
+              marginPct: id === 'Mini TikTok 6,3 x 10,3' ? 32 : 30,
               negoDiskonPct: 0,
             },
             customParams
@@ -172,11 +230,10 @@ export default function ManasikMatrixView({
           }
 
           list.push({
-            hal,
-            title,
+            varian: title,
             oplah,
             tipeJilid: label,
-            metode: oplah >= 300 ? 'Cetak Oliver' : 'Print Digital',
+            metode: res.metodeCoverTerpilih,
             hpp: res.summary.hppPerPcs,
             hargaJual: res.summary.hargaJualPerPcs,
             omset: res.summary.totalHargaJual,
@@ -187,7 +244,7 @@ export default function ManasikMatrixView({
     });
 
     return list;
-  }, [customParams, searchTerm, selectedJilidFilter]);
+  }, [customParams, searchTerm, selectedVarianFilter, selectedJilidFilter]);
 
   return (
     <div className="space-y-4">
@@ -199,10 +256,10 @@ export default function ManasikMatrixView({
           </div>
           <div>
             <h2 className="text-sm sm:text-base font-bold text-emerald-950 tracking-tight">
-              Pricelist Matriks Buku Manasik Haji & Umroh
+              Pricelist Matriks Buku Manasik Haji & Umroh 2026
             </h2>
             <p className="text-[11.5px] text-emerald-800/80 mt-0.5">
-              Tabel acuan harga jual per eksemplar (+30% margin) berdasarkan kuantitas oplah dan model jilid.
+              Tabel acuan harga jual resmi master Excel 2026: Custom Cover 10×15,5 cm, Kosongan Ready, dan Mini TikTok 6,3×10,3 cm.
             </p>
           </div>
         </div>
@@ -210,17 +267,35 @@ export default function ManasikMatrixView({
 
       {/* Search & Filter Bar */}
       <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center gap-3 text-xs">
+        {/* Filter Varian */}
+        <div className="flex items-center gap-1 shrink-0 w-full sm:w-auto">
+          <select
+            value={selectedVarianFilter}
+            onChange={(e) => setSelectedVarianFilter(e.target.value as any)}
+            className="px-2.5 py-1.5 font-bold rounded-lg border border-slate-200 bg-slate-50 text-slate-800 text-xs focus:ring-1 focus:ring-emerald-500 focus:outline-none"
+          >
+            <option value="ALL">Semua Varian Manasik</option>
+            <option value="Custom Cover 10 x 15,5">Custom Cover 10 x 15,5</option>
+            <option value="Kosongan 10 x 15,5">Kosongan 10 x 15,5</option>
+            <option value="Mini TikTok 6,3 x 10,3">Mini TikTok 6,3 x 10,3</option>
+          </select>
+        </div>
+
         <div className="relative flex-1 w-full">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            placeholder="Cari kuantitas oplah (misal: 500, 1000)..."
+            placeholder="Cari oplah, varian, atau mesin..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-8 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
           />
           {searchTerm && (
-            <button onClick={() => setSearchTerm('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+            <button
+              type="button"
+              onClick={() => setSearchTerm('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+            >
               <X className="w-3.5 h-3.5" />
             </button>
           )}
@@ -318,12 +393,15 @@ export default function ManasikMatrixView({
                 {matrixData.map((section) => {
                 if (section.rows.length === 0) return null;
                 return (
-                  <div key={section.hal} className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
+                  <div key={section.id} className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
                     <div className="bg-amber-50/70 px-4 py-2 border-b border-amber-100 flex items-center justify-between">
                       <span className="text-[11px] font-bold text-amber-900 tracking-wider uppercase flex items-center gap-1.5">
                         <Layers size={13} className="text-amber-600" />
-                        Bahan: {section.title} — 10 x 15.5 cm
+                        {section.title}
                       </span>
+                    </div>
+                    <div className="px-4 py-1.5 bg-amber-50/30 border-b border-amber-100/50 text-[10px] text-amber-800">
+                      {section.desc}
                     </div>
                     <div className="overflow-x-auto max-h-[500px]">
                       <table className="w-full text-xs text-left border-collapse">
@@ -430,8 +508,7 @@ export default function ManasikMatrixView({
             <table className="w-full text-xs text-left border-collapse">
               <thead className="sticky top-0 z-10 bg-slate-100 border-b border-slate-200 text-slate-700 font-bold">
                 <tr>
-                  <th className="py-2.5 px-3">Halaman</th>
-                  <th className="py-2.5 px-3">Tipe Jilid</th>
+                  <th className="py-2.5 px-3">Varian Buku</th>
                   <th className="py-2.5 px-3 text-center">Oplah</th>
                   <th className="py-2.5 px-3 text-center">Metode Cover</th>
                   <th className="py-2.5 px-3 text-right">HPP / Eks</th>
@@ -450,7 +527,7 @@ export default function ManasikMatrixView({
                 ) : (
                   flatTableRows.map((row, idx) => (
                     <tr key={idx} className="hover:bg-amber-50/20">
-                      <td className="py-2 px-3 font-semibold text-slate-800 font-sans">{row.title}</td>
+                      <td className="py-2 px-3 font-semibold text-slate-800 font-sans">{row.varian}</td>
                       <td className="py-2 px-3 font-medium text-slate-700 font-sans">
                         <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10.5px]">
                           {row.tipeJilid}

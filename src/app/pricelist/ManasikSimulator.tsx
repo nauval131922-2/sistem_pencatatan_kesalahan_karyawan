@@ -33,6 +33,8 @@ import {
   ManasikMasterParams,
   ManasikSimulatorInput,
   ManasikSimulatorOutput as ManasikSimulatorResult,
+  ManasikVarianType,
+  MANASIK_VARIAN_CONFIG,
 } from '@/lib/manasik-calculator';
 import ThousandInput from '@/components/ThousandInput';
 import { toast } from '@/lib/toast';
@@ -41,13 +43,15 @@ export interface SavedManasikSimulationItem {
   id: string;
   savedAt: string;
   title: string;
+  varian?: ManasikVarianType;
   oplah: number;
-  jumlahHalaman: 96 | 128 | 192 | 208;
-  tipeJilid: 'Softcover (Bending/Lem Panas)' | 'Staples Kawat' | 'Tali Cocard' | 'Spiral Kawat';
+  jumlahHalaman: 48 | 96 | 128 | 192 | 208 | 212 | 216;
+  tipeJilid: 'Softcover (Bending/Lem Panas)' | 'Staples Kawat' | 'Tali Cocard' | 'Spiral Kawat' | 'Ring Binder (TikTok)';
   metodeCetakCover: 'Otomatis' | 'Print Digital (A3+)' | 'Offset (Oliver)';
   laminasiCover: 'Tanpa Laminasi' | 'Glossy' | 'Doff' | 'UV Varnish';
   opsiPlastikOpp: boolean;
   opsiKardus: boolean;
+  opsiSisipan?: boolean;
   marginPct: number;
   negoDiskonPct: number;
   customParams: ManasikMasterParams;
@@ -55,18 +59,46 @@ export interface SavedManasikSimulationItem {
   summary: ManasikSimulatorResult['summary'];
 }
 
-const HALAMAN_OPTIONS = [
-  { value: 96, label: '96 Halaman', desc: 'Blok Manasik Ringkas' },
-  { value: 128, label: '128 Halaman', desc: 'Blok Manasik Standar' },
-  { value: 192, label: '192 Halaman', desc: 'Blok Manasik Lengkap (Populer)' },
-  { value: 208, label: '208 Halaman', desc: 'Blok Manasik Jumbo Plus' },
+const VARIAN_OPTIONS: { value: ManasikVarianType; label: string; desc: string }[] = [
+  {
+    value: 'Custom Cover 10 x 15,5',
+    label: 'Custom Cover 10 x 15,5 cm',
+    desc: 'Cover AC 230 Custom Travel + Sisipan 4 Hal + Blok 212 Hal + Tali Kur (Pricelist 2026)',
+  },
+  {
+    value: 'Kosongan 10 x 15,5',
+    label: 'Kosongan Ready 10 x 15,5 cm',
+    desc: 'Blok Isi Kosongan Ready Stock 212 Hal HVS 70 (Tanpa Cover Custom)',
+  },
+  {
+    value: 'Mini TikTok 6,3 x 10,3',
+    label: 'Mini TikTok 6,3 x 10,3 cm',
+    desc: 'Buku Manasik Saku AC 310 Bolak-balik + Ring Binder 3cm + Tali + Ziplock',
+  },
 ];
 
+const HALAMAN_OPTIONS: Record<ManasikVarianType, { value: number; label: string; desc: string }[]> = {
+  'Custom Cover 10 x 15,5': [
+    { value: 216, label: '216 Halaman (Standar 2026)', desc: '212 Hal Blok Isi + 4 Hal Sisipan PT' },
+    { value: 192, label: '192 Halaman', desc: 'Blok Manasik Lengkap Klasik' },
+    { value: 128, label: '128 Halaman', desc: 'Blok Manasik Standar' },
+    { value: 96, label: '96 Halaman', desc: 'Blok Manasik Ringkas' },
+  ],
+  'Kosongan 10 x 15,5': [
+    { value: 212, label: '212 Halaman (Ready 2026)', desc: 'Isi Kosongan Standar 2026' },
+    { value: 192, label: '192 Halaman', desc: 'Isi Kosongan Lama' },
+  ],
+  'Mini TikTok 6,3 x 10,3': [
+    { value: 48, label: '48 Halaman (24 Kartu)', desc: 'Ukuran saku mini ring binder' },
+  ],
+};
+
 const JILID_OPTIONS = [
+  { value: 'Tali Cocard', label: 'Tali Cocard (Standar 2026)', desc: 'Staples + Casing In + Bor + Tali Kur Leher' },
   { value: 'Softcover (Bending/Lem Panas)', label: 'Softcover (Lem Panas)', desc: 'Jilid bending punggung rapi' },
-  { value: 'Tali Cocard', label: 'Tali Cocard', desc: 'Staples + Lubang Bor + Tali Kur Leher' },
-  { value: 'Staples Kawat', label: 'Staples Kawat', desc: 'Staples tengah / samping ekonomis' },
+  { value: 'Staples Kawat', label: 'Staples Kawat', desc: 'Staples tengah / casing in ekonomis' },
   { value: 'Spiral Kawat', label: 'Spiral Kawat', desc: 'Jilid kawat ring spiral' },
+  { value: 'Ring Binder (TikTok)', label: 'Ring Binder 3cm', desc: 'Khusus varian Mini TikTok' },
 ];
 
 const METODE_OPTIONS = [
@@ -76,12 +108,11 @@ const METODE_OPTIONS = [
 ];
 
 const LAMINASI_OPTIONS = [
+  { value: 'Doff', label: 'Laminasi Doff (Standar 2026)', desc: 'Matte elegan & eksklusif' },
   { value: 'Glossy', label: 'Laminasi Glossy', desc: 'Mengkilap cerah' },
-  { value: 'Doff', label: 'Laminasi Doff', desc: 'Matte elegan & eksklusif' },
   { value: 'UV Varnish', label: 'UV Varnish', desc: 'Lapisan vernis mengkilap' },
   { value: 'Tanpa Laminasi', label: 'Tanpa Laminasi', desc: 'Standar cetak polos' },
 ];
-
 interface ManasikSimulatorProps {
   customParams?: ManasikMasterParams;
   setCustomParams?: React.Dispatch<React.SetStateAction<ManasikMasterParams>>;
@@ -101,10 +132,11 @@ export default function ManasikSimulator({
   activeSimulationTitle: propActiveSimTitle,
   setActiveSimulationTitle: propSetActiveSimTitle,
 }: ManasikSimulatorProps) {
+  const [varian, setVarian] = useState<ManasikVarianType>('Custom Cover 10 x 15,5');
   const [oplah, setOplah] = useState<number>(500);
-  const [jumlahHalaman, setJumlahHalaman] = useState<96 | 128 | 192 | 208>(192);
+  const [jumlahHalaman, setJumlahHalaman] = useState<48 | 96 | 128 | 192 | 208 | 212 | 216>(216);
   const [tipeJilid, setTipeJilid] = useState<
-    'Softcover (Bending/Lem Panas)' | 'Staples Kawat' | 'Tali Cocard' | 'Spiral Kawat'
+    'Softcover (Bending/Lem Panas)' | 'Staples Kawat' | 'Tali Cocard' | 'Spiral Kawat' | 'Ring Binder (TikTok)'
   >('Tali Cocard');
   const [metodeCetakCover, setMetodeCetakCover] = useState<
     'Otomatis' | 'Print Digital (A3+)' | 'Offset (Oliver)'
@@ -114,6 +146,7 @@ export default function ManasikSimulator({
   >('Doff');
   const [opsiPlastikOpp, setOpsiPlastikOpp] = useState<boolean>(true);
   const [opsiKardus, setOpsiKardus] = useState<boolean>(true);
+  const [opsiSisipan, setOpsiSisipan] = useState<boolean>(true);
   const [marginPct, setMarginPct] = useState<number>(30);
   const [negoDiskonPct, setNegoDiskonPct] = useState<number>(0);
   const [copiedQuote, setCopiedQuote] = useState(false);
@@ -139,6 +172,30 @@ export default function ManasikSimulator({
     else setInternalActiveTitle(title);
   };
 
+  // Handle change varian
+  const handleVarianChange = (newVarian: ManasikVarianType) => {
+    setVarian(newVarian);
+    const cfg = MANASIK_VARIAN_CONFIG[newVarian];
+    setJumlahHalaman(cfg.defaultHal);
+    setTipeJilid(cfg.defaultJilid);
+    if (newVarian === 'Mini TikTok 6,3 x 10,3') {
+      setLaminasiCover('Glossy');
+      setOpsiPlastikOpp(false);
+      setOpsiSisipan(false);
+      setMarginPct(32);
+    } else if (newVarian === 'Kosongan 10 x 15,5') {
+      setLaminasiCover('Tanpa Laminasi');
+      setOpsiPlastikOpp(false);
+      setOpsiSisipan(false);
+      setMarginPct(30);
+    } else {
+      setLaminasiCover('Doff');
+      setOpsiPlastikOpp(true);
+      setOpsiSisipan(true);
+      setMarginPct(30);
+    }
+  };
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem('sintak_saved_manasik_simulations');
@@ -149,6 +206,7 @@ export default function ManasikSimulator({
         if (activeSimulationId) {
           const item = list.find((s) => s.id === activeSimulationId);
           if (item) {
+            if (item.varian) setVarian(item.varian);
             setOplah(item.oplah);
             setJumlahHalaman(item.jumlahHalaman);
             setTipeJilid(item.tipeJilid);
@@ -156,6 +214,7 @@ export default function ManasikSimulator({
             setLaminasiCover(item.laminasiCover);
             setOpsiPlastikOpp(item.opsiPlastikOpp);
             setOpsiKardus(item.opsiKardus);
+            if (item.opsiSisipan !== undefined) setOpsiSisipan(item.opsiSisipan);
             setMarginPct(item.marginPct);
             setNegoDiskonPct(item.negoDiskonPct);
             setSimulationTitle(item.title);
@@ -169,6 +228,7 @@ export default function ManasikSimulator({
 
   const inputConfig: ManasikSimulatorInput = useMemo(
     () => ({
+      varian,
       oplah,
       jumlahHalaman,
       tipeJilid,
@@ -176,10 +236,12 @@ export default function ManasikSimulator({
       laminasiCover,
       opsiPlastikOpp,
       opsiKardus,
+      opsiSisipan,
       marginPct,
       negoDiskonPct,
     }),
     [
+      varian,
       oplah,
       jumlahHalaman,
       tipeJilid,
@@ -187,6 +249,7 @@ export default function ManasikSimulator({
       laminasiCover,
       opsiPlastikOpp,
       opsiKardus,
+      opsiSisipan,
       marginPct,
       negoDiskonPct,
     ]
@@ -197,13 +260,14 @@ export default function ManasikSimulator({
   }, [inputConfig, customParams]);
 
   const handleSaveSimulation = () => {
-    const defaultTitle = `Buku Manasik ${jumlahHalaman} Hal (${oplah.toLocaleString('id-ID')} eks - ${tipeJilid})`;
+    const defaultTitle = `${varian} ${jumlahHalaman} Hal (${oplah.toLocaleString('id-ID')} eks - ${tipeJilid})`;
     const titleToUse = simulationTitle.trim() || defaultTitle;
 
     const newItem: SavedManasikSimulationItem = {
       id: 'sim_manasik_' + Date.now(),
       savedAt: new Date().toISOString(),
       title: titleToUse,
+      varian,
       oplah,
       jumlahHalaman,
       tipeJilid,
@@ -211,6 +275,7 @@ export default function ManasikSimulator({
       laminasiCover,
       opsiPlastikOpp,
       opsiKardus,
+      opsiSisipan,
       marginPct,
       negoDiskonPct,
       customParams: { ...customParams },
@@ -241,6 +306,7 @@ export default function ManasikSimulator({
         return {
           ...sim,
           title: titleToUse,
+          varian,
           oplah,
           jumlahHalaman,
           tipeJilid,
@@ -248,6 +314,7 @@ export default function ManasikSimulator({
           laminasiCover,
           opsiPlastikOpp,
           opsiKardus,
+          opsiSisipan,
           marginPct,
           negoDiskonPct,
           customParams: { ...customParams },
@@ -256,24 +323,20 @@ export default function ManasikSimulator({
       }
       return sim;
     });
-
     setSavedSimulations(updated);
     try {
       localStorage.setItem('sintak_saved_manasik_simulations', JSON.stringify(updated));
       const targetItem = updated.find((s) => s.id === activeSimulationId);
       if (targetItem) saveCalculationToDb({ ...targetItem, category: 'Buku Manasik' });
       setActiveSimulationTitle(titleToUse);
-      toast.success(`Perubahan riwayat "${titleToUse}" berhasil disimpan!`);
-    setActiveSimulationId(null);
-    if (setActiveSimulationTitle) setActiveSimulationTitle(null);
-    setSimulationTitle('');
+      toast.success(`Perubahan pada simulasi "${titleToUse}" berhasil diperbarui!`);
     } catch (e) {
       console.error('Failed to update simulation:', e);
       toast.error('Gagal memperbarui riwayat simulasi.');
     }
-  };
 
   const handleLoadSimulation = (item: SavedManasikSimulationItem) => {
+    if (item.varian) setVarian(item.varian);
     setOplah(item.oplah);
     setJumlahHalaman(item.jumlahHalaman);
     setTipeJilid(item.tipeJilid);
@@ -281,6 +344,7 @@ export default function ManasikSimulator({
     setLaminasiCover(item.laminasiCover);
     setOpsiPlastikOpp(item.opsiPlastikOpp);
     setOpsiKardus(item.opsiKardus);
+    if (item.opsiSisipan !== undefined) setOpsiSisipan(item.opsiSisipan);
     setMarginPct(item.marginPct);
     setNegoDiskonPct(item.negoDiskonPct);
     if (setCustomParams && item.customParams) {
@@ -317,6 +381,7 @@ export default function ManasikSimulator({
       (sim) =>
         sim.title.toLowerCase().includes(q) ||
         sim.tipeJilid.toLowerCase().includes(q) ||
+        (sim.varian && sim.varian.toLowerCase().includes(q)) ||
         String(sim.jumlahHalaman).includes(q) ||
         String(sim.oplah).includes(q)
     );
@@ -326,10 +391,11 @@ export default function ManasikSimulator({
     const text = `*PENAWARAN BUKU PANDUAN MANASIK HAJI / UMROH*
 *PT Buya Barokah*
 ━━━━━━━━━━━━━━━━━━━━
-• *Produk*: Buku Manasik ${jumlahHalaman} Halaman
-• *Ukuran*: 10 x 15.5 cm
+• *Produk*: ${varian}
+• *Halaman*: ${jumlahHalaman} Halaman
+• *Ukuran*: ${MANASIK_VARIAN_CONFIG[varian].ukuran}
 • *Kuantitas (Oplah)*: ${oplah.toLocaleString('id-ID')} eks
-• *Cover*: Custom Full Color (AC 230 gsm) + Laminasi ${laminasiCover}
+• *Cover*: ${MANASIK_VARIAN_CONFIG[varian].defaultCover} + Laminasi ${laminasiCover}
 • *Model Jilid*: ${tipeJilid}
 • *Kemasan*: ${opsiPlastikOpp ? 'Plastik OPP Satuan' : 'Standar'} + ${opsiKardus ? 'Kardus Master' : ''}
 ━━━━━━━━━━━━━━━━━━━━
@@ -343,7 +409,6 @@ _Harga belum termasuk PPN. Spesifikasi & desain dapat dikonsultasikan lebih lanj
     toast.success('Penawaran format WhatsApp berhasil disalin!');
     setTimeout(() => setCopiedQuote(false), 2500);
   };
-
   return (
     <div className="space-y-6">
       {/* Header Info */}
@@ -409,6 +474,29 @@ _Harga belum termasuk PPN. Spesifikasi & desain dapat dikonsultasikan lebih lanj
               <Sliders size={15} className="text-emerald-700" />
               <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Input Spesifikasi Order</h3>
             </div>
+            {/* Pilihan Varian Produk */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Model / Varian Buku Manasik
+              </label>
+              <div className="grid grid-cols-1 gap-2">
+                {VARIAN_OPTIONS.map((v) => (
+                  <button
+                    key={v.value}
+                    type="button"
+                    onClick={() => handleVarianChange(v.value)}
+                    className={`p-2 px-2.5 rounded-lg border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                      varian === v.value
+                        ? 'border-emerald-600 bg-emerald-50/80 text-emerald-950 font-bold ring-1 ring-emerald-500'
+                        : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    <span className="text-xs font-bold">{v.label}</span>
+                    <span className="text-[10px] text-slate-500 mt-0.5">{v.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Oplah */}
             <div>
@@ -433,7 +521,7 @@ _Harga belum termasuk PPN. Spesifikasi & desain dapat dikonsultasikan lebih lanj
                 Varian Isi Buku Manasik
               </label>
               <div className="grid grid-cols-2 gap-2">
-                {HALAMAN_OPTIONS.map((opt) => (
+                {HALAMAN_OPTIONS[varian].map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
@@ -516,27 +604,39 @@ _Harga belum termasuk PPN. Spesifikasi & desain dapat dikonsultasikan lebih lanj
               </select>
             </div>
 
-            {/* Checkbox Kemasan */}
-            <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={opsiPlastikOpp}
-                  onChange={(e) => setOpsiPlastikOpp(e.target.checked)}
-                  className="rounded text-emerald-600 focus:ring-emerald-500"
-                />
-                <span className="text-slate-700">Plastik OPP Satuan</span>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={opsiKardus}
-                  onChange={(e) => setOpsiKardus(e.target.checked)}
-                  className="rounded text-emerald-600 focus:ring-emerald-500"
-                />
-                <span className="text-slate-700">Box Kardus Master</span>
-              </label>
+            {/* Checkbox Kemasan & Sisipan */}
+            <div className="pt-2 border-t border-slate-200 flex flex-col gap-2 text-xs">
+              {varian === 'Custom Cover 10 x 15,5' && (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={opsiSisipan}
+                    onChange={(e) => setOpsiSisipan(e.target.checked)}
+                    className="rounded text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span className="text-slate-700 font-medium">Sisipan 4 Halaman (Nama/Biro Travel)</span>
+                </label>
+              )}
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={opsiPlastikOpp}
+                    onChange={(e) => setOpsiPlastikOpp(e.target.checked)}
+                    className="rounded text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span className="text-slate-700">Plastik OPP Satuan</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={opsiKardus}
+                    onChange={(e) => setOpsiKardus(e.target.checked)}
+                    className="rounded text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span className="text-slate-700">Packing Kardus Master</span>
+                </label>
+              </div>
             </div>
 
             {/* Margin & Nego */}

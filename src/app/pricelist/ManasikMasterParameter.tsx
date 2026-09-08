@@ -30,13 +30,22 @@ const MANASIK_VISIBLE_KEYS: (keyof ManasikMasterParams)[] = [
   'hargaIsiKosongan128',
   'hargaIsiKosongan192',
   'hargaIsiKosongan208',
+  'tarifPrintCoverA3',
+  'tarifPrintMiniTikTokA3',
   'tarifDesainCover',
+  'tarifDesainMiniTikTok',
   'insheetCover',
+  'tarifKertasHvs70Kg',
+  'tarifPrintSisipanA3',
   'tarifBendingPerCm2',
   'tarifTaliKurPerPcs',
   'tarifSpiralManasik',
   'tarifLubangBor',
   'tarifPasangTali',
+  'tarifTaliCocardMini',
+  'tarifRingBinderMini',
+  'tarifPlastikZiplockMini',
+  'tarifPisauPoundMini',
 ];
 
 export default function ManasikMasterParameter({
@@ -172,79 +181,63 @@ export default function ManasikMasterParameter({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Card 1: Blok Isi Kosongan (Ready) */}
+        {/* Card 1: Blok Isi Kosongan (Ready 2026) */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs flex flex-col gap-3">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
             <Box className="w-4 h-4 text-emerald-700" />
-            <h3 className="text-xs font-bold text-slate-800">1. Blok Isi Kosongan (Ready)</h3>
+            <h3 className="text-xs font-bold text-slate-800">1. Blok Isi Kosongan (Ready Stock)</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {fieldRow('hargaIsiKosongan96', 'Isi 96 Halaman')}
-            {fieldRow('hargaIsiKosongan128', 'Isi 128 Halaman')}
-            {fieldRow('hargaIsiKosongan192', 'Isi 192 Halaman')}
-            {fieldRow('hargaIsiKosongan208', 'Isi 208 Halaman')}
+            {fieldRow('hargaIsiKosongan208', 'Isi 212 Hal Ready (Rp/eks)')}
+            {fieldRow('hargaIsiKosongan192', 'Isi 192 Halaman (Rp/eks)')}
+            {fieldRow('hargaIsiKosongan128', 'Isi 128 Halaman (Rp/eks)')}
+            {fieldRow('hargaIsiKosongan96', 'Isi 96 Halaman (Rp/eks)')}
+            {fieldRow('tarifKertasHvs70Kg', 'Kertas HVS 70 gsm (Rp/kg)')}
+            {fieldRow('tarifPrintSisipanA3', 'Print Sisipan PT A3+ (Rp/lbr)')}
           </div>
         </div>
 
-        {/* Card 2: Jasa Desain & Insheet Cover */}
+        {/* Card 2: Print Cover & Jasa Desain */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs flex flex-col gap-3">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
             <Printer className="w-4 h-4 text-blue-600" />
-            <h3 className="text-xs font-bold text-slate-800">2. Jasa Desain & Insheet Cover</h3>
+            <h3 className="text-xs font-bold text-slate-800">2. Print Cover POD & Desain</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {fieldRow('tarifDesainCover', 'Jasa Desain Cover (Rp)')}
-            {fieldRow('insheetCover', 'Insheet / Waste Cover (lbr)', false)}
+            {fieldRow('tarifPrintCoverA3', 'Print Cover AC230 A3+ (Rp)')}
+            {fieldRow('tarifPrintMiniTikTokA3', 'Print TikTok AC310 A3+ (Rp)')}
+            {fieldRow('tarifDesainCover', 'Desain Custom Cover (Rp)')}
+            {fieldRow('tarifDesainMiniTikTok', 'Desain Mini TikTok (Rp)')}
+            {fieldRow('insheetCover', 'Insheet POD (lembar)', false)}
           </div>
         </div>
 
-        {/* Card 3: Jilid, Tali & Kemasan */}
+        {/* Card 3: Jilid, Tali & Finishing Custom Cover */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs flex flex-col gap-3">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
             <Layers className="w-4 h-4 text-amber-600" />
-            <h3 className="text-xs font-bold text-slate-800">3. Jilid, Tali & Kemasan</h3>
+            <h3 className="text-xs font-bold text-slate-800">3. Jilid, Tali & Finishing Manasik</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {fieldRow('tarifBendingPerCm2', 'Lem Panas / Bending (Rp/eks)')}
-            {fieldRow('tarifTaliKurPerPcs', 'Tali Kur Leher (Rp/pcs)')}
-            {fieldRow('tarifSpiralManasik', 'Spiral Kawat Manasik (Rp/pcs)')}
-            <div
-              className={`p-2.5 rounded-lg border transition-all ${
-                isFieldModified('tarifLubangBor') || isFieldModified('tarifPasangTali')
-                  ? 'bg-amber-50/70 border-amber-300 ring-1 ring-amber-400/40'
-                  : 'bg-slate-50/70 border-slate-200/80 hover:bg-slate-50'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-1 mb-1.5">
-                <label className="text-xs font-semibold text-slate-700 truncate" title="Lubang Bor + Pasang Tali (Rp/pcs)">
-                  Lubang Bor + Pasang Tali (Rp/pcs)
-                </label>
-                {(isFieldModified('tarifLubangBor') || isFieldModified('tarifPasangTali')) && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleResetField('tarifLubangBor');
-                      handleResetField('tarifPasangTali');
-                    }}
-                    className="text-[9.5px] font-bold text-amber-700 hover:text-amber-900 flex items-center gap-0.5 bg-amber-100/80 px-1.5 py-0.5 rounded cursor-pointer shrink-0"
-                    title="Reset ke default"
-                  >
-                    <RotateCcw className="w-2.5 h-2.5" /> Def
-                  </button>
-                )}
-              </div>
-              <div className="flex items-center gap-1.5">
-                <ThousandInput
-                  value={customParams.tarifLubangBor + customParams.tarifPasangTali}
-                  onValueChange={(v) => {
-                    handleChange('tarifLubangBor', Math.round((v || 0) * 0.67));
-                    handleChange('tarifPasangTali', Math.round((v || 0) * 0.33));
-                  }}
-                  className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 text-right focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/10 shadow-2xs"
-                  prefix="Rp"
-                />
-              </div>
-            </div>
+            {fieldRow('tarifTaliKurPerPcs', 'Tali Kur Warna Leher (Rp/pcs)')}
+            {fieldRow('tarifBendingPerCm2', 'Tarif Bending (Rp/cm²)')}
+            {fieldRow('tarifSpiralManasik', 'Spiral Kawat (Rp/eks)')}
+            {fieldRow('tarifLubangBor', 'Jasa Lubang Bor Mata Ayam (Rp)')}
+            {fieldRow('tarifPasangTali', 'Jasa Pasang Tali Kur (Rp)')}
+          </div>
+        </div>
+
+        {/* Card 4: Komponen Khusus Mini TikTok */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs flex flex-col gap-3">
+          <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+            <Sparkles className="w-4 h-4 text-purple-600" />
+            <h3 className="text-xs font-bold text-slate-800">4. Komponen Khusus Mini TikTok</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {fieldRow('tarifRingBinderMini', 'Ring Binder 3cm (Rp/pcs)')}
+            {fieldRow('tarifTaliCocardMini', 'Tali Cocard Mini (Rp/pcs)')}
+            {fieldRow('tarifPlastikZiplockMini', 'Plastik Ziplock (Rp/pcs)')}
+            {fieldRow('tarifPisauPoundMini', 'Pisau Pond TikTok (Rp/pcs)')}
           </div>
         </div>
       </div>

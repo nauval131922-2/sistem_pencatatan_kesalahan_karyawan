@@ -186,6 +186,7 @@ export function applyGlobalParamsToAll(
     tarifAc230Kg: g.tarifAc230Kg,
     tarifAc260Kg: g.tarifAc260Kg,
     tarifPrintCoverA3: g.tarifPrintA3,
+    tarifKertasHvs70Kg: g.tarifHvs70,
     oliverMinOngkosCover: g.oliverMinOngkos,
     oliverPlatUnitCover: g.oliverPlatUnit,
     oliverDrekOverCover: g.oliverDrekOver,
@@ -199,7 +200,6 @@ export function applyGlobalParamsToAll(
     tarifKardusBox: g.tarifKardusBox,
     tarifPlastikOppPack: Math.round(g.tarifPlastikOppPcs * 100),
   };
-
   const nextYasin: YasinMasterParams = {
     ...currYasin,
     tarifPrintCoverA3: g.tarifPrintA3,

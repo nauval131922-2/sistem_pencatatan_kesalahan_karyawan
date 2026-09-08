@@ -407,23 +407,24 @@ export default function SavedCalculationsList({
       const hpp = summary.hppPerPcs || m.hppUnit || 0;
       const jual = summary.hargaJualPerPcs || m.hargaJualUnit || 0;
       const omset = summary.totalHargaJual || m.totalOmset || (jual * (m.oplah || 1));
+      const varian = m.varian || 'Custom Cover 10 x 15,5';
       items.push({
         id: m.id,
         category: 'Buku Manasik',
         savedAt: m.savedAt || new Date().toISOString(),
         title: m.title,
         oplah: m.oplah || 0,
-        specSummary: `Manasik ${m.jumlahHalaman || 96} Hal • ${m.tipeJilid || 'Softcover'}`,
+        specSummary: `${varian} • ${m.jumlahHalaman || 216} Hal • ${m.tipeJilid || 'Tali Cocard'}`,
         detailSpecs: [
-          `Cover: ${m.laminasiCover || 'Tanpa Laminasi'}`,
-          `Produksi: ${m.metodeCetakCover || 'Offset'}`,
+          `Cover: ${m.laminasiCover || 'Doff'}`,
+          `Produksi: ${m.metodeCetakCover || 'Otomatis'}`,
           `Kemasan: ${m.opsiPlastikOpp ? 'Plastik OPP' : 'Standar'}`,
         ],
         hppUnit: hpp,
         hargaJualUnit: jual,
         totalOmset: omset,
         marginPct: m.marginPct || 30,
-        negoDiskonPct: m.negoDiskonPct || 5,
+        negoDiskonPct: m.negoDiskonPct || 0,
         rawData: m,
       });
     });
