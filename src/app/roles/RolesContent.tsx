@@ -1036,7 +1036,7 @@ function LaporanPekerjaanRoleModal({
             }`}
           >
             <ShieldCheck size={14} />
-            <span>Hak Aksi ({[canAdd, canEdit, canDelete].filter(Boolean).length}/3)</span>
+            <span>Hak Aksi ({[canAdd, canEdit, deleteScope !== 'none'].filter(Boolean).length}/3)</span>
           </button>
           <button
             type="button"
