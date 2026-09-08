@@ -4099,6 +4099,7 @@ function InlineEditRow({
               </button>
             </div>
           )}
+        </td>
       )}
     </tr>
   );
