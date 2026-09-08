@@ -890,6 +890,7 @@ function LaporanPekerjaanRoleModal({
     if (initialConfig.delete_scope) return initialConfig.delete_scope;
     return initialConfig.can_delete === false ? 'none' : 'all';
   });
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(() =>
     initialConfig.visible_columns && initialConfig.visible_columns.length > 0
       ? [...initialConfig.visible_columns]
       : LAPORAN_PEKERJAAN_COLUMNS.map((c) => c.key)
