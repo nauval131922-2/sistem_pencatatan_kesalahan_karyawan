@@ -991,6 +991,17 @@ export const PAGE_CHANGELOGS: Record<string, PageChangelog> = {
     permissionKeys: [...SUPER_ADMIN_ONLY],
     items: [...UI_POLISH],
   }),
+  'roles-2026-09-08': entry({
+    pageKey: 'roles',
+    title: 'Hak Akses (Roles)',
+    permissionKeys: [...SUPER_ADMIN_ONLY],
+    sortDate: '2026-09-08',
+    date: '08 Sep 2026',
+    version: '2026-09-08-1',
+    items: [
+      'Penambahan opsi cakupan izin hapus untuk Laporan Pekerjaan: Tidak bisa hapus, Hanya bisa hapus di table utama, Hanya bisa hapus di card detail, atau Bisa hapus di manapun',
+    ],
+  }),
   'roles-2026-08-24': entry({
     pageKey: 'roles',
     title: 'Hak Akses (Roles)',
@@ -1179,6 +1190,17 @@ export const PAGE_CHANGELOGS: Record<string, PageChangelog> = {
   }),
 
   // ─── Laporan Pekerjaan ───
+  'laporan-pekerjaan-2026-09-08': entry({
+    pageKey: 'laporan-pekerjaan',
+    title: 'Laporan Pekerjaan',
+    permissionKeys: ['produksi_laporan_pekerjaan'],
+    sortDate: '2026-09-08',
+    date: '08 Sep 2026',
+    version: '2026-09-08-1',
+    items: [
+      'Penyelarasan hak akses hapus order di tabel utama dan aktivitas di card detail modal sesuai konfigurasi delete_scope dari Hak Akses',
+    ],
+  }),
   'laporan-pekerjaan-2026-09-07': entry({
     pageKey: 'laporan-pekerjaan',
     title: 'Laporan Pekerjaan',
