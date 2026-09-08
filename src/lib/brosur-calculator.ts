@@ -78,18 +78,25 @@ export type BrosurLaminasiType = 'Tanpa Laminasi' | 'Glossy' | 'Doff' | 'UV Varn
 // Konfigurasi fisik per ukuran (lebar x tinggi cm, insheet, plano yg bisa dipotong)
 const UKURAN_CONFIG: Record<BrosurUkuranType, {
   w: number; h: number;
-  insheetPrint: number;   // berapa brosur per lembar A3+ (79x109 / 65x90)
-  insheetOliver: number;  // berapa brosur per plano 65x90 cetak Oliver
+  insheetPrint: number;   // berapa brosur per lembar A3+
+  muatPlano: number;      // berapa brosur per plano cetak Oliver
+  potongPlano: number;    // 1 plano jadi berapa potong
+  insheetPlat: number;    // insheet lembar plat
   planoL: number;         // panjang plano Oliver (cm)
   planoP: number;         // lebar plano Oliver (cm)
 }> = {
-  '10,5 x 21':  { w: 10.5, h: 21,   insheetPrint: 6,  insheetOliver: 100, planoL: 65, planoP: 90 },
-  '14,5 x 21':  { w: 14.5, h: 21,   insheetPrint: 4,  insheetOliver: 150, planoL: 65, planoP: 90 },
-  '21 x 29,7':  { w: 21,   h: 29.7, insheetPrint: 2,  insheetOliver: 150, planoL: 65, planoP: 90 },
-  '21,5 x 33':  { w: 21.5, h: 33,   insheetPrint: 1,  insheetOliver: 150, planoL: 79, planoP: 109 },
-  '29,7 x 42':  { w: 29.7, h: 42,   insheetPrint: 1,  insheetOliver: 150, planoL: 65, planoP: 90 },
+  // Di Excel master Oliver (sheet BUKU):
+  // 10,5 x 21: plano 79x109, muatPlano = 30, potong = 5, insheetPlat = 100
+  // 14,5 x 21: plano 65x90,  muatPlano = 16, potong = 4, insheetPlat = 150
+  // 21 x 29,7: plano 65x90,  muatPlano = 8,  potong = 4, insheetPlat = 150
+  // 21,5 x 33: plano 79x109, muatPlano = 10, potong = 5, insheetPlat = 100
+  // 29,7 x 42: plano 65x90,  muatPlano = 4,  potong = 4, insheetPlat = 100
+  '10,5 x 21':  { w: 10.5, h: 21,   insheetPrint: 6, muatPlano: 30, potongPlano: 5, insheetPlat: 100, planoL: 79, planoP: 109 },
+  '14,5 x 21':  { w: 14.5, h: 21,   insheetPrint: 4, muatPlano: 16, potongPlano: 4, insheetPlat: 150, planoL: 65, planoP: 90 },
+  '21 x 29,7':  { w: 21,   h: 29.7, insheetPrint: 2, muatPlano: 8,  potongPlano: 4, insheetPlat: 150, planoL: 65, planoP: 90 },
+  '21,5 x 33':  { w: 21.5, h: 33,   insheetPrint: 1, muatPlano: 10, potongPlano: 5, insheetPlat: 100, planoL: 79, planoP: 109 },
+  '29,7 x 42':  { w: 29.7, h: 42,   insheetPrint: 1, muatPlano: 4,  potongPlano: 4, insheetPlat: 100, planoL: 65, planoP: 90 },
 };
-
 // Gramatur Art Paper: berat per plano = gramatur × (planoL/100 × planoP/100) / 1000 kg
 function beratPlanoKg(planoL: number, planoP: number, gramatur = 120): number {
   return gramatur * (planoL / 100) * (planoP / 100) / 1000;
@@ -160,8 +167,8 @@ export function calculateBrosurSimulator(
 
   // 1. Biaya Kertas
   if (isOliver) {
-    // Oliver: hitung kebutuhan plano
-    const planoPerOrder = Math.ceil(oplah / cfg.insheetOliver);
+    // Oliver: Kebutuhan plano sesuai Excel cell R = ROUNDUP((oplah / muatPlano) + (insheetPlat / potongPlano), 0)
+    const planoPerOrder = Math.ceil((oplah / cfg.muatPlano) + (cfg.insheetPlat / cfg.potongPlano));
     const hargaPlano = hargaPlanoRupiah(p, cfg.planoL, cfg.planoP, gramaturNum);
     const biayaKertas = planoPerOrder * hargaPlano;
     add(`Kertas ${gramatur}`, biayaKertas,
@@ -182,9 +189,12 @@ export function calculateBrosurSimulator(
     const biayaPlat = jmlPlat * p.tarifPlatOliver;
     add('Plate CTP Oliver', biayaPlat, `${jmlPlat} plat × Rp ${p.tarifPlatOliver.toLocaleString('id-ID')}`);
 
-    // Ongkos cetak: min 90.000/plat atau per-drek × warna
-    const drekCetak = oplah + 5; // +5 waste
-    const ongkosCetakPerPlat = Math.max(p.minOrderOliver, Math.ceil(drekCetak / 1000) * p.tarifDrekOliver * 4);
+    // Ongkos cetak: Di Excel cell AD = jmlPlat * Rp 90.000 (untuk oplah s/d 3.000 = 600 drek plat)
+    // Drek plat = (planoPerOrder * potongPlano * muka)
+    const planoPerOrder = Math.ceil((oplah / cfg.muatPlano) + (cfg.insheetPlat / cfg.potongPlano));
+    const totalDrekPlat = planoPerOrder * cfg.potongPlano * (is2Muka ? 2 : 1);
+    const drekOverPerPlat = Math.max(0, totalDrekPlat - 1000);
+    const ongkosCetakPerPlat = p.minOrderOliver + (drekOverPerPlat * p.tarifDrekOliver);
     const ongkosCetak = ongkosCetakPerPlat * jmlPlat;
     add('Ongkos Cetak Oliver', ongkosCetak,
       `${jmlPlat} plat × Rp ${ongkosCetakPerPlat.toLocaleString('id-ID')}`);
@@ -208,19 +218,13 @@ export function calculateBrosurSimulator(
   }
 
   // 5. Sisir (potong)
+  // Di Excel master cell AM: =IF((oplah/500)*AM6 < 10000, 10000, (oplah/500)*AM6) di mana AM6 = Rp 10.000
   if (opsiSisir) {
-    const biayaSisir = oplah <= 500
-      ? p.tarifSisirMin
-      : Math.ceil(oplah / 1000) * p.tarifSisirPer1000;
-    add('Sisir / Potong', biayaSisir, `${oplah} pcs`);
+    const tarifSisirPer500 = 10000;
+    const biayaSisir = Math.max(10000, Math.ceil(oplah / 500) * tarifSisirPer500);
+    add('Sisir / Potong', biayaSisir, `${oplah} pcs (potong rapi)`);
   }
-
-  // 6. Kardus & Packing (Sesuai Excel: kardus dihitung pada oplah besar >= 1.000 pcs)
-  if (oplah >= 1000 || isOliver) {
-    const boxQty = Math.ceil(oplah / 2000);
-    const biayaKardus = p.tarifKardus * boxQty;
-    add('Kardus Master Packing', biayaKardus, `${boxQty} box kardus packing`);
-  }
+  // 6. Kardus & Packing (Di Excel file Source cell BA9 default 0 kecuali opsi kardus dicentang khusus)
   // Recompute pct
   breakdown.forEach(b => { b.pct = totalHpp > 0 ? b.nominal / totalHpp : 0; });
 
