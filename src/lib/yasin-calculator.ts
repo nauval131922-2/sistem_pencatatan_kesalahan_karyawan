@@ -48,7 +48,7 @@ export const DEFAULT_YASIN_PARAMS: YasinMasterParams = {
   hargaIsiYasin64: 1650,
   hargaIsiYasin96: 2250,
   hargaIsiYasin112: 2470,
-  hargaIsiYasin128: 2600,
+  hargaIsiYasin128: 3000, // Excel Master!D36 Buya Barokah: Bo-[128-3000]-11,5[0#3000]Tgg
   hargaIsiYasin144: 3200,
   hargaIsiYasin192: 3800,
 
