@@ -522,7 +522,7 @@ _Harga belum termasuk PPN. Spesifikasi & desain dapat dikonsultasikan lebih lanj
                 Varian Isi Buku Manasik
               </label>
               <div className="grid grid-cols-2 gap-2">
-                {HALAMAN_OPTIONS[varian].map((opt) => (
+                {(HALAMAN_OPTIONS[varian] || HALAMAN_OPTIONS['Custom Cover 10 x 15,5']).map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
