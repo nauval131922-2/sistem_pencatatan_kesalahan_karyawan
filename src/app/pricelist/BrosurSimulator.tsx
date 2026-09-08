@@ -79,8 +79,8 @@ export default function BrosurSimulator({
   const [muka, setMuka] = useState<BrosurMukaType>('2 Muka');
   const [mesin, setMesin] = useState<BrosurMesinType>('Print Inter');
   const [laminasi, setLaminasi] = useState<BrosurLaminasiType>('Glossy');
-  const [opsiSisir, setOpsiSisir] = useState(false);
-  const [opsiPacking, setOpsiPacking] = useState(true);
+  const [opsiSisir, setOpsiSisir] = useState(true); // Standar brosur selalu disisir potong bersih
+  const [opsiPacking, setOpsiPacking] = useState(false);
   const [marginPct, setMarginPct] = useState(30);
   const [negoDiskonPct, setNegoDiskonPct] = useState(4);
   const [copiedQuote, setCopiedQuote] = useState(false);
@@ -139,6 +139,8 @@ export default function BrosurSimulator({
         if (d.muka !== undefined) setMuka(d.muka);
         if (d.mesin !== undefined) setMesin(d.mesin);
         if (d.laminasi !== undefined) setLaminasi(d.laminasi);
+        if (d.opsiSisir !== undefined) setOpsiSisir(Boolean(d.opsiSisir));
+        if (d.opsiPacking !== undefined) setOpsiPacking(Boolean(d.opsiPacking));
         if (d.marginPct !== undefined) setMarginPct(Number(d.marginPct) || 30);
         if (d.negoDiskonPct !== undefined) setNegoDiskonPct(Number(d.negoDiskonPct) || 0);
       }
@@ -158,6 +160,8 @@ export default function BrosurSimulator({
           muka,
           mesin,
           laminasi,
+          opsiSisir,
+          opsiPacking,
           marginPct,
           negoDiskonPct,
         };
@@ -174,10 +178,11 @@ export default function BrosurSimulator({
     muka,
     mesin,
     laminasi,
+    opsiSisir,
+    opsiPacking,
     marginPct,
     negoDiskonPct,
   ]);
-
   const result = useMemo(
     () =>
       calculateBrosurSimulator(
