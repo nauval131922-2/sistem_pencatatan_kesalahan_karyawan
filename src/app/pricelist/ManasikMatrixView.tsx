@@ -52,7 +52,7 @@ export default function ManasikMatrixView({
         id: 'Custom Cover 10 x 15,5',
         title: 'Buku Manasik Custom Cover (216 Hal)',
         hal: 216,
-        desc: 'Uk. 10 x 15,5 cm · 212 Hal Isi + 4 Hal Sisipan PT · Tali Cocard + Plastik OPP',
+        desc: 'Uk. 10 x 15,5 cm · 212 Hal Isi + 4 Hal Sisipan PT · Tali Kur + Plastik OPP',
       },
       {
         id: 'Kosongan 10 x 15,5',
@@ -92,13 +92,13 @@ export default function ManasikMatrixView({
           customParams
         );
 
-        // Model 2: Tali Cocard (Atau Ring Binder untuk TikTok)
+        // Model 2: Tali Kur (Atau Ring Binder untuk TikTok)
         const taliCocard = calculateManasikSimulator(
           {
             varian: v.id,
             oplah,
             jumlahHalaman: v.hal,
-            tipeJilid: v.id === 'Mini TikTok 6,3 x 10,3' ? 'Ring Binder (TikTok)' : 'Tali Cocard',
+            tipeJilid: v.id === 'Mini TikTok 6,3 x 10,3' ? 'Ring Binder (TikTok)' : 'Tali Kur',
             metodeCetakCover: 'Otomatis',
             laminasiCover: v.id === 'Mini TikTok 6,3 x 10,3' ? 'Glossy' : v.id === 'Kosongan 10 x 15,5' ? 'Tanpa Laminasi' : 'Doff',
             opsiPlastikOpp: v.id === 'Custom Cover 10 x 15,5',
@@ -188,13 +188,13 @@ export default function ManasikMatrixView({
     filteredVarians.forEach(({ id, title, hal }) => {
       OPLAH_TIERS.forEach((oplah) => {
         const jilidOptions: Array<{
-          type: 'Softcover (Bending/Lem Panas)' | 'Tali Cocard' | 'Spiral Kawat' | 'Ring Binder (TikTok)';
+          type: 'Softcover (Bending/Lem Panas)' | 'Tali Kur' | 'Spiral Kawat' | 'Ring Binder (TikTok)';
           label: string;
           filterKey: 'Softcover' | 'Cocard' | 'Spiral';
         }> = id === 'Mini TikTok 6,3 x 10,3'
           ? [{ type: 'Ring Binder (TikTok)', label: 'Ring Binder 3cm', filterKey: 'Cocard' }]
           : [
-              { type: 'Tali Cocard', label: 'Tali Cocard', filterKey: 'Cocard' },
+              { type: 'Tali Kur', label: 'Tali Kur', filterKey: 'Cocard' },
               { type: 'Softcover (Bending/Lem Panas)', label: 'Softcover Bending', filterKey: 'Softcover' },
               { type: 'Spiral Kawat', label: 'Spiral Kawat', filterKey: 'Spiral' },
             ];
@@ -327,7 +327,7 @@ export default function ManasikMatrixView({
               selectedJilidFilter === 'Cocard' ? 'bg-white text-emerald-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
-            Tali Cocard
+            Tali Kur / Ring
           </button>
           <button
             type="button"
@@ -420,7 +420,7 @@ export default function ManasikMatrixView({
                             )}
                             {(selectedJilidFilter === 'ALL' || selectedJilidFilter === 'Cocard') && (
                               <th colSpan={2} className="py-1.5 px-2 text-center border-r border-gray-200 font-bold text-gray-900 bg-gray-200/80">
-                                Tali Cocard
+                                Tali Kur / Ring
                               </th>
                             )}
                             {(selectedJilidFilter === 'ALL' || selectedJilidFilter === 'Spiral') && (

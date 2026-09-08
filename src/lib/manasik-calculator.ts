@@ -131,7 +131,7 @@ export interface ManasikSimulatorInput {
   varian: ManasikVarianType;
   oplah: number;
   jumlahHalaman: 48 | 96 | 128 | 192 | 208 | 212 | 216;
-  tipeJilid: 'Softcover (Bending/Lem Panas)' | 'Staples Kawat' | 'Tali Cocard' | 'Spiral Kawat' | 'Ring Binder (TikTok)';
+  tipeJilid: 'Softcover (Bending/Lem Panas)' | 'Staples Kawat' | 'Tali Kur' | 'Spiral Kawat' | 'Ring Binder (TikTok)';
   metodeCetakCover: 'Otomatis' | 'Print Digital (A3+)' | 'Offset (Oliver)';
   laminasiCover: 'Tanpa Laminasi' | 'Glossy' | 'Doff' | 'UV Varnish';
   opsiPlastikOpp: boolean;
@@ -175,7 +175,7 @@ export const MANASIK_VARIAN_CONFIG = {
     widthCm: 10,
     heightCm: 15.5,
     defaultHal: 216 as const,
-    defaultJilid: 'Tali Cocard' as const,
+    defaultJilid: 'Tali Kur' as const,
     defaultCover: 'Art Carton 230 gsm',
     desc: 'Cover Full Colour Custom Nama/Biro + Sisipan 4 Hal + Isi Kosongan 212 Hal + Tali Kur + Plastik OPP',
   },
@@ -583,7 +583,7 @@ export function calculateManasikSimulator(
         keterangan: 'Staples kawat tengah 1213 + jilid casing in cover',
       });
 
-      if (tipeJilid === 'Tali Cocard') {
+      if (tipeJilid === 'Tali Kur') {
         const biayaBor = params.tarifLubangBor * validOplah;
         const biayaBahanTali = (validOplah / 56) * 16000;
         const biayaPasangTali = params.tarifPasangTali * validOplah;

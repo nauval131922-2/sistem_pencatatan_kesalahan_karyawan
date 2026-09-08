@@ -46,7 +46,7 @@ export interface SavedManasikSimulationItem {
   varian?: ManasikVarianType;
   oplah: number;
   jumlahHalaman: 48 | 96 | 128 | 192 | 208 | 212 | 216;
-  tipeJilid: 'Softcover (Bending/Lem Panas)' | 'Staples Kawat' | 'Tali Cocard' | 'Spiral Kawat' | 'Ring Binder (TikTok)';
+  tipeJilid: 'Softcover (Bending/Lem Panas)' | 'Staples Kawat' | 'Tali Kur' | 'Spiral Kawat' | 'Ring Binder (TikTok)';
   metodeCetakCover: 'Otomatis' | 'Print Digital (A3+)' | 'Offset (Oliver)';
   laminasiCover: 'Tanpa Laminasi' | 'Glossy' | 'Doff' | 'UV Varnish';
   opsiPlastikOpp: boolean;
@@ -94,11 +94,11 @@ const HALAMAN_OPTIONS: Record<ManasikVarianType, { value: number; label: string;
 };
 
 const JILID_OPTIONS = [
-  { value: 'Tali Cocard', label: 'Tali Cocard (Standar 2026)', desc: 'Staples + Casing In + Bor + Tali Kur Leher' },
+  { value: 'Tali Kur', label: 'Tali Kur (Standar 2026)', desc: 'Staples + Casing In + Bor Lubang Tali Kur Leher' },
   { value: 'Softcover (Bending/Lem Panas)', label: 'Softcover (Lem Panas)', desc: 'Jilid bending punggung rapi' },
   { value: 'Staples Kawat', label: 'Staples Kawat', desc: 'Staples tengah / casing in ekonomis' },
   { value: 'Spiral Kawat', label: 'Spiral Kawat', desc: 'Jilid kawat ring spiral' },
-  { value: 'Ring Binder (TikTok)', label: 'Ring Binder 3cm', desc: 'Khusus varian Mini TikTok' },
+  { value: 'Ring Binder (TikTok)', label: 'Ring Binder 3cm', desc: 'Khusus varian Mini TikTok (+ Tali Co Card)' },
 ];
 
 const METODE_OPTIONS = [
@@ -136,8 +136,8 @@ export default function ManasikSimulator({
   const [oplah, setOplah] = useState<number>(500);
   const [jumlahHalaman, setJumlahHalaman] = useState<48 | 96 | 128 | 192 | 208 | 212 | 216>(216);
   const [tipeJilid, setTipeJilid] = useState<
-    'Softcover (Bending/Lem Panas)' | 'Staples Kawat' | 'Tali Cocard' | 'Spiral Kawat' | 'Ring Binder (TikTok)'
-  >('Tali Cocard');
+    'Softcover (Bending/Lem Panas)' | 'Staples Kawat' | 'Tali Kur' | 'Spiral Kawat' | 'Ring Binder (TikTok)'
+  >('Tali Kur');
   const [metodeCetakCover, setMetodeCetakCover] = useState<
     'Otomatis' | 'Print Digital (A3+)' | 'Offset (Oliver)'
   >('Otomatis');
@@ -1065,7 +1065,7 @@ _Harga belum termasuk PPN. Spesifikasi & desain dapat dikonsultasikan lebih lanj
                   <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
                     <span className="font-bold text-emerald-800 text-xs">3. Jilid, Finishing & Sisipan</span>
                     <p className="text-[11px] text-slate-600">
-                      Tersedia: <strong>Tali Cocard + Mata Ayam</strong>, <strong>Bending Lem Panas</strong>, <strong>Spiral</strong>, atau <strong>Ring Binder</strong> (TikTok) + Laminasi Doff/Glossy.
+                      Tersedia: <strong>Staples + Casing In + Tali Kur</strong>, <strong>Bending Lem Panas</strong>, <strong>Spiral</strong>, atau <strong>Ring Binder 3cm + Tali Co Card</strong> (TikTok).
                     </p>
                   </div>
                   <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">

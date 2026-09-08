@@ -414,7 +414,7 @@ export default function SavedCalculationsList({
         savedAt: m.savedAt || new Date().toISOString(),
         title: m.title,
         oplah: m.oplah || 0,
-        specSummary: `${varian} • ${m.jumlahHalaman || 216} Hal • ${m.tipeJilid || 'Tali Cocard'}`,
+        specSummary: `${varian} • ${m.jumlahHalaman || 216} Hal • ${m.tipeJilid || 'Tali Kur'}`,
         detailSpecs: [
           `Cover: ${m.laminasiCover || 'Doff'}`,
           `Produksi: ${m.metodeCetakCover || 'Otomatis'}`,
