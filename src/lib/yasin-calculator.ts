@@ -195,7 +195,8 @@ export function calculateYasinSimulator(
   const biayaLaminasi = Math.max(params.minLaminasi, rawLam);
 
   // 6. Finishing Perakitan Jilid
-  const totalLembarSisip = lembarSisipanFoto + lembarSisipanKeluarga;
+  // Di Excel Hardcover cell AU7: =$AU$2 * $AU$6 * H7 di mana AU2 = 3 lembar sisipan (Rp 300/buku)
+  const totalLembarSisip = isHardcover ? Math.max(3, lembarSisipanFoto + lembarSisipanKeluarga) : (lembarSisipanFoto + lembarSisipanKeluarga);
   const biayaSisip = totalLembarSisip * params.tarifSisipLembar * validOplah;
   const biayaStaples = params.tarifStaplesYasin * validOplah;
   const biayaSisir = params.tarifSisirYasin * validOplah;
@@ -223,7 +224,8 @@ export function calculateYasinSimulator(
 
   let biayaOpp = 0;
   if (opsiPlastikOpp) {
-    biayaOpp = params.tarifPlastikOppYasin * validOplah;
+    const tarifOpp = isHardcover ? 95 : (params.tarifPlastikOppYasin ?? 90);
+    biayaOpp = tarifOpp * validOplah;
   }
 
   // Total HPP
@@ -326,7 +328,8 @@ export function calculateYasinSimulator(
   // Di Excel: =ROUNDUP(((G5 * margin) + G5), -2)
   const rawHpp = totalHpp / validOplah;
   const rawHargaJual = rawHpp * (1 + marginPct / 100);
-  const hargaJualPerPcs = Math.ceil(rawHargaJual / 100) * 100;
+  // Di Excel cell BR7: =ROUNDUP(BQ7, -1) (pembulatan ke kelipatan 10 terdekat, misal 16.490)
+  const hargaJualPerPcs = Math.ceil(rawHargaJual / 10) * 10;
   const totalHargaJual = hargaJualPerPcs * validOplah;
   const marginNominalPerPcs = hargaJualPerPcs - hppPerPcs;
   const totalProfit = totalHargaJual - totalHpp;
