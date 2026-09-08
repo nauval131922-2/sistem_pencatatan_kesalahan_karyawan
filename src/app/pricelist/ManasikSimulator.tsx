@@ -67,13 +67,13 @@ const VARIAN_OPTIONS: { value: ManasikVarianType; label: string; desc: string }[
   },
   {
     value: 'Kosongan 10 x 15,5',
-    label: 'Kosongan Ready 10 x 15,5 cm',
-    desc: 'Blok Isi Kosongan Ready Stock 212 Hal HVS 70 (Tanpa Cover Custom)',
+    label: 'Kosongan 10 x 15,5 cm',
+    desc: 'Blok Isi Kosongan 212 Hal HVS 70 (Tanpa Cover Custom)',
   },
   {
     value: 'Mini TikTok 6,3 x 10,3',
-    label: 'Mini TikTok 6,3 x 10,3 cm',
-    desc: 'Buku Manasik Saku AC 310 Bolak-balik + Ring Binder 3cm + Tali + Ziplock',
+    label: 'Cocard 6,3 x 10,3 cm',
+    desc: 'Buku Manasik Saku Cocard AC 310 Bolak-balik + Ring Binder 3cm + Tali + Ziplock',
   },
 ];
 
@@ -85,11 +85,11 @@ const HALAMAN_OPTIONS: Record<ManasikVarianType, { value: number; label: string;
     { value: 96, label: '96 Halaman', desc: 'Blok Manasik Ringkas' },
   ],
   'Kosongan 10 x 15,5': [
-    { value: 212, label: '212 Halaman (Ready 2026)', desc: 'Isi Kosongan Standar 2026' },
+    { value: 212, label: '212 Halaman (Standar 2026)', desc: 'Isi Kosongan Standar 2026' },
     { value: 192, label: '192 Halaman', desc: 'Isi Kosongan Lama' },
   ],
   'Mini TikTok 6,3 x 10,3': [
-    { value: 48, label: '48 Halaman (24 Kartu)', desc: 'Ukuran saku mini ring binder' },
+    { value: 48, label: '48 Halaman (24 Kartu)', desc: 'Ukuran saku cocard ring binder' },
   ],
 };
 
@@ -98,7 +98,7 @@ const JILID_OPTIONS = [
   { value: 'Softcover (Bending/Lem Panas)', label: 'Softcover (Lem Panas)', desc: 'Jilid bending punggung rapi' },
   { value: 'Staples Kawat', label: 'Staples Kawat', desc: 'Staples tengah / casing in ekonomis' },
   { value: 'Spiral Kawat', label: 'Spiral Kawat', desc: 'Jilid kawat ring spiral' },
-  { value: 'Ring Binder (TikTok)', label: 'Ring Binder 3cm', desc: 'Khusus varian Mini TikTok (+ Tali Co Card)' },
+  { value: 'Ring Binder (TikTok)', label: 'Ring Binder 3cm', desc: 'Khusus varian Cocard (+ Tali Co Card)' },
 ];
 
 const METODE_OPTIONS = [
@@ -1109,7 +1109,7 @@ _Harga belum termasuk PPN. Spesifikasi & desain dapat dikonsultasikan lebih lanj
                   <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
                     <span className="font-bold text-emerald-800 text-xs">1. Pilih Model Varian</span>
                     <p className="text-[11px] text-slate-600">
-                      Pilih: <strong>Custom Cover 10×15,5</strong> (standar 2026), <strong>Kosongan Ready</strong>, atau <strong>Mini TikTok 6,3×10,3</strong>. Parameter otomatis menyesuaikan.
+                      Pilih: <strong>Custom Cover 10×15,5</strong> (standar 2026), <strong>Kosongan</strong>, atau <strong>Cocard 6,3×10,3</strong>. Parameter otomatis menyesuaikan.
                     </p>
                   </div>
                   <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
@@ -1121,7 +1121,7 @@ _Harga belum termasuk PPN. Spesifikasi & desain dapat dikonsultasikan lebih lanj
                   <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
                     <span className="font-bold text-emerald-800 text-xs">3. Jilid, Finishing & Sisipan</span>
                     <p className="text-[11px] text-slate-600">
-                      Tersedia: <strong>Staples + Casing In + Tali Kur</strong>, <strong>Bending Lem Panas</strong>, <strong>Spiral</strong>, atau <strong>Ring Binder 3cm + Tali Co Card</strong> (TikTok).
+                      Tersedia: <strong>Staples + Casing In + Tali Kur</strong>, <strong>Bending Lem Panas</strong>, <strong>Spiral</strong>, atau <strong>Ring Binder 3cm + Tali Co Card</strong>.
                     </p>
                   </div>
                   <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
@@ -1149,11 +1149,11 @@ _Harga belum termasuk PPN. Spesifikasi & desain dapat dikonsultasikan lebih lanj
                   <div className="p-2.5 bg-white rounded border border-blue-100 space-y-1">
                     <span className="font-bold text-blue-900 block">Kosongan 10 x 15,5 cm:</span>
                     <p className="text-slate-600 leading-snug">
-                      Blok isi ready 212 hal HVS 70 gsm cetak offset Oliver 1 warna (53 plat CTP), finishing pelipatan kuras, susun urut, lem panas bending, dan kemasan kardus master.
+                      Blok isi 212 hal HVS 70 gsm cetak mesin Buya/Web Rotary, finishing pelipatan kuras, susun urut, lem panas bending, dan kemasan kardus master.
                     </p>
                   </div>
                   <div className="p-2.5 bg-white rounded border border-purple-100 space-y-1">
-                    <span className="font-bold text-purple-900 block">Mini TikTok 6,3 x 10,3 cm:</span>
+                    <span className="font-bold text-purple-900 block">Cocard 6,3 x 10,3 cm:</span>
                     <p className="text-slate-600 leading-snug">
                       Art Carton 310 gsm full color bolak-balik (48 hal / 24 kartu) + Laminasi glossy + Pisau & jasa pond sudut + Ring binder 3cm + Tali cocard + Plastik ziplock.
                     </p>

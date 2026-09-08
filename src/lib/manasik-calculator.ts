@@ -180,24 +180,24 @@ export const MANASIK_VARIAN_CONFIG = {
     desc: 'Cover Full Colour Custom Nama/Biro + Sisipan 4 Hal + Isi Kosongan 212 Hal + Tali Kur + Plastik OPP',
   },
   'Kosongan 10 x 15,5': {
-    label: 'Kosongan Ready 10 x 15,5 cm',
+    label: 'Kosongan 10 x 15,5 cm',
     ukuran: '10 x 15,5 cm',
     widthCm: 10,
     heightCm: 15.5,
     defaultHal: 212 as const,
     defaultJilid: 'Softcover (Bending/Lem Panas)' as const,
     defaultCover: 'Tanpa Cover',
-    desc: 'Blok Isi Buku Manasik Kosongan Ready Stock (HVS 70 gsm, 1 Warna Offset, Susun + Lem Panas)',
+    desc: 'Blok Isi Buku Manasik Kosongan (HVS 70 gsm, 1 Warna Offset, Susun + Lem Panas)',
   },
   'Mini TikTok 6,3 x 10,3': {
-    label: 'Mini TikTok 6,3 x 10,3 cm',
+    label: 'Cocard 6,3 x 10,3 cm',
     ukuran: '6,3 x 10,3 cm',
     widthCm: 6.3,
     heightCm: 10.3,
     defaultHal: 48 as const,
     defaultJilid: 'Ring Binder (TikTok)' as const,
     defaultCover: 'Art Carton 310 gsm',
-    desc: 'Buku Saku Manasik Mini TikTok (Art Carton 310 gsm FC Bolak-balik + Ring Binder 3cm + Tali Cocard + Plastik Ziplock)',
+    desc: 'Buku Saku Manasik Cocard (Art Carton 310 gsm FC Bolak-balik + Ring Binder 3cm + Tali Cocard + Plastik Ziplock)',
   },
 };
 
@@ -559,9 +559,8 @@ export function calculateManasikSimulator(
     else hargaIsiPerPcs = params.hargaIsiKosongan208;
 
     const insheetIsi = 2;
-    const biayaIsi = hargaIsiPerPcs * (validOplah + insheetIsi);
     breakdown.push({
-      nama: `Blok Isi Manasik (${jumlahHalaman >= 208 ? '212' : jumlahHalaman} Hal Ready)`,
+      nama: `Blok Isi Manasik (${jumlahHalaman >= 208 ? '212' : jumlahHalaman} Halaman)`,
       nominal: Math.round(biayaIsi),
       pct: 0,
       keterangan: `@ Rp ${hargaIsiPerPcs.toLocaleString('id-ID')} x ${validOplah + insheetIsi} eks (inkl. 2 insheet)`,

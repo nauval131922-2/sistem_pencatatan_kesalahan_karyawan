@@ -145,7 +145,31 @@ export default function SavedCalculationsList({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  // View mode (Card vs Table) dengan default 'table' dan persist di localStorage
+  const [viewMode, setViewModeState] = useState<'card' | 'table'>('table');
+
+  useEffect(() => {
+    try {
+      const savedMode = localStorage.getItem('sintak_pricelist_saved_view_mode');
+      if (savedMode === 'card' || savedMode === 'table') {
+        setViewModeState(savedMode);
+      } else {
+        setViewModeState('table');
+      }
+    } catch (e) {
+      console.error('Failed to read saved view mode:', e);
+    }
+  }, []);
+
+  const setViewMode = (mode: 'card' | 'table') => {
+    setViewModeState(mode);
+    try {
+      localStorage.setItem('sintak_pricelist_saved_view_mode', mode);
+    } catch (e) {
+      console.error('Failed to save view mode:', e);
+    }
+  };
+
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   // Raw state lists
   const [kalenderList, setKalenderList] = useState<SavedSimulationItem[]>([]);

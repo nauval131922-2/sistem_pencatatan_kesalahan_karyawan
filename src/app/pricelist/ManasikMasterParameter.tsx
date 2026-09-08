@@ -180,14 +180,14 @@ export default function ManasikMasterParameter({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Card 1: Blok Isi Kosongan (Ready 2026) */}
+        {/* Card 1: Blok Isi Kosongan */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs flex flex-col gap-3">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
             <Box className="w-4 h-4 text-emerald-700" />
-            <h3 className="text-xs font-bold text-slate-800">1. Blok Isi Kosongan (Ready Stock)</h3>
+            <h3 className="text-xs font-bold text-slate-800">1. Blok Isi Kosongan</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {fieldRow('hargaIsiKosongan208', 'Isi 212 Hal Ready (Rp/eks)')}
+            {fieldRow('hargaIsiKosongan208', 'Isi 212 Halaman (Rp/eks)')}
             {fieldRow('hargaIsiKosongan192', 'Isi 192 Halaman (Rp/eks)')}
             {fieldRow('hargaIsiKosongan128', 'Isi 128 Halaman (Rp/eks)')}
             {fieldRow('hargaIsiKosongan96', 'Isi 96 Halaman (Rp/eks)')}
@@ -204,9 +204,9 @@ export default function ManasikMasterParameter({
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {fieldRow('tarifPrintCoverA3', 'Print Cover AC230 A3+ (Rp)')}
-            {fieldRow('tarifPrintMiniTikTokA3', 'Print TikTok AC310 A3+ (Rp)')}
+            {fieldRow('tarifPrintMiniTikTokA3', 'Print Cocard AC310 A3+ (Rp)')}
             {fieldRow('tarifDesainCover', 'Desain Custom Cover (Rp)')}
-            {fieldRow('tarifDesainMiniTikTok', 'Desain Mini TikTok (Rp)')}
+            {fieldRow('tarifDesainMiniTikTok', 'Desain Cocard (Rp)')}
             {fieldRow('insheetCover', 'Insheet POD (lembar)', false)}
           </div>
         </div>
@@ -226,17 +226,17 @@ export default function ManasikMasterParameter({
           </div>
         </div>
 
-        {/* Card 4: Komponen Khusus Mini TikTok */}
+        {/* Card 4: Komponen Khusus Cocard */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs flex flex-col gap-3">
           <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
             <Sparkles className="w-4 h-4 text-purple-600" />
-            <h3 className="text-xs font-bold text-slate-800">4. Komponen Khusus Mini TikTok</h3>
+            <h3 className="text-xs font-bold text-slate-800">4. Komponen Khusus Cocard</h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {fieldRow('tarifRingBinderMini', 'Ring Binder 3cm (Rp/pcs)')}
-            {fieldRow('tarifTaliCocardMini', 'Tali Cocard Mini (Rp/pcs)')}
+            {fieldRow('tarifTaliCocardMini', 'Tali Cocard (Rp/pcs)')}
             {fieldRow('tarifPlastikZiplockMini', 'Plastik Ziplock (Rp/pcs)')}
-            {fieldRow('tarifPisauPoundMini', 'Pisau Pond TikTok (Rp/pcs)')}
+            {fieldRow('tarifPisauPoundMini', 'Pisau Pond Cocard (Rp/pcs)')}
           </div>
         </div>
       </div>
@@ -299,7 +299,7 @@ export default function ManasikMasterParameter({
                     </p>
                   </div>
                   <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-3 space-y-1.5">
-                    <span className="font-bold text-purple-950 text-xs block">3. Mini TikTok 6,3 x 10,3 cm</span>
+                    <span className="font-bold text-purple-950 text-xs block">3. Cocard 6,3 x 10,3 cm</span>
                     <p className="text-[10.5px] text-purple-800 leading-snug">
                       Ref: <code>...UK. 6,3 x 10,3 - BUKU MANASIK MINI TIKTOK.xlsm</code><br />
                       Sheet: <span className="font-mono font-semibold">Master</span> & <span className="font-mono font-semibold">BUKU</span>.<br />
@@ -323,7 +323,7 @@ export default function ManasikMasterParameter({
                       <span>1. Blok Isi Kosongan & Kertas HVS</span>
                     </div>
                     <ul className="space-y-1.5 text-[11px] text-slate-600">
-                      <li>• <strong>Isi 212 Hal Ready 2026</strong>: <span className="font-mono text-emerald-700">Master!D21</span> = Rp 3.620 / eks (insheet 2 eks).</li>
+                      <li>• <strong>Isi 212 Halaman Standar 2026</strong>: <span className="font-mono text-emerald-700">Master!D21</span> = Rp 3.620 / eks (insheet 2 eks).</li>
                       <li>• <strong>Isi Klasik</strong>: 192 Hal (Rp 3.421), 128 Hal (Rp 2.300), 96 Hal (Rp 1.800).</li>
                       <li>• <strong>Kertas HVS 70 gsm</strong>: <span className="font-mono text-emerald-700">Kosongan!Master!D22</span> = Rp 15.700 / kg.</li>
                       <li>• <strong>Print Sisipan PT A3+</strong>: <span className="font-mono text-emerald-700">BUKU!AM6</span> = Rp 350 / lbr A3+ (4 hal per lembar).</li>
@@ -338,9 +338,9 @@ export default function ManasikMasterParameter({
                     </div>
                     <ul className="space-y-1.5 text-[11px] text-slate-600">
                       <li>• <strong>Tarif Print Cover AC 230 (POD)</strong>: <span className="font-mono text-blue-700">Custom!Master!D18</span> = Rp 2.700 / lbr A3+.</li>
-                      <li>• <strong>Tarif Print Mini TikTok (POD)</strong>: <span className="font-mono text-blue-700">TikTok!Master!D18</span> = Rp 2.500 / lbr A3+.</li>
+                      <li>• <strong>Tarif Print Cocard AC 310 (POD)</strong>: <span className="font-mono text-blue-700">TikTok!Master!D18</span> = Rp 2.500 / lbr A3+.</li>
                       <li>• <strong>Kertas AC 230 / 260</strong>: Rp 16.400 / kg | <strong>AC 310</strong>: Rp 33.500 / kg.</li>
-                      <li>• <strong>Desain Cover</strong>: Custom Cover Rp 20.000 | Mini TikTok Rp 2.500.</li>
+                      <li>• <strong>Desain Cover</strong>: Custom Cover Rp 20.000 | Cocard Rp 2.500.</li>
                       <li>• <strong>Offset Oliver</strong>: Plat Rp 45.000, Min Rp 90.000, Drek over Rp 40.</li>
                     </ul>
                   </div>
@@ -364,13 +364,13 @@ export default function ManasikMasterParameter({
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
                     <div className="flex items-center gap-2 font-bold text-slate-900">
                       <span className="w-2 h-2 rounded-full bg-purple-500"></span>
-                      <span>4. Aksesoris Khusus Mini TikTok & Kemasan</span>
+                      <span>4. Aksesoris Khusus Cocard & Kemasan</span>
                     </div>
                     <ul className="space-y-1.5 text-[11px] text-slate-600">
                       <li>• <strong>Ring Binder 3 cm</strong>: <span className="font-mono text-purple-700">TikTok!Master!D24</span> = Rp 925 / pcs.</li>
-                      <li>• <strong>Tali Cocard Mini</strong>: <span className="font-mono text-purple-700">TikTok!Master!D23</span> = Rp 2.500 / pcs.</li>
+                      <li>• <strong>Tali Cocard</strong>: <span className="font-mono text-purple-700">TikTok!Master!D23</span> = Rp 2.500 / pcs.</li>
                       <li>• <strong>Plastik Ziplock</strong>: <span className="font-mono text-purple-700">TikTok!Master!D25</span> = Rp 465 / pcs.</li>
-                      <li>• <strong>Pisau + Jasa Pond Mini</strong>: Rp 299,30 + Rp 225,49.</li>
+                      <li>• <strong>Pisau + Jasa Pond Cocard</strong>: Rp 299,30 + Rp 225,49.</li>
                       <li>• <strong>Plastik OPP Satuan</strong>: Rp 92 / pcs + jasa Rp 225,49 | <strong>Kardus</strong>: Rp 8.500/box.</li>
                     </ul>
                   </div>

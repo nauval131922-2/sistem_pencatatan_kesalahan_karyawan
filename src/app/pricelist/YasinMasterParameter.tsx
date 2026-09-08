@@ -329,8 +329,8 @@ export default function YasinMasterParameter({
                     </div>
                     <ul className="space-y-1.5 text-[11px] text-slate-600">
                       <li>• <strong>Database Harga Isi</strong>: <span className="font-mono text-emerald-700">Data_Yasin!A1:P104</span> & <span className="font-mono text-emerald-700">Master!D36</span>.</li>
-                      <li>• <strong>Harga Netto</strong>: 64 Hal: Rp 1.650, 96 Hal: Rp 2.250, 112 Hal: Rp 2.470, 128 Hal: Rp 2.600, 144 Hal: Rp 3.200, 192 Hal: Rp 3.800.</li>
-                      <li>• <strong>Kode Master</strong>: <span className="font-mono text-slate-600">Master!D34</span> = <code className="text-[10px] bg-white px-1 py-0.5 rounded border">Bo-[96-2250]-11,5[0#2250]Tgg</code>.</li>
+                      <li>• <strong>Harga Netto</strong>: 64 Hal: Rp 1.650, 96 Hal: Rp 2.250, 112 Hal: Rp 2.470, 128 Hal: Rp 3.000 (Buya Barokah), 144 Hal: Rp 3.200, 192 Hal: Rp 3.800.</li>
+                      <li>• <strong>Kode Master</strong>: <span className="font-mono text-slate-600">Master!D34</span> = <code className="text-[10px] bg-white px-1 py-0.5 rounded border">Bo-[96-2250]-11,5[0#2250]Tgg</code> &amp; <code className="text-[10px] bg-white px-1 py-0.5 rounded border">Bo-[128-3000]-11,5[0#3000]Tgg</code>.</li>
                     </ul>
                   </div>
 
@@ -341,9 +341,9 @@ export default function YasinMasterParameter({
                       <span>2. Cetak Cover & Sisipan (Print Inter A3+)</span>
                     </div>
                     <ul className="space-y-1.5 text-[11px] text-slate-600">
-                      <li>• <strong>Print Cover AC 230 / AP 150</strong>: <span className="font-mono text-blue-700">Master!D15</span> (Softcover: Rp 2.500, Hardcover: Rp 2.000 / lbr A3+).</li>
-                      <li>• <strong>Print Sisipan Foto (4 Warna)</strong>: <span className="font-mono text-blue-700">Master!D23</span> (Rp 1.750 / lbr A3+ AP 120).</li>
-                      <li>• <strong>Print Sisipan Doa Keluarga</strong>: <span className="font-mono text-blue-700">Master!D31</span> (Rp 3.300 / 1.500 / lbr A3+).</li>
+                      <li>• <strong>Print Cover AC 230 / AP 150</strong>: <span className="font-mono text-blue-700">Master!D15</span> (Softcover: Rp 2.500 [insheet 5 lbr], Hardcover: Rp 2.000 / lbr A3+ [insheet 10 lbr]).</li>
+                      <li>• <strong>Print Sisipan Foto (4 Warna)</strong>: <span className="font-mono text-blue-700">Master!D23</span> (Rp 1.750 / lbr A3+ AP 120, insheet 2 lbr).</li>
+                      <li>• <strong>Print Sisipan Doa Keluarga</strong>: <span className="font-mono text-blue-700">Master!D31</span> (Rp 3.300 / lbr A3+ AP 120 cetak 2 muka bolak-balik, insheet 2 lbr).</li>
                       <li>• <strong>Desain Setting Cover</strong>: <span className="font-mono text-blue-700">Master!D14</span> (Rp 25.000).</li>
                     </ul>
                   </div>
@@ -371,10 +371,10 @@ export default function YasinMasterParameter({
                     </div>
                     <ul className="space-y-1.5 text-[11px] text-slate-600">
                       <li>• <strong>Pita Pembatas Rumbai</strong>: <span className="font-mono text-violet-700">BUKU!AY6</span> (Rp 470 / buku).</li>
-                      <li>• <strong>Siku Sudut Emas (4 Pcs)</strong>: <span className="font-mono text-violet-700">Master Parameter</span> (Rp 400 / set).</li>
-                      <li>• <strong>Gembos Klise Foil Emas</strong>: <span className="font-mono text-violet-700">Master!D40</span> (Rp 195.000 / pack = Rp 4.875 / 12 pcs).</li>
-                      <li>• <strong>Plastik OPP /Pack</strong>: <span className="font-mono text-violet-700">Master!D42</span> (Rp 9.000 / pack).</li>
-                      <li>• <strong>Target Margin Standar</strong>: <span className="font-mono text-violet-700">Master!E43</span> (30%).</li>
+                      <li>• <strong>Siku Sudut Emas (4 Pcs)</strong>: <span className="font-mono text-violet-700">Master Parameter</span> (Rp 400 / set, opsi tambahan di luar paket standar).</li>
+                      <li>• <strong>Gembos Klise Foil Emas</strong>: <span className="font-mono text-violet-700">Master!D40</span> (Rp 195.000 / pack = Rp 4.875 / 12 pcs setup).</li>
+                      <li>• <strong>Plastik OPP /Pack</strong>: <span className="font-mono text-violet-700">BUKU!AX6 / BC6</span> (Softcover: min 1 pack 100 pcs @ Rp 90 = Rp 9.000, Hardcover: Rp 95 / buku).</li>
+                      <li>• <strong>Target Margin Standar</strong>: <span className="font-mono text-violet-700">Master!E43 &amp; Sheet Harga 2026</span> (30% pembulatan ke kelipatan 10 / ratusan).</li>
                     </ul>
                   </div>
                 </div>

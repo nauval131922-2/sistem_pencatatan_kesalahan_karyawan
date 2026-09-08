@@ -56,13 +56,13 @@ export default function ManasikMatrixView({
       },
       {
         id: 'Kosongan 10 x 15,5',
-        title: 'Buku Manasik Kosongan Ready (212 Hal)',
+        title: 'Buku Manasik Kosongan (212 Hal)',
         hal: 212,
-        desc: 'Uk. 10 x 15,5 cm · HVS 70 gsm Offset 1 Warna · Susun + Lem Panas',
+        desc: 'Uk. 10 x 15,5 cm · HVS 70 gsm Mesin Buya / Offset · Susun + Lem Panas',
       },
       {
         id: 'Mini TikTok 6,3 x 10,3',
-        title: 'Buku Manasik Mini TikTok (48 Hal)',
+        title: 'Buku Manasik Cocard (48 Hal)',
         hal: 48,
         desc: 'Uk. 6,3 x 10,3 cm · AC 310 gsm FC Bolak-balik + Ring Binder 3cm + Ziplock',
       },
@@ -177,8 +177,8 @@ export default function ManasikMatrixView({
       hal: any;
     }> = [
       { id: 'Custom Cover 10 x 15,5', title: 'Custom Cover 10 x 15,5 (216 Hal)', hal: 216 },
-      { id: 'Kosongan 10 x 15,5', title: 'Kosongan Ready 10 x 15,5 (212 Hal)', hal: 212 },
-      { id: 'Mini TikTok 6,3 x 10,3', title: 'Mini TikTok 6,3 x 10,3 (48 Hal)', hal: 48 },
+      { id: 'Kosongan 10 x 15,5', title: 'Kosongan 10 x 15,5 (212 Hal)', hal: 212 },
+      { id: 'Mini TikTok 6,3 x 10,3', title: 'Cocard 6,3 x 10,3 (48 Hal)', hal: 48 },
     ];
 
     const filteredVarians = selectedVarianFilter === 'ALL'
@@ -259,7 +259,7 @@ export default function ManasikMatrixView({
               Pricelist Matriks Buku Manasik Haji & Umroh 2026
             </h2>
             <p className="text-[11.5px] text-emerald-800/80 mt-0.5">
-              Tabel acuan harga jual resmi master Excel 2026: Custom Cover 10×15,5 cm, Kosongan Ready, dan Mini TikTok 6,3×10,3 cm.
+              Tabel acuan harga jual resmi master Excel 2026: Custom Cover 10×15,5 cm, Kosongan, dan Cocard 6,3×10,3 cm.
             </p>
           </div>
         </div>
@@ -277,7 +277,7 @@ export default function ManasikMatrixView({
             <option value="ALL">Semua Varian Manasik</option>
             <option value="Custom Cover 10 x 15,5">Custom Cover 10 x 15,5</option>
             <option value="Kosongan 10 x 15,5">Kosongan 10 x 15,5</option>
-            <option value="Mini TikTok 6,3 x 10,3">Mini TikTok 6,3 x 10,3</option>
+            <option value="Mini TikTok 6,3 x 10,3">Cocard 6,3 x 10,3</option>
           </select>
         </div>
 

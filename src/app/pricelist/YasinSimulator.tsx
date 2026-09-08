@@ -1062,7 +1062,7 @@ _Desain foto almarhum & silsilah keluarga dibantu layouting sampai approved._`;
                   <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
                     <span className="font-bold text-emerald-800 text-xs">2. Sisipan Foto & Doa</span>
                     <p className="text-[11px] text-slate-600">
-                      Tentukan jumlah lembar <strong>Foto FC Almarhum</strong> (misal 2 lbr) dan <strong>Teks Doa / Silsilah Keluarga</strong> (misal 2 lbr).
+                      Tentukan jumlah lembar <strong>Foto FC Almarhum</strong> (standar 1 lbr = 2 hal muka) dan <strong>Teks Doa / Silsilah Keluarga</strong> (standar 1 lbr bolak-balik).
                     </p>
                   </div>
                   <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
