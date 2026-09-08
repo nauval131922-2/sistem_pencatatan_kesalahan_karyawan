@@ -229,8 +229,17 @@ export default function PricelistClient() {
       if (savedKlem) setParamsKlem({ ...DEFAULT_MASTER_PARAMS_KLEM, ...JSON.parse(savedKlem) });
 
       const savedManasik = localStorage.getItem('sintak_pricelist_master_params_manasik');
-      if (savedManasik) setParamsManasik({ ...DEFAULT_MANASIK_PARAMS, ...JSON.parse(savedManasik) });
-
+      if (savedManasik) {
+        const parsed = JSON.parse(savedManasik);
+        // Migrasi nilai default lama agar presisi sesuai Master Excel 2026
+        if (parsed.tarifCasingIn === 225 || parsed.tarifStaplesPalu === 113 || parsed.tarifStaplesPalu === 100) {
+          delete parsed.tarifCasingIn;
+          delete parsed.tarifStaplesPalu;
+          delete parsed.jasaPlastikOpp;
+          delete parsed.tarifLakbanBox;
+        }
+        setParamsManasik({ ...DEFAULT_MANASIK_PARAMS, ...parsed });
+      }
       const savedYasin = localStorage.getItem('sintak_pricelist_master_params_yasin');
       if (savedYasin) setParamsYasin({ ...DEFAULT_YASIN_PARAMS, ...JSON.parse(savedYasin) });
 

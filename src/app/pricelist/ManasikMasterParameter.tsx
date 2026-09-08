@@ -42,6 +42,9 @@ const MANASIK_VISIBLE_KEYS: (keyof ManasikMasterParams)[] = [
   'tarifSpiralManasik',
   'tarifLubangBor',
   'tarifPasangTali',
+  'tarifStaplesPalu',
+  'tarifCasingIn',
+  'jasaPlastikOpp',
   'tarifTaliCocardMini',
   'tarifRingBinderMini',
   'tarifPlastikZiplockMini',
@@ -67,18 +70,14 @@ export default function ManasikMasterParameter({
   };
 
   const isModified = React.useMemo(() => {
-    return MANASIK_VISIBLE_KEYS.some((key) => customParams[key] !== DEFAULT_MANASIK_PARAMS[key]);
+    return (Object.keys(DEFAULT_MANASIK_PARAMS) as (keyof ManasikMasterParams)[]).some(
+      (key) => customParams[key] !== DEFAULT_MANASIK_PARAMS[key]
+    );
   }, [customParams]);
 
   const handleResetAll = () => {
-    setCustomParams((prev) => {
-      const resetObj = { ...prev };
-      MANASIK_VISIBLE_KEYS.forEach((k) => {
-        (resetObj as any)[k] = DEFAULT_MANASIK_PARAMS[k];
-      });
-      return resetObj;
-    });
-    toast.success('Semua parameter Buku Manasik dikembalikan ke standar master.');
+    setCustomParams({ ...DEFAULT_MANASIK_PARAMS });
+    toast.success('Semua parameter Buku Manasik dikembalikan ke standar master 2026.');
   };
 
   const fieldRow = (
