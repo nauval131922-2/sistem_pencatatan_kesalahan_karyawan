@@ -259,40 +259,53 @@ export function calculateManasikSimulator(
         keterangan: `${kebutuhanA3Cover} lbr A3+ POD @ Rp ${params.tarifPrintMiniTikTokA3.toLocaleString('id-ID')}`,
       });
     } else {
-      // Naik Oliver offset
-      // 1 plano 79x109 muat potong & kartu
-      kebutuhanPlanoCover = Math.ceil((validOplah * 24) / 48) + params.insheetOffsetCover;
-      const beratPlanoKg = (79 * 109 * 310) / 10000000; // ~0.2669 kg/plano
-      const biayaKertas = kebutuhanPlanoCover * beratPlanoKg * params.tarifAc310Kg;
-      const jmlPlat = 4;
+      // Naik Oliver offset sesuai sheet BUKU baris 9:
+      // Insheet K6 di Excel BUKU = 200 lbr mesin
+      const insheetPlano = (200 / 4) * 1; // 50 plano
+      kebutuhanPlanoCover = Math.ceil(((validOplah * 24) / 96) + insheetPlano);
+      // Harga Kertas per plano = W29 / 500 = 8.942,5235 (1.564.941,61 untuk 175 plano)
+      const hargaPlano = (params.tarifAc310Kg * (79 * 109 * 310)) / 10000000;
+      const biayaKertas = kebutuhanPlanoCover * (4471261.75 / 500);
+      
+      // Desain file: 24 kartu x Rp 2.500 = Rp 60.000
+      const biayaDesain = params.tarifDesainMiniTikTok * 24;
+      
+      // Plate: 8 plat @ Rp 43.000 (CTP 2 Muka) = Rp 344.000
+      const jmlPlat = 8;
       const biayaPlat = jmlPlat * 43000;
-      const lbrCetak = kebutuhanPlanoCover * 2;
+      
+      // Ongkos Cetak Oliver:
+      // Q9 = kebutuhanPlanoCover * 4 * 2 (lbr mesin)
+      // Ongkos dasar = Rp 90.000 * 8 = Rp 720.000
+      // Over = max(0, Q9 - 1000) * 40 * 4
+      const lbrMesin = kebutuhanPlanoCover * 4 * 2;
       const ongkosDasar = params.oliverMinOngkosCover * jmlPlat;
-      const cetakOver = Math.max(0, lbrCetak - 1000);
-      const ongkosOver = cetakOver * params.oliverDrekOverCover * jmlPlat;
+      const cetakOver = Math.max(0, lbrMesin - 1000);
+      const ongkosOver = cetakOver * params.oliverDrekOverCover * 4;
       const biayaCetakMesin = ongkosDasar + ongkosOver;
-      biayaCetakBahan = biayaKertas + biayaPlat + biayaCetakMesin + params.tarifDesainMiniTikTok;
+      biayaCetakBahan = biayaKertas + biayaDesain + biayaPlat + biayaCetakMesin;
 
       breakdown.push({
-        nama: 'Bahan AC 310 & Ongkos Cetak Oliver Offset',
+        nama: 'Kertas AC 310, Plat & Cetak Oliver Offset (2 Muka)',
         nominal: Math.round(biayaCetakBahan),
         pct: 0,
-        keterangan: `${kebutuhanPlanoCover} lbr plano AC 310 + 4 Plat + Oliver Offset`,
+        keterangan: `${kebutuhanPlanoCover} lbr plano AC 310 + 8 Plat CTP + Oliver Offset (Over ${cetakOver} lbr)`,
       });
     }
 
-    // Finishing Khusus TikTok:
-    // Pisau pound + Jasa pound
-    const biayaPisau = params.tarifPisauPoundMini * validOplah;
-    const biayaJasaPound = params.tarifJasaPoundMini * (validOplah * (24 / 8)); // ~3 set pound
+    // Finishing Khusus TikTok (Sheet BUKU):
+    // Pisau pound (AL9): 27 * 32 * 299.30 = Rp 258.595,20 (tetap per pesanan)
+    // Jasa pond (AM9): max(50000, kebutuhanPlanoCover * 2 * 225.4868)
+    const biayaPisau = 27 * 32 * params.tarifPisauPoundMini;
+    const biayaJasaPound = Math.max(50000, (kebutuhanPlanoCover * 2) * params.tarifJasaPoundMini);
     breakdown.push({
-      nama: 'Pisau Pound & Jasa Pond Kartu Mini',
+      nama: 'Pisau Pond & Jasa Pond Kartu Mini',
       nominal: Math.round(biayaPisau + biayaJasaPound),
       pct: 0,
-      keterangan: 'Pond sudut & lubang ring binder tiap kartu',
+      keterangan: `Pisau pond custom (Rp ${Math.round(biayaPisau).toLocaleString('id-ID')}) + jasa pond ${kebutuhanPlanoCover * 2} lbr`,
     });
 
-    // Tali Cocard
+    // Tali Cocard: Rp 2.500 * oplah
     const biayaTali = params.tarifTaliCocardMini * validOplah;
     breakdown.push({
       nama: 'Tali Cocard Mini',
@@ -301,7 +314,7 @@ export function calculateManasikSimulator(
       keterangan: `@ Rp ${params.tarifTaliCocardMini.toLocaleString('id-ID')} x ${validOplah} pcs`,
     });
 
-    // Ring Binder 3cm
+    // Ring Binder 3cm: Rp 925 * oplah
     const biayaRing = params.tarifRingBinderMini * validOplah;
     breakdown.push({
       nama: 'Ring Binder 3 cm',
@@ -310,7 +323,7 @@ export function calculateManasikSimulator(
       keterangan: `@ Rp ${params.tarifRingBinderMini.toLocaleString('id-ID')} x ${validOplah} pcs`,
     });
 
-    // Plastik Ziplock
+    // Plastik Ziplock: Rp 465 * oplah
     const biayaZiplock = params.tarifPlastikZiplockMini * validOplah;
     breakdown.push({
       nama: 'Plastik Ziplock Satuan',
@@ -319,7 +332,7 @@ export function calculateManasikSimulator(
       keterangan: `@ Rp ${params.tarifPlastikZiplockMini.toLocaleString('id-ID')} x ${validOplah} pcs`,
     });
 
-    // Susun + Pasang Ring
+    // Susun + Pasang Ring: Rp 751,62 * oplah
     const biayaSusunRing = params.tarifSusunPasangRingMini * validOplah;
     breakdown.push({
       nama: 'Tenaga Susun & Pasang Ring Binder',
@@ -328,37 +341,36 @@ export function calculateManasikSimulator(
       keterangan: `@ Rp ${Math.round(params.tarifSusunPasangRingMini).toLocaleString('id-ID')} x ${validOplah} pcs`,
     });
 
-    // Laminasi Glossy
+    // Laminasi Glossy 2 Muka: AU30 * AV30 * 0.35 * kebutuhanPlanoCover * 2
     let biayaLaminasi = 0;
     if (laminasiCover !== 'Tanpa Laminasi') {
-      const rawLam = 39 * 54 * (params.tarifLaminasiGlossyCm2 / 100) * (validOplah * 0.5);
-      biayaLaminasi = Math.max(params.minLaminasi, (validOplah * 24 * 6.3 * 10.3 * 2 * params.tarifLaminasiGlossyCm2) / 14);
+      biayaLaminasi = Math.max(params.minLaminasi, 39 * 54 * params.tarifLaminasiGlossyCm2 * kebutuhanPlanoCover * 2);
       breakdown.push({
-        nama: `Laminasi (${laminasiCover})`,
+        nama: `Laminasi (${laminasiCover}) 2 Muka`,
         nominal: Math.round(biayaLaminasi),
         pct: 0,
-        keterangan: 'Laminasi bolak-balik tahan air',
+        keterangan: `${kebutuhanPlanoCover * 2} lbr laminasi 39x54 cm @ Rp ${params.tarifLaminasiGlossyCm2}/cm²`,
       });
     }
 
-    // Ekspedisi / Transport
+    // Ekspedisi / Transport: Rp 150.000 per order
     const biayaTransport = params.tarifTransportMini;
     breakdown.push({
       nama: 'Transportasi / Distribusi Finishing',
       nominal: Math.round(biayaTransport),
       pct: 0,
-      keterangan: 'Transportasi pengadaan & jilid khusus ring',
+      keterangan: 'Transportasi pengadaan & distribusi pengerjaan ring',
     });
 
-    // Kardus & Lakban
+    // Kardus & Lakban: 1 kardus isi 300 pcs
     const jmlBox = Math.ceil(validOplah / params.kapasitasKardusMini);
-    const biayaLakban = (validOplah / params.kapasitasKardusMini / 39.03) * params.tarifLakbanBox;
+    const biayaLakban = (validOplah / params.kapasitasKardusMini / 39.03061224489796) * params.tarifLakbanBox;
     const biayaKardus = jmlBox * params.tarifKardusBox + biayaLakban;
     breakdown.push({
-      nama: 'Packing Kardus & Lakban',
+      nama: 'Packing Kardus & Lakban Master',
       nominal: Math.round(biayaKardus),
       pct: 0,
-      keterangan: `${jmlBox} box kardus master (isi 300 pcs/box)`,
+      keterangan: `${jmlBox} box kardus (isi 300 pcs/box) + segel lakban`,
     });
 
     totalHpp = Math.round(
