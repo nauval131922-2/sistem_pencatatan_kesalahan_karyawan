@@ -2772,7 +2772,7 @@ export default function LaporanPekerjaanClient({
                       <Eye size={13} />
                       Detail
                     </button>
-                    {roleConfig?.can_delete !== false && (
+                    {((roleConfig?.delete_scope === 'all' || roleConfig?.delete_scope === 'table_only') || (!roleConfig?.delete_scope && roleConfig?.can_delete !== false)) && (
                       <button
                         type="button"
                         onClick={(e) => {
@@ -2891,7 +2891,7 @@ export default function LaporanPekerjaanClient({
                             <Eye size={13} />
                             Detail
                           </button>
-                          {roleConfig?.can_delete !== false && (
+                          {((roleConfig?.delete_scope === 'all' || roleConfig?.delete_scope === 'table_only') || (!roleConfig?.delete_scope && roleConfig?.can_delete !== false)) && (
                             <button
                               type="button"
                               onClick={(e) => {
@@ -3417,9 +3417,8 @@ function TaskDetailModal({
 
   const canAdd = roleConfig?.can_add !== false;
   const canEdit = roleConfig?.can_edit !== false;
-  const canDelete = roleConfig?.can_delete !== false;
-  const hasRowAction = canEdit || canDelete;
-
+  const canDeleteInCard = (roleConfig?.delete_scope === 'all' || roleConfig?.delete_scope === 'card_only') || (!roleConfig?.delete_scope && roleConfig?.can_delete !== false);
+  const hasRowAction = canEdit || canDeleteInCard;
   const visibleColKeys = useMemo(() => {
     if (!roleConfig?.visible_columns || roleConfig.visible_columns.length === 0) {
       return LAPORAN_PEKERJAAN_COLUMNS.map((c) => c.key);
@@ -3676,7 +3675,7 @@ function TaskDetailModal({
                                   <Edit2 size={13} />
                                 </button>
                               )}
-                              {canDelete && (
+                              {canDeleteInCard && (
                                 <button
                                   type="button"
                                   onClick={(e) => {
@@ -3689,7 +3688,6 @@ function TaskDetailModal({
                                   <Trash2 size={13} />
                                 </button>
                               )}
-                            </div>
                           </td>
                         )}
                       </tr>
@@ -4088,7 +4086,7 @@ function InlineEditRow({
       {/* 9. Aksi */}
       {isColVisible('aksi') && (
         <td className="px-1 py-1.5 text-center whitespace-nowrap">
-          {roleConfig?.can_delete !== false && (
+          {((roleConfig?.delete_scope === 'all' || roleConfig?.delete_scope === 'card_only') || (!roleConfig?.delete_scope && roleConfig?.can_delete !== false)) && (
             <div className="flex items-center justify-center">
               <button
                 type="button"
@@ -4100,7 +4098,6 @@ function InlineEditRow({
               </button>
             </div>
           )}
-        </td>
       )}
     </tr>
   );

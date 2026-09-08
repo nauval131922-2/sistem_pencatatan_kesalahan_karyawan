@@ -338,13 +338,22 @@ export default function RolesContent({
       lpConfig.visible_columns.length > 0 &&
       lpConfig.visible_columns.length < LAPORAN_PEKERJAAN_COLUMNS.length
     );
-    const hasCustomActions = lpConfig?.can_add === false || lpConfig?.can_edit === false || lpConfig?.can_delete === false;
+    const deleteScope = lpConfig?.delete_scope || (lpConfig?.can_delete === false ? 'none' : 'all');
+    const hasCustomActions = lpConfig?.can_add === false || lpConfig?.can_edit === false || deleteScope !== 'all';
     const hasCustomLp = hasCustomBagian || hasCustomPic || hasExcludedPic || hasCustomCols || hasCustomActions;
+
+    const deleteLabel = deleteScope === 'none'
+      ? null
+      : deleteScope === 'table_only'
+      ? 'Hapus (Tabel Utama Saja)'
+      : deleteScope === 'card_only'
+      ? 'Hapus (Card Detail Saja)'
+      : 'Hapus (Semua)';
 
     const actionSummary = [
       lpConfig?.can_add !== false ? 'Tambah' : null,
       lpConfig?.can_edit !== false ? 'Edit' : null,
-      lpConfig?.can_delete !== false ? 'Hapus' : null,
+      deleteLabel,
     ].filter(Boolean).join(', ');
 
     let picSummary = 'Semua PIC';
@@ -775,7 +784,8 @@ export default function RolesContent({
                   visible_columns: newConfig.visible_columns,
                   can_add: newConfig.can_add,
                   can_edit: newConfig.can_edit,
-                  can_delete: newConfig.can_delete,
+                  can_delete: newConfig.delete_scope !== 'none',
+                  delete_scope: newConfig.delete_scope,
                 },
               }));
               showResult('success', `Pengaturan Laporan Pekerjaan untuk ${configModalRole} disimpan.`);
@@ -858,6 +868,7 @@ interface LaporanPekerjaanRoleModalProps {
     can_add?: boolean;
     can_edit?: boolean;
     can_delete?: boolean;
+    delete_scope?: 'none' | 'table_only' | 'card_only' | 'all';
   }) => Promise<void>;
 }
 
@@ -875,8 +886,10 @@ function LaporanPekerjaanRoleModal({
   const [excludedPic, setExcludedPic] = useState<string[]>(() => [...(initialConfig.excluded_pic || [])]);
   const [canAdd, setCanAdd] = useState<boolean>(initialConfig.can_add !== false);
   const [canEdit, setCanEdit] = useState<boolean>(initialConfig.can_edit !== false);
-  const [canDelete, setCanDelete] = useState<boolean>(initialConfig.can_delete !== false);
-  const [visibleColumns, setVisibleColumns] = useState<string[]>(() =>
+  const [deleteScope, setDeleteScope] = useState<'none' | 'table_only' | 'card_only' | 'all'>(() => {
+    if (initialConfig.delete_scope) return initialConfig.delete_scope;
+    return initialConfig.can_delete === false ? 'none' : 'all';
+  });
     initialConfig.visible_columns && initialConfig.visible_columns.length > 0
       ? [...initialConfig.visible_columns]
       : LAPORAN_PEKERJAAN_COLUMNS.map((c) => c.key)
@@ -949,7 +962,8 @@ function LaporanPekerjaanRoleModal({
         visible_columns: visibleColumns.length === 0 ? LAPORAN_PEKERJAAN_COLUMNS.map((c) => c.key) : visibleColumns,
         can_add: canAdd,
         can_edit: canEdit,
-        can_delete: canDelete,
+        can_delete: deleteScope !== 'none',
+        delete_scope: deleteScope,
       });
     } finally {
       setSaving(false);
@@ -1429,7 +1443,17 @@ function LaporanPekerjaanRoleModal({
                 <div className="text-xs text-slate-600">
                   <span className="font-semibold text-slate-800">Izin Aksi Pekerjaan: </span>
                   <span className="text-emerald-700 font-bold">
-                    {[canAdd && 'Tambah', canEdit && 'Edit', canDelete && 'Hapus'].filter(Boolean).join(', ') || 'Semua Aksi Dinonaktifkan'}
+                    {[
+                      canAdd && 'Tambah',
+                      canEdit && 'Edit',
+                      deleteScope === 'all'
+                        ? 'Hapus (Manapun)'
+                        : deleteScope === 'table_only'
+                        ? 'Hapus (Tabel Utama)'
+                        : deleteScope === 'card_only'
+                        ? 'Hapus (Card Detail)'
+                        : null,
+                    ].filter(Boolean).join(', ') || 'Semua Aksi Dinonaktifkan'}
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 mt-1">
@@ -1522,48 +1546,100 @@ function LaporanPekerjaanRoleModal({
                   </div>
                 </div>
 
-                {/* 3. Hapus Pekerjaan */}
-                <div
-                  onClick={() => setCanDelete((prev) => !prev)}
-                  className={`flex items-start justify-between p-3.5 rounded-xl border cursor-pointer select-none transition-all ${
-                    canDelete
-                      ? 'border-rose-500 bg-rose-50/60 shadow-xs'
-                      : 'border-slate-200 bg-white hover:bg-slate-50 opacity-60'
-                  }`}
-                >
+                {/* 3. Pengaturan Izin Hapus Pekerjaan */}
+                <div className="p-3.5 rounded-xl border border-slate-200 bg-white space-y-3">
                   <div className="flex items-start gap-3">
                     <div
                       className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
-                        canDelete ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-400'
+                        deleteScope !== 'none' ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-400'
                       }`}
                     >
                       <Trash2 size={15} />
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="text-xs font-bold text-slate-800">Hapus Pekerjaan</p>
+                        <p className="text-xs font-bold text-slate-800">Izin Hapus Data</p>
                         <span
                           className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
-                            canDelete ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-400'
+                            deleteScope === 'all'
+                              ? 'bg-rose-100 text-rose-700'
+                              : deleteScope === 'none'
+                              ? 'bg-slate-100 text-slate-400'
+                              : 'bg-amber-100 text-amber-800'
                           }`}
                         >
-                          {canDelete ? 'DIIZINKAN' : 'DINONAKTIFKAN'}
+                          {deleteScope === 'all'
+                            ? 'BISA DI MANAPUN'
+                            : deleteScope === 'table_only'
+                            ? 'HANYA TABEL UTAMA'
+                            : deleteScope === 'card_only'
+                            ? 'HANYA CARD DETAIL'
+                            : 'TIDAK BISA HAPUS'}
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-500 mt-0.5">
-                        Mengizinkan user menghapus baris pekerjaan yang sudah ada dari daftar modal order.
+                        Tentukan cakupan izin tombol hapus: di tabel utama (hapus seluruh order), di card/modal detail (hapus baris pekerjaan), di keduanya, atau dilarang sama sekali.
                       </p>
                     </div>
                   </div>
-                  <div
-                    className={`w-5 h-5 rounded-md flex items-center justify-center border shrink-0 transition-colors ${
-                      canDelete ? 'bg-rose-600 border-rose-600 text-white' : 'bg-white border-slate-300'
-                    }`}
-                  >
-                    {canDelete && <CheckCircle2 size={13} className="text-white" />}
+
+                  {/* 4 Opsi Radio Card */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                    {[
+                      {
+                        value: 'none' as const,
+                        label: 'Tidak bisa hapus',
+                        desc: 'Tombol hapus disembunyikan di tabel utama maupun modal detail order.',
+                      },
+                      {
+                        value: 'table_only' as const,
+                        label: 'Hanya bisa hapus di table utama',
+                        desc: 'Bisa hapus order di list/tabel utama, tidak bisa hapus task di card detail.',
+                      },
+                      {
+                        value: 'card_only' as const,
+                        label: 'Hanya bisa hapus di card detail',
+                        desc: 'Bisa hapus aktivitas di card detail modal, tidak bisa hapus order di tabel utama.',
+                      },
+                      {
+                        value: 'all' as const,
+                        label: 'Bisa hapus di manapun',
+                        desc: 'Bebas menghapus data baik di tabel utama maupun di card detail modal.',
+                      },
+                    ].map((opt) => {
+                      const isSelected = deleteScope === opt.value;
+                      return (
+                        <div
+                          key={opt.value}
+                          onClick={() => setDeleteScope(opt.value)}
+                          className={`p-2.5 rounded-xl border cursor-pointer select-none transition-all flex items-start gap-2.5 ${
+                            isSelected
+                              ? 'border-rose-500 bg-rose-50/70 shadow-xs ring-1 ring-rose-400/30'
+                              : 'border-slate-200 bg-slate-50/40 hover:bg-slate-100/70 text-slate-600'
+                          }`}
+                        >
+                          <div
+                            className={`w-4 h-4 rounded-full flex items-center justify-center border shrink-0 mt-0.5 transition-colors ${
+                              isSelected
+                                ? 'border-rose-600 bg-rose-600 text-white'
+                                : 'border-slate-300 bg-white'
+                            }`}
+                          >
+                            {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className={`text-xs font-bold ${isSelected ? 'text-rose-950' : 'text-slate-800'}`}>
+                              {opt.label}
+                            </p>
+                            <p className="text-[10.5px] text-slate-500 leading-tight mt-0.5">
+                              {opt.desc}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              </div>
             </div>
           )}
 

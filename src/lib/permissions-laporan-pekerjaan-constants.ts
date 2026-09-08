@@ -25,6 +25,8 @@ export const LAPORAN_PEKERJAAN_BAGIAN_LIST = [
   'MESIN',
 ] as const;
 
+export type LaporanPekerjaanDeleteScope = 'none' | 'table_only' | 'card_only' | 'all';
+
 export interface RoleLaporanPekerjaanConfig {
   role: string;
   allowed_bagian: string[];   // [] berarti SEMUA Bagian diizinkan
@@ -33,5 +35,6 @@ export interface RoleLaporanPekerjaanConfig {
   visible_columns: string[];  // [] berarti SEMUA Kolom ditampilkan
   can_add?: boolean;          // Default true (Izin Tambah Pekerjaan Baru)
   can_edit?: boolean;         // Default true (Izin Edit / Ubah Pekerjaan)
-  can_delete?: boolean;       // Default true (Izin Hapus Pekerjaan)
+  can_delete?: boolean;       // Legacy boolean: jika false setara 'none', true setara 'all'
+  delete_scope?: LaporanPekerjaanDeleteScope; // 'none' | 'table_only' | 'card_only' | 'all'
 }

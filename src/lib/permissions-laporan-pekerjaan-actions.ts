@@ -34,6 +34,9 @@ async function ensureTable() {
     if (!cols.includes('can_delete')) {
       await db.execute("ALTER TABLE role_laporan_pekerjaan_config ADD COLUMN can_delete INTEGER DEFAULT 1;");
     }
+    if (!cols.includes('delete_scope')) {
+      await db.execute("ALTER TABLE role_laporan_pekerjaan_config ADD COLUMN delete_scope TEXT DEFAULT 'all';");
+    }
     tableChecked = true;
   } catch (_) {}
 }
@@ -51,6 +54,7 @@ export async function saveRoleLaporanPekerjaanConfig(
     can_add?: boolean;
     can_edit?: boolean;
     can_delete?: boolean;
+    delete_scope?: 'none' | 'table_only' | 'card_only' | 'all';
   }
 ): Promise<{ success: boolean; message?: string }> {
   try {
@@ -71,11 +75,15 @@ export async function saveRoleLaporanPekerjaanConfig(
     const visibleColsJson = JSON.stringify(config.visible_columns || []);
     const canAddVal = config.can_add === false ? 0 : 1;
     const canEditVal = config.can_edit === false ? 0 : 1;
-    const canDeleteVal = config.can_delete === false ? 0 : 1;
+    let deleteScope = config.delete_scope;
+    if (!deleteScope) {
+      deleteScope = config.can_delete === false ? 'none' : 'all';
+    }
+    const canDeleteVal = deleteScope !== 'none' ? 1 : 0;
 
     await db.execute({
-      sql: `INSERT INTO role_laporan_pekerjaan_config (role, allowed_bagian, allowed_pic, excluded_pic, visible_columns, can_add, can_edit, can_delete, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      sql: `INSERT INTO role_laporan_pekerjaan_config (role, allowed_bagian, allowed_pic, excluded_pic, visible_columns, can_add, can_edit, can_delete, delete_scope, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(role) DO UPDATE SET
               allowed_bagian = excluded.allowed_bagian,
               allowed_pic = excluded.allowed_pic,
@@ -84,8 +92,9 @@ export async function saveRoleLaporanPekerjaanConfig(
               can_add = excluded.can_add,
               can_edit = excluded.can_edit,
               can_delete = excluded.can_delete,
+              delete_scope = excluded.delete_scope,
               updated_at = CURRENT_TIMESTAMP;`,
-      args: [role, allowedBagianJson, allowedPicJson, excludedPicJson, visibleColsJson, canAddVal, canEditVal, canDeleteVal],
+      args: [role, allowedBagianJson, allowedPicJson, excludedPicJson, visibleColsJson, canAddVal, canEditVal, canDeleteVal, deleteScope],
     });
     const { logActivity } = await import('@/lib/activity');
     logActivity(

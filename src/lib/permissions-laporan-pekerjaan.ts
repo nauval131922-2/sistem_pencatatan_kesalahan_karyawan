@@ -40,6 +40,7 @@ async function ensureTable() {
       can_add INTEGER DEFAULT 1,
       can_edit INTEGER DEFAULT 1,
       can_delete INTEGER DEFAULT 1,
+      delete_scope TEXT DEFAULT 'all',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`);
@@ -56,6 +57,9 @@ async function ensureTable() {
     }
     if (!cols.includes('can_delete')) {
       await db.execute("ALTER TABLE role_laporan_pekerjaan_config ADD COLUMN can_delete INTEGER DEFAULT 1;");
+    }
+    if (!cols.includes('delete_scope')) {
+      await db.execute("ALTER TABLE role_laporan_pekerjaan_config ADD COLUMN delete_scope TEXT DEFAULT 'all';");
     }
     tableChecked = true;
   } catch {}
@@ -76,6 +80,7 @@ export async function getRoleLaporanPekerjaanConfig(role: string): Promise<RoleL
       can_add: true,
       can_edit: true,
       can_delete: true,
+      delete_scope: 'all',
     };
   }
 
@@ -83,10 +88,9 @@ export async function getRoleLaporanPekerjaanConfig(role: string): Promise<RoleL
 
   try {
     const res = await db.execute({
-      sql: 'SELECT role, allowed_bagian, allowed_pic, excluded_pic, visible_columns, can_add, can_edit, can_delete FROM role_laporan_pekerjaan_config WHERE role = ?',
+      sql: 'SELECT role, allowed_bagian, allowed_pic, excluded_pic, visible_columns, can_add, can_edit, can_delete, delete_scope FROM role_laporan_pekerjaan_config WHERE role = ?',
       args: [role],
     });
-
     if (res.rows.length === 0) {
       return {
         role,
@@ -97,6 +101,7 @@ export async function getRoleLaporanPekerjaanConfig(role: string): Promise<RoleL
         can_add: true,
         can_edit: true,
         can_delete: true,
+        delete_scope: 'all',
       };
     }
 
@@ -111,6 +116,10 @@ export async function getRoleLaporanPekerjaanConfig(role: string): Promise<RoleL
     const can_add = row.can_add !== undefined && row.can_add !== null ? Number(row.can_add) === 1 : true;
     const can_edit = row.can_edit !== undefined && row.can_edit !== null ? Number(row.can_edit) === 1 : true;
     const can_delete = row.can_delete !== undefined && row.can_delete !== null ? Number(row.can_delete) === 1 : true;
+    let delete_scope = (row.delete_scope as any) || (can_delete ? 'all' : 'none');
+    if (!['none', 'table_only', 'card_only', 'all'].includes(delete_scope)) {
+      delete_scope = can_delete ? 'all' : 'none';
+    }
 
     return {
       role,
@@ -120,9 +129,9 @@ export async function getRoleLaporanPekerjaanConfig(role: string): Promise<RoleL
       visible_columns,
       can_add,
       can_edit,
-      can_delete,
+      can_delete: delete_scope !== 'none',
+      delete_scope,
     };
-  } catch (error) {
     console.error(`[PERMISSIONS] Failed to get config for role ${role}:`, error);
     return {
       role,
@@ -133,9 +142,9 @@ export async function getRoleLaporanPekerjaanConfig(role: string): Promise<RoleL
       can_add: true,
       can_edit: true,
       can_delete: true,
+      delete_scope: 'all',
     };
   }
-}
 
 /**
  * Ambil konfigurasi Laporan Pekerjaan untuk semua role yang terdaftar.
@@ -152,14 +161,13 @@ export async function getAllRoleLaporanPekerjaanConfigs(): Promise<Record<string
       can_add: true,
       can_edit: true,
       can_delete: true,
+      delete_scope: 'all',
     },
   };
-
   await ensureTable();
 
   try {
-    const { rows } = await db.execute('SELECT role, allowed_bagian, allowed_pic, excluded_pic, visible_columns, can_add, can_edit, can_delete FROM role_laporan_pekerjaan_config');
-    for (const row of rows) {
+    const { rows } = await db.execute('SELECT role, allowed_bagian, allowed_pic, excluded_pic, visible_columns, can_add, can_edit, can_delete, delete_scope FROM role_laporan_pekerjaan_config');
       const roleName = String(row.role);
       const allowed_bagian = parseJsonArray(row.allowed_bagian);
       const allowed_pic = parseJsonArray(row.allowed_pic);
@@ -171,6 +179,10 @@ export async function getAllRoleLaporanPekerjaanConfigs(): Promise<Record<string
       const can_add = row.can_add !== undefined && row.can_add !== null ? Number(row.can_add) === 1 : true;
       const can_edit = row.can_edit !== undefined && row.can_edit !== null ? Number(row.can_edit) === 1 : true;
       const can_delete = row.can_delete !== undefined && row.can_delete !== null ? Number(row.can_delete) === 1 : true;
+      let delete_scope = (row.delete_scope as any) || (can_delete ? 'all' : 'none');
+      if (!['none', 'table_only', 'card_only', 'all'].includes(delete_scope)) {
+        delete_scope = can_delete ? 'all' : 'none';
+      }
 
       result[roleName] = {
         role: roleName,
@@ -180,10 +192,10 @@ export async function getAllRoleLaporanPekerjaanConfigs(): Promise<Record<string
         visible_columns,
         can_add,
         can_edit,
-        can_delete,
+        can_delete: delete_scope !== 'none',
+        delete_scope,
       };
     }
-  } catch (error) {
     console.error('[PERMISSIONS] Failed to get all role configs:', error);
   }
 
@@ -315,7 +327,32 @@ export async function getUserMergedLaporanPekerjaanConfig(
   // Action permissions: jika setidaknya satu role mengizinkan create/edit/delete, bernilai true
   const can_add = allConfigs.length > 0 && allConfigs.some(c => c.can_add !== false);
   const can_edit = allConfigs.length > 0 && allConfigs.some(c => c.can_edit !== false);
-  const can_delete = allConfigs.length > 0 && allConfigs.some(c => c.can_delete !== false);
+
+  // Resolusi delete_scope untuk multi-role
+  let canDeleteTable = false;
+  let canDeleteCard = false;
+  for (const c of allConfigs) {
+    const scope = c.delete_scope || (c.can_delete === false ? 'none' : 'all');
+    if (scope === 'all') {
+      canDeleteTable = true;
+      canDeleteCard = true;
+    } else if (scope === 'table_only') {
+      canDeleteTable = true;
+    } else if (scope === 'card_only') {
+      canDeleteCard = true;
+    }
+  }
+
+  let mergedDeleteScope: 'none' | 'table_only' | 'card_only' | 'all' = 'none';
+  if (canDeleteTable && canDeleteCard) {
+    mergedDeleteScope = 'all';
+  } else if (canDeleteTable) {
+    mergedDeleteScope = 'table_only';
+  } else if (canDeleteCard) {
+    mergedDeleteScope = 'card_only';
+  }
+
+  const can_delete = mergedDeleteScope !== 'none';
 
   return {
     role: roles.join(', '),
@@ -326,5 +363,6 @@ export async function getUserMergedLaporanPekerjaanConfig(
     can_add,
     can_edit,
     can_delete,
+    delete_scope: mergedDeleteScope,
   };
 }

@@ -215,6 +215,7 @@ export async function initSchema(db: any) {
       can_add INTEGER DEFAULT 1,
       can_edit INTEGER DEFAULT 1,
       can_delete INTEGER DEFAULT 1,
+      delete_scope TEXT DEFAULT 'all',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );`,
@@ -916,7 +917,7 @@ export async function initSchema(db: any) {
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_pr_unique ON purchase_requests(faktur);",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_role_permissions_unique ON role_permissions(role, module_key);",
     "CREATE UNIQUE INDEX IF NOT EXISTS idx_role_laporan_pekerjaan_config_role ON role_laporan_pekerjaan_config(role);",
-    "ALTER TABLE sales_orders ADD COLUMN satuan TEXT;",
+    "ALTER TABLE role_laporan_pekerjaan_config ADD COLUMN delete_scope TEXT DEFAULT 'all';",
     "ALTER TABLE barang_jadi ADD COLUMN faktur_so TEXT;",
     "ALTER TABLE barang_jadi ADD COLUMN kd_cabang TEXT;",
     "ALTER TABLE barang_jadi ADD COLUMN kd_gudang TEXT;",
