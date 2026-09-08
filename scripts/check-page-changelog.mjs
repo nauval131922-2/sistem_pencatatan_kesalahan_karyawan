@@ -142,15 +142,11 @@ function loadChangelogRegistry() {
 
   return { paths, pageKeys, error: null };
 }
-function getNewChangelogKeys() {
+function getWorkingTreeChangelogKeys() {
   const diffCmds = [
     'git diff -U0 -- ' + CHANGELOG_FILE,
     'git diff --cached -U0 -- ' + CHANGELOG_FILE,
   ];
-  if (!workingTreeOnly && gitOk(`git rev-parse --verify ${baseRef}`)) {
-    diffCmds.push(`git diff -U0 ${baseRef}...HEAD -- ${CHANGELOG_FILE}`);
-  }
-
   const addedLines = [];
   for (const cmd of diffCmds) {
     const lines = gitLines(cmd);
@@ -160,16 +156,34 @@ function getNewChangelogKeys() {
       }
     }
   }
-
-  const newKeys = new Set();
+  const keys = new Set();
   for (const line of addedLines) {
     const mPk = line.match(/pageKey:\s*['"]([^'"]+)['"]/);
-    if (mPk) newKeys.add(mPk[1]);
+    if (mPk) keys.add(mPk[1]);
     const mKey = line.match(/['"]([a-z0-9-]+)-\d{4}-\d{2}-\d{2}/);
-    if (mKey) newKeys.add(mKey[1]);
+    if (mKey) keys.add(mKey[1]);
   }
-  return newKeys;
+  return keys;
 }
+
+function getLastChangelogCommitForPage(pageKey) {
+  if (workingTreeOnly || !gitOk(`git rev-parse --verify ${baseRef}`)) return null;
+  const commits = gitLines(`git log --format="%H" ${baseRef}..HEAD -- ${CHANGELOG_FILE}`);
+  for (const h of commits) {
+    const diff = gitLines(`git show -U0 ${h} -- ${CHANGELOG_FILE}`);
+    const hasKey = diff.some(
+      (l) =>
+        l.startsWith('+') &&
+        !l.startsWith('+++') &&
+        (l.includes(`pageKey: '${pageKey}'`) ||
+          l.includes(`pageKey: "${pageKey}"`) ||
+          l.includes(`'${pageKey}-`))
+    );
+    if (hasKey) return h;
+  }
+  return null;
+}
+
 
 
 const fromUnstaged = gitLines('git diff --name-only');
@@ -210,7 +224,8 @@ if (registry.error) {
   console.error(registry.error);
   process.exit(1);
 }
-const newChangelogKeys = getNewChangelogKeys();
+const workingTreeChangelogKeys = getWorkingTreeChangelogKeys();
+
 
 
 // route → { files, sources }
@@ -252,13 +267,49 @@ for (const [route, rec] of [...routeMap.entries()].sort((a, b) =>
     });
     continue;
   }
-  if (!newChangelogKeys.has(pageKey)) {
+  // 1. Verifikasi jika file halaman dimodifikasi di working tree
+  if (rec.fromTree && !workingTreeChangelogKeys.has(pageKey)) {
     missing.push({
       route,
-      reason: `halaman berubah tetapi belum ada entri baru untuk pageKey "${pageKey}" di git diff ${CHANGELOG_FILE}`,
+      reason: `file halaman dimodifikasi di working tree tetapi belum ada entri baru untuk pageKey "${pageKey}" di working tree ${CHANGELOG_FILE}`,
       ...rec,
     });
     continue;
+  }
+
+  // 2. Verifikasi jika file halaman dimodifikasi di commit lokal
+  if (rec.fromCommits) {
+    const lastChangelogCommit = getLastChangelogCommitForPage(pageKey);
+    if (!lastChangelogCommit) {
+      missing.push({
+        route,
+        reason: `halaman diubah pada commit lokal tetapi belum ada entri changelog untuk pageKey "${pageKey}" di range ${baseRef}..HEAD`,
+        ...rec,
+      });
+      continue;
+    }
+
+    // Cek commit terakhir yang menyentuh file-file halaman ini
+    const pageFilesEscaped = rec.files.join(' ');
+    const lastPageCommit = gitLines(
+      `git log -n 1 --format="%H" ${baseRef}..HEAD -- ${pageFilesEscaped}`
+    )[0];
+
+    if (lastPageCommit && lastPageCommit !== lastChangelogCommit) {
+      const afterCount = Number(
+        gitLines(
+          `git rev-list --count ${lastChangelogCommit}..${lastPageCommit}`
+        )[0] || 0
+      );
+      if (afterCount > 0) {
+        missing.push({
+          route,
+          reason: `halaman dimodifikasi lagi pada commit ${lastPageCommit.slice(0, 7)} (${afterCount} commit setelah update changelog terakhir ${lastChangelogCommit.slice(0, 7)}), changelog perlu diperbarui`,
+          ...rec,
+        });
+        continue;
+      }
+    }
   }
   covered.push({ route, pageKey, ...rec });
 }
