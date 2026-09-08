@@ -276,23 +276,58 @@ export default function ManasikMasterParameter({
 
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto space-y-6 text-xs text-slate-700 leading-relaxed">
-              {/* Bagian 1: Pemetaan 4 Kelompok Master Parameter */}
+              {/* Bagian 1: Pemetaan 3 Varian Master File Excel */}
               <div className="space-y-3">
                 <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-                  Pemetaan 4 Bagian Master Parameter ke File Excel (Folder 01. Pricelist Buku Manasik/*.xlsm)
+                  Pemetaan Sumber Master Excel (3 File Referensi 2026)
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3 space-y-1.5">
+                    <span className="font-bold text-emerald-950 text-xs block">1. Custom Cover 10 x 15,5 cm</span>
+                    <p className="text-[10.5px] text-emerald-800 leading-snug">
+                      Ref: <code>...UK. 10 x 15,5 - BUKU MANASIK - Custom Cover 2026.xlsm</code><br />
+                      Sheet: <span className="font-mono font-semibold">HARGA FILE BARU</span> & <span className="font-mono font-semibold">BUKU</span>.<br />
+                      Cover AC 230 POD (Rp 2.700) / Oliver + Sisipan 4 hal PT (Rp 350 + Rp 225,49) + Blok 212 hal (Rp 3.620) + Tali Kur (Rp 285,71) + Staples 1213 (Rp 24.000).
+                    </p>
+                  </div>
+                  <div className="bg-blue-50/70 border border-blue-200 rounded-xl p-3 space-y-1.5">
+                    <span className="font-bold text-blue-950 text-xs block">2. Kosongan 10 x 15,5 cm</span>
+                    <p className="text-[10.5px] text-blue-800 leading-snug">
+                      Ref: <code>...UK. 10 x 15,5 - BUKU MANASIK - Kosongan.xlsm</code><br />
+                      Sheet: <span className="font-mono font-semibold">HARGA 2026</span> & <span className="font-mono font-semibold">BUKU</span>.<br />
+                      HVS 70 gsm (Rp 15.700/kg) cetak Oliver 1 warna 53 plat CTP + lipat kuras + susun urut + jilid lem panas (bending) + kardus master (200 pcs/box).
+                    </p>
+                  </div>
+                  <div className="bg-purple-50/70 border border-purple-200 rounded-xl p-3 space-y-1.5">
+                    <span className="font-bold text-purple-950 text-xs block">3. Mini TikTok 6,3 x 10,3 cm</span>
+                    <p className="text-[10.5px] text-purple-800 leading-snug">
+                      Ref: <code>...UK. 6,3 x 10,3 - BUKU MANASIK MINI TIKTOK.xlsm</code><br />
+                      Sheet: <span className="font-mono font-semibold">Master</span> & <span className="font-mono font-semibold">BUKU</span>.<br />
+                      Art Carton 310 gsm (Rp 33.500/kg) bolak-balik + pisau & jasa pond (Rp 524,79) + Ring Binder 3cm (Rp 925) + Tali cocard (Rp 2.500) + Ziplock (Rp 465).
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bagian 2: Rincian 4 Kelompok Parameter */}
+              <div className="space-y-3">
+                <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-slate-700"></span>
+                  Rincian Rumus & Komponen Parameter Master
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   {/* Poin 1 */}
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
                     <div className="flex items-center gap-2 font-bold text-slate-900">
                       <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                      <span>1. Blok Isi Kosongan (Ready)</span>
+                      <span>1. Blok Isi Kosongan & Kertas HVS</span>
                     </div>
                     <ul className="space-y-1.5 text-[11px] text-slate-600">
-                      <li>• <strong>Harga Netto HPP Blok Isi</strong>: <span className="font-mono text-emerald-700">Master!D21</span> & <span className="font-mono text-emerald-700">BUKU!AJ6</span>.</li>
-                      <li>• <strong>Tarif Standar</strong>: 192 Hal: Rp 3.421, 208 Hal: Rp 3.650, 96 Hal: Rp 1.800, 128 Hal: Rp 2.300.</li>
-                      <li>• <strong>Insheet Blok Isi</strong>: <span className="font-mono text-slate-600">Master!D22</span> = 2 eksemplar.</li>
+                      <li>• <strong>Isi 212 Hal Ready 2026</strong>: <span className="font-mono text-emerald-700">Master!D21</span> = Rp 3.620 / eks (insheet 2 eks).</li>
+                      <li>• <strong>Isi Klasik</strong>: 192 Hal (Rp 3.421), 128 Hal (Rp 2.300), 96 Hal (Rp 1.800).</li>
+                      <li>• <strong>Kertas HVS 70 gsm</strong>: <span className="font-mono text-emerald-700">Kosongan!Master!D22</span> = Rp 15.700 / kg.</li>
+                      <li>• <strong>Print Sisipan PT A3+</strong>: <span className="font-mono text-emerald-700">BUKU!AM6</span> = Rp 350 / lbr A3+ (4 hal per lembar).</li>
                     </ul>
                   </div>
 
@@ -300,14 +335,14 @@ export default function ManasikMasterParameter({
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
                     <div className="flex items-center gap-2 font-bold text-slate-900">
                       <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                      <span>2. Bahan Cover & Print Inter A3+ / Offset</span>
+                      <span>2. Bahan Cover & Print POD / Offset</span>
                     </div>
                     <ul className="space-y-1.5 text-[11px] text-slate-600">
-                      <li>• <strong>Harga Kertas AC 230</strong>: <span className="font-mono text-blue-700">Master!D12</span> (Rp 15.100 / kg).</li>
-                      <li>• <strong>Tarif Print Cover A3+ (POD)</strong>: <span className="font-mono text-blue-700">Master!D18</span> (Rp 2.500 / lbr).</li>
-                      <li>• <strong>Desain Cover</strong>: <span className="font-mono text-blue-700">Master!D17</span> (Rp 20.000).</li>
-                      <li>• <strong>Insheet Cover Cetak</strong>: <span className="font-mono text-blue-700">Master!D13</span> (5 lembar).</li>
-                      <li>• <strong>Offset Oliver Cover</strong>: Plat CTP <span className="font-mono text-blue-700">BUKU!Y4</span> (Rp 45.000), Min Order <span className="font-mono text-blue-700">BUKU!AB4</span> (Rp 90.000).</li>
+                      <li>• <strong>Tarif Print Cover AC 230 (POD)</strong>: <span className="font-mono text-blue-700">Custom!Master!D18</span> = Rp 2.700 / lbr A3+.</li>
+                      <li>• <strong>Tarif Print Mini TikTok (POD)</strong>: <span className="font-mono text-blue-700">TikTok!Master!D18</span> = Rp 2.500 / lbr A3+.</li>
+                      <li>• <strong>Kertas AC 230 / 260</strong>: Rp 16.400 / kg | <strong>AC 310</strong>: Rp 33.500 / kg.</li>
+                      <li>• <strong>Desain Cover</strong>: Custom Cover Rp 20.000 | Mini TikTok Rp 2.500.</li>
+                      <li>• <strong>Offset Oliver</strong>: Plat Rp 45.000, Min Rp 90.000, Drek over Rp 40.</li>
                     </ul>
                   </div>
 
@@ -315,30 +350,29 @@ export default function ManasikMasterParameter({
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
                     <div className="flex items-center gap-2 font-bold text-slate-900">
                       <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                      <span>3. Ongkos Jilid & Finishing</span>
+                      <span>3. Ongkos Jilid & Finishing Custom</span>
                     </div>
                     <ul className="space-y-1.5 text-[11px] text-slate-600">
-                      <li>• <strong>Tali Kur Warna /Roll</strong>: <span className="font-mono text-amber-700">Master!D28</span> (Rp 16.000 / roll = Rp 285,71 / pcs).</li>
-                      <li>• <strong>Steples 1213 /Pack</strong>: <span className="font-mono text-amber-700">Master!D27</span> (Rp 24.000 = Rp 112,74 / pcs).</li>
-                      <li>• <strong>Casing-In Pasang Cover</strong>: <span className="font-mono text-amber-700">BUKU!AP6</span> (Rp 225,49 / buku).</li>
-                      <li>• <strong>Lubang Bor Mata Ayam</strong>: <span className="font-mono text-amber-700">BUKU!AQ6</span> (Rp 225,49 / buku).</li>
-                      <li>• <strong>Potong Sisir Sisi</strong>: <span className="font-mono text-amber-700">BUKU!AR6</span> (Rp 150 / buku).</li>
-                      <li>• <strong>Laminasi Doff/Glossy</strong>: <span className="font-mono text-amber-700">Master!D24</span> & <span className="font-mono text-amber-700">BUKU!AO6</span>.</li>
+                      <li>• <strong>Tali Kur Warna Leher</strong>: <span className="font-mono text-amber-700">BUKU!BQ6</span> (Rp 16.000/roll isi 56 pcs = Rp 285,71) + jasa pasang Rp 112,74.</li>
+                      <li>• <strong>Isi Staples 1213</strong>: Rp 24.000/pack + tenaga Rp 112,74 + casing in Rp 225,49.</li>
+                      <li>• <strong>Lubang Bor Mata Ayam</strong>: <span className="font-mono text-amber-700">BUKU!BM6</span> (Rp 225,49 / buku).</li>
+                      <li>• <strong>Potong Sisir 3 Sisi</strong>: <span className="font-mono text-amber-700">BUKU!BK6</span> (Rp 150 / buku).</li>
+                      <li>• <strong>Jasa Sisip & Lipat Nama PT</strong>: Rp 225,49 / buku.</li>
                     </ul>
                   </div>
 
                   {/* Kelompok 4 */}
                   <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
                     <div className="flex items-center gap-2 font-bold text-slate-900">
-                      <span className="w-2 h-2 rounded-full bg-violet-500"></span>
-                      <span>4. Kemasan OPP, Lakban & Kardus</span>
+                      <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                      <span>4. Aksesoris Khusus Mini TikTok & Kemasan</span>
                     </div>
                     <ul className="space-y-1.5 text-[11px] text-slate-600">
-                      <li>• <strong>Plastik OPP /Pack 100</strong>: <span className="font-mono text-violet-700">Master!D26</span> (Rp 9.200 = Rp 92 / pcs).</li>
-                      <li>• <strong>Jasa Kemas OPP</strong>: <span className="font-mono text-violet-700">BUKU!BE4</span> (Rp 225,49 / pcs).</li>
-                      <li>• <strong>Kardus Master Box</strong>: <span className="font-mono text-violet-700">Master!D30</span> (Rp 8.500 / box isi 200 buku).</li>
-                      <li>• <strong>Lakban Box</strong>: <span className="font-mono text-violet-700">Master!D29</span> (Rp 8.000 / roll).</li>
-                      <li>• <strong>Target Margin Standar</strong>: <span className="font-mono text-violet-700">Master!E32</span> (30%).</li>
+                      <li>• <strong>Ring Binder 3 cm</strong>: <span className="font-mono text-purple-700">TikTok!Master!D24</span> = Rp 925 / pcs.</li>
+                      <li>• <strong>Tali Cocard Mini</strong>: <span className="font-mono text-purple-700">TikTok!Master!D23</span> = Rp 2.500 / pcs.</li>
+                      <li>• <strong>Plastik Ziplock</strong>: <span className="font-mono text-purple-700">TikTok!Master!D25</span> = Rp 465 / pcs.</li>
+                      <li>• <strong>Pisau + Jasa Pond Mini</strong>: Rp 299,30 + Rp 225,49.</li>
+                      <li>• <strong>Plastik OPP Satuan</strong>: Rp 92 / pcs + jasa Rp 225,49 | <strong>Kardus</strong>: Rp 8.500/box.</li>
                     </ul>
                   </div>
                 </div>

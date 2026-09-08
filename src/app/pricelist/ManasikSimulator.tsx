@@ -1047,31 +1047,31 @@ _Harga belum termasuk PPN. Spesifikasi & desain dapat dikonsultasikan lebih lanj
               <div className="space-y-3">
                 <h4 className="font-bold text-slate-900 text-sm flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
-                  Langkah Menggunakan Simulator Buku Manasik
+                  Langkah Menggunakan Simulator Buku Manasik 2026
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
-                    <span className="font-bold text-emerald-800 text-xs">1. Pilih Halaman Isi</span>
+                    <span className="font-bold text-emerald-800 text-xs">1. Pilih Model Varian</span>
                     <p className="text-[11px] text-slate-600">
-                      Pilih varian isi: <strong>96, 128, 192 (Populer), atau 208 Hal</strong>. Harga blok isi kosongan dihitung otomatis dari Master Parameter.
+                      Pilih: <strong>Custom Cover 10×15,5</strong> (standar 2026), <strong>Kosongan Ready</strong>, atau <strong>Mini TikTok 6,3×10,3</strong>. Parameter otomatis menyesuaikan.
                     </p>
                   </div>
                   <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
-                    <span className="font-bold text-emerald-800 text-xs">2. Tentukan Tipe Jilid</span>
+                    <span className="font-bold text-emerald-800 text-xs">2. Tentukan Oplah & Halaman</span>
                     <p className="text-[11px] text-slate-600">
-                      Pilih <strong>Tali Cocard + Mata Ayam</strong>, <strong>Softcover Bending (Lem Panas)</strong>, atau <strong>Spiral Kawat</strong>.
+                      Tentukan kuantiti (20 s/d 5.000 eks) dan varian isi (misal 216 hal untuk 212 blok + 4 sisipan PT).
                     </p>
                   </div>
                   <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
-                    <span className="font-bold text-emerald-800 text-xs">3. Metode Cover & Laminasi</span>
+                    <span className="font-bold text-emerald-800 text-xs">3. Jilid, Finishing & Sisipan</span>
                     <p className="text-[11px] text-slate-600">
-                      Pilihan <strong>Otomatis</strong> akan memilih Digital Print A3+ (&lt;300 eks) atau Cetak Offset Oliver (&ge;300 eks) + Laminasi Doff/Glossy.
+                      Tersedia: <strong>Tali Cocard + Mata Ayam</strong>, <strong>Bending Lem Panas</strong>, <strong>Spiral</strong>, atau <strong>Ring Binder</strong> (TikTok) + Laminasi Doff/Glossy.
                     </p>
                   </div>
                   <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
-                    <span className="font-bold text-emerald-800 text-xs">4. Target Margin & Nego</span>
+                    <span className="font-bold text-emerald-800 text-xs">4. Target Margin & Salin WA</span>
                     <p className="text-[11px] text-slate-600">
-                      Sesuaikan margin keuntungan (+30%) serta diskon negosiasi. Klik <strong>Salin Penawaran</strong> untuk teks WA instan.
+                      Harga jual terhubung ke pricelist resmi Excel 2026. Klik <strong>Salin Penawaran</strong> untuk teks WA instan.
                     </p>
                   </div>
                 </div>
@@ -1081,19 +1081,25 @@ _Harga belum termasuk PPN. Spesifikasi & desain dapat dikonsultasikan lebih lanj
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2.5">
                 <h5 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-2">
                   <BookOpen className="w-4 h-4 text-emerald-700" />
-                  Struktur Biaya Produksi Buku Manasik
+                  Struktur Biaya Produksi Berdasarkan 3 Varian (Pricelist 2026)
                 </h5>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
                   <div className="p-2.5 bg-white rounded border border-emerald-100 space-y-1">
-                    <span className="font-bold text-emerald-900 block">Blok Isi Kosongan + Cover Custom:</span>
+                    <span className="font-bold text-emerald-900 block">Custom Cover 10 x 15,5 cm:</span>
                     <p className="text-slate-600 leading-snug">
-                      Blok isi dipasok siap pakai. Cover dicetak Art Carton 230 gsm full color sesuai branding travel/kbih pemesan, lalu dilaminasi untuk perlindungan maksimal.
+                      Cover AC 230 gsm POD/Oliver + Laminasi Doff + Sisipan 4 hal PT + Blok isi 212 hal + Staples tengah 1213 + Casing In + Bor + Tali Kur warna leher + Plastik OPP + Kardus master.
                     </p>
                   </div>
                   <div className="p-2.5 bg-white rounded border border-blue-100 space-y-1">
-                    <span className="font-bold text-blue-900 block">Perakitan & Finishing:</span>
+                    <span className="font-bold text-blue-900 block">Kosongan 10 x 15,5 cm:</span>
                     <p className="text-slate-600 leading-snug">
-                      Termasuk ongkos jilid (bending/spiral/tali cocard), potong sisir 3 sisi, kemasan plastik OPP per buku, dan box kardus master pengiriman.
+                      Blok isi ready 212 hal HVS 70 gsm cetak offset Oliver 1 warna (53 plat CTP), finishing pelipatan kuras, susun urut, lem panas bending, dan kemasan kardus master.
+                    </p>
+                  </div>
+                  <div className="p-2.5 bg-white rounded border border-purple-100 space-y-1">
+                    <span className="font-bold text-purple-900 block">Mini TikTok 6,3 x 10,3 cm:</span>
+                    <p className="text-slate-600 leading-snug">
+                      Art Carton 310 gsm full color bolak-balik (48 hal / 24 kartu) + Laminasi glossy + Pisau & jasa pond sudut + Ring binder 3cm + Tali cocard + Plastik ziplock.
                     </p>
                   </div>
                 </div>
