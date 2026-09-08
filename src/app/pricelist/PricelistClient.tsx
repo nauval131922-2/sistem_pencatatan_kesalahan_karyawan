@@ -274,8 +274,9 @@ export default function PricelistClient() {
       const savedBrosur = localStorage.getItem('sintak_pricelist_master_params_brosur');
       if (savedBrosur) {
         const parsedBrosur = JSON.parse(savedBrosur);
-        if (parsedBrosur.tarifPrintInter1Muka === 1800) {
+        if (parsedBrosur.tarifPrintInter1Muka === 1800 || parsedBrosur.tarifArtPaperKg === 17400) {
           delete parsedBrosur.tarifPrintInter1Muka;
+          delete parsedBrosur.tarifArtPaperKg;
         }
         setParamsBrosur({ ...DEFAULT_BROSUR_PARAMS, ...parsedBrosur });
       }
