@@ -264,8 +264,13 @@ export default function PricelistClient() {
         setParamsYasin({ ...DEFAULT_YASIN_PARAMS, ...parsedYasin });
       }
       const savedNota = localStorage.getItem('sintak_pricelist_master_params_nota');
-      if (savedNota) setParamsNota({ ...DEFAULT_NOTA_PARAMS, ...JSON.parse(savedNota) });
-
+      if (savedNota) {
+        const parsedNota = JSON.parse(savedNota);
+        if (parsedNota.upHvsPct === 5) {
+          delete parsedNota.upHvsPct;
+        }
+        setParamsNota({ ...DEFAULT_NOTA_PARAMS, ...parsedNota });
+      }
       const savedBrosur = localStorage.getItem('sintak_pricelist_master_params_brosur');
       if (savedBrosur) setParamsBrosur({ ...DEFAULT_BROSUR_PARAMS, ...JSON.parse(savedBrosur) });
 
