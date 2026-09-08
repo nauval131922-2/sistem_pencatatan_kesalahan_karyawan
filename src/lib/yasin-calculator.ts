@@ -66,8 +66,8 @@ export const DEFAULT_YASIN_PARAMS: YasinMasterParams = {
   tarifSisirYasin: 150,
   tarifPlastikOppYasin: 90, // Excel BUKU!AX6: Rp 90 / buku
 
-  tarifBoardHardcover: 280,
-  tarifCasingInHardcover: 750,
+  tarifBoardHardcover: 279.48, // Excel BUKU!BA6
+  tarifCasingInHardcover: 751.62, // Excel BUKU!AZ6 (formula UMR)
   tarifSkiblat: 350,
   tarifPitaRumbaiPapercraft: 470,
   tarifSikuSudutEmas: 400,
