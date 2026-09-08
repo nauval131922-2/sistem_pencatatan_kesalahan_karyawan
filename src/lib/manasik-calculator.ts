@@ -557,8 +557,8 @@ export function calculateManasikSimulator(
     else if (jumlahHalaman === 128) hargaIsiPerPcs = params.hargaIsiKosongan128;
     else if (jumlahHalaman === 192) hargaIsiPerPcs = params.hargaIsiKosongan192;
     else hargaIsiPerPcs = params.hargaIsiKosongan208;
-
     const insheetIsi = 2;
+    const biayaIsi = hargaIsiPerPcs * (validOplah + insheetIsi);
     breakdown.push({
       nama: `Blok Isi Manasik (${jumlahHalaman >= 208 ? '212' : jumlahHalaman} Halaman)`,
       nominal: Math.round(biayaIsi),
