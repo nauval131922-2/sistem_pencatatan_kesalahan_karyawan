@@ -150,9 +150,10 @@ export function calculateYasinSimulator(
   else tebalPunggung = 1.0;
 
   // 2. Biaya Cover POD A3+
-  // Softcover muat 3 cover / A3+, Hardcover muat 2 cover (bentangan lebar + lipatan board)
+  // Softcover muat 3 cover / A3+ (insheet 5), Hardcover muat 2 cover (insheet 10 di Excel Master!D11)
   const a3MuatCover = isHardcover ? 2 : 3;
-  const kebutuhanA3Cover = Math.ceil(validOplah / a3MuatCover) + (params.insheetCover ?? 5);
+  const insheetCoverEffective = isHardcover ? 10 : (params.insheetCover ?? 5);
+  const kebutuhanA3Cover = Math.ceil(validOplah / a3MuatCover) + insheetCoverEffective;
   const hargaPrintCoverUnit = isHardcover ? 2000 : (params.tarifPrintCoverA3 ?? 2500);
   const biayaPrintCover = (kebutuhanA3Cover * hargaPrintCoverUnit) + (params.tarifDesainCover ?? 25000);
 
