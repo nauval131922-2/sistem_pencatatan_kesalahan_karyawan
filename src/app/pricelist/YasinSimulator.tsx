@@ -96,11 +96,11 @@ export default function YasinSimulator({
   const [tipeCover, setTipeCover] = useState<'Softcover' | 'Hardcover'>('Hardcover');
   const [ukuran, setUkuran] = useState<'11.7 x 15' | '9.5 x 14'>('11.7 x 15');
   const [jumlahHalamanIsi, setJumlahHalamanIsi] = useState<64 | 96 | 112 | 128 | 144 | 192>(96);
-  const [lembarSisipanFoto, setLembarSisipanFoto] = useState<number>(2);
-  const [lembarSisipanKeluarga, setLembarSisipanKeluarga] = useState<number>(2);
+  const [lembarSisipanFoto, setLembarSisipanFoto] = useState<number>(1);
+  const [lembarSisipanKeluarga, setLembarSisipanKeluarga] = useState<number>(1);
   const [laminasiCover, setLaminasiCover] = useState<'Glossy' | 'Doff'>('Glossy');
   const [opsiPitaRumbai, setOpsiPitaRumbai] = useState<boolean>(true);
-  const [opsiSikuEmas, setOpsiSikuEmas] = useState<boolean>(true);
+  const [opsiSikuEmas, setOpsiSikuEmas] = useState<boolean>(false);
   const [opsiPlastikOpp, setOpsiPlastikOpp] = useState<boolean>(true);
   const [marginPct, setMarginPct] = useState<number>(30);
   const [negoDiskonPct, setNegoDiskonPct] = useState<number>(0);
