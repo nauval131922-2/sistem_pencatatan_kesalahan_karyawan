@@ -53,7 +53,7 @@ export const DEFAULT_YASIN_PARAMS: YasinMasterParams = {
   hargaIsiYasin192: 3800,
 
   tarifPrintSisipanFotoA3: 1750,
-  tarifPrintSisipanTeksA3: 1500,
+  tarifPrintSisipanTeksA3: 3300, // Excel Master!D31: Rp 3.300 / lbr A3+ (Cetak 2 Muka / Bolak-balik)
   insheetSisipan: 2,
 
   tarifLaminasiGlossyCm2: 0.35,
@@ -62,9 +62,9 @@ export const DEFAULT_YASIN_PARAMS: YasinMasterParams = {
 
   tarifSisipLembar: 100,
   tarifStaplesYasin: 50,
-  tarifPasangCoverSoft: 100,
+  tarifPasangCoverSoft: 200, // Excel BUKU!AU6: Rp 200 / buku
   tarifSisirYasin: 150,
-  tarifPlastikOppYasin: 95,
+  tarifPlastikOppYasin: 90, // Excel BUKU!AX6: Rp 90 / buku
 
   tarifBoardHardcover: 280,
   tarifCasingInHardcover: 750,
@@ -321,14 +321,17 @@ export function calculateYasinSimulator(
     });
   }
 
-  // Summary Profit & Nego
-  const marginNominalPerPcs = Math.round((hppPerPcs * marginPct) / 100);
-  const hargaJualPerPcs = hppPerPcs + marginNominalPerPcs;
+  // Summary Profit & Nego (Selaras dengan Sheet Harga Yasin 2026: pembulatan ke kelipatan ratusan terdekat)
+  // Di Excel: =ROUNDUP(((G5 * margin) + G5), -2)
+  const rawHpp = totalHpp / validOplah;
+  const rawHargaJual = rawHpp * (1 + marginPct / 100);
+  const hargaJualPerPcs = Math.ceil(rawHargaJual / 100) * 100;
   const totalHargaJual = hargaJualPerPcs * validOplah;
+  const marginNominalPerPcs = hargaJualPerPcs - hppPerPcs;
   const totalProfit = totalHargaJual - totalHpp;
 
   const diskonNominalPerPcs = Math.round((hargaJualPerPcs * Math.max(0, Math.min(100, negoDiskonPct))) / 100);
-  const hargaNegoPerPcs = hargaJualPerPcs - diskonNominalPerPcs;
+  const hargaNegoPerPcs = Math.ceil((hargaJualPerPcs - diskonNominalPerPcs) / 10) * 10;
   const totalHargaNego = hargaNegoPerPcs * validOplah;
   const totalProfitNego = totalHargaNego - totalHpp;
 

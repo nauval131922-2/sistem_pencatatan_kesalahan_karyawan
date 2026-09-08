@@ -244,8 +244,16 @@ export default function PricelistClient() {
         setParamsManasik({ ...DEFAULT_MANASIK_PARAMS, ...parsed });
       }
       const savedYasin = localStorage.getItem('sintak_pricelist_master_params_yasin');
-      if (savedYasin) setParamsYasin({ ...DEFAULT_YASIN_PARAMS, ...JSON.parse(savedYasin) });
-
+      if (savedYasin) {
+        const parsedYasin = JSON.parse(savedYasin);
+        // Migrasi jika masih menggunakan nilai default lama (1500 / 100 / 95)
+        if (parsedYasin.tarifPrintSisipanTeksA3 === 1500 || parsedYasin.tarifPasangCoverSoft === 100) {
+          delete parsedYasin.tarifPrintSisipanTeksA3;
+          delete parsedYasin.tarifPasangCoverSoft;
+          delete parsedYasin.tarifPlastikOppYasin;
+        }
+        setParamsYasin({ ...DEFAULT_YASIN_PARAMS, ...parsedYasin });
+      }
       const savedNota = localStorage.getItem('sintak_pricelist_master_params_nota');
       if (savedNota) setParamsNota({ ...DEFAULT_NOTA_PARAMS, ...JSON.parse(savedNota) });
 
