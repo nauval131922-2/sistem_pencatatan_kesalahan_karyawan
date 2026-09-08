@@ -170,6 +170,7 @@ export async function getAllRoleLaporanPekerjaanConfigs(): Promise<Record<string
   try {
     const { rows } = await db.execute('SELECT role, allowed_bagian, allowed_pic, excluded_pic, visible_columns, can_add, can_edit, can_delete, delete_scope FROM role_laporan_pekerjaan_config');
     for (const row of rows) {
+      const roleName = String(row.role);
       const allowed_bagian = parseJsonArray(row.allowed_bagian);
       const allowed_pic = parseJsonArray(row.allowed_pic);
       const excluded_pic = parseJsonArray(row.excluded_pic);
