@@ -393,56 +393,113 @@ export function calculateManasikSimulator(
     tebalPunggung = 1.0;
     metodeCover = 'Offset (Oliver)';
 
-    // Produksi blok isi manasik kosongan 212 hal (26.5 sheet 10x15.5)
-    // 1 Plano muat 8 potong (1 plano muat 8 lbr 21.5x33)
-    // HVS 70 gsm @ 15.700/kg
-    const lbrIsiPerBuku = 26.5;
-    const insheetIsi = 5;
-    const kebutuhanLbrCetak = Math.ceil(validOplah * lbrIsiPerBuku + insheetIsi);
-    const beratPlanoKg = (21.5 * 33 * 70) / 10000000;
-    const biayaKertasIsi = kebutuhanLbrCetak * beratPlanoKg * params.tarifKertasHvs70Kg * 8; // scaled
+    // Rumus Cetak Buku Kosongan sesuai Sheet BUKU & HARGA 2026:
+    // 212 Halaman = 26.5 sheet (AN18 = 26.5)
+    // Kebutuhan lbr cetak (AP): (oplah * 26.5) + (5 insheet * 27)
+    const ap = Math.ceil(validOplah * 26.5 + 5 * 27);
 
-    // Plat & Cetak 1 Warna
-    const jmlPlat = 53; // 212 hal / 4
-    const biayaPlat = jmlPlat * params.oliverPlatUnitCover;
-    const ongkosDasar = params.oliverMinOngkosCover * jmlPlat;
-    const lbrMesin = Math.ceil((validOplah * 4) / 8);
-    const cetakOver = Math.max(0, lbrMesin - 1000);
-    const ongkosOver = cetakOver * params.oliverDrekOverCover * jmlPlat;
-    const biayaCetakIsi = ongkosDasar + ongkosOver;
+    // 1. Kertas Isi HVS 70 gsm: 26.5 lbr plano roll @ Rp 38.987,025 / rim potong
+    const hargaPlanoRim = 38987.025 * (params.tarifKertasHvs70Kg / 15700);
+    const biayaKertasIsi = (ap / 500) * hargaPlanoRim;
+
+    // 2. Desain File Isi: 26.5 set @ Rp 5.000
+    const biayaDesain = 5000 * 26.5;
+
+    // 3. Ongkos Cetak Rotary Web (Print Buya): Rp 350 / lbr cetak
+    const biayaCetakIsi = ap * 350;
 
     breakdown.push({
-      nama: 'Kertas HVS 70 gsm & Cetak Offset Isi (1 Warna)',
-      nominal: Math.round(biayaKertasIsi + biayaPlat + biayaCetakIsi),
+      nama: 'Kertas HVS 70 gsm & Cetak Mesin Buya (212 Hal)',
+      nominal: Math.round(biayaKertasIsi + biayaDesain + biayaCetakIsi),
       pct: 0,
-      keterangan: `212 Halaman (53 Plat) HVS 70 gsm @ Rp ${params.tarifKertasHvs70Kg.toLocaleString('id-ID')}/kg`,
+      keterangan: `${ap.toLocaleString('id-ID')} lbr cetak HVS 70 gsm @ Rp 350 + kertas & desain`,
     });
 
-    // Lipat + Susun + Gabung Lem
-    const biayaLipat = 169.11 * validOplah;
-    const biayaSusun = 434.86 * validOplah;
-    const biayaBelah = 22.55 * validOplah;
-    const biayaLem = 188.86 * validOplah;
+    // 4. Finishing Blok Isi (Kuras: Lipat, Susun, Belah, Lem Panas):
+    // BF: 6.26352222 * 27 * oplah (Rp 169.115,10 / 1000 eks)
+    // BG: 16.1062 * 27 * oplah (Rp 434.867,40 / 1000 eks)
+    // BH: 22.54868 * oplah (Rp 22.548,68 / 1000 eks)
+    // BM: 187.90567 * oplah + 4800 lem (Rp 192.705,67 / 1000 eks)
+    const biayaLipat = 6.26352222 * 27 * validOplah;
+    const biayaSusun = 16.1062 * 27 * validOplah;
+    const biayaBelah = params.tarifCasingIn / 10 * validOplah;
+    const biayaLem = 187.90567 * validOplah + 4800;
     const totalFinishingIsi = biayaLipat + biayaSusun + biayaBelah + biayaLem;
+
     breakdown.push({
-      nama: 'Finishing Blok Isi (Lipat + Susun + Lem Bending)',
+      nama: 'Finishing Blok Isi (Lipat, Susun, Belah, Lem Bending)',
       nominal: Math.round(totalFinishingIsi),
       pct: 0,
-      keterangan: 'Pelipatan kuras, susun urut halaman, dan pengeleman blok buku',
+      keterangan: 'Pelipatan kuras, susun urut halaman, belah dan pengeleman blok',
     });
 
-    // Kardus & Packing
+    // 5. Sisipan 4 Halaman:
+    const biayaSisipan = Math.ceil((4 / 8) * validOplah + 10) * 350 + validOplah * params.tarifBiayaSisipLipat;
+    breakdown.push({
+      nama: 'Sisipan 4 Halaman PT',
+      nominal: Math.round(biayaSisipan),
+      pct: 0,
+      keterangan: 'Print sisipan A3+ dan jasa sisip lipat nama PT',
+    });
+
+    // 6. Finishing Jilid & Tali (Staples, Casing In, Bor & Pasang Tali):
+    const staplesIsi = Math.max(0.3, validOplah / (10000 / 12)) * 16000;
+    const staplesTenaga = validOplah * params.tarifStaplesPalu;
+    const casingIn = validOplah * params.tarifCasingIn;
+    const lubangBor = validOplah * params.tarifLubangBor;
+    const taliBahan = (validOplah / 56) * 16000;
+    const taliPasang = validOplah * params.tarifPasangTali;
+    const biayaJilidTali = staplesIsi + staplesTenaga + casingIn + lubangBor + taliBahan + taliPasang;
+    breakdown.push({
+      nama: 'Jilid Staples, Casing In & Pasang Tali Kur',
+      nominal: Math.round(biayaJilidTali),
+      pct: 0,
+      keterangan: 'Staples kawat, casing in, bor lubang & tali kur leher',
+    });
+
+    // 7. Potong Sisir & Kemasan OPP:
+    const biayaSisir = validOplah * params.tarifSisir;
+    const oppBahan = (params.tarifPlastikOppPack / 100) * validOplah;
+    const oppJasa = validOplah * params.jasaPlastikOpp;
+    const biayaKemasan = biayaSisir + oppBahan + oppJasa;
+    breakdown.push({
+      nama: 'Potong Sisir 3 Sisi & Plastik OPP',
+      nominal: Math.round(biayaKemasan),
+      pct: 0,
+      keterangan: 'Potong sisir rapi & kemasan segel plastik OPP per pcs',
+    });
+
+    // 8. Laminasi Doff Cover:
+    const lamDoff = Math.max(50000, 10 * 15.5 * 2 * params.tarifLaminasiDoffCm2 * validOplah);
+    breakdown.push({
+      nama: 'Laminasi Doff Cover',
+      nominal: Math.round(lamDoff),
+      pct: 0,
+      keterangan: 'Finishing laminasi doff (min. Rp 50.000)',
+    });
+
+    // 9. Kardus & Packing Lakban:
     const jmlBox = Math.ceil(validOplah / params.kapasitasKardusManasik);
-    const biayaLakban = (validOplah / params.kapasitasKardusManasik / 39.03) * params.tarifLakbanBox;
+    const biayaLakban = (validOplah / params.kapasitasKardusManasik / 39.03061224489796) * params.tarifLakbanBox;
     const biayaKardus = jmlBox * params.tarifKardusBox + biayaLakban;
     breakdown.push({
-      nama: 'Packing Kardus & Lakban Master',
+      nama: 'Packing Kardus Master & Lakban',
       nominal: Math.round(biayaKardus),
       pct: 0,
       keterangan: `${jmlBox} box kardus master (isi 200 pcs/box)`,
     });
 
-    totalHpp = Math.round(biayaKertasIsi + biayaPlat + biayaCetakIsi + totalFinishingIsi + biayaKardus);
+    totalHpp = Math.round(
+      biayaKertasIsi +
+        biayaDesain +
+        biayaCetakIsi +
+        totalFinishingIsi +
+        biayaSisipan +
+        biayaJilidTali +
+        biayaKemasan +
+        lamDoff +
+        biayaKardus
+    );
   }
   // ==========================================
   // 3. VARIAN: CUSTOM COVER (10 x 15,5 cm) - DEFAULT 2026
