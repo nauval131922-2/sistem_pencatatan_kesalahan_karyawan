@@ -231,11 +231,14 @@ export default function PricelistClient() {
       const savedManasik = localStorage.getItem('sintak_pricelist_master_params_manasik');
       if (savedManasik) {
         const parsed = JSON.parse(savedManasik);
-        // Migrasi nilai default lama agar presisi sesuai Master Excel 2026
-        if (parsed.tarifCasingIn === 225 || parsed.tarifStaplesPalu === 113 || parsed.tarifStaplesPalu === 100) {
+        // Migrasi nilai default lama agar presisi 100% dengan desimal UMR Master Excel 2026
+        if (parsed.tarifCasingIn === 225 || parsed.tarifCasingIn === 225.49 || parsed.tarifStaplesPalu === 113 || parsed.tarifStaplesPalu === 112.74 || parsed.tarifStaplesPalu === 100) {
           delete parsed.tarifCasingIn;
           delete parsed.tarifStaplesPalu;
           delete parsed.jasaPlastikOpp;
+          delete parsed.tarifLubangBor;
+          delete parsed.tarifPasangTali;
+          delete parsed.tarifBiayaSisipLipat;
           delete parsed.tarifLakbanBox;
         }
         setParamsManasik({ ...DEFAULT_MANASIK_PARAMS, ...parsed });

@@ -39,15 +39,15 @@ export interface ManasikMasterParams {
   tarifUvVarnishCm2: number; // 0.11 (min 50000)
   minLaminasi: number; // 50000
 
-  tarifStaplesPalu: number; // 112.74
+  tarifStaplesPalu: number; // 112.7434
   tarifIsiStaplesPack: number; // 24000 (isi staples 1213)
-  tarifCasingIn: number; // 225.49
+  tarifCasingIn: number; // 225.4868
   tarifSisir: number; // 150
-  tarifLubangBor: number; // 225.49
-  tarifPasangTali: number; // 112.74
-  tarifTaliKurPerPcs: number; // 285.71 (1 roll 16000 / 56 pcs)
+  tarifLubangBor: number; // 225.4868
+  tarifPasangTali: number; // 112.7434
+  tarifTaliKurPerPcs: number; // 285.7143 (1 roll 16000 / 56 pcs)
   tarifSpiralManasik: number; // 1200
-  tarifBiayaSisipLipat: number; // 225.49
+  tarifBiayaSisipLipat: number; // 225.4868
 
   // Mini TikTok Finishing Khusus
   tarifPisauPoundMini: number; // 299.30
@@ -60,7 +60,7 @@ export interface ManasikMasterParams {
 
   // 5. Packing & Kemasan
   tarifPlastikOppPack: number; // 9200 (isi 100) -> 92/pcs
-  jasaPlastikOpp: number; // 225.49
+  jasaPlastikOpp: number; // 225.4868
   tarifKardusBox: number; // 8500
   kapasitasKardusManasik: number; // 200 pcs / box
   kapasitasKardusMini: number; // 300 pcs / box
@@ -99,15 +99,15 @@ export const DEFAULT_MANASIK_PARAMS: ManasikMasterParams = {
   tarifUvVarnishCm2: 0.11,
   minLaminasi: 50000,
 
-  tarifStaplesPalu: 112.74,
+  tarifStaplesPalu: 112.7434,
   tarifIsiStaplesPack: 24000,
-  tarifCasingIn: 225.49,
+  tarifCasingIn: 225.4868,
   tarifSisir: 150,
-  tarifLubangBor: 225.49,
-  tarifPasangTali: 112.74,
-  tarifTaliKurPerPcs: 285.71,
+  tarifLubangBor: 225.4868,
+  tarifPasangTali: 112.7434,
+  tarifTaliKurPerPcs: 285.7143,
   tarifSpiralManasik: 1200,
-  tarifBiayaSisipLipat: 225.49,
+  tarifBiayaSisipLipat: 225.4868,
 
   tarifPisauPoundMini: 299.30,
   tarifJasaPoundMini: 225.49,
@@ -118,7 +118,7 @@ export const DEFAULT_MANASIK_PARAMS: ManasikMasterParams = {
   tarifTransportMini: 150000,
 
   tarifPlastikOppPack: 9200,
-  jasaPlastikOpp: 225.49,
+  jasaPlastikOpp: 225.4868,
   tarifKardusBox: 8500,
   kapasitasKardusManasik: 200,
   kapasitasKardusMini: 300,
