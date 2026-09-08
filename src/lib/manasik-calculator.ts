@@ -650,70 +650,13 @@ export function calculateManasikSimulator(
     b.pct = totalHpp > 0 ? (b.nominal / totalHpp) * 100 : 0;
   });
 
-  // Perhitungan Harga Jual Mengikuti Pricelist Excel jika tersedia, atau Margin %
-  // Tabel Excel Resmi 2026:
-  // 20: 16.000 | 50: 15.000 | 100: 14.500 | 150: 14.000 | 200: 13.500 | 250: 13.000 | 300: 12.500 | 350: 12.000 | 400: 11.500 | 450: 10.900 | 500: 9.900 | 1000: 8.900
-  let hargaJualPerPcs = 0;
-  let hargaNegoPerPcs = 0;
-
-  if (varian === 'Custom Cover 10 x 15,5' && marginPct === 30) {
-    // Pricelist resmi Excel Custom Cover 2026
-    const exactPrices: Record<number, { jual: number; nego: number }> = {
-      20: { jual: 16000, nego: 15500 },
-      50: { jual: 15000, nego: 14500 },
-      100: { jual: 14500, nego: 14000 },
-      150: { jual: 14000, nego: 13500 },
-      200: { jual: 13500, nego: 13000 },
-      250: { jual: 13000, nego: 12500 },
-      300: { jual: 12500, nego: 12000 },
-      350: { jual: 12000, nego: 11500 },
-      400: { jual: 11500, nego: 11000 },
-      450: { jual: 10900, nego: 10500 },
-      500: { jual: 9900, nego: 9500 },
-      1000: { jual: 8900, nego: 8500 },
-    };
-
-    if (exactPrices[validOplah] && negoDiskonPct === 0) {
-      hargaJualPerPcs = exactPrices[validOplah].jual;
-      hargaNegoPerPcs = exactPrices[validOplah].nego;
-    } else {
-      const marginNominal = Math.round((hppPerPcs * marginPct) / 100);
-      hargaJualPerPcs = Math.ceil((hppPerPcs + marginNominal) / 50) * 50;
-      const diskon = Math.round((hargaJualPerPcs * Math.max(0, Math.min(100, negoDiskonPct))) / 100);
-      hargaNegoPerPcs = hargaJualPerPcs - diskon;
-    }
-  } else if (varian === 'Mini TikTok 6,3 x 10,3') {
-    const exactPricesTikTok: Record<number, number> = {
-      400: 16730,
-      450: 16020,
-      500: 15410,
-      550: 14950,
-      600: 14530,
-      650: 14230,
-      700: 13920,
-      750: 13680,
-      800: 13450,
-      850: 13270,
-      900: 13080,
-      950: 12950,
-      1000: 12800,
-    };
-    if (exactPricesTikTok[validOplah] && marginPct === 32) {
-      hargaJualPerPcs = exactPricesTikTok[validOplah];
-    } else {
-      const marginNominal = Math.round((hppPerPcs * marginPct) / 100);
-      hargaJualPerPcs = Math.ceil((hppPerPcs + marginNominal) / 10) * 10;
-    }
-    const diskon = Math.round((hargaJualPerPcs * Math.max(0, Math.min(100, negoDiskonPct))) / 100);
-    hargaNegoPerPcs = hargaJualPerPcs - diskon;
-  } else {
-    // Kosongan & custom margin
-    const marginNominal = Math.round((hppPerPcs * marginPct) / 100);
-    hargaJualPerPcs = Math.ceil((hppPerPcs + marginNominal) / 10) * 10;
-    const diskon = Math.round((hargaJualPerPcs * Math.max(0, Math.min(100, negoDiskonPct))) / 100);
-    hargaNegoPerPcs = hargaJualPerPcs - diskon;
-  }
-
+  // Perhitungan Harga Jual murni sesuai formula Excel Sheet BUKU:
+  // Formula DE: =ROUNDUP(((HPP + Laba)), -1) -> Kelipatan 10 terdekat
+  const marginNominal = (hppPerPcs * marginPct) / 100;
+  const hargaJualPerPcs = Math.ceil((hppPerPcs + marginNominal) / 10) * 10;
+  
+  const diskon = (hargaJualPerPcs * Math.max(0, Math.min(100, negoDiskonPct))) / 100;
+  const hargaNegoPerPcs = Math.ceil((hargaJualPerPcs - diskon) / 10) * 10;
   const totalHargaJual = hargaJualPerPcs * validOplah;
   const totalProfit = totalHargaJual - totalHpp;
   const totalHargaNego = hargaNegoPerPcs * validOplah;
