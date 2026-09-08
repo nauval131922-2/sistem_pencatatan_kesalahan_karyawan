@@ -186,9 +186,11 @@ export function calculateBrosurSimulator(
   // 2. Biaya Cetak Oliver (hanya jika mesin = Oliver)
   if (isOliver) {
     // Di Excel master Oliver (cell Z): jumlah plat cetak adalah 4 plat (CMYK) baik 1 muka maupun 2 muka (cetak bolak-balik work-and-turn)
+    // Di Excel cell Y6: tarif plat 1 muka = 45.000, 2 muka = 43.000 (total plat Rp 172.000)
     const jmlPlat = p.jumlahPlatOliver;
-    const biayaPlat = jmlPlat * p.tarifPlatOliver;
-    add('Plate CTP Oliver', biayaPlat, `${jmlPlat} plat × Rp ${p.tarifPlatOliver.toLocaleString('id-ID')}`);
+    const tarifPlatUnit = is2Muka ? 43000 : p.tarifPlatOliver;
+    const biayaPlat = jmlPlat * tarifPlatUnit;
+    add('Plate CTP Oliver', biayaPlat, `${jmlPlat} plat × Rp ${tarifPlatUnit.toLocaleString('id-ID')}`);
 
     // Ongkos cetak: Di Excel cell AD = jmlPlat * Rp 90.000
     // Total drek plat = planoPerOrder * potongPlano * muka
