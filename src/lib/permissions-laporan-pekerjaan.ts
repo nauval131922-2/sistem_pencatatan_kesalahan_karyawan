@@ -132,6 +132,7 @@ export async function getRoleLaporanPekerjaanConfig(role: string): Promise<RoleL
       can_delete: delete_scope !== 'none',
       delete_scope,
     };
+  } catch (error) {
     console.error(`[PERMISSIONS] Failed to get config for role ${role}:`, error);
     return {
       role,
@@ -145,7 +146,7 @@ export async function getRoleLaporanPekerjaanConfig(role: string): Promise<RoleL
       delete_scope: 'all',
     };
   }
-
+}
 /**
  * Ambil konfigurasi Laporan Pekerjaan untuk semua role yang terdaftar.
  */
@@ -168,7 +169,7 @@ export async function getAllRoleLaporanPekerjaanConfigs(): Promise<Record<string
 
   try {
     const { rows } = await db.execute('SELECT role, allowed_bagian, allowed_pic, excluded_pic, visible_columns, can_add, can_edit, can_delete, delete_scope FROM role_laporan_pekerjaan_config');
-      const roleName = String(row.role);
+    for (const row of rows) {
       const allowed_bagian = parseJsonArray(row.allowed_bagian);
       const allowed_pic = parseJsonArray(row.allowed_pic);
       const excluded_pic = parseJsonArray(row.excluded_pic);
@@ -196,9 +197,9 @@ export async function getAllRoleLaporanPekerjaanConfigs(): Promise<Record<string
         delete_scope,
       };
     }
+  } catch (error) {
     console.error('[PERMISSIONS] Failed to get all role configs:', error);
   }
-
   return result;
 }
 
