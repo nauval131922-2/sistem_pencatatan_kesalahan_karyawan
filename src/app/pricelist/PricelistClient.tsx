@@ -272,8 +272,13 @@ export default function PricelistClient() {
         setParamsNota({ ...DEFAULT_NOTA_PARAMS, ...parsedNota });
       }
       const savedBrosur = localStorage.getItem('sintak_pricelist_master_params_brosur');
-      if (savedBrosur) setParamsBrosur({ ...DEFAULT_BROSUR_PARAMS, ...JSON.parse(savedBrosur) });
-
+      if (savedBrosur) {
+        const parsedBrosur = JSON.parse(savedBrosur);
+        if (parsedBrosur.tarifPrintInter1Muka === 1800) {
+          delete parsedBrosur.tarifPrintInter1Muka;
+        }
+        setParamsBrosur({ ...DEFAULT_BROSUR_PARAMS, ...parsedBrosur });
+      }
       const savedLabelKhq = localStorage.getItem('sintak_pricelist_master_params_label_khq');
       if (savedLabelKhq) setParamsLabelKhq({ ...DEFAULT_LABEL_KHQ_PARAMS, ...JSON.parse(savedLabelKhq) });
 

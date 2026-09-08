@@ -39,7 +39,7 @@ export const DEFAULT_BROSUR_PARAMS: BrosurMasterParams = {
   tarifArtPaperKg: 16900,
   upKertasPct: 5,
 
-  tarifPrintInter1Muka: 1800,
+  tarifPrintInter1Muka: 2000, // Master!D18 file Source: Rp 2.000 / lbr A3+
   tarifPrintInter2Muka: 3300,
 
   tarifPlatOliver: 45000,
@@ -83,11 +83,11 @@ const UKURAN_CONFIG: Record<BrosurUkuranType, {
   planoL: number;         // panjang plano Oliver (cm)
   planoP: number;         // lebar plano Oliver (cm)
 }> = {
-  '10,5 x 21':  { w: 10.5, h: 21,   insheetPrint: 5,  insheetOliver: 100, planoL: 65, planoP: 90 },
-  '14,5 x 21':  { w: 14.5, h: 21,   insheetPrint: 5,  insheetOliver: 150, planoL: 65, planoP: 90 },
-  '21 x 29,7':  { w: 21,   h: 29.7, insheetPrint: 5,  insheetOliver: 150, planoL: 65, planoP: 90 },
-  '21,5 x 33':  { w: 21.5, h: 33,   insheetPrint: 5,  insheetOliver: 150, planoL: 79, planoP: 109 },
-  '29,7 x 42':  { w: 29.7, h: 42,   insheetPrint: 5,  insheetOliver: 150, planoL: 65, planoP: 90 },
+  '10,5 x 21':  { w: 10.5, h: 21,   insheetPrint: 6,  insheetOliver: 100, planoL: 65, planoP: 90 },
+  '14,5 x 21':  { w: 14.5, h: 21,   insheetPrint: 4,  insheetOliver: 150, planoL: 65, planoP: 90 },
+  '21 x 29,7':  { w: 21,   h: 29.7, insheetPrint: 2,  insheetOliver: 150, planoL: 65, planoP: 90 },
+  '21,5 x 33':  { w: 21.5, h: 33,   insheetPrint: 1,  insheetOliver: 150, planoL: 79, planoP: 109 },
+  '29,7 x 42':  { w: 29.7, h: 42,   insheetPrint: 1,  insheetOliver: 150, planoL: 65, planoP: 90 },
 };
 
 // Gramatur Art Paper: berat per plano = gramatur × (planoL/100 × planoP/100) / 1000 kg
@@ -167,12 +167,13 @@ export function calculateBrosurSimulator(
     add(`Kertas ${gramatur}`, biayaKertas,
       `${planoPerOrder} plano × Rp ${Math.round(hargaPlano).toLocaleString('id-ID')} (${cfg.planoL}×${cfg.planoP}cm, +${p.upKertasPct}%)`);
   } else {
-    // Print Inter: hitung kebutuhan lembar A3+
-    const lbrPerOrder = Math.ceil(oplah / cfg.insheetPrint) * (is2Muka ? 1 : 1);
+    // Print Inter: hitung kebutuhan lembar A3+ (di Excel cell R: ROUNDUP((oplah / muat) + 5 insheet, 0))
+    const insheetA3 = 5;
+    const lbrPerOrder = Math.ceil((oplah / cfg.insheetPrint) + insheetA3);
     const tarifPrint = is2Muka ? p.tarifPrintInter2Muka : p.tarifPrintInter1Muka;
     const biayaPrint = lbrPerOrder * tarifPrint;
     add('Biaya Cetak Print Inter', biayaPrint,
-      `${lbrPerOrder} lbr A3+ × Rp ${tarifPrint.toLocaleString('id-ID')}/${is2Muka ? '2 muka' : '1 muka'}`);
+      `${lbrPerOrder} lbr A3+ × Rp ${tarifPrint.toLocaleString('id-ID')}/${is2Muka ? '2 muka' : '1 muka'} (inkl. ${insheetA3} insheet)`);
   }
 
   // 2. Biaya Cetak Oliver (hanya jika mesin = Oliver)
@@ -214,18 +215,20 @@ export function calculateBrosurSimulator(
     add('Sisir / Potong', biayaSisir, `${oplah} pcs`);
   }
 
-  // 6. Kardus & Packing
-  {
-    const biayaKardus = p.tarifKardus;
-    add('Kardus & Lakban', biayaKardus, '1 box packing');
+  // 6. Kardus & Packing (Sesuai Excel: kardus dihitung pada oplah besar >= 1.000 pcs)
+  if (oplah >= 1000 || isOliver) {
+    const boxQty = Math.ceil(oplah / 2000);
+    const biayaKardus = p.tarifKardus * boxQty;
+    add('Kardus Master Packing', biayaKardus, `${boxQty} box kardus packing`);
   }
-
   // Recompute pct
   breakdown.forEach(b => { b.pct = totalHpp > 0 ? b.nominal / totalHpp : 0; });
 
   const hppPerPcs = totalHpp / oplah;
-  const hargaJualPerPcs = Math.ceil(hppPerPcs * (1 + marginPct / 100));
-  const hargaNegoPerPcs = Math.ceil(hargaJualPerPcs * (1 - negoDiskonPct / 100));
+  // Di Excel cell BI: =ROUNDUP(BH, -1) (pembulatan ke kelipatan 10 terdekat)
+  const rawHargaJual = hppPerPcs * (1 + marginPct / 100);
+  const hargaJualPerPcs = Math.ceil(rawHargaJual / 10) * 10;
+  const hargaNegoPerPcs = Math.ceil((hargaJualPerPcs * (1 - negoDiskonPct / 100)) / 10) * 10;
   const totalHargaJual = hargaJualPerPcs * oplah;
   const totalHargaNego = hargaNegoPerPcs * oplah;
   const profitPerPcs = hargaJualPerPcs - hppPerPcs;
