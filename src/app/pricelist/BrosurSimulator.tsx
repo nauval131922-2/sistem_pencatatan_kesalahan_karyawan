@@ -32,6 +32,7 @@ import {
   BrosurLaminasiType,
   SavedBrosurSimulationItem,
 } from '@/lib/brosur-calculator';
+import ThousandInput from '@/components/ThousandInput';
 import { toast } from '@/lib/toast';
 
 export type { SavedBrosurSimulationItem };
@@ -102,6 +103,7 @@ export default function BrosurSimulator({
     else setInternalActiveTitle(title);
   };
 
+  // Load saved simulations & load draft simulator states from localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem('sintak_saved_brosur_simulations');
@@ -119,18 +121,62 @@ export default function BrosurSimulator({
             setMuka(input.muka);
             setMesin(input.mesin);
             setLaminasi(input.laminasi);
-            setOpsiSisir(input.opsiSisir);
-            setOpsiPacking(input.opsiPacking);
             setMarginPct(input.marginPct);
             setNegoDiskonPct(input.negoDiskonPct);
             setSimulationTitle(item.title);
+            return;
           }
         }
       }
+
+      // Restore draft settingan pengguna dari localStorage saat pindah tab
+      const rawDraft = localStorage.getItem('sintak_brosur_simulator_draft');
+      if (rawDraft) {
+        const d = JSON.parse(rawDraft);
+        if (d.oplah !== undefined) setOplah(Number(d.oplah) || 100);
+        if (d.gramatur !== undefined) setGramatur(d.gramatur);
+        if (d.ukuran !== undefined) setUkuran(d.ukuran);
+        if (d.muka !== undefined) setMuka(d.muka);
+        if (d.mesin !== undefined) setMesin(d.mesin);
+        if (d.laminasi !== undefined) setLaminasi(d.laminasi);
+        if (d.marginPct !== undefined) setMarginPct(Number(d.marginPct) || 30);
+        if (d.negoDiskonPct !== undefined) setNegoDiskonPct(Number(d.negoDiskonPct) || 0);
+      }
     } catch (e) {
-      console.error('Failed to load saved brosur simulations:', e);
+      console.error('Failed to load saved brosur simulations or draft:', e);
     }
   }, [activeSimulationId]);
+
+  // Simpan draft settingan simulator secara otomatis saat ada perubahan input (auto-persist)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const draft = {
+          oplah,
+          gramatur,
+          ukuran,
+          muka,
+          mesin,
+          laminasi,
+          marginPct,
+          negoDiskonPct,
+        };
+        localStorage.setItem('sintak_brosur_simulator_draft', JSON.stringify(draft));
+      } catch (e) {
+        console.error('Failed to save brosur simulator draft:', e);
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [
+    oplah,
+    gramatur,
+    ukuran,
+    muka,
+    mesin,
+    laminasi,
+    marginPct,
+    negoDiskonPct,
+  ]);
 
   const result = useMemo(
     () =>
@@ -325,29 +371,18 @@ export default function BrosurSimulator({
 
             {/* Oplah */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Kuantitas Oplah (pcs)
-              </label>
-              <div className="flex items-center gap-2">
-                <select
-                  value={oplah}
-                  onChange={(e) => setOplah(Number(e.target.value))}
-                  className="w-full px-3 py-1.5 text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none cursor-pointer"
-                >
-                  {OPLAH_TIERS.map((t) => (
-                    <option key={t} value={t}>{t.toLocaleString('id-ID')} pcs</option>
-                  ))}
-                </select>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-700">Kuantitas Oplah (pcs)</label>
+                <span className="text-[11px] font-mono font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  {oplah.toLocaleString('id-ID')} pcs
+                </span>
               </div>
-              <input
-                type="number"
-                min={100}
-                max={10000}
-                step={50}
+              <ThousandInput
                 value={oplah}
-                onChange={(e) => setOplah(Math.max(100, Number(e.target.value) || 100))}
-                className="mt-1.5 w-full px-3 py-1.5 text-xs font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none"
-                placeholder="Atau ketik oplah lain..."
+                allowDecimals={false}
+                onValueChange={(val) => setOplah(Math.max(1, val))}
+                placeholder="Jumlah pesanan brosur (pcs)"
+                className="w-full px-3 py-2 text-sm font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none"
               />
             </div>
 
