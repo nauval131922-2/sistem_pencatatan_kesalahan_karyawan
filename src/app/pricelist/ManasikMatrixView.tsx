@@ -459,10 +459,10 @@ export default function ManasikMatrixView({
                               <td className="py-2 px-3 text-center text-gray-600 border-r border-gray-200 font-medium">
                                 <span
                                   className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                                    row.metode === 'Cetak Oliver' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                                    row.metode === 'Offset (Oliver)' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
                                   }`}
                                 >
-                                  {row.metode === 'Cetak Oliver' ? 'Oliver' : 'Digital'}
+                                  {row.metode === 'Offset (Oliver)' ? 'Oliver' : 'Digital'}
                                 </span>
                               </td>
                               {(selectedJilidFilter === 'ALL' || selectedJilidFilter === 'Softcover') && (

@@ -2197,8 +2197,6 @@ export default function SavedCalculationsList({
                             ? 'bg-fuchsia-100 text-fuchsia-900 border border-fuchsia-200'
                             : item.category === 'Majalah 14,5×20,25'
                             ? 'bg-sky-100 text-sky-900 border border-sky-200'
-                            : item.category === 'Kalender'
-                            ? 'bg-amber-100 text-amber-900 border border-amber-200'
                             : item.category === 'Stiker'
                             ? 'bg-pink-100 text-pink-900 border border-pink-200'
                             : item.category === 'Buku Soft Cover 10,5×14,8'

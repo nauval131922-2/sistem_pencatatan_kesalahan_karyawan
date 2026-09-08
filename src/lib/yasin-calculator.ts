@@ -346,6 +346,7 @@ export function calculateYasinSimulator(
   return {
     input,
     tebalPunggungCm: tebalPunggung,
+    kebutuhanA3Cover,
     kebutuhanA3SisipanFoto,
     kebutuhanA3SisipanTeks,
     breakdown,

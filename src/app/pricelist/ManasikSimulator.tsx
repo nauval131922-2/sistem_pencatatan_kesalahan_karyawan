@@ -215,7 +215,7 @@ export default function ManasikSimulator({
             setLaminasiCover(item.laminasiCover);
             setOpsiPlastikOpp(item.opsiPlastikOpp);
             setOpsiKardus(item.opsiKardus);
-            setOpsiSisipan(item.opsiSisipan);
+            setOpsiSisipan(Boolean(item.opsiSisipan));
             setMarginPct(item.marginPct);
             setNegoDiskonPct(item.negoDiskonPct);
             setSimulationTitle(item.title);
