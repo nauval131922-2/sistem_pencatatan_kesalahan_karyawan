@@ -136,48 +136,49 @@ export function calculateNotaSimulator(
   const totalSet = validOplahRim * 500;
   const jumlahBukuBendel = (totalSet / setPerBuku) * divider;
 
-  // 1. Biaya Kertas Isi
+  // 1. Biaya Kertas Isi Sesuai Rumus Master!D11:
   let hargaKertasPerRim = 0;
   if (rangkap === 1) {
-    // Kertas HVS 70: rumus berat (21.5 * 33 * 70)/20000 * 15700 * (1 + 7%) = 41.716,11
+    // Kertas HVS 70: rumus berat (21.5 * 33 * 70)/20000 * 15700 * (1 + 7%) = 41.716,11675
     const beratRim = (21.5 * 33 * 70) / 20000;
     const hargaPerKgNet = params.tarifHvs70Kg * (1 + params.upHvsPct / 100);
     hargaKertasPerRim = beratRim * hargaPerKgNet;
   } else if (rangkap === 2) {
-    // NCR 2 Rangkap: Top (65.500 * 1.05 = 68.775) + Bottom (62.000 * 1.05 = 65.100) = 133.875
+    // NCR 2 Rangkap: Top (65.500 * 1.05 = 68.775) + Bottom (62.000 * 1.05 = 65.100) = 133.875 per rim pesanan
     const top = params.tarifNcrTopRim * (1 + params.upNcrPct / 100);
     const bottom = params.tarifNcrBottomRim * (1 + params.upNcrPct / 100);
     hargaKertasPerRim = top + bottom;
   } else if (rangkap === 3) {
-    // NCR 3 Rangkap: Top + Middle + Bottom = 68.775 + 68.775 + 65.100 = 202.650 / 3 rim = 101.325 per rangkap set
+    // NCR 3 Rangkap: Top + Middle + Bottom = 68.775 + 68.775 + 65.100 = 202.650 per rim pesanan
     const top = params.tarifNcrTopRim * (1 + params.upNcrPct / 100);
     const middle = params.tarifNcrMiddleRim * (1 + params.upNcrPct / 100);
     const bottom = params.tarifNcrBottomRim * (1 + params.upNcrPct / 100);
-    hargaKertasPerRim = (top + middle + bottom) / 2; // Rata-rata per rim basis
+    hargaKertasPerRim = top + middle + bottom;
   } else {
     // NCR 4 Rangkap: Top + 2 Middle + Bottom
     const top = params.tarifNcrTopRim * (1 + params.upNcrPct / 100);
     const middle = params.tarifNcrMiddleRim * (1 + params.upNcrPct / 100);
     const bottom = params.tarifNcrBottomRim * (1 + params.upNcrPct / 100);
-    hargaKertasPerRim = (top + middle * 2 + bottom) / 2.5;
+    hargaKertasPerRim = top + middle * 2 + bottom;
   }
 
   const biayaKertas = Math.round(hargaKertasPerRim * validOplahRim);
 
   // 2. Desain & Plat
+  // Di Excel Sheet BUKU cell V: jumlah plat ditentukan oleh jumlah warna desain (Top, Middle, Bottom menggunakan plat yang sama)
   const biayaDesain = params.tarifDesainNota;
-  const jumlahPlat = rangkap * jumlahWarna;
+  const jumlahPlat = jumlahWarna;
   const biayaPlat = jumlahPlat * params.tarifPlatRyobi;
 
   // 3. Ongkos Cetak Mesin Ryobi (1 Muka)
-  // Per rangkap naik cetak 500 drek per rim.
-  const cetakMinOrder = jumlahPlat * params.minOngkosCetakRyobi;
-  // Drek over per rangkap jika (totalLembarFolio - 500*jumlahPlat) > 0
-  const drekPerPlat = validOplahRim * 500;
-  const drekOverPerPlat = Math.max(0, drekPerPlat - 500);
-  const biayaCetakOver = drekOverPerPlat * params.tarifDrekOverRyobi * jumlahPlat;
+  // Total lembar folio dicetak = validOplahRim * rangkap * 500
+  // Rumus Excel cell Z7: (Q7*V7) - (V7*500) di mana Q7 = lembar cetak folio, V7 = jumlah warna
+  const totalPutaranCetak = totalLembarFolio * jumlahWarna;
+  const putaranMinOrder = jumlahWarna * 500;
+  const cetakMinOrder = jumlahWarna * params.minOngkosCetakRyobi;
+  const putaranOver = Math.max(0, totalPutaranCetak - putaranMinOrder);
+  const biayaCetakOver = putaranOver * params.tarifDrekOverRyobi;
   const biayaCetakTotal = cetakMinOrder + biayaCetakOver;
-
   // 4. Finishing per Rim Rangkap (validOplahRim * rangkap)
   const totalVolumeRimRangkap = validOplahRim * rangkap;
   const biayaSamson = params.tarifKertasSamson * totalVolumeRimRangkap;
@@ -201,10 +202,10 @@ export function calculateNotaSimulator(
     biayaNomorator;
 
   // Total HPP
+  // Total HPP & HPP Per Rim (Di Excel cell AT7: AS7 / (H7 * rangkap))
   const totalHpp = Math.round(biayaKertas + biayaDesain + biayaPlat + biayaCetakTotal + totalFinishing);
-  const hppPerRim = Math.round(totalHpp / validOplahRim);
+  const hppPerRim = Math.round(totalHpp / (validOplahRim * rangkap));
   const hppPerBuku = Math.round(totalHpp / Math.max(1, jumlahBukuBendel));
-
   // Breakdown Table Items
   const breakdown: NotaBreakdownItem[] = [
     {
@@ -217,10 +218,10 @@ export function calculateNotaSimulator(
       nama: `Plat CTP Ryobi (${jumlahPlat} Plat Cetak)`,
       nominal: biayaPlat,
       pct: totalHpp > 0 ? (biayaPlat / totalHpp) * 100 : 0,
-      keterangan: `${jumlahWarna} warna x ${rangkap} ply @ Rp ${params.tarifPlatRyobi.toLocaleString('id-ID')}`,
+      keterangan: `${jumlahPlat} plat cetak @ Rp ${params.tarifPlatRyobi.toLocaleString('id-ID')}`,
     },
     {
-      nama: `Ongkos Cetak Mesin Ryobi (${(drekPerPlat * jumlahPlat).toLocaleString('id-ID')} Putaran)`,
+      nama: `Ongkos Cetak Mesin Ryobi (${totalPutaranCetak.toLocaleString('id-ID')} Putaran)`,
       nominal: biayaCetakTotal,
       pct: totalHpp > 0 ? (biayaCetakTotal / totalHpp) * 100 : 0,
       keterangan: `Min order Rp ${cetakMinOrder.toLocaleString('id-ID')}${biayaCetakOver > 0 ? ` + Over Rp ${biayaCetakOver.toLocaleString('id-ID')}` : ''}`,
@@ -264,9 +265,15 @@ export function calculateNotaSimulator(
   }
 
   // Margin & Harga Jual
+  // Margin & Harga Jual (Sesuai Excel cell AU7, AW7, AY7):
+  // AT = HPP per rim kertas = totalHpp / (validOplahRim * rangkap)
+  // AW = Total Harga = (AT * (1 + margin%)) * validOplahRim
+  // AY = Harga per Rim = ROUNDUP(AW / validOplahRim, -1)
   const marginPct = Math.max(0, input.marginPct);
-  const marginNominalPerRim = Math.round((hppPerRim * marginPct) / 100);
-  const hargaJualPerRim = Math.ceil((hppPerRim + marginNominalPerRim) / 100) * 100; // Round ke ratusan
+  const rawHppPerRim = totalHpp / (validOplahRim * rangkap);
+  const rawHargaJualPerRim = rawHppPerRim * (1 + marginPct / 100);
+  const hargaJualPerRim = Math.ceil(rawHargaJualPerRim / 10) * 10; // ROUNDUP kelipatan 10
+  const marginNominalPerRim = hargaJualPerRim - hppPerRim;
   const totalHargaJual = hargaJualPerRim * validOplahRim;
   const hargaJualPerBuku = Math.round(totalHargaJual / Math.max(1, jumlahBukuBendel));
   const totalProfit = totalHargaJual - totalHpp;

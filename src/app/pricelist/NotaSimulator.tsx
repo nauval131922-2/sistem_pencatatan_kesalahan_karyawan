@@ -113,6 +113,7 @@ export default function NotaSimulator({
     else setInternalActiveTitle(title);
   };
 
+  // Load saved simulations & load draft simulator states from localStorage
   useEffect(() => {
     try {
       const raw = localStorage.getItem('sintak_saved_nota_simulations');
@@ -132,13 +133,59 @@ export default function NotaSimulator({
             setMarginPct(item.marginPct);
             setNegoDiskonPct(item.negoDiskonPct);
             setSimulationTitle(item.title);
+            return;
           }
         }
       }
+
+      // Restore draft settingan pengguna dari localStorage saat pindah tab
+      const rawDraft = localStorage.getItem('sintak_nota_simulator_draft');
+      if (rawDraft) {
+        const d = JSON.parse(rawDraft);
+        if (d.oplahRim !== undefined) setOplahRim(Number(d.oplahRim) || 1);
+        if (d.rangkap !== undefined) setRangkap(d.rangkap);
+        if (d.ukuran !== undefined) setUkuran(d.ukuran);
+        if (d.jumlahWarna !== undefined) setJumlahWarna(d.jumlahWarna);
+        if (d.opsiPorporasi !== undefined) setOpsiPorporasi(Boolean(d.opsiPorporasi));
+        if (d.opsiNomorator !== undefined) setOpsiNomorator(Boolean(d.opsiNomorator));
+        if (d.marginPct !== undefined) setMarginPct(Number(d.marginPct) || 30);
+        if (d.negoDiskonPct !== undefined) setNegoDiskonPct(Number(d.negoDiskonPct) || 0);
+      }
     } catch (e) {
-      console.error('Failed to load saved nota simulations:', e);
+      console.error('Failed to load saved nota simulations or draft:', e);
     }
   }, [activeSimulationId]);
+
+  // Simpan draft settingan simulator secara otomatis saat ada perubahan input (auto-persist)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const draft = {
+          oplahRim,
+          rangkap,
+          ukuran,
+          jumlahWarna,
+          opsiPorporasi,
+          opsiNomorator,
+          marginPct,
+          negoDiskonPct,
+        };
+        localStorage.setItem('sintak_nota_simulator_draft', JSON.stringify(draft));
+      } catch (e) {
+        console.error('Failed to save nota simulator draft:', e);
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [
+    oplahRim,
+    rangkap,
+    ukuran,
+    jumlahWarna,
+    opsiPorporasi,
+    opsiNomorator,
+    marginPct,
+    negoDiskonPct,
+  ]);
 
   const inputConfig: NotaSimulatorInput = useMemo(
     () => ({
