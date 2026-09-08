@@ -187,7 +187,8 @@ export function calculateYasinSimulator(
   }
 
   // 5. Biaya Laminasi Cover
-  const bentanganWidth = isHardcover ? (widthCm * 2 + 4) : (widthCm * 2 + tebalPunggung + 1);
+  // Sesuai formula Excel cell AZ: =(((D*2+1)*(F+1)*tarif)*oplah)
+  const bentanganWidth = isHardcover ? (widthCm * 2 + 4) : (widthCm * 2 + 1);
   const bentanganHeight = isHardcover ? (heightCm + 4) : (heightCm + 1);
   const luasCm2Cover = bentanganWidth * bentanganHeight;
   const tarifLamCm2 = laminasiCover === 'Doff' ? params.tarifLaminasiDoffCm2 : params.tarifLaminasiGlossyCm2;
@@ -195,12 +196,11 @@ export function calculateYasinSimulator(
   const biayaLaminasi = Math.max(params.minLaminasi, rawLam);
 
   // 6. Finishing Perakitan Jilid
-  // Di Excel Hardcover cell AU7: =$AU$2 * $AU$6 * H7 di mana AU2 = 3 lembar sisipan (Rp 300/buku)
-  const totalLembarSisip = isHardcover ? Math.max(3, lembarSisipanFoto + lembarSisipanKeluarga) : (lembarSisipanFoto + lembarSisipanKeluarga);
+  // Di Excel Sheet BUKU cell AT: =$AT$2 * $AT$6 * H di mana AT2 = 3 lembar sisipan (Rp 300/buku)
+  const totalLembarSisip = Math.max(3, lembarSisipanFoto + lembarSisipanKeluarga);
   const biayaSisip = totalLembarSisip * params.tarifSisipLembar * validOplah;
   const biayaStaples = params.tarifStaplesYasin * validOplah;
   const biayaSisir = params.tarifSisirYasin * validOplah;
-
   let biayaHardcoverKhusus = 0;
   let biayaPasangCover = 0;
 
@@ -224,10 +224,14 @@ export function calculateYasinSimulator(
 
   let biayaOpp = 0;
   if (opsiPlastikOpp) {
-    const tarifOpp = isHardcover ? 95 : (params.tarifPlastikOppYasin ?? 90);
-    biayaOpp = tarifOpp * validOplah;
+    if (isHardcover) {
+      biayaOpp = 95 * validOplah;
+    } else {
+      // Di Excel cell AX7: pembulatan minimal 1 pack plastik OPP (kelipatan 100 pcs x Rp 90 = min Rp 9.000)
+      const packOppQty = Math.ceil(validOplah / 100) * 100;
+      biayaOpp = packOppQty * (params.tarifPlastikOppYasin ?? 90);
+    }
   }
-
   // Total HPP
   const totalHpp = Math.round(
     biayaPrintCover +
